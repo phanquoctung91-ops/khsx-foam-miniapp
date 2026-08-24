@@ -1,9 +1,24 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PUBLISHABLE_KEY = Deno.env.get("KHSX_PUBLISHABLE_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+
+function namedKey(jsonName: string, legacyNames: string[]) {
+  try {
+    const values = JSON.parse(Deno.env.get(jsonName) ?? "{}") as Record<string, string>;
+    if (values.default) return values.default;
+  } catch {
+    // Dự án cũ chưa có biến JSON; dùng khóa tương thích bên dưới.
+  }
+  for (const name of legacyNames) {
+    const value = Deno.env.get(name);
+    if (value) return value;
+  }
+  return "";
+}
+
+const SERVICE_ROLE_KEY = namedKey("SUPABASE_SECRET_KEYS", ["SUPABASE_SERVICE_ROLE_KEY"]);
+const PUBLISHABLE_KEY = namedKey("SUPABASE_PUBLISHABLE_KEYS", ["KHSX_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY"]);
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
 const SESSION_SECRET = Deno.env.get("TELEGRAM_SESSION_SECRET")!;
 const ALLOWED_ORIGINS = new Set(
@@ -82,6 +97,12 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json(req, { error: "METHOD_NOT_ALLOWED" }, 405);
   const origin = req.headers.get("origin") ?? "";
   if (!ALLOWED_ORIGINS.has(origin)) return json(req, { error: "ORIGIN_NOT_ALLOWED" }, 403);
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !PUBLISHABLE_KEY || !TELEGRAM_BOT_TOKEN || !SESSION_SECRET) {
+    return json(req, { error: "SERVER_NOT_CONFIGURED" }, 503);
+  }
+  if (Number(req.headers.get("content-length") ?? 0) > 16_384) {
+    return json(req, { error: "REQUEST_TOO_LARGE" }, 413);
+  }
 
   let initData = "";
   try {
@@ -89,6 +110,7 @@ Deno.serve(async (req) => {
   } catch {
     return json(req, { error: "INVALID_REQUEST" }, 400);
   }
+  if (!initData || initData.length > 10_000) return json(req, { error: "INVALID_REQUEST" }, 400);
 
   const telegramUser = await verifyTelegramInitData(initData);
   if (!telegramUser) return json(req, { error: "INVALID_TELEGRAM_DATA" }, 401);
@@ -98,25 +120,28 @@ Deno.serve(async (req) => {
   });
   const displayName = [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" ");
 
-  const { data: link } = await admin.from("khsx_telegram_links")
+  const { data: link, error: linkError } = await admin.from("khsx_telegram_links")
     .select("auth_user_id,active")
     .eq("telegram_user_id", telegramUser.id)
     .maybeSingle();
+  if (linkError) return json(req, { error: "AUTH_LOOKUP_FAILED" }, 503);
 
   if (!link?.active) {
-    await admin.from("khsx_telegram_access_requests").upsert({
+    const { error: requestError } = await admin.from("khsx_telegram_access_requests").upsert({
       telegram_user_id: telegramUser.id,
       telegram_username: telegramUser.username ?? null,
       telegram_display_name: displayName,
       last_seen_at: new Date().toISOString(),
     }, { onConflict: "telegram_user_id" });
+    if (requestError) return json(req, { error: "ACCESS_REQUEST_FAILED" }, 503);
     return json(req, { error: "ACCESS_NOT_PROVISIONED", telegram_user_id: telegramUser.id }, 403);
   }
 
-  const { data: profile } = await admin.from("khsx_profiles")
+  const { data: profile, error: profileError } = await admin.from("khsx_profiles")
     .select("display_name,role,unit_name,active")
     .eq("user_id", link.auth_user_id)
     .maybeSingle();
+  if (profileError) return json(req, { error: "PROFILE_LOOKUP_FAILED" }, 503);
   if (!profile?.active) return json(req, { error: "ACCOUNT_DISABLED" }, 403);
 
   const email = `tg_${telegramUser.id}@khsx.internal`;
