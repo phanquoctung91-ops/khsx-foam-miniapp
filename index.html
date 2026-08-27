@@ -852,6 +852,8 @@ html[data-local-ui-test="1"] #loginOverlay{display:none !important;}
       <button id="managementToolsBtn" type="button" aria-expanded="false">⚙️ Công cụ</button>
       <div class="management-tools-menu" id="managementToolsMenu">
         <button id="logoutBtn" title="Đăng xuất và nhập mã khác">↪ Đổi người dùng</button>
+        <button id="stageTestMenuBtn" class="only-manager" title="Mở kiểm thử nhập liệu ba công đoạn">🧪 Test 3 công đoạn</button>
+        <button id="telegramFullscreenBtn" type="button" style="display:none;" title="Mở rộng MiniApp trên Telegram Desktop">⛶ Mở rộng cửa sổ</button>
         <button id="staffUsersBtn" class="only-manager" title="Tạo và thu hồi mã đăng nhập cho nhân viên">👥 Tạo mã đăng nhập</button>
         <button id="backupBtn" class="only-manager" title="Tải gói sao lưu / nạp lại dữ liệu">💾 Sao lưu &amp; bàn giao</button>
         <button id="quarterTargetBtn" class="only-manager" title="Nhập mục tiêu sản lượng của quý">🎯 Mục tiêu quý</button>
@@ -2387,7 +2389,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 103;
+const APP_VERSION = 104;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -2804,6 +2806,39 @@ async function loginWithTelegram(){
   const tgId=TELEGRAM_WEBAPP.initDataUnsafe&&TELEGRAM_WEBAPP.initDataUnsafe.user?TELEGRAM_WEBAPP.initDataUnsafe.user.id:'';
   return {code:`tg:${tgId}`,name:data.profile.display_name,role:data.profile.role,unit:supabaseUnitToUi(data.profile.unit_name),worker_id:data.profile.worker_id||null};
 }
+async function enterWithTelegram(){
+  const btn=document.getElementById('loginBtn');
+  const err=document.getElementById('loginError');
+  if(!TELEGRAM_WEBAPP || !TELEGRAM_WEBAPP.initData){
+    if(err){err.textContent='Hãy mở MiniApp trực tiếp trong Telegram.';err.style.display='block';}
+    return false;
+  }
+  if(btn){btn.disabled=true;btn.textContent='Đang xác thực...';}
+  try{
+    const telegramUser=await loginWithTelegram();
+    currentUser=telegramUser;
+    saveLoginSession(telegramUser);
+    try{localStorage.removeItem('khsx_manual_logout');}catch(e){}
+    const overlay=document.getElementById('loginOverlay');
+    if(overlay) overlay.style.display='none';
+    if(err) err.style.display='none';
+    applyRoleUI();
+    if(await loadSupabaseOperationalData()){
+      supabasePrimaryActive=true;
+      document.documentElement.setAttribute('data-primary-source','supabase');
+      await startSupabaseRealtime();
+      await flushSupabaseStageOutbox();
+      renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
+      saveLocalCache(); startPolling();
+    }
+    return true;
+  }catch(e){
+    if(err){err.textContent=e.message||'Không đăng nhập được Telegram.';err.style.display='block';}
+    return false;
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Đăng nhập bằng Telegram';}
+  }
+}
 async function restoreSupabaseSession(){
   if(!supabaseDb) return false;
   const {data:{session}}=await supabaseDb.auth.getSession();
@@ -2816,21 +2851,32 @@ async function restoreSupabaseSession(){
   applyRoleUI();
   return true;
 }
+async function supabaseSelectAll(table,columns='*',configure=null){
+  const pageSize=1000,all=[];
+  for(let from=0;;from+=pageSize){
+    let query=supabaseDb.from(table).select(columns).range(from,from+pageSize-1);
+    if(configure) query=configure(query);
+    const {data,error}=await query;
+    if(error) return {data:null,error};
+    const rows=data||[]; all.push(...rows);
+    if(rows.length<pageSize) return {data:all,error:null};
+  }
+}
 async function loadSupabaseOperationalData(){
   if(!supabaseDb) return false;
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session) return false;
   const results=await Promise.all([
-    supabaseDb.from('khsx_orders').select('*').is('deleted_at',null),
-    supabaseDb.from('khsx_order_assignments').select('*'),
-    supabaseDb.from('khsx_daily_assignments').select('*'),
-    supabaseDb.from('khsx_stage_progress').select('*'),
-    supabaseDb.from('khsx_day_locks').select('*'),
-    supabaseDb.from('khsx_plan_snapshots').select('*'),
-    supabaseDb.from('khsx_quarter_targets').select('*'),
-    supabaseDb.from('khsx_profiles').select('user_id,display_name,role,unit_name,active,worker_id'),
-    supabaseDb.from('khsx_workers').select('id,display_name,stage,active'),
-    supabaseDb.from('khsx_stage_credits').select('order_id,work_date,stage,worker_id,quantity,source')
+    supabaseSelectAll('khsx_orders','*',q=>q.is('deleted_at',null)),
+    supabaseSelectAll('khsx_order_assignments'),
+    supabaseSelectAll('khsx_daily_assignments'),
+    supabaseSelectAll('khsx_stage_progress'),
+    supabaseSelectAll('khsx_day_locks'),
+    supabaseSelectAll('khsx_plan_snapshots'),
+    supabaseSelectAll('khsx_quarter_targets'),
+    supabaseSelectAll('khsx_profiles','user_id,display_name,role,unit_name,active,worker_id'),
+    supabaseSelectAll('khsx_workers','id,display_name,stage,active'),
+    supabaseSelectAll('khsx_stage_credits','order_id,work_date,stage,worker_id,quantity,source')
   ]);
   const failed=results.find(x=>x.error);
   if(failed){ console.warn('Supabase đọc song song thất bại',failed.error); return false; }
@@ -4489,7 +4535,7 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
     // thực nhập trong ngày đang xem, đồng thời ghi cho đúng tổ thực hiện ngày đó.
     // Chỉ tính trên đúng tập đơn đang hiển thị sau bộ lọc. Không dùng lại danh sách rộng
     // bên ngoài vì sẽ giữ mẫu số cũ dù người dùng thêm/xóa/lọc hết đơn.
-    const keHoach = teamOrders.filter(isPlannedOrder).reduce((a,o)=>a+(Number(o.so_luong)||0),0);
+    const keHoach = teamOrders.filter(isPlannedOrder).reduce((a,o)=>a+keHoachTrongNgay(o,ngayDangXem),0);
     const hoanThanh = orders.reduce((a,o)=>a+soCongDoanCuaTo(o,congDoan,team,ngayDangXem),0);
     if(keHoach === 0){
       // Tổ không có kế hoạch riêng. Hai trường hợp khác nhau:
@@ -4577,7 +4623,7 @@ function renderAutoPlan(){
     if(assignFilter === 'completed' && status !== 'hoan_thanh') return false;
     return true;
   });
-  const kesHoachSanXuat = filtered.filter(isPlannedOrder).reduce((a,r)=>a+r.so_luong,0);
+  const kesHoachSanXuat = filtered.filter(isPlannedOrder).reduce((a,r)=>a+keHoachTrongNgay(r,dayVal),0);
   const hoanThanh = filtered.reduce((a,r)=>a+(assignments[r.id]?.so_luong_hoan_thanh||0),0);
   const rotCount = filtered.filter(r=>getOrderStatus(r)==='rot').length;
   const dangSXCount = filtered.filter(r=>getOrderStatus(r)==='dang_san_xuat').length;
@@ -7234,7 +7280,7 @@ document.getElementById('wfModal').addEventListener('click', (e)=>{
 // ---- Đăng nhập / đăng xuất ----
 document.getElementById('loginBtn').addEventListener('click', async ()=>{
   if(SUPABASE_VARIANT){
-    const err=document.getElementById('loginError'); err.textContent='Hãy mở MiniApp từ Telegram để xác thực Telegram ID.'; err.style.display='block'; return;
+    await enterWithTelegram(); return;
   }
   const input = document.getElementById('loginCodeInput');
   const err = document.getElementById('loginError');
@@ -7265,6 +7311,15 @@ document.getElementById('refreshProgressBtn').addEventListener('click', async ()
 });
 
 document.getElementById('viewerBtn').addEventListener('click', enterAsViewer);
+document.getElementById('stageTestMenuBtn').addEventListener('click',()=>{
+  document.getElementById('stageTestBtn').click();
+});
+document.getElementById('telegramFullscreenBtn').addEventListener('click',()=>{
+  try{
+    if(TELEGRAM_WEBAPP && typeof TELEGRAM_WEBAPP.requestFullscreen==='function') TELEGRAM_WEBAPP.requestFullscreen();
+    else if(TELEGRAM_WEBAPP) TELEGRAM_WEBAPP.expand();
+  }catch(e){ if(TELEGRAM_WEBAPP) try{TELEGRAM_WEBAPP.expand();}catch(_){} }
+});
 // Menu công cụ quản lý: gọn trên mobile, luôn canh phải
 (function(){
   const btn=document.getElementById('managementToolsBtn');
@@ -7285,8 +7340,8 @@ document.getElementById('viewerBtn').addEventListener('click', enterAsViewer);
   window.addEventListener('resize',close);
 })();
 
-document.getElementById('logoutBtn').addEventListener('click', ()=>{
-  if(supabaseDb) supabaseDb.auth.signOut().catch(()=>{});
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  if(supabaseDb) await supabaseDb.auth.signOut().catch(()=>{});
   clearLoginSession();
   try{ localStorage.setItem('khsx_manual_logout','1'); }catch(e){}
   document.documentElement.classList.remove('khsx-fast-session');
@@ -7296,6 +7351,9 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
   if(ov) ov.style.display='flex';
   const input=document.getElementById('loginCodeInput');
   if(input) input.focus();
+  // Trong Telegram không có "đổi tài khoản" bằng mã. Đăng xuất xong phải xác
+  // thực lại chính Telegram ID hiện tại, không để người dùng mắc ở màn hình khóa.
+  if(SUPABASE_VARIANT && TELEGRAM_WEBAPP && TELEGRAM_WEBAPP.initData) await enterWithTelegram();
 });
 
 // Vào ngay bằng session local; xác thực máy chủ chạy ngầm, không chặn dashboard.
@@ -7362,6 +7420,9 @@ async function bootstrap(){
   await cleanupLegacyDashboardCache();
   if(TELEGRAM_WEBAPP){
     try{ TELEGRAM_WEBAPP.ready(); TELEGRAM_WEBAPP.expand(); }catch(e){}
+    const platform=String(TELEGRAM_WEBAPP.platform||'').toLowerCase();
+    const fullscreenBtn=document.getElementById('telegramFullscreenBtn');
+    if(fullscreenBtn && ['tdesktop','macos','web','weba','webk'].includes(platform)) fullscreenBtn.style.display='block';
   }
   if(SUPABASE_VARIANT){
     document.documentElement.setAttribute('data-dashboard-variant','supabase');
@@ -7369,7 +7430,11 @@ async function bootstrap(){
     if(versionLabel) versionLabel.textContent='Telegram Mini App · thử nghiệm 0.2';
     const codeInput=document.getElementById('loginCodeInput'),loginBtn=document.getElementById('loginBtn'),viewerBtn=document.getElementById('viewerBtn');
     if(codeInput) codeInput.style.display='none';
-    if(loginBtn){loginBtn.textContent='Mở bằng Telegram';loginBtn.disabled=true;}
+    if(loginBtn){
+      const canTelegramLogin=!!(TELEGRAM_WEBAPP&&TELEGRAM_WEBAPP.initData);
+      loginBtn.textContent=canTelegramLogin?'Đăng nhập bằng Telegram':'Mở bằng Telegram';
+      loginBtn.disabled=!canTelegramLogin;
+    }
     if(viewerBtn) viewerBtn.style.display='none';
     const loginLabel=codeInput?.previousElementSibling; if(loginLabel) loginLabel.textContent='Telegram ID được xác thực tự động';
   }

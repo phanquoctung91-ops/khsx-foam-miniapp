@@ -68,7 +68,9 @@ async function verifyTelegramInitData(initData: string): Promise<TelegramUser | 
   const receivedHash = params.get("hash") ?? "";
   const authDate = Number(params.get("auth_date") ?? 0);
   const now = Math.floor(Date.now() / 1000);
-  if (!receivedHash || !authDate || Math.abs(now - authDate) > 300) return null;
+  // Telegram Desktop may keep one MiniApp window open through a whole shift.
+  // Accept that signed launch context for 24h so logout -> login works again.
+  if (!receivedHash || !authDate || Math.abs(now - authDate) > 86400) return null;
 
   params.delete("hash");
   const checkString = [...params.entries()]
