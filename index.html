@@ -9,7 +9,7 @@
 <title>Kế Hoạch sản xuất - Tổ Mút Foam</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
-<script src="js/khsx-data-core.js"></script>
+<script src="js/khsx-data-core.js?v=105"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   :root{
@@ -221,6 +221,10 @@
 
   tr.row-rot td{background:#fdf2f1;}
   tr.row-rot:hover td{background:#fbe8e7;}
+  tr.row-integrity td{box-shadow:inset 0 1px 0 #e0a128,inset 0 -1px 0 #e0a128;}
+  .data-integrity-alert{display:none;margin:0 0 12px;border:1px solid #e5bb66;border-radius:10px;background:#fff8e8;color:#6f4700;padding:9px 12px;font-size:12px;}
+  .data-integrity-alert summary{cursor:pointer;font-weight:800;}
+  .data-integrity-list{margin-top:7px;display:grid;gap:5px;}
   select.to-select{width:100%;min-width:0;max-width:100%;padding-left:7px;padding-right:24px;}
   select.to-select-empty{color:var(--text2);font-style:italic;}
   select.spinoff-to-select, select.support-day-select{width:100%;min-width:0;max-width:100%;font-size:11px;padding:4px 22px 4px 5px;border-radius:6px;}
@@ -620,6 +624,61 @@
 <style>
 html.khsx-fast-session #loginOverlay,
 html[data-local-ui-test="1"] #loginOverlay{display:none !important;}
+.employee-stage-workspace{display:none;}
+@media(max-width:760px){
+  body.stage-view-dan header .htext>.day-select-row,
+  body.stage-view-may header .htext>.day-select-row,
+  body.stage-view-dong-goi header .htext>.day-select-row,
+  body.stage-view-dan #kpiRow,body.stage-view-may #kpiRow,body.stage-view-dong-goi #kpiRow,
+  body.stage-view-dan .tabs,body.stage-view-may .tabs,body.stage-view-dong-goi .tabs{display:none!important;}
+  body.stage-view-dan header,body.stage-view-may header,body.stage-view-dong-goi header{margin-bottom:10px;padding-bottom:10px;}
+  body.stage-view-dan .brand-sub,body.stage-view-may .brand-sub,body.stage-view-dong-goi .brand-sub{display:none;}
+  body.stage-view-dan .brand-logo,body.stage-view-may .brand-logo,body.stage-view-dong-goi .brand-logo{width:42px;height:42px;}
+  body.stage-view-dan header .page-title,body.stage-view-may header .page-title,body.stage-view-dong-goi header .page-title{display:none;}
+  body.stage-view-dan #panel-progress .card,
+  body.stage-view-may #panel-progress .card,
+  body.stage-view-dong-goi #panel-progress .card{padding:10px;background:#eef3f9;}
+  body.stage-view-dan #panel-progress h3,
+  body.stage-view-may #panel-progress h3,
+  body.stage-view-dong-goi #panel-progress h3,
+  body.stage-view-dan #panel-progress .wf-link,
+  body.stage-view-may #panel-progress .wf-link,
+  body.stage-view-dong-goi #panel-progress .wf-link,
+  body.stage-view-dan #panel-progress .btn-row,
+  body.stage-view-may #panel-progress .btn-row,
+  body.stage-view-dong-goi #panel-progress .btn-row,
+  body.stage-view-dan #progressKpis,body.stage-view-dan #progressTeamRings,
+  body.stage-view-may #progressKpis,body.stage-view-may #progressTeamRings,
+  body.stage-view-dong-goi #progressKpis,body.stage-view-dong-goi #progressTeamRings,
+  body.stage-view-dan #progressTable,body.stage-view-may #progressTable,
+  body.stage-view-dong-goi #progressTable{display:none!important;}
+  body.stage-view-dan .employee-stage-workspace,
+  body.stage-view-may .employee-stage-workspace,
+  body.stage-view-dong-goi .employee-stage-workspace{display:block;}
+  .employee-stage-head{position:sticky;top:0;z-index:12;margin:-10px -10px 10px;padding:12px 12px 10px;background:linear-gradient(135deg,#153d73,#2379a8);color:#fff;box-shadow:0 5px 18px rgba(18,58,105,.2);}
+  .employee-stage-identity{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .employee-stage-name{font-size:18px;font-weight:850;line-height:1.15;}
+  .employee-stage-date{font-size:11px;opacity:.85;margin-top:4px;}
+  .employee-stage-score{min-width:75px;text-align:center;padding:7px 9px;border-radius:12px;background:rgba(255,255,255,.15);}
+  .employee-stage-score strong{display:block;font-size:22px;line-height:1;}
+  .employee-stage-score span{font-size:9px;text-transform:uppercase;letter-spacing:.06em;}
+  .employee-stage-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+  .employee-stage-metric{padding:7px 5px;text-align:center;border-radius:9px;background:rgba(255,255,255,.12);font-size:9px;}
+  .employee-stage-metric strong{display:block;margin-top:2px;font-size:16px;}
+  .employee-capacity-alert{margin:8px 0 10px;padding:9px 11px;border-radius:10px;background:#fff2d9;color:#8a5200;font-size:11px;font-weight:700;}
+  .employee-order-list{display:grid;gap:9px;}
+  .employee-order-card{background:#fff;border:1px solid #d7e1ed;border-radius:13px;box-shadow:0 3px 10px rgba(25,55,90,.07);overflow:hidden;}
+  .employee-order-main{display:grid;grid-template-columns:minmax(0,1fr) 68px 98px;align-items:center;gap:8px;padding:11px;}
+  .employee-order-title{font-size:15px;font-weight:850;color:#17283d;line-height:1.25;}
+  .employee-order-note{font-size:10px;color:#b4231e;margin-top:3px;line-height:1.3;}
+  .employee-order-plan{text-align:center;color:#52647a;font-size:9px;}
+  .employee-order-plan strong{display:block;color:#17283d;font-size:18px;}
+  .employee-order-entry .stage-cell{display:block;}
+  .employee-order-entry .qty-input{width:100%!important;min-height:48px;font-size:20px!important;font-weight:850;text-align:center;border:2px solid #2d8fc1;border-radius:10px;}
+  .employee-order-entry .stage-hint{font-size:9px;margin-top:3px;text-align:center;}
+  .employee-order-meta{display:flex;justify-content:space-between;gap:8px;padding:7px 11px;border-top:1px solid #edf1f6;color:#607086;font-size:9.5px;}
+  .employee-empty{padding:26px 15px;text-align:center;background:#fff;border:1px dashed #c9d5e3;border-radius:13px;color:#607086;}
+}
 </style>
 </head>
 <body>
@@ -1026,6 +1085,7 @@ html[data-local-ui-test="1"] #loginOverlay{display:none !important;}
       <span class="search-with-clear"><input type="text" id="progressSearchBox" placeholder="Tìm theo dòng, mã, kích thước..."><button type="button" class="search-clear-btn" data-clear-search="progressSearchBox" aria-label="Xóa nội dung tìm kiếm" title="Xóa tìm kiếm">×</button></span>
       <span class="save-status" id="syncStatus"></span>
     </div>
+    <details id="dataIntegrityAlert" class="data-integrity-alert only-manager2"><summary></summary><div class="data-integrity-list"></div></details>
     <div id="lockProgressPanel" style="display:none;background:#f8f9fb;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="font-size:12.5px;color:var(--text2);margin-bottom:9px;">
         Tick chọn ngày muốn <strong>chốt tiến độ</strong>. Ngày đã chốt thì nhân viên chỉ xem được số đã nhập, không sửa được nữa. Khi cần chỉnh, bạn bấm nút đỏ "⚠ Sửa đổi số liệu" ở tab Kế hoạch tuần để mở tạm.
@@ -1061,16 +1121,13 @@ html[data-local-ui-test="1"] #loginOverlay{display:none !important;}
         <span class="save-status" id="manualOrderStatusProgress"></span>
       </div>
     </div>
-    <section class="ops-command-center only-manager2" id="productionCommandCenter" aria-label="Điều hành nhanh sản xuất">
-      <div class="ops-command-head">
-        <div><div class="ops-command-title">Điều hành nhanh</div><div class="ops-command-sub" id="opsCommandSubtitle">Luồng thực tế Dán → May → Đóng gói</div></div>
-        <span class="ops-live-pill">Dữ liệu hiện tại</span>
-      </div>
-      <div class="ops-stage-flow" id="opsStageFlow"></div>
-      <div class="ops-alert-strip" id="opsAlertStrip"></div>
-    </section>
     <div class="kpis" id="progressKpis" style="margin-bottom:16px;"></div>
     <div class="team-ring-row" id="progressTeamRings" style="margin-bottom:16px;"></div>
+    <section id="employeeStageWorkspace" class="employee-stage-workspace" aria-label="Công việc công đoạn">
+      <div id="employeeStageHead" class="employee-stage-head"></div>
+      <div id="employeeCapacityAlert" class="employee-capacity-alert"></div>
+      <div id="employeeOrderList" class="employee-order-list"></div>
+    </section>
     <div class="table-scroll">
       <table id="progressTable">
         <thead>
@@ -1569,7 +1626,7 @@ function renderDay(key){
 }
 
 daySelect.addEventListener('change', e => renderDay(e.target.value));
-searchBox.addEventListener('input', () => renderDay(daySelect.value));
+searchBox.addEventListener('input', window.KhsxDataCore.debounce(() => renderDay(daySelect.value),160));
 
 // ---- Tổng hợp tháng tab ----
 const monthFromSelect = document.getElementById('monthFromSelect');
@@ -2013,6 +2070,7 @@ let orderGroupRows = []; // rows từ sheet đơn đặt: {date, dong, kich_thuo
 let dynamicOrders = [];  // rows Claude/dashboard spins off when an order falls short (persisted)
 let assignments = {};    // { [orderId]: { to: string|null, so_luong_hoan_thanh: number|null, spinoff_id: string|null } }
 let autoPlanLoaded = false;
+const orderEntityStore=window.KhsxDataCore?.createEntityStore('id');
 
 let deletedOrderIds = []; // id các đơn đã bị xoá tay — không hiện lại dù sheet vẫn còn dòng đó
 
@@ -2034,7 +2092,8 @@ function getOrders(){
              .filter(o=>!deletedOrderIds.includes(o.id))
              .filter(o=>!laDonRotLichSuDaHoanThanh(o));
 }
-function getOrderById(id){ return getOrders().find(o=>o.id===id); }
+function rebuildOrderEntityStore(){ orderEntityStore?.replace(getOrders()); }
+function getOrderById(id){ return orderEntityStore?.get(id) || getOrders().find(o=>o.id===id); }
 
 // Ngày đã qua (trước hôm nay) — dùng để xác định đơn chưa xong thì thành "đơn rớt"
 function isPastDate(dateStr){
@@ -2058,6 +2117,11 @@ function nguoiHoanThanhCongDoan(entry,congDoan){
   const name=entry[truongNguoiHoanThanh(congDoan,'name')]||'';
   const at=entry[truongNguoiHoanThanh(congDoan,'at')]||'';
   return code||name ? {code,name:name||code,at} : null;
+}
+function saiChuoiCongDoan(o){
+  if(!o||o.is_warranty)return null;
+  const dan=tongCongDoan(o,'dan'),may=tongCongDoan(o,'may'),dongGoi=tongCongDoan(o,'dong_goi');
+  return may>dan||dongGoi>may?{dan,may,dongGoi}:null;
 }
 function ganNguoiHoanThanhCongDoan(entry,congDoan,actor){
   if(!entry || !CONG_DOAN_TINH_KPI_CA_NHAN.includes(congDoan) || actor===undefined) return;
@@ -2389,7 +2453,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 104;
+const APP_VERSION = 105;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -2742,6 +2806,13 @@ let supabaseManagementOutbox = {};
 let supabaseManagementOutboxInFlight = false;
 try{ supabaseStageOutbox=JSON.parse(localStorage.getItem(SUPABASE_STAGE_OUTBOX_KEY)||'{}')||{}; }catch(e){ supabaseStageOutbox={}; }
 try{ supabaseManagementOutbox=JSON.parse(localStorage.getItem(SUPABASE_MANAGEMENT_OUTBOX_KEY)||'{}')||{}; }catch(e){ supabaseManagementOutbox={}; }
+// #104 từng bị RPC lỗi 42702 (operation_id mơ hồ). Cho các thao tác đó chạy lại
+// cùng operation_id sau khi máy chủ đã sửa, thay vì để chúng mắc vĩnh viễn.
+Object.values(supabaseStageOutbox).forEach(item=>{
+  if(item?.status==='failed'&&['42702','UNKNOWN'].includes(String(item.error_code||''))){
+    item.status='pending'; delete item.error_code; item.next_attempt_at=0;
+  }
+});
 function makeOperationId(){
   if(crypto && typeof crypto.randomUUID==='function') return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
@@ -2931,6 +3002,7 @@ async function loadSupabaseOperationalData(){
   lockedProgressDates=locks.filter(x=>x.progress_locked).map(x=>isoToDMY(x.work_date));
   planSnapshots={}; snaps.forEach(x=>{planSnapshots[isoToDMY(x.work_date)]=x.rows_json||[];});
   quarterTargets={}; targets.forEach(x=>{quarterTargets[`${x.year}_Q${x.quarter}`]=Number(x.target_qty)||0;});
+  rebuildOrderEntityStore();
   autoPlanLoaded=true;
   saveLocalCache();
   supabaseStatus(`Supabase đã đồng bộ · ${ord.length} đơn`,true);
@@ -2950,7 +3022,7 @@ async function refreshFromPrimarySupabase(){
 function scheduleSupabaseReload(){
   clearTimeout(supabaseReloadTimer);
   supabaseReloadTimer=setTimeout(async()=>{
-    if(Date.now()<localWriteUntil) return scheduleSupabaseReload();
+    if(Date.now()<localWriteUntil || Object.values(supabaseStageOutbox).some(x=>x.status!=='failed')) return scheduleSupabaseReload();
     if(await loadSupabaseOperationalData()){
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
     }
@@ -2960,10 +3032,34 @@ async function startSupabaseRealtime(){
   if(!supabaseDb || supabaseRealtimeChannel) return;
   const {data:{session}}=await supabaseDb.auth.getSession(); if(!session) return;
   supabaseRealtimeChannel=supabaseDb.channel('khsx-dashboard-live');
-  ['khsx_orders','khsx_order_assignments','khsx_daily_assignments','khsx_stage_progress','khsx_day_locks'].forEach(table=>{
+  ['khsx_orders','khsx_order_assignments','khsx_daily_assignments','khsx_day_locks','khsx_stage_credits','khsx_profiles','khsx_workers'].forEach(table=>{
     supabaseRealtimeChannel.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseReload);
   });
+  supabaseRealtimeChannel.on('postgres_changes',{event:'*',schema:'public',table:'khsx_stage_progress'},applySupabaseProgressEvent);
   supabaseRealtimeChannel.subscribe();
+}
+function applySupabaseProgressEvent(payload){
+  const row=payload?.eventType==='DELETE'?payload.old:payload.new;
+  if(!row?.order_id||!row?.work_date||!CONG_DOAN.includes(row.stage)) return;
+  const day=isoToDMY(row.work_date), key=[row.order_id,day,row.stage].join('|');
+  // Thao tác của máy này chưa được RPC xác nhận thì dữ liệu local mới nhất thắng.
+  if(supabaseStageOutbox[key]&&supabaseStageOutbox[key].status!=='failed') return;
+  const a=assignments[row.order_id]||(assignments[row.order_id]={stage_by_date:{},support_by_date:{}});
+  if(!a.stage_by_date)a.stage_by_date={};
+  const entry=a.stage_by_date[day]||(a.stage_by_date[day]={});
+  if(payload.eventType==='DELETE'){
+    delete entry[row.stage];delete entry[`_${row.stage}_to`];ganNguoiHoanThanhCongDoan(entry,row.stage,null);
+  }else{
+    entry[row.stage]=soCongDoan(row.quantity);
+    const team=supabaseUnitToUi(row.kpi_team);if(team)entry[`_${row.stage}_to`]=team;
+    if(row.completed_by_worker_id){
+      const worker=supabaseWorkers.find(w=>w.id===row.completed_by_worker_id);
+      ganNguoiHoanThanhCongDoan(entry,row.stage,{worker_id:row.completed_by_worker_id,code:row.completed_by_worker_id,name:worker?.display_name||row.completed_by_worker_id,at:row.updated_at||new Date().toISOString()});
+    }
+  }
+  if(!CONG_DOAN.some(stage=>entry[stage]!=null))delete a.stage_by_date[day];
+  const order=getOrderById(row.order_id);if(order)dongBoSoHoanThanhCu(order);
+  renderAutoPlan();renderProgress();scheduleMonthlySync();saveLocalCache();
 }
 function persistSupabaseStageOutbox(){
   try{ localStorage.setItem(SUPABASE_STAGE_OUTBOX_KEY,JSON.stringify(supabaseStageOutbox)); }catch(e){}
@@ -2974,7 +3070,8 @@ function queueStagePatchForSupabase(o,ngay,congDoan,value,team,workerId=null,sen
   supabaseStageOutbox[key]={key,operation_id:makeOperationId(),device_id:getSupabaseDeviceId(),
     order_id:o.id,work_date:ngay,stage:congDoan,
     value:value==null?0:soCongDoan(value),kpi_team:team||toKpiKhiNhapCongDoan(o,ngay)||null,
-    worker_id:workerId||null,status:'pending',attempts:0};
+    worker_id:workerId||null,status:'pending',attempts:0,next_attempt_at:0};
+  markLocalWrite();
   persistSupabaseStageOutbox();
   if(sendNow) flushSupabaseStageOutbox();
 }
@@ -2985,7 +3082,7 @@ async function sendSupabaseStageItem(item){
   const workDate=`${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`;
   if(!item.operation_id) item.operation_id=makeOperationId();
   if(!item.device_id) item.device_id=getSupabaseDeviceId();
-  const {error}=await supabaseDb.rpc('khsx_apply_stage_progress_v2',{
+  const {data,error}=await supabaseDb.rpc('khsx_apply_stage_progress_v2',{
     p_operation_id:item.operation_id,p_order_id:item.order_id,p_work_date:workDate,
     p_stage:item.stage,p_quantity:soCongDoan(item.value),p_kpi_team:uiUnitToSupabase(item.kpi_team),
     p_worker_id:item.worker_id||null,p_device_id:item.device_id
@@ -2999,9 +3096,21 @@ async function sendSupabaseStageItem(item){
       supabaseStatus(`Không lưu được (${kind.code}) · cần sửa số vừa nhập`,false);
       return 'terminal';
     }
+    item.next_attempt_at=Date.now()+(window.KhsxDataCore?.retryDelay(item.attempts)||3000);
+    persistSupabaseStageOutbox();
     console.warn('Mất kết nối, hàng đợi cục bộ sẽ gửi lại',error);
     supabaseStatus('Mất kết nối · dữ liệu đang chờ gửi lại',false); return false;
   }
+  const ack=Array.isArray(data)?data[0]:data;
+  if(!ack||String(ack.operation_id)!==String(item.operation_id)){
+    item.attempts=(item.attempts||0)+1;
+    item.next_attempt_at=Date.now()+(window.KhsxDataCore?.retryDelay(item.attempts)||3000);
+    persistSupabaseStageOutbox();
+    supabaseStatus('Máy chủ chưa xác nhận thao tác · đang giữ số vừa nhập',false);
+    return false;
+  }
+  item.confirmed_value=Number(ack.applied_quantity)||0;
+  item.status='confirmed';
   supabaseStatus('Đã lưu Supabase · các máy đang đồng bộ',true);
   return true;
 }
@@ -3011,6 +3120,7 @@ async function flushSupabaseStageOutbox(){
   try{
     for(const [key,item] of Object.entries({...supabaseStageOutbox})){
       if(item.status==='failed') continue;
+      if(Number(item.next_attempt_at||0)>Date.now()) continue;
       let ok=false;
       try{ ok=await sendSupabaseStageItem(item); }catch(e){ console.warn('Supabase outbox sẽ thử lại',e); }
       if(ok==='terminal') continue;
@@ -4164,6 +4274,7 @@ function detectSheetChanges(newRows){
             + `${a && a.to ? a.to : 'chưa có tổ'}, `
             + `${a && a.so_luong_hoan_thanh != null ? a.so_luong_hoan_thanh : 0}/${oldR.so_luong} con.`
         }));
+        orderEntityStore?.patch(dynamicOrders[dynamicOrders.length-1]);
         if(a) assignments[ghostId] = Object.assign({}, a);
         ghosted++;
       }
@@ -4896,7 +5007,7 @@ document.querySelectorAll('.date-select-limited').forEach(sel=>{
   sel.addEventListener('blur',closeList);
   sel.addEventListener('keydown',e=>{ if(e.key==='Escape') closeList(); });
 });
-document.getElementById('autoPlanSearchBox').addEventListener('input', renderAutoPlan);
+document.getElementById('autoPlanSearchBox').addEventListener('input',window.KhsxDataCore.debounce(renderAutoPlan,160));
 document.getElementById('autoPlanAssignFilter').addEventListener('change', renderAutoPlan);
 
 // ---- Thêm đơn hàng phát sinh — dùng chung cho cả tab Kế hoạch tuần và Tiến độ sản xuất ----
@@ -4916,6 +5027,7 @@ async function createManualOrder({dateVal, name, size, qty, note, team}){
     is_manual: true
   };
   dynamicOrders.push(newOrder);
+  orderEntityStore?.patch(newOrder);
   if(team){
     assignments[newOrder.id] = {to: team, so_luong_hoan_thanh: null, spinoff_id: null};
     dirtyAssignmentIds.set(newOrder.id, monthKeyOf(newOrder.date));
@@ -5090,11 +5202,13 @@ document.querySelector('#autoPlanTable tbody').addEventListener('click', async (
   if(a && a.spinoff_id){
     const spinOrder = getOrderById(a.spinoff_id);   // lấy ngày TRƯỚC khi lọc khỏi dynamicOrders
     dynamicOrders = dynamicOrders.filter(d=>d.id !== a.spinoff_id);
+    orderEntityStore?.remove(a.spinoff_id);
     delete assignments[a.spinoff_id];
     dirtyAssignmentIds.set(a.spinoff_id, monthKeyOf(spinOrder && spinOrder.date));
   }
   delete assignments[id];
   dynamicOrders = dynamicOrders.filter(d=>d.id !== id);
+  orderEntityStore?.remove(id);
   if(!deletedOrderIds.includes(id)) deletedOrderIds.push(id);
 
   renderAutoPlanDaySelect();
@@ -5126,6 +5240,7 @@ async function handleQtyChange(orderId, rawVal){
       const spin = getOrderById(a.spinoff_id);
       if(spin && !(assignments[spin.id]?.to)){
         dynamicOrders = dynamicOrders.filter(d=>d.id!==a.spinoff_id);
+        orderEntityStore?.remove(a.spinoff_id);
         delete assignments[spin.id];
       }
       a.spinoff_id = null;
@@ -5149,6 +5264,7 @@ async function handleQtyChange(orderId, rawVal){
       const newId = 'd' + Date.now() + Math.random().toString(36).slice(2,7);
       spin = {id:newId, date:o.date, ma:o.ma, dong:o.dong, ngang:o.ngang, dai:o.dai, day:o.day, so_luong:remainder, ghi_chu:o.ghi_chu, is_drop:true};
       dynamicOrders.push(spin);
+      orderEntityStore?.patch(spin);
       a.spinoff_id = newId;
     }
   }
@@ -5691,9 +5807,47 @@ function renderOpsCommandCenter(rows, dayVal, totalPlan){
   if(subtitle) subtitle.textContent=`${dayVal==='all'?'Tất cả ngày':`Ngày ${dayVal}`} · Luồng thực tế Dán → May → Đóng gói`;
 }
 
+function renderEmployeeStageWorkspace(rows,stage,dayVal){
+  const workspace=document.getElementById('employeeStageWorkspace');
+  if(!workspace) return;
+  if(!stage){workspace.removeAttribute('data-stage');return;}
+  workspace.dataset.stage=stage;
+  const stageName={dan:'Dán',may:'May',dong_goi:'Đóng gói'}[stage];
+  const allRows=getProgressRowsForCurrentFilters(false);
+  const inputFor=o=>stage==='dan'?keHoachTrongNgay(o,dayVal):(dayVal==='all'?tongCongDoan(o,stage==='may'?'dan':'may'):soCongDoan(giaTriCongDoanNgay(o,dayVal,stage==='may'?'dan':'may')));
+  const doneFor=o=>dayVal==='all'?tongCongDoan(o,stage):soCongDoan(giaTriCongDoanNgay(o,dayVal,stage));
+  const input=allRows.reduce((s,o)=>s+inputFor(o),0);
+  const done=allRows.reduce((s,o)=>s+doneFor(o),0);
+  const waiting=rows.reduce((s,o)=>s+soLuongConChoCongDoan(o,stage),0);
+  const completed=Math.max(0,allRows.filter(o=>soLuongConChoCongDoan(o,stage)<=0&&inputFor(o)>0).length);
+  const dropped=rows.filter(o=>isPastDate(o.date)).length;
+  const rate=input>0?Math.min(100,Math.round(done/input*100)):0;
+  const rating=rate>=100?'Đạt':rate>=80?'Gần đạt':'Cần xử lý';
+  document.getElementById('employeeStageHead').innerHTML=`
+    <div class="employee-stage-identity"><div><div class="employee-stage-name">${thoatHtml(currentUser?.name||stageName)} · ${stageName}</div><div class="employee-stage-date">${dayVal==='all'?'Tất cả ngày':`Ngày ${dayVal}`} · Dữ liệu đã xác nhận</div></div><div class="employee-stage-score"><strong>${rate}%</strong><span>${rating}</span></div></div>
+    <div class="employee-stage-metrics"><div class="employee-stage-metric">Đầu vào<strong>${input.toLocaleString('vi-VN')}</strong></div><div class="employee-stage-metric">Hoàn thành<strong>${done.toLocaleString('vi-VN')}</strong></div><div class="employee-stage-metric">Còn chờ<strong>${waiting.toLocaleString('vi-VN')}</strong></div></div>`;
+  const alert=document.getElementById('employeeCapacityAlert');
+  alert.style.display=waiting||dropped?'block':'none';
+  alert.textContent=dropped?`${dropped} đơn rớt đang chờ ${stageName.toLowerCase()} · ưu tiên xử lý trước`:`Còn ${waiting.toLocaleString('vi-VN')} sản phẩm chờ ${stageName.toLowerCase()} · ${completed} đơn đã hoàn thành`;
+  const list=document.getElementById('employeeOrderList');
+  if(!rows.length){list.innerHTML=`<div class="employee-empty"><strong>Đã xử lý hết công việc</strong><div style="margin-top:5px;">Chưa có đơn mới chờ ${stageName.toLowerCase()}.</div></div>`;return;}
+  list.innerHTML=sortOrdersForDisplay(rows,dayVal==='all').map(o=>{
+    const reference=inputFor(o), note=[o.ghi_chu,changeNoteHtml(o)].filter(Boolean).join(' · ');
+    const team=assignments[o.id]?.to||'Chưa gán tổ';
+    return `<article class="employee-order-card" data-order-id="${o.id}"><div class="employee-order-main"><div><div class="employee-order-title">${thoatHtml(o.dong||'-')} · ${kichThuocHtml(o)}</div>${note?`<div class="employee-order-note">${thoatHtml(String(o.ghi_chu||''))}</div>`:''}</div><div class="employee-order-plan">${stage==='dan'?'Kế hoạch':stage==='may'?'Đã dán':'Đã may'}<strong>${reference.toLocaleString('vi-VN')}</strong></div><div class="employee-order-entry">${oNhapCongDoanHtml(o,dayVal,stage)}</div></div><div class="employee-order-meta"><span>${thoatHtml(team)}</span><span>${nhomDonHangHtml(o)}</span><span>${o.date!==dayVal?`Gốc ${o.date}`:'Trong ngày'}</span></div></article>`;
+  }).join('');
+}
+
 function renderProgress(){
   populateProgressSelects();
   const filtered = getFilteredProgressRows();
+  const integrityBox=document.getElementById('dataIntegrityAlert');
+  const integrityRows=getOrders().map(o=>({o,bad:saiChuoiCongDoan(o)})).filter(x=>x.bad);
+  if(integrityBox){
+    integrityBox.style.display=canManage2()&&integrityRows.length?'block':'none';
+    integrityBox.querySelector('summary').textContent=`⚠ ${integrityRows.length} đơn sai chuỗi Dán → May → Đóng gói · cần quản lý duyệt`;
+    integrityBox.querySelector('.data-integrity-list').innerHTML=integrityRows.map(({o,bad})=>`<div><strong>${thoatHtml(o.date)} · ${thoatHtml(o.ma||o.dong||'-')} · ${thoatHtml(formatKichThuoc(o))}</strong> — Dán ${bad.dan}, May ${bad.may}, Đóng gói ${bad.dongGoi}</div>`).join('');
+  }
   const congDoanNhanVien = congDoanNhanVienDuocNhap();
   const progressTable = document.getElementById('progressTable');
   progressTable.classList.toggle('employee-stage-view', !!congDoanNhanVien);
@@ -5710,6 +5864,7 @@ function renderProgress(){
   renderTeamRings('progressTeamRings',ringOrders,dayValRing!=='all',!!congDoanNhanVien,dayValRing,ringCongDoan,chiTo,ringCongDoan!=='dan');
 
   const dayVal = progressDaySelect.value;
+  renderEmployeeStageWorkspace(filtered,congDoanNhanVien,dayVal);
   const totalPlan = filtered.filter(isPlannedOrder).reduce((a,r)=>a+keHoachTrongNgay(r,dayVal),0);
   // Chọn một ngày: chỉ cộng Đóng gói phát sinh đúng ngày đó. "Tất cả ngày"
   // mới dùng tổng tích luỹ; nhờ vậy đơn rớt không bị cộng lại sản lượng ngày cũ.
@@ -5778,7 +5933,7 @@ function renderProgress(){
       ? `<span class="badge ${stageMobileDone?'badge-done':'badge-progress'}">${stageMobileDone?'✓ ':''}${stageMobileDone?stageMobileConfig.done:stageMobileConfig.waiting}</span>`
       : statusBadgeHtml(r);
 
-    return `<tr class="${r.is_ghost ? 'row-ghost' : (laUuTien(r.id) ? 'row-uutien' : (status==='rot' ? 'row-rot' : ''))}" data-order-id="${r.id}">
+    return `<tr class="${saiChuoiCongDoan(r)?'row-integrity':(r.is_ghost ? 'row-ghost' : (laUuTien(r.id) ? 'row-uutien' : (status==='rot' ? 'row-rot' : '')))}" data-order-id="${r.id}">
       ${congDoanNhanVien ? `<td class="employee-mobile-summary">${thoatHtml(r.dong||'-')} · ${kichThuocHtml(r)}</td><td class="employee-mobile-group">${nhomDonHangHtml(r)}</td>` : ''}
       <td class="col-date"><span class="date-main">${ngayDong}${lockBadgeHtml(ngayDong)}</span>${backupBadgeHtml(r)}${ngayGocHtml}${madeUpNoteHtml(r)}</td>
       <td class="col-code">${r.ma || (r.is_manual ? '<span class="badge" style="background:var(--accent-l);color:var(--accent);">Phát sinh</span>' : '-')}${lotBadgeHtml(r)}</td>
@@ -5798,7 +5953,7 @@ function renderProgress(){
 
 progressDaySelect.addEventListener('change', renderProgress);
 progressTeamSelect.addEventListener('change', renderProgress);
-progressSearchBox.addEventListener('input', renderProgress);
+progressSearchBox.addEventListener('input',window.KhsxDataCore.debounce(renderProgress,160));
 document.querySelector('#progressTable tbody').addEventListener('keydown', (e)=>{
   if(e.target.classList.contains('stage-qty-input') && e.key === 'Enter'){
     e.target.blur();
@@ -7314,9 +7469,21 @@ document.getElementById('viewerBtn').addEventListener('click', enterAsViewer);
 document.getElementById('stageTestMenuBtn').addEventListener('click',()=>{
   document.getElementById('stageTestBtn').click();
 });
+document.getElementById('employeeOrderList').addEventListener('keydown',e=>{
+  if(e.target.classList.contains('stage-qty-input')&&e.key==='Enter') e.target.blur();
+});
+document.getElementById('employeeOrderList').addEventListener('change',async e=>{
+  if(e.target.classList.contains('stage-qty-input'))
+    await handleStageQtyChange(e.target.dataset.orderId,e.target.dataset.day,e.target.dataset.stage,e.target.value);
+});
+function syncTelegramFullscreenButton(){
+  const btn=document.getElementById('telegramFullscreenBtn'); if(!btn||!TELEGRAM_WEBAPP)return;
+  btn.textContent=TELEGRAM_WEBAPP.isFullscreen?'↙ Thu nhỏ cửa sổ':'⛶ Mở rộng cửa sổ';
+}
 document.getElementById('telegramFullscreenBtn').addEventListener('click',()=>{
   try{
-    if(TELEGRAM_WEBAPP && typeof TELEGRAM_WEBAPP.requestFullscreen==='function') TELEGRAM_WEBAPP.requestFullscreen();
+    if(TELEGRAM_WEBAPP?.isFullscreen && typeof TELEGRAM_WEBAPP.exitFullscreen==='function') TELEGRAM_WEBAPP.exitFullscreen();
+    else if(TELEGRAM_WEBAPP && typeof TELEGRAM_WEBAPP.requestFullscreen==='function') TELEGRAM_WEBAPP.requestFullscreen();
     else if(TELEGRAM_WEBAPP) TELEGRAM_WEBAPP.expand();
   }catch(e){ if(TELEGRAM_WEBAPP) try{TELEGRAM_WEBAPP.expand();}catch(_){} }
 });
@@ -7420,9 +7587,10 @@ async function bootstrap(){
   await cleanupLegacyDashboardCache();
   if(TELEGRAM_WEBAPP){
     try{ TELEGRAM_WEBAPP.ready(); TELEGRAM_WEBAPP.expand(); }catch(e){}
+    try{ TELEGRAM_WEBAPP.onEvent('fullscreenChanged',syncTelegramFullscreenButton); }catch(e){}
     const platform=String(TELEGRAM_WEBAPP.platform||'').toLowerCase();
     const fullscreenBtn=document.getElementById('telegramFullscreenBtn');
-    if(fullscreenBtn && ['tdesktop','macos','web','weba','webk'].includes(platform)) fullscreenBtn.style.display='block';
+    if(fullscreenBtn && ['tdesktop','macos','web','weba','webk'].includes(platform)){fullscreenBtn.style.display='block';syncTelegramFullscreenButton();}
   }
   if(SUPABASE_VARIANT){
     document.documentElement.setAttribute('data-dashboard-variant','supabase');
@@ -7583,7 +7751,7 @@ async function bootstrap(){
   checkAppVersion();
   startPolling();
 }
-bootstrap();
+bootstrap().finally(()=>{ window.__khsxBootstrapDone=true; });
 
 // ---- Xử lý xoay màn hình (điện thoại/tablet) ----
 // Một số trình duyệt di động báo kích thước cũ trong khoảnh khắc vừa xoay xong;

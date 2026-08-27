@@ -19,6 +19,9 @@ on conflict(id) do update set display_name=excluded.display_name,stage=excluded.
 alter table public.khsx_profiles add column if not exists worker_id text references public.khsx_workers(id);
 alter table public.khsx_stage_progress add column if not exists completed_by_worker_id text references public.khsx_workers(id);
 alter table public.khsx_stage_operations add column if not exists completed_by_worker_id text references public.khsx_workers(id);
+-- Dữ liệu lịch sử có thể đã hoàn thành nhưng nguồn cũ chưa ghi tổ. Cho phép giữ
+-- sản lượng với KPI tổ rỗng thay vì đoán tổ hoặc làm phát sinh đơn rớt giả.
+alter table public.khsx_stage_progress alter column kpi_team drop not null;
 
 create index if not exists khsx_profiles_worker_idx on public.khsx_profiles(worker_id);
 create index if not exists khsx_stage_progress_worker_idx on public.khsx_stage_progress(completed_by_worker_id);
@@ -80,11 +83,7 @@ declare
   v_dan integer := 0;
   v_may integer := 0;
   v_pack integer := 0;
-  v_local_dan integer := 0;
-  v_local_may integer := 0;
-  v_raise integer := 0;
   v_worker text;
-  v_normalized boolean := false;
 begin
   if v_actor is null then raise exception using errcode='42501',message='AUTH_REQUIRED'; end if;
   if p_operation_id is null or nullif(pg_catalog.btrim(p_order_id),'') is null or p_work_date is null or p_stage is null or p_quantity is null then
@@ -97,7 +96,9 @@ begin
   if not found then raise exception using errcode='42501',message='PROFILE_INACTIVE'; end if;
 
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_operation_id::text,0));
-  select * into v_existing_op from public.khsx_stage_operations where operation_id=p_operation_id;
+  select op.* into v_existing_op
+  from public.khsx_stage_operations op
+  where op.operation_id=p_operation_id;
   if found then
     if v_existing_op.order_id<>p_order_id
       or v_existing_op.work_date<>p_work_date
@@ -144,34 +145,14 @@ begin
     raise exception using errcode='22023',message='PLAN_LIMIT_EXCEEDED';
   end if;
 
-  if p_stage='dan' then
-    v_applied:=greatest(v_applied,v_existing+greatest(0,v_may-v_dan));
-  elsif p_stage='may' then
-    v_raise:=greatest(0,(v_may-v_existing+v_applied)-v_dan);
-    if v_raise>0 then
-      select coalesce(quantity,0) into v_local_dan from public.khsx_stage_progress where order_id=p_order_id and work_date=p_work_date and stage='dan';
-      insert into public.khsx_stage_progress(order_id,work_date,stage,quantity,kpi_team,entered_by)
-      values(p_order_id,p_work_date,'dan',v_local_dan+v_raise,v_credit_team,v_actor)
-      on conflict(order_id,work_date,stage) do update set quantity=excluded.quantity,kpi_team=excluded.kpi_team,entered_by=excluded.entered_by,updated_at=now();
-      v_dan:=v_dan+v_raise; v_normalized:=true;
-    end if;
-  else
-    v_raise:=greatest(0,(v_pack-v_existing+v_applied)-v_may);
-    if v_raise>0 then
-      select coalesce(quantity,0) into v_local_may from public.khsx_stage_progress where order_id=p_order_id and work_date=p_work_date and stage='may';
-      insert into public.khsx_stage_progress(order_id,work_date,stage,quantity,kpi_team,entered_by)
-      values(p_order_id,p_work_date,'may',v_local_may+v_raise,v_credit_team,v_actor)
-      on conflict(order_id,work_date,stage) do update set quantity=excluded.quantity,kpi_team=excluded.kpi_team,entered_by=excluded.entered_by,updated_at=now();
-      v_may:=v_may+v_raise; v_normalized:=true;
-    end if;
-    v_raise:=greatest(0,v_may-v_dan);
-    if v_raise>0 then
-      select coalesce(quantity,0) into v_local_dan from public.khsx_stage_progress where order_id=p_order_id and work_date=p_work_date and stage='dan';
-      insert into public.khsx_stage_progress(order_id,work_date,stage,quantity,kpi_team,entered_by)
-      values(p_order_id,p_work_date,'dan',v_local_dan+v_raise,v_credit_team,v_actor)
-      on conflict(order_id,work_date,stage) do update set quantity=excluded.quantity,kpi_team=excluded.kpi_team,entered_by=excluded.entered_by,updated_at=now();
-      v_normalized:=true;
-    end if;
+  -- Không tự tạo sản lượng công đoạn trước. Nếu chuỗi Dán -> May -> Đóng gói
+  -- không hợp lệ thì từ chối toàn bộ giao dịch để người quản lý sửa đúng nguồn.
+  if p_stage='dan' and (v_dan-v_existing+v_applied)<v_may then
+    raise exception using errcode='22023',message='CHAIN_LIMIT_EXCEEDED';
+  elsif p_stage='may' and ((v_may-v_existing+v_applied)>v_dan or (v_may-v_existing+v_applied)<v_pack) then
+    raise exception using errcode='22023',message='CHAIN_LIMIT_EXCEEDED';
+  elsif p_stage='dong_goi' and (v_pack-v_existing+v_applied)>v_may then
+    raise exception using errcode='22023',message='CHAIN_LIMIT_EXCEEDED';
   end if;
 
   insert into public.khsx_stage_operations(operation_id,order_id,work_date,stage,requested_quantity,applied_quantity,kpi_team,actor_user_id,device_id,completed_by_worker_id)
@@ -186,7 +167,7 @@ begin
     insert into public.khsx_stage_credits(order_id,work_date,stage,worker_id,quantity,source)
     values(p_order_id,p_work_date,p_stage,v_worker,v_applied,'actual');
   end if;
-  return query select p_operation_id,v_applied,false,v_normalized;
+  return query select p_operation_id,v_applied,false,false;
 end;
 $$;
 

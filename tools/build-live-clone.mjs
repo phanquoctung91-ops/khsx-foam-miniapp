@@ -63,6 +63,14 @@ function workerId(v){
 }
 function isHistoricalDrop(o){const x=iso(o.date);return !!o.is_drop&&x&&x<='2026-08-21'}
 function dimKey(o){return [String(o.date||''),norm(o.dong||o.ten_hang),Number(o.ngang)||'',Number(o.dai)||200,Number(o.day)||''].join('|')}
+function dimensions(o){
+  const direct=[Number(o.ngang),Number(o.dai),Number(o.day)];
+  if(direct.every(Number.isFinite) && direct.every(x=>x>0)) return direct;
+  const parts=String(o.ngang||o.kich_thuoc||'').match(/\d+(?:[.,]\d+)?/g)?.map(x=>Number(x.replace(',','.')))||[];
+  if(parts.length>=3) return parts.slice(0,3);
+  if(parts.length===2) return [parts[0],200,parts[1]];
+  return [Number.isFinite(direct[0])&&direct[0]>0?direct[0]:null,Number.isFinite(direct[1])&&direct[1]>0?direct[1]:200,Number.isFinite(direct[2])&&direct[2]>0?direct[2]:null];
+}
 
 const baseKeys=['khsx_assign_months','khsx_autoplan_assignments','khsx_dynamic_orders','khsx_deleted_orders','khsx_locked_plan_dates','khsx_locked_progress_dates','khsx_priority_orders','khsx_user_teams','khsx_muc_tieu_quy','khsx_snap_version'];
 const base=await getAll(baseKeys);
@@ -108,23 +116,32 @@ for(const [id,o] of orderMap){
     a.stage_by_date={...(a.stage_by_date||{}),[o.date]:{...((a.stage_by_date||{})[o.date]||{}),dan:qty,may:qty,dong_goi:qty,_dan_to:team,_may_to:team,_dong_goi_to:team}};
     a.so_luong_da_dan=qty;a.so_luong_da_may=qty;a.so_luong_hoan_thanh=qty;a.ngay_hoan_thanh=o.date;
   }
+  // Đơn phát sinh cũ không phải lúc nào cũng có stage_by_date, nhưng bản live vẫn
+  // lưu tổng hoàn thành và ngày hoàn thành. Chỉ dựng tiến độ khi bằng chứng này có đủ.
+  const legacyDone=Math.max(0,Number(a.so_luong_hoan_thanh)||0), qty=Math.max(0,Number(o.so_luong)||0);
+  const doneDate=dmy(a.ngay_hoan_thanh);
+  const hasStage=Object.values(a.stage_by_date||{}).some(s=>['dan','may','dong_goi'].some(k=>s?.[k]!=null));
+  if(o.is_manual&&!hasStage&&doneDate&&qty>0&&legacyDone>=qty){
+    const team=a.to||null;
+    a.stage_by_date={...(a.stage_by_date||{}),[doneDate]:{dan:qty,may:qty,dong_goi:qty,_dan_to:team,_may_to:team,_dong_goi_to:team,_legacy:true}};
+  }
 }
 
 const orders=[], orderAssignments=[], dailyAssignments=[], progress=[];
 for(const [id,o] of orderMap){
-  const a=assignments[id]||{}, sizeNums=[o.ngang,o.dai,o.day].map(Number), gk=[String(o.date||''),norm(o.dong||o.ten_hang),...sizeNums.filter(Number.isFinite)].join('|');
+  const a=assignments[id]||{}, sizeNums=dimensions(o), gk=[String(o.date||''),norm(o.dong||o.ten_hang),...sizeNums.filter(Number.isFinite)].join('|');
   orders.push({id,production_date:iso(o.date),product_code:String(o.ma||''),product_name:String(o.dong||o.ten_hang||''),width_mm:Number.isFinite(sizeNums[0])?sizeNums[0]:null,length_mm:Number.isFinite(sizeNums[1])?sizeNums[1]:null,thickness_mm:Number.isFinite(sizeNums[2])?sizeNums[2]:null,plan_qty:Math.max(0,Number(o.so_luong)||0),note:String(o.ghi_chu||''),order_group:String(o.nhom_don_hang||o.nhom_khsx||groupMap.get(gk)||(o.is_warranty?'Bảo hành':o.is_manual?'Phát sinh':'KHSX Tuần Foam')),source_order_id:null,is_manual:!!o.is_manual,is_drop:!!o.is_drop,is_ghost:!!o.is_ghost,is_warranty:!!o.is_warranty,is_lot:!!o.is_lot,lot_label:String(o.lot_label||''),source_payload:{clone_run:runId,live_row:o,live_assignment:a}});
   const team=toDb(a.to); if(team||priorities.has(id)) orderAssignments.push({order_id:id,plan_team:team,current_team:team,spinoff_order_id:null,change_note:String(a.change_note||''),priority:priorities.has(id)});
   for(const [date,t] of Object.entries(a.support_by_date||{})){const teamName=toDb(t);if(teamName)dailyAssignments.push({order_id:id,work_date:iso(date),team_name:teamName,assignment_kind:'support'})}
   for(const [date,s] of Object.entries(a.stage_by_date||{})) for(const stage of ['dan','may','dong_goi']) if(s[stage]!==undefined&&s[stage]!==null){
     const kpi=toDb(s[`_${stage}_to`]||a.to);
     const who=workerId(s[`_${stage}_by_name`]||s[`_${stage}_by_code`]);
-    if(kpi)progress.push({order_id:id,work_date:iso(date),stage,quantity:Math.max(0,Number(s[stage])||0),kpi_team:kpi,completed_by_worker_id:who});
+    progress.push({order_id:id,work_date:iso(date),stage,quantity:Math.max(0,Number(s[stage])||0),kpi_team:kpi,completed_by_worker_id:who});
   }
 }
 
-// Kế hoạch là mức trần. Nếu công đoạn sau đã được ghi nhận thì công đoạn trước
-// tối thiểu phải bằng nó; chỉ nâng phần thiếu, không tự hạ sản lượng đã ghi nhận.
+// Không tự sửa chuỗi công đoạn khi clone. Sai lệch phải được liệt kê riêng để
+// quản lý duyệt; nếu tự nâng công đoạn trước thì bản clone không còn đúng nguồn.
 const orderById=new Map(orders.map(o=>[o.id,o]));
 const progressByOrder=new Map();
 for(const row of progress){
@@ -134,22 +151,11 @@ for(const row of progress){
   progressByOrder.get(row.order_id).push(row);
 }
 function totalStage(rows,stage){return rows.filter(x=>x.stage===stage).reduce((s,x)=>s+x.quantity,0)}
-function raiseStage(rows,order,stage,target){
-  const current=totalStage(rows,stage),delta=Math.max(0,Math.min(order.plan_qty,target)-current);
-  if(!delta) return;
-  let row=[...rows].reverse().find(x=>x.stage===stage);
-  if(!row){
-    const kpi=rows.find(x=>x.kpi_team)?.kpi_team||null;
-    if(!kpi) return;
-    row={order_id:order.id,work_date:order.production_date,stage,quantity:0,kpi_team:kpi,completed_by_worker_id:null};
-    rows.push(row); progress.push(row);
-  }
-  row.quantity+=delta;
-}
+const chainIssues=[];
 for(const [id,rows] of progressByOrder){
   const order=orderById.get(id); if(!order) continue;
-  raiseStage(rows,order,'may',totalStage(rows,'dong_goi'));
-  raiseStage(rows,order,'dan',totalStage(rows,'may'));
+  const dan=totalStage(rows,'dan'),may=totalStage(rows,'may'),dong_goi=totalStage(rows,'dong_goi');
+  if(may>dan||dong_goi>may) chainIssues.push({order_id:id,production_date:order.production_date,product_code:order.product_code,dan,may,dong_goi});
 }
 
 // KPI cũ: May theo tổ Dán đã chốt; Đóng gói do Minh Thuận nhận toàn bộ.
@@ -178,6 +184,6 @@ for(const row of progress){
 const dayLocks=[...new Set([...(base.khsx_locked_plan_dates||[]),...(base.khsx_locked_progress_dates||[])])].map(date=>({work_date:iso(date),plan_locked:(base.khsx_locked_plan_dates||[]).includes(date),progress_locked:(base.khsx_locked_progress_dates||[]).includes(date)}));
 const planSnapshots=lockedPlan.flatMap(date=>{const rows=snaps[`khsx_snap_${date.replaceAll('/','-')}`];return Array.isArray(rows)&&rows.length?[{work_date:iso(date),rows_json:rows,version:Number(base.khsx_snap_version)||1}]:[]});
 const quarterTargets=Object.entries(base.khsx_muc_tieu_quy||{}).flatMap(([k,v])=>{const m=k.match(/^(\d{4})_Q([1-4])$/);return m?[{year:Number(m[1]),quarter:Number(m[2]),target_qty:Math.max(0,Number(v)||0)}]:[]});
-const payload={runId,sourceAt:new Date().toISOString(),workers:WORKERS,orders,orderAssignments,dailyAssignments,progress,stageCredits,dayLocks,planSnapshots,quarterTargets,summary:{sheetRows:current.length,orders:orders.length,assignments:orderAssignments.length,dailyAssignments:dailyAssignments.length,progress:progress.length,stageCredits:stageCredits.length,lockedDays:dayLocks.length,snapshots:planSnapshots.length,warrantyOrders:orders.filter(x=>x.is_warranty).length,dates:[...new Set(orders.map(x=>x.production_date))].sort()}};
+const payload={runId,sourceAt:new Date().toISOString(),workers:WORKERS,orders,orderAssignments,dailyAssignments,progress,stageCredits,dayLocks,planSnapshots,quarterTargets,chainIssues,summary:{sheetRows:current.length,orders:orders.length,assignments:orderAssignments.length,dailyAssignments:dailyAssignments.length,progress:progress.length,stageCredits:stageCredits.length,chainIssues:chainIssues.length,lockedDays:dayLocks.length,snapshots:planSnapshots.length,warrantyOrders:orders.filter(x=>x.is_warranty).length,dates:[...new Set(orders.map(x=>x.production_date))].sort()}};
 const out=process.argv[2]; if(out) fs.writeFileSync(out,JSON.stringify(payload));
 console.log(JSON.stringify({output:out||null,runId:payload.runId,...payload.summary},null,2));
