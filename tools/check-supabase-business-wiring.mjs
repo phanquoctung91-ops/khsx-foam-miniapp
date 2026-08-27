@@ -9,12 +9,13 @@ const checks = [
   ['Thẻ tổ dùng đúng công đoạn đang đăng nhập', /ringCongDoan\s*=\s*congDoanNhanVien\s*\|\|\s*'dong_goi'/],
   ['Thẻ tổ có đường nhập nhanh theo đúng dòng', /function\s+moPopupNhapNhanhCongDoan[\s\S]{0,1000}handleStageQtyChange/],
   ['KPI năng lực Dán tách khỏi KPI cá nhân May và Đóng gói', /tinhNangLucToDan[\s\S]{0,4000}tinhNangLucCaNhan\('may'[\s\S]{0,300}tinhNangLucCaNhan\('dong_goi'/],
-  ['Phiên Supabase cũ không ghi đè vai Quản lý khi kiểm thử local', /if\(SUPABASE_VARIANT\s*&&\s*!LOCAL_SUPABASE_UI_TEST\)\{\s*try\{ coSession = \(await restoreSupabaseSession\(\)\)/],
+  ['MiniApp luôn khôi phục phiên Telegram Supabase thật', /if\(SUPABASE_VARIANT\)\{\s*try\{ coSession = \(await restoreSupabaseSession\(\)/],
+  ['Không còn nhánh giao diện Test 3 công đoạn', !/stageTestMenuBtn|stageTestModal|managerStageTestMode/.test(html)],
 ];
 
 let failed = 0;
 for (const [name, pattern] of checks) {
-  const ok = pattern.test(html);
+  const ok = pattern instanceof RegExp ? pattern.test(html) : Boolean(pattern);
   if (!ok) failed += 1;
   process.stdout.write(`${ok ? 'PASS' : 'FAIL'}  ${name}\n`);
 }
