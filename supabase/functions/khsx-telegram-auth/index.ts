@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
   }
 
   const { data: profile, error: profileError } = await admin.from("khsx_profiles")
-    .select("display_name,role,unit_name,active")
+    .select("display_name,role,unit_name,active,worker_id")
     .eq("user_id", link.auth_user_id)
     .maybeSingle();
   if (profileError) return json(req, { error: "PROFILE_LOOKUP_FAILED" }, 503);
@@ -165,6 +165,7 @@ Deno.serve(async (req) => {
       display_name: profile.display_name,
       role: profile.role,
       unit_name: profile.unit_name,
+      worker_id: profile.worker_id,
     },
   });
 });

@@ -9,6 +9,7 @@
 <title>Kế Hoạch sản xuất - Tổ Mút Foam</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
+<script src="js/khsx-data-core.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   :root{
@@ -276,6 +277,30 @@
   .team-ring-list .team-ring-row-uutien{background:#fff7d9;}
   .team-ring-list .t.team-ring-row-uutien{border-radius:4px 0 0 4px;}
   .team-ring-list b.team-ring-row-uutien{border-radius:0 4px 4px 0;}
+
+  /* ---- Popup số liệu năng lực ---- */
+  .capacity-modal{display:none;position:fixed;inset:0;z-index:9350;background:rgba(18,20,26,.48);padding:16px;overflow:auto;}
+  .capacity-dialog{background:var(--card);border-radius:16px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:1120px;margin:24px auto;padding:20px;}
+  .capacity-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .capacity-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:12px;background:#f7f9fc;border:1px solid var(--border);border-radius:11px;margin-bottom:14px;}
+  .capacity-filters label{display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;}
+  .capacity-summary{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
+  .capacity-summary .kpi{min-height:84px;}
+  .capacity-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .capacity-section{border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0;}
+  .capacity-section.capacity-full{grid-column:1/-1;}
+  .capacity-section h4{margin:0 0 10px;font-size:14px;}
+  .capacity-quick-btn{font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid #cfd6e4;background:#f4f6fa;color:var(--text2);cursor:pointer;}
+  .capacity-quick-btn:hover{background:#eaeef4;}
+  .capacity-table{width:100%;min-width:560px;font-size:12px;}
+  .capacity-table th,.capacity-table td{padding:8px 9px;}
+  .capacity-note{font-size:11.5px;color:var(--text2);line-height:1.45;margin-top:10px;}
+  @media(max-width:700px){
+    .capacity-dialog{margin:5px auto;padding:14px;border-radius:13px;}
+    .capacity-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .capacity-grid{grid-template-columns:1fr;}
+    .capacity-section.capacity-full{grid-column:auto;}
+  }
   /* ---- Ẩn/hiện chức năng theo vai người dùng ----
      .only-manager  : chỉ Quản lý          (nút đỏ, 2 nút chốt, cột Xoá)
      .only-manager2 : Quản lý + Quản lý 2  (thêm đơn phát sinh, nút ✓ Hoàn thành)
@@ -463,12 +488,126 @@
     header .hbadge{font-size:10.5px;padding:5px 10px;}
     footer{font-size:10.5px;}
   }
+  /* ---- Telegram Mini App: gọn, một luồng cuộn, không vỡ hàng trên màn hình hẹp ---- */
+  .toolbar-filter-row{min-width:0;}
+  @media(max-width:1100px){
+    .wrap{max-width:100%;}
+    .btn-row{grid-template-columns:repeat(auto-fit,minmax(132px,1fr));}
+    .btn-row .primary-btn{min-width:0;}
+  }
+  @media(max-width:700px){
+    body{padding-bottom:env(safe-area-inset-bottom);}
+    .wrap{padding-top:max(10px,env(safe-area-inset-top));}
+    header{gap:10px;margin-bottom:14px;padding-bottom:12px;}
+    .brand{gap:10px;min-width:0;}
+    .brand-logo{width:48px;}
+    .brand-text{min-width:0;}
+    .brand-name{font-size:12px;line-height:1.25;}
+    .brand-sub{display:none;}
+    .page-title{font-size:15px;margin-bottom:4px;}
+    #userBarName{font-size:13px;}
+    #userBarRole{font-size:11.5px;}
+    .management-tools{margin-top:6px;}
+    #managementToolsBtn{padding:7px 10px;font-size:11.5px;}
+
+    .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4px;width:100%;overflow:visible;}
+    .tab-btn{min-width:0;padding:8px 6px;overflow:hidden;text-overflow:ellipsis;}
+    .card{padding:12px 10px;border-radius:12px;}
+    .card h3{margin-bottom:10px;font-size:14px;}
+    .wf-link{margin-bottom:10px;}
+
+    .btn-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:12px;}
+    .btn-row .primary-btn{min-width:0;padding:9px 6px;white-space:nowrap;text-overflow:ellipsis;}
+    body.role-nhan-vien #panel-progress .btn-row{grid-template-columns:1fr;}
+
+    .toolbar-filter-row{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:7px 9px;margin-bottom:12px;}
+    .toolbar-filter-row label{margin:0;white-space:nowrap;}
+    .toolbar-filter-row select{width:100%;min-width:0;}
+    .toolbar-filter-row .search-with-clear,
+    .toolbar-filter-row .save-status{grid-column:1/-1;width:100%;min-width:0;margin-left:0;}
+    .toolbar-filter-row .search-with-clear input{min-width:0;}
+
+    .kpis{gap:7px;margin-bottom:14px;}
+    .kpi{padding:10px 11px;border-radius:11px;}
+    .kpi .label{font-size:10px;line-height:1.25;margin-bottom:4px;}
+    .kpi .value{font-size:20px;}
+    .kpi-phu{font-size:10px;line-height:1.3;}
+    #progressKpis{grid-template-columns:repeat(3,minmax(0,1fr));}
+    #progressKpis .kpi{min-width:0;padding:9px 7px;}
+    #progressKpis .kpi .label{overflow-wrap:anywhere;}
+
+    /* Trên điện thoại chỉ cuộn trang; bỏ thanh cuộn dọc lồng trong bảng. */
+    .table-scroll{max-height:none!important;overflow-x:clip;overflow-y:visible;border-radius:10px;}
+    #autoPlanTable tbody,#progressTable tbody{padding:6px;}
+    #autoPlanTable tbody tr,#progressTable tbody tr{margin-bottom:8px;}
+    #progressTable.employee-stage-view tbody .employee-mobile-summary{padding:10px 7px 7px;font-size:16px;}
+    #progressTable.employee-stage-view tbody .employee-mobile-group{padding:4px 7px 8px;}
+    #progressTable.employee-stage-view tbody td{padding:8px 6px;}
+    #progressTable.employee-stage-view tbody .col-status{padding:9px 10px;}
+
+    #loginOverlay{align-items:flex-start!important;overflow-y:auto;padding:max(12px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom))!important;}
+    #loginOverlay>div{max-width:340px!important;}
+    #loginOverlay img{width:118px!important;height:auto!important;max-width:40vw;}
+    #loginOverlay>div>div:nth-child(2){padding:20px 18px!important;border-radius:14px!important;}
+    #loginOverlay>div>div:last-child{margin-top:12px!important;}
+  }
+  @media(max-width:380px){
+    .wrap{padding-left:8px;padding-right:8px;}
+    .kpis{grid-template-columns:repeat(2,minmax(0,1fr));}
+    #progressKpis{grid-template-columns:repeat(3,minmax(0,1fr));}
+    #progressKpis .kpi .label{font-size:9px;letter-spacing:0;}
+    #progressKpis .kpi .value{font-size:18px;}
+  }
   .team-ring-extra{font-size:10.5px;color:var(--accent);font-weight:600;margin-top:2px;}
+  /* ---- Khung điều hành mới: lớp hiển thị song song, không thay logic/bảng cũ ---- */
+  .ops-command-center{margin:2px 0 16px;padding:16px;border:1px solid #d7e2ef;border-radius:16px;background:linear-gradient(145deg,#f8fbff 0%,#fff 55%,#f4f8fc 100%);box-shadow:0 8px 24px rgba(31,65,105,.08);}
+  .ops-command-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;}
+  .ops-command-title{font-size:14px;font-weight:800;color:#163b6d;letter-spacing:.01em;}
+  .ops-command-sub{margin-top:3px;font-size:11px;color:var(--text2);}
+  .ops-live-pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:6px 9px;border-radius:999px;background:#e8f7ef;color:#087a43;font-size:10px;font-weight:800;}
+  .ops-live-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:#11a55c;box-shadow:0 0 0 4px rgba(17,165,92,.12);}
+  .ops-stage-flow{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;align-items:stretch;gap:8px;}
+  .ops-stage-arrow{display:flex;align-items:center;justify-content:center;color:#8ca0b7;font-size:20px;font-weight:700;}
+  .ops-stage-card{position:relative;min-width:0;padding:13px;border:1px solid #dce5ef;border-radius:13px;background:#fff;overflow:hidden;}
+  .ops-stage-card::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--stage-color,#2c75a0);}
+  .ops-stage-card.is-ok{--stage-color:#129353;}
+  .ops-stage-card.is-warn{--stage-color:#c27a11;}
+  .ops-stage-card.is-danger{--stage-color:#cc3732;}
+  .ops-stage-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+  .ops-stage-name{font-size:12px;font-weight:800;color:#24364b;text-transform:uppercase;letter-spacing:.04em;}
+  .ops-stage-status{padding:4px 7px;border-radius:999px;background:#f0f3f7;color:#53657a;font-size:9.5px;font-weight:800;}
+  .ops-stage-card.is-ok .ops-stage-status{background:#e6f6ed;color:#087a43;}
+  .ops-stage-card.is-warn .ops-stage-status{background:#fff3dc;color:#9a5b00;}
+  .ops-stage-card.is-danger .ops-stage-status{background:#fdebea;color:#b4231e;}
+  .ops-stage-value{font-size:25px;font-weight:850;color:#132337;line-height:1;}
+  .ops-stage-meta{display:flex;justify-content:space-between;gap:8px;margin-top:8px;color:var(--text2);font-size:10.5px;}
+  .ops-stage-meta strong{color:#293b50;}
+  .ops-alert-strip{display:none;align-items:flex-start;gap:9px;margin-top:11px;padding:9px 11px;border-radius:10px;background:#fff3e2;color:#8a5200;font-size:11px;line-height:1.4;}
+  .ops-alert-strip.show{display:flex;}
+  @media(max-width:700px){
+    .ops-command-center{padding:12px 10px;border-radius:13px;}
+    .ops-command-head{align-items:flex-start;}
+    .ops-command-sub{max-width:210px;}
+    .ops-stage-flow{grid-template-columns:1fr;gap:7px;}
+    .ops-stage-arrow{height:10px;font-size:0;}
+    .ops-stage-arrow::after{content:'↓';font-size:15px;line-height:10px;}
+    .ops-stage-card{padding:11px 12px;}
+    .ops-stage-card{display:grid;grid-template-columns:minmax(86px,1fr) auto;gap:4px 10px;align-items:center;}
+    .ops-stage-top{margin:0;}
+    .ops-stage-value{font-size:22px;text-align:right;}
+    .ops-stage-meta{grid-column:1/-1;margin-top:3px;}
+  }
 </style>
 <script>
 // Giấu màn hình login ngay từ khung hình đầu tiên nếu máy đang có session còn hạn.
 // Chỉ là kiểm tra localStorage, không gọi mạng và không thay đổi giao diện dashboard.
 (function(){
+  // Bản đang dựng: file local và localhost vào thẳng ngay từ khung hình đầu,
+  // tránh màn hình login nháy lên hoặc bị một nhánh khởi động khác bật lại.
+  if(location.protocol === 'file:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost'){
+    document.documentElement.classList.add('khsx-fast-session');
+    return;
+  }
   try{
     const raw = localStorage.getItem('khsx_login_session_v3') || localStorage.getItem('khsx_login_session_v2');
     if(!raw) return;
@@ -478,7 +617,10 @@
   }catch(e){}
 })();
 </script>
-<style>html.khsx-fast-session #loginOverlay{display:none !important;}</style>
+<style>
+html.khsx-fast-session #loginOverlay,
+html[data-local-ui-test="1"] #loginOverlay{display:none !important;}
+</style>
 </head>
 <body>
 <div id="localPreviewBanner" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9998;background:#173f73;color:#fff;border:2px solid #fff;border-radius:999px;box-shadow:0 5px 18px rgba(0,0,0,.24);padding:9px 16px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap;max-width:calc(100vw - 28px);overflow:hidden;text-overflow:ellipsis;">
@@ -768,7 +910,7 @@
       <button id="exportReportBtn" class="primary-btn only-manager2" style="background:var(--success);">📤 Xuất báo cáo</button>
       <button id="phoiBtn" class="primary-btn only-manager2" style="background:var(--accent);">🧱 Bảng đặt phôi</button>
     </div>
-    <div class="day-select-row">
+    <div class="day-select-row toolbar-filter-row">
       <label>Ngày:</label>
       <select id="autoPlanDaySelect" class="date-select-limited"></select>
       <span class="search-with-clear"><input type="text" id="autoPlanSearchBox" placeholder="Tìm theo dòng, mã, kích thước..."><button type="button" class="search-clear-btn" data-clear-search="autoPlanSearchBox" aria-label="Xóa nội dung tìm kiếm" title="Xóa tìm kiếm">×</button></span>
@@ -870,9 +1012,11 @@
       <button id="addManualOrderBtnProgress" class="primary-btn only-manager2" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="bulkCompleteBtn" class="primary-btn only-manager2" style="background:var(--success);">✓ Hoàn thành</button>
       <button id="lockProgressBtn" class="primary-btn only-manager2" style="background:var(--text2);">🔒 Chốt tiến độ</button>
+      <button id="capacityStatsBtn" class="primary-btn only-manager2" style="background:#6d4bc3;">Số liệu năng lực</button>
+      <button id="stageTestBtn" class="primary-btn only-manager" style="background:#0f766e;">Test 3 công đoạn</button>
       <button id="refreshProgressBtn" class="primary-btn">↻ Làm mới</button>
     </div>
-    <div class="day-select-row">
+    <div class="day-select-row toolbar-filter-row">
       <label>Ngày:</label>
       <select id="progressDaySelect" class="date-select-limited"></select>
       <label>Tổ:</label>
@@ -915,6 +1059,14 @@
         <span class="save-status" id="manualOrderStatusProgress"></span>
       </div>
     </div>
+    <section class="ops-command-center only-manager2" id="productionCommandCenter" aria-label="Điều hành nhanh sản xuất">
+      <div class="ops-command-head">
+        <div><div class="ops-command-title">Điều hành nhanh</div><div class="ops-command-sub" id="opsCommandSubtitle">Luồng thực tế Dán → May → Đóng gói</div></div>
+        <span class="ops-live-pill">Dữ liệu hiện tại</span>
+      </div>
+      <div class="ops-stage-flow" id="opsStageFlow"></div>
+      <div class="ops-alert-strip" id="opsAlertStrip"></div>
+    </section>
     <div class="kpis" id="progressKpis" style="margin-bottom:16px;"></div>
     <div class="team-ring-row" id="progressTeamRings" style="margin-bottom:16px;"></div>
     <div class="table-scroll">
@@ -941,6 +1093,43 @@
         <thead><tr><th>Tổ</th><th>Sản phẩm</th><th>Kích thước</th><th>SL</th><th>Lỗi</th><th>Nguyên nhân</th><th>Hướng xử lý</th></tr></thead>
         <tbody id="warrantyDetailBody"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<div id="capacityStatsModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="capacityStatsTitle">
+  <div class="capacity-dialog">
+    <div class="capacity-head">
+      <div><h3 id="capacityStatsTitle" style="margin:0;font-size:18px;">Số liệu năng lực</h3><div style="margin-top:4px;color:var(--text2);font-size:12px;">Dán tính theo tổ · May và Đóng gói tính theo người hoàn thành</div></div>
+      <button id="closeCapacityStatsBtn" type="button" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid #cfd6e4;background:#f4f6fa;color:var(--text2);cursor:pointer;">Đóng</button>
+    </div>
+    <div class="capacity-filters">
+      <div><label for="capacityFromDate">Từ ngày</label><input type="date" id="capacityFromDate"></div>
+      <div><label for="capacityToDate">Đến ngày</label><input type="date" id="capacityToDate"></div>
+      <button id="refreshCapacityStatsBtn" type="button" class="primary-btn">Xem số liệu</button>
+      <button id="capacityQuickYesterday" type="button" class="capacity-quick-btn">Hôm qua</button>
+      <button id="capacityQuickLastWeek" type="button" class="capacity-quick-btn">Tuần trước</button>
+      <button id="capacityQuickLastMonth" type="button" class="capacity-quick-btn">Tháng trước</button>
+      <span id="capacityStatsRange" class="save-status"></span>
+    </div>
+    <div id="capacityStatsSummary" class="capacity-summary"></div>
+    <div class="capacity-grid">
+      <section class="capacity-section capacity-full"><h4>Năng lực Tổ Dán</h4><div class="table-scroll" style="max-height:300px;"><table class="capacity-table"><thead><tr><th>Tổ</th><th>Kế hoạch</th><th>Đã dán</th><th>Tỷ lệ</th><th>Hỗ trợ tổ khác</th><th>Còn chờ</th></tr></thead><tbody id="capacityDanBody"></tbody></table></div></section>
+      <section class="capacity-section capacity-full"><h4>Năng lực từng người May</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th></tr></thead><tbody id="capacityMayBody"></tbody></table></div></section>
+      <section class="capacity-section capacity-full"><h4>Năng lực từng người Đóng gói</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th></tr></thead><tbody id="capacityPackBody"></tbody></table></div></section>
+    </div>
+    <div class="capacity-note">Dữ liệu mới tính đúng người hoàn thành. Dữ liệu cũ đến 24/08/2026 được phân bổ theo quy ước đã chốt; bảo hành được tính riêng ngoài kế hoạch.</div>
+  </div>
+</div>
+
+<div id="stageTestModal" class="capacity-modal" role="dialog" aria-modal="true">
+  <div class="capacity-dialog" style="max-width:520px;">
+    <div class="capacity-head"><div><h3 style="margin:0;">Test 3 công đoạn</h3><div class="capacity-note">Nhập trên đơn thật · tài khoản quản lý có thể sửa lại</div></div><button id="closeStageTestBtn" class="capacity-quick-btn">Đóng</button></div>
+    <div style="display:grid;gap:10px;">
+      <label class="capacity-section"><strong>Tổ Dán</strong><select id="testDanTeam" style="width:100%;margin:8px 0;"><option>Tổ 1</option><option>Tổ 2</option><option>Tổ 3</option><option>Tổ 4</option><option>Tổ 5</option></select><button class="primary-btn" data-test-stage="dan">Mở giao diện Dán</button></label>
+      <label class="capacity-section"><strong>Tổ May</strong><select id="testMayWorker" style="width:100%;margin:8px 0;"><option value="loan_anh">Loan Anh</option><option value="thao_vy">Thảo Vy</option><option value="bao_cham">Bảo Chăm</option></select><button class="primary-btn" data-test-stage="may">Mở giao diện May</button></label>
+      <div class="capacity-section"><strong>Tổ Đóng gói</strong><div style="margin:8px 0;color:var(--text2);">Minh Thuận</div><button class="primary-btn" data-test-stage="dong_goi">Mở giao diện Đóng gói</button></div>
+      <button id="exitStageTestBtn" class="capacity-quick-btn" style="display:none;">Trở về giao diện quản lý</button>
     </div>
   </div>
 </div>
@@ -1744,6 +1933,7 @@ function laToSanXuatCuaToi(){
 // Nhân viên Tổ 1–5 chỉ nhập Dán; hai bộ phận sau chỉ nhập đúng công đoạn của mình.
 // Quản lý và Quản lý 2 vẫn giữ quyền nhập đủ ba công đoạn như trước.
 function congDoanNhanVienDuocNhap(){
+  if(managerStageTestMode && canManage()) return managerStageTestMode.stage;
   if(!currentUser || currentUser.role !== 'nhan_vien') return null;
   if(laToSanXuatCuaToi()) return 'dan';
   return congDoanBoPhanCuaToi();
@@ -1766,6 +1956,7 @@ function coQuyenNhapCongDoan(congDoan){
 // KPI theo tổ luôn thuộc Tổ 1–5 phụ trách trong ngày. Tổ may/đóng gói là công đoạn,
 // không phải một tổ sản xuất mới nên tuyệt đối không được tạo thêm cột KPI riêng.
 function toKpiKhiNhapCongDoan(o, ngay){
+  if(managerStageTestMode && managerStageTestMode.stage==='dan' && managerStageTestMode.team) return managerStageTestMode.team;
   const donVi = toCuaToi();
   return PROCESS_TEAM_STAGE[donVi] ? toPhuTrachTheoNgay(o,ngay) : (donVi || toPhuTrachTheoNgay(o,ngay));
 }
@@ -1857,6 +2048,58 @@ function isPastDate(dateStr){
 // {'14/08/2026': {dan:6, may:4, dong_goi:2}, '15/08/2026': {dan:2, may:4, dong_goi:6}}
 // Các assignment cũ chỉ có so_luong_hoan_thanh vẫn được hiểu là đã hoàn tất đủ cả ba công đoạn.
 const CONG_DOAN = ['dan','may','dong_goi'];
+const CONG_DOAN_TINH_KPI_CA_NHAN = ['may','dong_goi'];
+function truongNguoiHoanThanh(congDoan,loai){ return `_${congDoan}_by_${loai}`; }
+function nguoiHoanThanhCongDoan(entry,congDoan){
+  if(!entry || !CONG_DOAN_TINH_KPI_CA_NHAN.includes(congDoan)) return null;
+  const code=entry[truongNguoiHoanThanh(congDoan,'code')]||'';
+  const name=entry[truongNguoiHoanThanh(congDoan,'name')]||'';
+  const at=entry[truongNguoiHoanThanh(congDoan,'at')]||'';
+  return code||name ? {code,name:name||code,at} : null;
+}
+function ganNguoiHoanThanhCongDoan(entry,congDoan,actor){
+  if(!entry || !CONG_DOAN_TINH_KPI_CA_NHAN.includes(congDoan) || actor===undefined) return;
+  ['code','name','at'].forEach(loai=>delete entry[truongNguoiHoanThanh(congDoan,loai)]);
+  if(actor){
+    entry[truongNguoiHoanThanh(congDoan,'code')]=String(actor.code||'').trim();
+    entry[truongNguoiHoanThanh(congDoan,'name')]=String(actor.name||actor.code||'').trim();
+    entry[truongNguoiHoanThanh(congDoan,'at')]=actor.at||new Date().toISOString();
+  }
+}
+async function chonNguoiHoanThanhCongDoan(congDoan){
+  if(!CONG_DOAN_TINH_KPI_CA_NHAN.includes(congDoan)) return undefined;
+  if(managerStageTestMode && managerStageTestMode.stage===congDoan && managerStageTestMode.workerId){
+    const w=supabaseWorkers.find(x=>x.id===managerStageTestMode.workerId);
+    return {code:managerStageTestMode.workerId,name:w?.display_name||managerStageTestMode.workerName||managerStageTestMode.workerId,worker_id:managerStageTestMode.workerId,at:new Date().toISOString()};
+  }
+  if(currentUser && currentUser.role==='nhan_vien') return {code:currentUser.code||'',name:currentUser.name||currentUser.code||'Nhân viên',worker_id:currentUser.worker_id||null,at:new Date().toISOString()};
+  if(!canManage2()) return null;
+  if(!staffUsersLoaded) await loadStaffUsers();
+  const donViCan=congDoan==='may'?'tổ may':'tổ đóng gói';
+  const ds=staffUsers.filter(u=>u.role==='nhan_vien' && String(u.unit||toGanTheoMa(u.code)||'').toLowerCase()===donViCan);
+  if(!ds.length){ alert(`Chưa tải được tài khoản ${congDoan==='may'?'Tổ May':'Tổ Đóng gói'}. Không thể ghi KPI cá nhân.`); return null; }
+  const u=await chonNhanSuBangDanhSach(ds,congDoan==='may'?'May':'Đóng gói');
+  return u?{code:u.code||'',name:u.name||u.code||'Nhân viên',worker_id:u.worker_id||u.code||null,at:new Date().toISOString()}:null;
+}
+function chonNhanSuBangDanhSach(ds,nhanCongDoan){
+  return new Promise(resolve=>{
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;z-index:9600;background:rgba(18,20,26,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
+    overlay.innerHTML=`<div style="width:min(420px,100%);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 55px rgba(0,0,0,.25);"><h3 style="margin:0 0 6px;font-size:17px;">Chọn người ${nhanCongDoan} hoàn thành</h3><div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Tick đúng một người thực hiện.</div><div class="staff-check-list" style="display:grid;gap:8px;">${ds.map((u,i)=>`<label style="display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--border);border-radius:9px;cursor:pointer;"><input type="checkbox" name="staff-completer" value="${i}"><span>${thoatHtml(u.name||u.code)}</span></label>`).join('')}</div><div class="staff-check-error" style="display:none;color:var(--danger);font-size:12px;margin-top:9px;">Hãy tick đúng một người.</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;"><button type="button" data-action="cancel" class="capacity-quick-btn">Hủy</button><button type="button" data-action="ok" class="primary-btn">Xác nhận</button></div></div>`;
+    document.body.appendChild(overlay);
+    const close=value=>{overlay.remove();resolve(value);};
+    overlay.addEventListener('change',e=>{ if(e.target.name==='staff-completer'&&e.target.checked) overlay.querySelectorAll('input[name="staff-completer"]').forEach(x=>{if(x!==e.target)x.checked=false;}); });
+    overlay.addEventListener('click',e=>{
+      const action=e.target.closest('[data-action]')?.dataset.action;
+      if(action==='cancel'||e.target===overlay) close(null);
+      if(action==='ok'){
+        const picked=overlay.querySelector('input[name="staff-completer"]:checked');
+        if(!picked){overlay.querySelector('.staff-check-error').style.display='block';return;}
+        close(ds[Number(picked.value)]||null);
+      }
+    });
+  });
+}
 function soCongDoan(v){
   const n = Number(v);
   return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -2144,7 +2387,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 102;
+const APP_VERSION = 103;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -2264,6 +2507,9 @@ function showNewVersionBanner(v, autoReload){
 }
 
 let currentUser = null;
+let managerStageTestMode = null;
+let supabaseWorkers = [];
+let supabaseStageCredits = [];
 const VIEWER_USER = {code:'', name:'Khách xem thống kê', role:'chi_xem'};
 // Quản lý: toàn quyền (nút đỏ, chốt, xoá đơn, phân công tổ)
 function canManage(){ return currentUser && currentUser.role === 'quan_ly'; }
@@ -2460,7 +2706,10 @@ function isOrderLocked(o){
 // Sau khi deploy Apps Script (xem HUONG_DAN_DEPLOY.md), dán URL Web App vào đây.
 const STORAGE_API_URL = 'https://script.google.com/macros/s/AKfycbxqrbrDm9eGu6NuwhNYZLznho6SWgbSE6l9EcaI8xM9VyP2FE--bGcQNRhfJI751lyI/exec';
 // Khi chạy bằng localhost để xem thử, vẫn được đọc dữ liệu nhưng tuyệt đối không gửi lệnh ghi ra ngoài.
-const LOCAL_PREVIEW_MODE = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+const LOCAL_PREVIEW_MODE = location.protocol === 'file:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+// Chỉ dùng lúc dựng giao diện/nghiệp vụ local: vào thẳng dashboard, không yêu cầu mã.
+// Bản public vẫn bắt buộc đăng nhập Supabase/Telegram như bình thường.
+const LOCAL_SUPABASE_UI_TEST = SUPABASE_VARIANT && LOCAL_PREVIEW_MODE;
 const LOCAL_DROP_DEMO_MODE = LOCAL_PREVIEW_MODE && new URLSearchParams(location.search).get('dropDemo') === '1';
 const LOCAL_DROP_DEMO_ID = '__LOCAL_DROP_DEMO_14_15__';
 
@@ -2553,16 +2802,16 @@ async function loginWithTelegram(){
   const set=await supabaseDb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
   if(set.error) throw set.error;
   const tgId=TELEGRAM_WEBAPP.initDataUnsafe&&TELEGRAM_WEBAPP.initDataUnsafe.user?TELEGRAM_WEBAPP.initDataUnsafe.user.id:'';
-  return {code:`tg:${tgId}`,name:data.profile.display_name,role:data.profile.role,unit:supabaseUnitToUi(data.profile.unit_name)};
+  return {code:`tg:${tgId}`,name:data.profile.display_name,role:data.profile.role,unit:supabaseUnitToUi(data.profile.unit_name),worker_id:data.profile.worker_id||null};
 }
 async function restoreSupabaseSession(){
   if(!supabaseDb) return false;
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session) return false;
-  const {data,error}=await supabaseDb.from('khsx_profiles').select('display_name,role,unit_name,active').eq('user_id',session.user.id).maybeSingle();
+  const {data,error}=await supabaseDb.from('khsx_profiles').select('display_name,role,unit_name,active,worker_id').eq('user_id',session.user.id).maybeSingle();
   if(error || !data || !data.active) return false;
   const oldCode=currentUser&&currentUser.code?currentUser.code:'';
-  currentUser={code:oldCode,name:data.display_name,role:data.role,unit:supabaseUnitToUi(data.unit_name)};
+  currentUser={code:oldCode,name:data.display_name,role:data.role,unit:supabaseUnitToUi(data.unit_name),worker_id:data.worker_id||null};
   const ov=document.getElementById('loginOverlay'); if(ov) ov.style.display='none';
   applyRoleUI();
   return true;
@@ -2578,11 +2827,19 @@ async function loadSupabaseOperationalData(){
     supabaseDb.from('khsx_stage_progress').select('*'),
     supabaseDb.from('khsx_day_locks').select('*'),
     supabaseDb.from('khsx_plan_snapshots').select('*'),
-    supabaseDb.from('khsx_quarter_targets').select('*')
+    supabaseDb.from('khsx_quarter_targets').select('*'),
+    supabaseDb.from('khsx_profiles').select('user_id,display_name,role,unit_name,active,worker_id'),
+    supabaseDb.from('khsx_workers').select('id,display_name,stage,active'),
+    supabaseDb.from('khsx_stage_credits').select('order_id,work_date,stage,worker_id,quantity,source')
   ]);
   const failed=results.find(x=>x.error);
   if(failed){ console.warn('Supabase đọc song song thất bại',failed.error); return false; }
-  const [ord,asg,daily,progress,locks,snaps,targets]=results.map(x=>x.data||[]);
+  const [ord,asg,daily,progress,locks,snaps,targets,profiles,workers,credits]=results.map(x=>x.data||[]);
+  supabaseWorkers=workers.filter(x=>x.active!==false);
+  supabaseStageCredits=credits;
+  const profileNameById=Object.fromEntries(profiles.map(p=>[p.user_id,p.display_name||'']));
+  staffUsers=supabaseWorkers.map(w=>({code:w.id,name:w.display_name,role:'nhan_vien',unit:w.stage==='may'?'Tổ May':'Tổ Đóng gói',worker_id:w.id}));
+  staffUsersLoaded=true;
   const nextAssignments={};
   asg.forEach(a=>{
     nextAssignments[a.order_id]={
@@ -2602,6 +2859,13 @@ async function loadSupabaseOperationalData(){
     const d=isoToDMY(p.work_date), e=x.stage_by_date[d]||(x.stage_by_date[d]={});
     e[p.stage]=Number(p.quantity)||0;
     const t=supabaseUnitToUi(p.kpi_team); if(t) e[`_${p.stage}_to`]=t;
+    if(CONG_DOAN_TINH_KPI_CA_NHAN.includes(p.stage) && (p.completed_by_worker_id||p.entered_by)){
+      const wid=p.completed_by_worker_id||p.entered_by;
+      const worker=supabaseWorkers.find(w=>w.id===wid);
+      e[truongNguoiHoanThanh(p.stage,'code')]=wid;
+      e[truongNguoiHoanThanh(p.stage,'name')]=worker?.display_name||profileNameById[p.entered_by]||wid;
+      e[truongNguoiHoanThanh(p.stage,'at')]=p.updated_at||'';
+    }
   });
   sheetRows=ord.filter(o=>!o.is_manual&&!o.is_drop&&!o.is_ghost&&!o.is_warranty).map(o=>({
     id:o.id,date:isoToDMY(o.production_date),ma:o.product_code||'',dong:o.product_name||'',
@@ -2609,11 +2873,12 @@ async function loadSupabaseOperationalData(){
     day:o.thickness_mm==null?'':String(o.thickness_mm),so_luong:Number(o.plan_qty)||0,
     ghi_chu:o.note||'',nhom_don_hang:o.order_group||'',is_lot:!!o.is_lot,lot_label:o.lot_label||''
   }));
-  dynamicOrders=ord.filter(o=>o.is_manual||o.is_drop||o.is_ghost).map(o=>({
+  dynamicOrders=ord.filter(o=>o.is_manual||o.is_drop||o.is_ghost||o.is_warranty).map(o=>({
     id:o.id,date:isoToDMY(o.production_date),ma:o.product_code||'',dong:o.product_name||'',
     ngang:o.width_mm==null?'':String(o.width_mm),dai:o.length_mm==null?'':String(o.length_mm),
     day:o.thickness_mm==null?'':String(o.thickness_mm),so_luong:Number(o.plan_qty)||0,ghi_chu:o.note||'',
-    is_manual:!!o.is_manual,is_drop:!!o.is_drop,is_ghost:!!o.is_ghost,is_lot:!!o.is_lot,lot_label:o.lot_label||''
+    is_manual:!!o.is_manual,is_drop:!!o.is_drop,is_ghost:!!o.is_ghost,is_warranty:!!o.is_warranty,
+    is_lot:!!o.is_lot,lot_label:o.lot_label||'',nhom_don_hang:o.order_group||''
   }));
   assignments=applyVerifiedDataCorrections(overlayPendingAssignments(nextAssignments,assignments));
   lockedPlanDates=locks.filter(x=>x.plan_locked).map(x=>isoToDMY(x.work_date));
@@ -2657,12 +2922,13 @@ async function startSupabaseRealtime(){
 function persistSupabaseStageOutbox(){
   try{ localStorage.setItem(SUPABASE_STAGE_OUTBOX_KEY,JSON.stringify(supabaseStageOutbox)); }catch(e){}
 }
-function queueStagePatchForSupabase(o,ngay,congDoan,value,team,sendNow=true){
+function queueStagePatchForSupabase(o,ngay,congDoan,value,team,workerId=null,sendNow=true){
   if(!o || !CONG_DOAN.includes(congDoan)) return;
   const key=[o.id,ngay,congDoan].join('|');
   supabaseStageOutbox[key]={key,operation_id:makeOperationId(),device_id:getSupabaseDeviceId(),
     order_id:o.id,work_date:ngay,stage:congDoan,
-    value:value==null?0:soCongDoan(value),kpi_team:team||toKpiKhiNhapCongDoan(o,ngay)||null};
+    value:value==null?0:soCongDoan(value),kpi_team:team||toKpiKhiNhapCongDoan(o,ngay)||null,
+    worker_id:workerId||null,status:'pending',attempts:0};
   persistSupabaseStageOutbox();
   if(sendNow) flushSupabaseStageOutbox();
 }
@@ -2673,12 +2939,23 @@ async function sendSupabaseStageItem(item){
   const workDate=`${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`;
   if(!item.operation_id) item.operation_id=makeOperationId();
   if(!item.device_id) item.device_id=getSupabaseDeviceId();
-  const {error}=await supabaseDb.rpc('khsx_apply_stage_progress',{
+  const {error}=await supabaseDb.rpc('khsx_apply_stage_progress_v2',{
     p_operation_id:item.operation_id,p_order_id:item.order_id,p_work_date:workDate,
     p_stage:item.stage,p_quantity:soCongDoan(item.value),p_kpi_team:uiUnitToSupabase(item.kpi_team),
-    p_device_id:item.device_id
+    p_worker_id:item.worker_id||null,p_device_id:item.device_id
   });
-  if(error){ console.warn('Supabase chưa nhận tiến độ, hàng đợi cục bộ vẫn giữ',error); supabaseStatus('Đã ghi nhận · Supabase đang thử lại...',false); return false; }
+  if(error){
+    const kind=window.KhsxDataCore?.classifyWriteError(error)||{retryable:false,code:error.code||'UNKNOWN'};
+    item.attempts=(item.attempts||0)+1;
+    if(!kind.retryable){
+      item.status='failed'; item.error_code=kind.code; persistSupabaseStageOutbox();
+      console.warn('Supabase từ chối dữ liệu nghiệp vụ',error);
+      supabaseStatus(`Không lưu được (${kind.code}) · cần sửa số vừa nhập`,false);
+      return 'terminal';
+    }
+    console.warn('Mất kết nối, hàng đợi cục bộ sẽ gửi lại',error);
+    supabaseStatus('Mất kết nối · dữ liệu đang chờ gửi lại',false); return false;
+  }
   supabaseStatus('Đã lưu Supabase · các máy đang đồng bộ',true);
   return true;
 }
@@ -2687,8 +2964,10 @@ async function flushSupabaseStageOutbox(){
   supabaseOutboxInFlight=true;
   try{
     for(const [key,item] of Object.entries({...supabaseStageOutbox})){
+      if(item.status==='failed') continue;
       let ok=false;
       try{ ok=await sendSupabaseStageItem(item); }catch(e){ console.warn('Supabase outbox sẽ thử lại',e); }
+      if(ok==='terminal') continue;
       if(!ok) break;
       // Nếu người dùng vừa nhập số mới trong lúc gói cũ đang gửi, không được
       // xóa nhầm gói mới cùng ô. Chỉ xóa đúng operation vừa được xác nhận.
@@ -2762,14 +3041,14 @@ function runSupabaseOutboxSelfTests(){
   const old=supabaseStageOutbox;
   const fake={id:'__queue_test__',date:'21/08/2026'};
   supabaseStageOutbox={};
-  queueStagePatchForSupabase(fake,'21/08/2026','may',3,'Tổ 1',false);
+  queueStagePatchForSupabase(fake,'21/08/2026','may',3,'Tổ 1',null,false);
   const one=Object.keys(supabaseStageOutbox).length===1;
   const key=Object.keys(supabaseStageOutbox)[0], stale={...supabaseStageOutbox[key]};
-  queueStagePatchForSupabase(fake,'21/08/2026','may',7,'Tổ 1',false);
+  queueStagePatchForSupabase(fake,'21/08/2026','may',7,'Tổ 1',null,false);
   const latest=Object.values(supabaseStageOutbox)[0]?.value===7&&Object.keys(supabaseStageOutbox).length===1;
   if(supabaseStageOutbox[key]?.operation_id===stale.operation_id) delete supabaseStageOutbox[key];
   const racePreservesLatest=supabaseStageOutbox[key]?.value===7;
-  queueStagePatchForSupabase(fake,'21/08/2026','may',null,null,false);
+  queueStagePatchForSupabase(fake,'21/08/2026','may',null,null,null,false);
   const clearBecomesZero=Object.values(supabaseStageOutbox)[0]?.value===0;
   supabaseStageOutbox=old; persistSupabaseStageOutbox();
   return [{name:'mat_mang_van_giu_hang_doi',ok:one},{name:'nhap_lai_chi_giu_so_moi_nhat',ok:latest},{name:'goi_cu_khong_xoa_so_moi',ok:racePreservesLatest},{name:'xoa_duoc_gui_thanh_so_0',ok:clearBecomesZero}];
@@ -3109,10 +3388,10 @@ function restoreAssignmentOutbox(){
     if(dirtyAssignmentIds.size) pendingSaves.add('assignments');
   }catch(e){}
 }
-function recordStagePatch(o, ngay, congDoan, value, team){
+function recordStagePatch(o, ngay, congDoan, value, team, workerId=null){
   if(!o || !ngay || !CONG_DOAN.includes(congDoan)) return;
   if(SUPABASE_VARIANT){
-    queueStagePatchForSupabase(o,ngay,congDoan,value,team);
+    queueStagePatchForSupabase(o,ngay,congDoan,value,team,workerId);
     return;
   }
   const byDay=dirtyStagePatches[o.id]||(dirtyStagePatches[o.id]={});
@@ -3868,12 +4147,67 @@ function detectSheetChanges(newRows){
 // ============================================================================
 let baoHanhTheoNgay = {};   // { 'dd/mm/yyyy': {tong, theoTo:{}, chiTiet:[]} }
 let lastWarrantyFetchAt = 0;
+let warrantyDaQuetNgay = null;
+const WARRANTY_SHEET_ID = '177wqQjNq8B5n3dG-Fe1N43atitmX66J5phaWYsLyJq0';
+const WARRANTY_LEGACY_ACTOR_CUTOFF = 20260824;
+const WARRANTY_LEGACY_MAY_BY_TEAM = {'Tổ 1':'Thảo Vy','Tổ 2':'Bảo Chăm','Tổ 3':'Loan Anh','Tổ 4':'Loan Anh'};
+
+function gvizJsonpRequest(url,timeoutMs=15000){
+  return new Promise((resolve,reject)=>{
+    const cbName='khsx_gviz_'+Date.now()+'_'+Math.floor(Math.random()*1e6), script=document.createElement('script');
+    let settled=false;
+    const cleanup=()=>{ script.remove(); try{ delete window[cbName]; }catch(e){} };
+    const timer=setTimeout(()=>{ if(settled)return; settled=true; script.remove(); window[cbName]=()=>{}; setTimeout(()=>{try{delete window[cbName];}catch(e){}},120000); reject(new Error('GViz timeout')); },timeoutMs);
+    window[cbName]=data=>{ if(settled)return; settled=true; clearTimeout(timer); cleanup(); data&&data.status==='ok'?resolve(data):reject(new Error('GViz không trả dữ liệu hợp lệ')); };
+    script.onerror=()=>{ if(settled)return; settled=true; clearTimeout(timer); cleanup(); reject(new Error('Không đọc được Sheet bảo hành')); };
+    script.src=url+(url.includes('?')?'&':'?')+'tqx='+encodeURIComponent(`out:json;responseHandler:${cbName}`);
+    document.body.appendChild(script);
+  });
+}
+function giaTriOgviz(cell){ return !cell?'':(cell.f!=null?cell.f:(cell.v!=null?cell.v:'')); }
+function chuanToBaoHanh(v){ const s=String(v==null?'':v).trim(),m=s.match(/[1-5]/); return m?`Tổ ${m[0]}`:s; }
+function khoaDongBaoHanh(x){ return [chuanToBaoHanh(x.to),chuanHoaTenSP(x.ten||''),normHeaderText(x.kich_thuoc||''),soCongDoan(x.so_luong)].join('|'); }
+function dongNhanSuTuGviz(data){
+  const table=data&&data.table;
+  if(!table||!Array.isArray(table.cols)||!Array.isArray(table.rows)) return [];
+  const headers=table.cols.map(c=>normHeaderText(c&&c.label)),tim=(...a)=>headers.findIndex(h=>a.includes(h));
+  const col={to:tim('tophutrach','to'),may:tim('maytay','may','nguoimay'),dong_goi:tim('donggoi','nguoidonggoi'),ten:tim('tennem','tenhang','dong'),kich_thuoc:tim('kichthuoc'),so_luong:tim('soluong','sl')};
+  if(col.ten<0||col.kich_thuoc<0||col.so_luong<0) return [];
+  return table.rows.map(r=>{ const c=(r&&r.c)||[],lay=i=>i>=0?giaTriOgviz(c[i]):''; return {to:chuanToBaoHanh(lay(col.to)),ten:String(lay(col.ten)||'').trim(),kich_thuoc:String(lay(col.kich_thuoc)||'').trim(),so_luong:soCongDoan(lay(col.so_luong)),bh_may_ten:String(lay(col.may)||'').trim(),bh_dong_goi_ten:String(lay(col.dong_goi)||'').trim()}; }).filter(x=>x.so_luong>0&&normHeaderText(x.ten)!=='tong');
+}
+async function taiNhanSuBaoHanhTuSheet(ngay){
+  const p=String(ngay||'').split('/'); if(p.length!==3)return [];
+  const tab=`BC BẢO HÀNH MÚT ${p[0]}${p[1]}${p[2].slice(-2)}`;
+  return dongNhanSuTuGviz(await gvizJsonpRequest(`https://docs.google.com/spreadsheets/d/${WARRANTY_SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tab)}&range=A7:Z1000&_cb=${Date.now()}`));
+}
+function tenNhanSuBaoHanh(x,congDoan){
+  const fields=congDoan==='may'?['bh_may_ten','may_tay','may','nguoi_may','may_by_name']:['bh_dong_goi_ten','dong_goi','donggoi','nguoi_dong_goi','dong_goi_by_name'];
+  for(const f of fields){ const v=x&&x[f]; if(typeof v==='string'&&v.trim())return v.trim(); } return '';
+}
+async function boSungNhanSuBaoHanh(nguon,chiNgay){
+  const ds=chiNgay===undefined?Object.keys(nguon||{}):(chiNgay?[chiNgay].filter(n=>nguon[n]):[]),bo=new Set(ds);
+  await Promise.all(ds.map(async ngay=>{ const d=nguon[ngay]; try{ const rows=await taiNhanSuBaoHanhTuSheet(ngay),q={}; rows.forEach(x=>(q[khoaDongBaoHanh(x)]||(q[khoaDongBaoHanh(x)]=[])).push(x)); d.chiTiet=(Array.isArray(d.chiTiet)?d.chiTiet:[]).map((x,i)=>{ const direct=q[khoaDongBaoHanh(x)]?.shift(),match=direct||(!direct&&rows.length===d.chiTiet.length?rows[i]:null); return {...x,bh_may_ten:tenNhanSuBaoHanh(x,'may')||(match&&match.bh_may_ten)||'',bh_dong_goi_ten:tenNhanSuBaoHanh(x,'dong_goi')||(match&&match.bh_dong_goi_ten)||''}; }); }catch(e){console.warn(`Chưa đọc được cột nhân sự bảo hành ${ngay}`,e);} }));
+  if(chiNgay!==undefined) Object.entries(nguon||{}).forEach(([ngay,d])=>{ const cu=baoHanhTheoNgay[ngay]; if(!bo.has(ngay)&&cu&&Array.isArray(cu.chiTiet)&&Array.isArray(d.chiTiet)&&cu.chiTiet.length===d.chiTiet.length) d.chiTiet=d.chiTiet.map((x,i)=>({...x,bh_may_ten:x.bh_may_ten||cu.chiTiet[i].bh_may_ten||'',bh_dong_goi_ten:x.bh_dong_goi_ten||cu.chiTiet[i].bh_dong_goi_ten||''})); });
+  return nguon;
+}
+function phanBoNhanSuBaoHanh(ngay,chiTiet){
+  const rows=(Array.isArray(chiTiet)?chiTiet:[]).map(x=>({...x,bh_may_phan_bo:[],bh_dong_goi_phan_bo:[]})),to5=[];
+  rows.forEach((x,i)=>{ const qty=soCongDoan(x.so_luong),may=tenNhanSuBaoHanh(x,'may'),pack=tenNhanSuBaoHanh(x,'dong_goi'); if(may)x.bh_may_phan_bo=[{name:may,so_luong:qty}]; else{const team=chuanToBaoHanh(x.to);if(WARRANTY_LEGACY_MAY_BY_TEAM[team])x.bh_may_phan_bo=[{name:WARRANTY_LEGACY_MAY_BY_TEAM[team],so_luong:qty}];else if(team==='Tổ 5')to5.push({i,qty});} x.bh_dong_goi_phan_bo=[{name:pack||'Minh Thuận',so_luong:qty}]; });
+  let vyCon=Math.ceil(to5.reduce((s,x)=>s+x.qty,0)/2); to5.forEach(({i,qty})=>{const vy=Math.min(qty,vyCon),cham=qty-vy;rows[i].bh_may_phan_bo=[];if(vy)rows[i].bh_may_phan_bo.push({name:'Thảo Vy',so_luong:vy});if(cham)rows[i].bh_may_phan_bo.push({name:'Bảo Chăm',so_luong:cham});vyCon-=vy;});
+  return rows;
+}
+function hienThiPhanBoBaoHanh(ds,tong){ const rows=(ds||[]).filter(x=>soCongDoan(x.so_luong)>0); return rows.length?rows.map(x=>`${thoatHtml(x.name)}${rows.length>1||soCongDoan(x.so_luong)!==soCongDoan(tong)?` (${soCongDoan(x.so_luong)})`:''}`).join('<br>'):'—'; }
+function loiBaoHanhDeHienThi(x){ const ds=Array.isArray(x&&x.loi)?x.loi:(x&&x.loi?[x.loi]:[]); return ds.filter(v=>!['maytay','donggoi'].includes(normHeaderText(v))).join(', ')||'-'; }
 
 async function fetchBaoHanh({silent=false}={}){
   if(!SHEET_READER_URL || SHEET_READER_URL.startsWith('PASTE_')) return false;
+  const homNay=formatDMY(new Date()),canQuet=warrantyDaQuetNgay!==homNay;
+  if(canQuet) warrantyDaQuetNgay=homNay;
   try{
     const d = await jsonpRequest(`${SHEET_READER_URL}?action=baohanh&_cb=${Date.now()}`);
     if(d && d.ok && d.ngay && typeof d.ngay === 'object'){
+      await boSungNhanSuBaoHanh(d.ngay,canQuet?homNay:null);
+      Object.entries(d.ngay).forEach(([ngay,x])=>{x.chiTiet=phanBoNhanSuBaoHanh(ngay,x.chiTiet);});
       baoHanhTheoNgay = d.ngay;
       lastWarrantyFetchAt = Date.now();
       saveLocalCache();
@@ -4089,56 +4423,57 @@ function openWarrantyDetail(date){
   </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text2);">Không có chi tiết.</td></tr>';
   document.getElementById('warrantyDetailModal').style.display='block';
 }
-function danhSachDonCuaTo(teamOrders, anDongDaXong){
+function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi'){
   const gom = {};
   teamOrders.forEach(o=>{
     if(o.is_drop && !toDuocHoTro(o)) return;     // phần thiếu không rõ đơn gốc -> bỏ
     if(anDongDaXong){
-      const tt = getOrderStatus(o);
-      if(tt === 'hoan_thanh' || tt === 'partial') return;   // đã xong -> ẩn dòng
+      if(soLuongConChoCongDoan(o,congDoan)<=0) return;
     }
     const ten = String(o.dong || '');   // đã chuẩn hoá lúc đọc sheet
     const kt = formatKichThuoc(o);
     const hoTro = toDuocHoTro(o);
     const k = ten + '|' + kt + '|' + (hoTro || '');
-    if(!gom[k]) gom[k] = {ten, tenGon:tenGonTrenTheTo(o), kt, sl:0, hoTro, uuTien:false, xong:true, day: parseFloat(o.day) || 0, ngang: parseFloat(o.ngang) || 0};
+    if(!gom[k]) gom[k] = {ten, tenGon:tenGonTrenTheTo(o), kt, sl:0, hoTro, uuTien:false, xong:true, day: parseFloat(o.day) || 0, ngang: parseFloat(o.ngang) || 0, ids:[]};
     gom[k].sl += Number(o.so_luong) || 0;
+    gom[k].ids.push(o.id);
     if(laUuTien(o.id)) gom[k].uuTien = true;
     // Tick chỉ có khi Đóng gói đã đủ toàn bộ kế hoạch. Không dùng trạng thái
     // "còn chờ = 0" vì công đoạn trước chưa có đầu vào cũng có thể trả về 0.
-    if(soCongDoan(o.so_luong) <= 0 || tongCongDoan(o,'dong_goi') < soCongDoan(o.so_luong))
-      gom[k].xong = false;
+    if(soCongDoan(o.so_luong)<=0 || tongCongDoan(o,congDoan)<soCongDoan(o.so_luong)) gom[k].xong=false;
   });
   return Object.keys(gom).map(k=>gom[k])
     .sort((a,b)=> (a.day - b.day) || (a.ngang - b.ngang) || a.ten.localeCompare(b.ten,'vi'));
 }
 
-function htmlDanhSachDon(teamOrders, anDongDaXong){
-  const ds = danhSachDonCuaTo(teamOrders, anDongDaXong);
+function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=null){
+  const ds = danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan);
   if(!ds.length){
     return anDongDaXong ? `<div class="team-ring-list-xong">✓ Đã xong hết</div>` : '';
   }
-  // Ba cột thẳng hàng: tên bên trái, kích thước canh phải, số lượng canh phải
+  const coTheBam=!!ngay&&coQuyenNhapCongDoan(congDoan);
   return `<div class="team-ring-list">`
       + ds.map(r=>{
         const uuTienClass = r.uuTien ? ' team-ring-row-uutien' : '';
         const tickXong = canManage2() && r.xong
           ? `<span class="team-ring-done-tick" title="Đã hoàn thành">✓</span>` : '';
-        return `<span class="t${uuTienClass}" title="${thoatHtml(r.ten)}">${thoatHtml(r.tenGon)}${r.hoTro?` <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}</span>`
-             + `<span class="k${uuTienClass}">${r.kt}:</span><b class="${uuTienClass.trim()}">${r.sl}${tickXong}</b>`;
+        const dataAttr=coTheBam?` data-ids="${r.ids.join('|')}" data-ngay="${ngay}" data-stage="${congDoan}"`:'';
+        const clickCls=coTheBam?' team-ring-clickable':'';
+        return `<span class="t${uuTienClass}${clickCls}"${dataAttr} title="${thoatHtml(r.ten)}${coTheBam?' — bấm để nhập số':''}">${thoatHtml(r.tenGon)}${r.hoTro?` <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}</span>`
+             + `<span class="k${uuTienClass}${clickCls}"${dataAttr}>${r.kt}:</span><b class="${uuTienClass.trim()}${clickCls}"${dataAttr}>${r.sl}${tickXong}</b>`;
       }).join('')
     + `</div>`;
 }
 
-function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDangXem='all'){
+function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDangXem='all', congDoan='dong_goi', chiTo=null, anTyLe=false){
   const container = document.getElementById(containerId);
   if(!container) return;
-  const dsHtml = hienDanhSach ? (dh => htmlDanhSachDon(dh, anDongDaXong)) : (()=> '');
+  const dsHtml = hienDanhSach ? (dh => htmlDanhSachDon(dh, anDongDaXong, congDoan, ngayDangXem)) : (()=> '');
   const motNgay = !!ngayDangXem && ngayDangXem !== 'all';
   const cacNgayDangXem = motNgay ? [ngayDangXem] : Array.from(new Set(orders.map(o=>o.date)));
   const toMinh = toCuaToi();
   const toSanXuat = TEAM_OPTIONS.includes(toMinh) ? toMinh : null;
-  const cacTo = toSanXuat ? TEAM_OPTIONS.filter(t=>t === toSanXuat) : TEAM_OPTIONS;
+  const cacTo = toSanXuat ? TEAM_OPTIONS.filter(t=>t === toSanXuat) : (TEAM_OPTIONS.includes(chiTo) ? [chiTo] : TEAM_OPTIONS);
   container.classList.toggle('mot-the', cacTo.length === 1);
   container.innerHTML = cacTo.map(team=>{
     const teamOrders = orders.filter(o=>{
@@ -4146,13 +4481,16 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
       const a = assignments[o.id] || {};
       return a.to === team || Object.values(a.support_by_date || {}).includes(team);
     });
+    if(anTyLe){
+      const slBaoHanh=baoHanhCuaTo(team,cacNgayDangXem);
+      return `<div class="team-ring-card team-ring-card-simple"><div class="team-ring-label">${team}</div>${slBaoHanh>0?`<div class="team-ring-bh">🛠 Bảo hành: ${slBaoHanh}</div>`:''}${dsHtml(teamOrders)}</div>`;
+    }
     // KH chỉ thuộc ngày gốc và tổ được phân công ban đầu. HT chỉ lấy số Đóng gói
     // thực nhập trong ngày đang xem, đồng thời ghi cho đúng tổ thực hiện ngày đó.
     // Chỉ tính trên đúng tập đơn đang hiển thị sau bộ lọc. Không dùng lại danh sách rộng
     // bên ngoài vì sẽ giữ mẫu số cũ dù người dùng thêm/xóa/lọc hết đơn.
-    const keHoach = teamOrders.filter(o=>isPlannedOrder(o) && toKeHoachCuaDon(o) === team)
-      .reduce((a,o)=>a+keHoachTrongNgay(o,ngayDangXem),0);
-    const hoanThanh = orders.reduce((a,o)=>a+soCongDoanCuaTo(o,'dong_goi',team,ngayDangXem),0);
+    const keHoach = teamOrders.filter(isPlannedOrder).reduce((a,o)=>a+(Number(o.so_luong)||0),0);
+    const hoanThanh = orders.reduce((a,o)=>a+soCongDoanCuaTo(o,congDoan,team,ngayDangXem),0);
     if(keHoach === 0){
       // Tổ không có kế hoạch riêng. Hai trường hợp khác nhau:
       //   - Có hỗ trợ tổ khác -> vòng tròn XANH, 0% (phân biệt rõ với tổ ngồi không)
@@ -4313,6 +4651,177 @@ document.getElementById('autoPlanTable').addEventListener('click',e=>{
 });
 document.getElementById('closeWarrantyDetailBtn').addEventListener('click',closeWarrantyDetail);
 document.getElementById('warrantyDetailModal').addEventListener('click',e=>{ if(e.target.id==='warrantyDetailModal') closeWarrantyDetail(); });
+
+function namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa){
+  const k=khoaNgayDMY(ngay);
+  return !!k && k>=tuKhoa && k<=denKhoa;
+}
+
+async function moPopupNhapNhanhCongDoan(ids,ngay,congDoan){
+  if(!coQuyenNhapCongDoan(congDoan)) return;
+  const id=ids.find(i=>soLuongConChoCongDoan(getOrderById(i),congDoan)>0)||ids[0],o=getOrderById(id);
+  if(!o) return;
+  const hienTai=giaTriCongDoanNgay(o,ngay,congDoan),nhan=congDoan==='dan'?'Dán':(congDoan==='may'?'May':'Đóng gói');
+  const raw=prompt(`${nhan} — ${o.dong||o.ma||''} ${formatKichThuoc(o)} — ngày ${ngay}:\nNhập số lượng đã làm`,hienTai!=null?String(hienTai):'');
+  if(raw!=null) await handleStageQtyChange(id,ngay,congDoan,raw);
+}
+document.getElementById('progressTeamRings').addEventListener('click',e=>{
+  const t=e.target.closest('.team-ring-clickable'); if(!t)return;
+  const ids=(t.dataset.ids||'').split('|').filter(Boolean);
+  if(ids.length&&t.dataset.ngay&&t.dataset.stage) moPopupNhapNhanhCongDoan(ids,t.dataset.ngay,t.dataset.stage);
+});
+function tinhNangLucCaNhan(congDoan,tuKhoa,denKhoa){
+  if(SUPABASE_VARIANT && supabaseStageCredits.length){
+    const theoNguoi={};
+    supabaseStageCredits.filter(x=>x.stage===congDoan).forEach(x=>{
+      const ngay=isoToDMY(x.work_date); if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa))return;
+      const w=supabaseWorkers.find(y=>y.id===x.worker_id),name=w?.display_name||x.worker_id,sl=soCongDoan(x.quantity),o=getOrderById(x.order_id);
+      if(!sl||!o)return;
+      const row=theoNguoi[x.worker_id]||(theoNguoi[x.worker_id]={code:x.worker_id,name,soLuong:0,soDon:new Set(),theoNgay:{},dungNgay:0,coMocDungHan:0});
+      row.soLuong+=sl;row.soDon.add(x.order_id);row.theoNgay[ngay]=(row.theoNgay[ngay]||0)+sl;row.coMocDungHan+=sl;if(khoaNgayDMY(ngay)<=khoaNgayDMY(o.date))row.dungNgay+=sl;
+    });
+    return {rows:Object.values(theoNguoi).map(r=>{const days=Object.entries(r.theoNgay).sort((a,b)=>b[1]-a[1]),top=days[0]||['—',0];return {...r,soDon:r.soDon.size,soNgay:days.length,trungBinh:days.length?r.soLuong/days.length:0,ngayCao:top[0],slNgayCao:top[1],tyLeDung:r.coMocDungHan?Math.round(r.dungNgay/r.coMocDungHan*100):null};}).sort((a,b)=>b.soLuong-a.soLuong||a.name.localeCompare(b.name,'vi'))};
+  }
+  const theoNguoi={};
+  const cong=(actor,sl,id,ngay,{coTinhDungHan=false,dungHan=false}={})=>{
+    if(!actor || !sl) return;
+    const name=String(actor.name||actor.code||'').trim();
+    const code=String(actor.code||'').trim();
+    if(!name) return;
+    const key=`name:${normHeaderText(name)}`;
+    const row=theoNguoi[key]||(theoNguoi[key]={code,name,soLuong:0,soDon:new Set(),theoNgay:{},dungNgay:0,coMocDungHan:0});
+    if(!row.code && code) row.code=code;
+    row.soLuong+=sl;
+    row.soDon.add(id);
+    row.theoNgay[ngay]=(row.theoNgay[ngay]||0)+sl;
+    if(coTinhDungHan){ row.coMocDungHan+=sl; if(dungHan) row.dungNgay+=sl; }
+  };
+  const cu=[];
+  getOrders().forEach(o=>{
+    if(o.is_warranty) return;
+    Object.entries(lichSuCongDoanDeDoc(o)).forEach(([ngay,e])=>{
+      if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa)) return;
+      const sl=soCongDoan(e&&e[congDoan]);
+      if(!sl) return;
+      const actor=nguoiHoanThanhCongDoan(e,congDoan);
+      const evt={o,ngay,sl,team:toThucHienCongDoanNgay(o,ngay,congDoan),dungHan:khoaNgayDMY(ngay)<=khoaNgayDMY(o.date)};
+      if(actor) cong(actor,sl,o.id,ngay,{coTinhDungHan:true,dungHan:evt.dungHan});
+      else if(khoaNgayDMY(ngay)>0 && khoaNgayDMY(ngay)<=WARRANTY_LEGACY_ACTOR_CUTOFF) cu.push(evt);
+    });
+  });
+  if(congDoan==='dong_goi'){
+    cu.forEach(e=>cong({name:'Minh Thuận'},e.sl,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan}));
+  }else if(congDoan==='may'){
+    const to5={};
+    cu.forEach(e=>{
+      const name=WARRANTY_LEGACY_MAY_BY_TEAM[e.team];
+      if(name) cong({name},e.sl,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
+      else if(e.team==='Tổ 5') (to5[e.ngay]||(to5[e.ngay]=[])).push(e);
+    });
+    Object.values(to5).forEach(ds=>{
+      let phanVy=Math.ceil(ds.reduce((s,e)=>s+e.sl,0)/2);
+      ds.forEach(e=>{
+        const vy=Math.min(e.sl,phanVy), cham=e.sl-vy;
+        if(vy) cong({name:'Thảo Vy'},vy,e.sl?e.o.id:'',e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
+        if(cham) cong({name:'Bảo Chăm'},cham,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
+        phanVy-=vy;
+      });
+    });
+  }
+  Object.entries(baoHanhTheoNgay).forEach(([ngay,d])=>{
+    if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa)) return;
+    phanBoNhanSuBaoHanh(ngay,d&&d.chiTiet).forEach((x,i)=>{
+      const ds=congDoan==='may'?x.bh_may_phan_bo:x.bh_dong_goi_phan_bo;
+      (ds||[]).forEach(p=>cong({name:p.name},soCongDoan(p.so_luong),`bh_${ngay}_${i}`,ngay));
+    });
+  });
+  const rows=Object.values(theoNguoi).map(r=>{
+    const ngayEntries=Object.entries(r.theoNgay).sort((a,b)=>b[1]-a[1]||khoaNgayDMY(a[0])-khoaNgayDMY(b[0]));
+    const ngayCao=ngayEntries[0]||['—',0];
+    return {...r,soDon:r.soDon.size,soNgay:ngayEntries.length,trungBinh:ngayEntries.length?r.soLuong/ngayEntries.length:0,ngayCao:ngayCao[0],slNgayCao:ngayCao[1],tyLeDung:r.coMocDungHan?Math.round(r.dungNgay/r.coMocDungHan*100):null};
+  }).sort((a,b)=>b.soLuong-a.soLuong||a.name.localeCompare(b.name,'vi'));
+  return {rows};
+}
+function tinhNangLucToDan(tuKhoa,denKhoa){
+  const map=Object.fromEntries(TEAM_OPTIONS.map(t=>[t,{team:t,keHoach:0,daDan:0,hoTro:0,conCho:0}]));
+  getOrders().forEach(o=>{
+    const toGoc=toKeHoachCuaDon(o);
+    if(isPlannedOrder(o) && map[toGoc] && namTrongKhoangNangLuc(o.date,tuKhoa,denKhoa)){
+      map[toGoc].keHoach+=soCongDoan(o.so_luong);
+      map[toGoc].conCho+=Math.max(0,soCongDoan(o.so_luong)-tongCongDoan(o,'dan'));
+    }
+    Object.entries(lichSuCongDoanDeDoc(o)).forEach(([ngay,e])=>{
+      if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa)) return;
+      const sl=soCongDoan(e&&e.dan);
+      if(!sl) return;
+      const toLam=toThucHienCongDoanNgay(o,ngay,'dan');
+      if(!map[toLam]) return;
+      map[toLam].daDan+=sl;
+      if(toGoc && toGoc!==toLam) map[toLam].hoTro+=sl;
+    });
+  });
+  return TEAM_OPTIONS.map(t=>map[t]);
+}
+function htmlDongNangLucCaNhan(data){
+  const rows=data.rows.map(r=>`<tr><td><strong>${thoatHtml(r.name||r.code)}</strong></td><td>${r.soLuong.toLocaleString('vi-VN')}</td><td>${r.soDon}</td><td>${r.trungBinh.toLocaleString('vi-VN',{maximumFractionDigits:1})}</td><td>${r.ngayCao==='—'?'—':`${r.ngayCao} · ${r.slNgayCao}`}</td><td>${r.tyLeDung==null?'—':r.tyLeDung+'%'}</td></tr>`);
+  return rows.length?rows.join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:16px;">Chưa có dữ liệu hoàn thành trong khoảng ngày này.</td></tr>';
+}
+function renderCapacityStats(){
+  const tu=isoToDMY(document.getElementById('capacityFromDate').value), den=isoToDMY(document.getElementById('capacityToDate').value);
+  const tuKhoa=khoaNgayDMY(tu), denKhoa=khoaNgayDMY(den), rangeEl=document.getElementById('capacityStatsRange');
+  if(!tuKhoa||!denKhoa||tuKhoa>denKhoa){ rangeEl.textContent='Khoảng ngày không hợp lệ.'; rangeEl.style.color='var(--danger)'; return; }
+  rangeEl.textContent=`${tu} → ${den}`; rangeEl.style.color='var(--text2)';
+  const dan=tinhNangLucToDan(tuKhoa,denKhoa), may=tinhNangLucCaNhan('may',tuKhoa,denKhoa), dongGoi=tinhNangLucCaNhan('dong_goi',tuKhoa,denKhoa);
+  const tongKh=dan.reduce((s,r)=>s+r.keHoach,0), tongDan=dan.reduce((s,r)=>s+r.daDan,0), tongMay=may.rows.reduce((s,r)=>s+r.soLuong,0), tongDongGoi=dongGoi.rows.reduce((s,r)=>s+r.soLuong,0);
+  document.getElementById('capacityStatsSummary').innerHTML=`<div class="kpi k-accent"><div class="label">Kế hoạch Dán</div><div class="value">${tongKh.toLocaleString('vi-VN')}</div></div><div class="kpi k-success"><div class="label">Đã dán</div><div class="value">${tongDan.toLocaleString('vi-VN')}</div></div><div class="kpi" style="border-top-color:#6d4bc3;"><div class="label">May đã ghi tên</div><div class="value">${tongMay.toLocaleString('vi-VN')}</div></div><div class="kpi k-warning"><div class="label">Đóng gói đã ghi tên</div><div class="value">${tongDongGoi.toLocaleString('vi-VN')}</div></div>`;
+  document.getElementById('capacityDanBody').innerHTML=dan.map(r=>`<tr><td><strong>${r.team}</strong></td><td>${r.keHoach.toLocaleString('vi-VN')}</td><td>${r.daDan.toLocaleString('vi-VN')}</td><td>${r.keHoach?Math.round(r.daDan/r.keHoach*100):0}%</td><td>${r.hoTro.toLocaleString('vi-VN')}</td><td>${r.conCho.toLocaleString('vi-VN')}</td></tr>`).join('');
+  document.getElementById('capacityMayBody').innerHTML=htmlDongNangLucCaNhan(may);
+  document.getElementById('capacityPackBody').innerHTML=htmlDongNangLucCaNhan(dongGoi);
+}
+function closeCapacityStats(){ document.getElementById('capacityStatsModal').style.display='none'; }
+function isoCuaNgay(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function thuHaiCuaTuan(d){ const x=new Date(d),wd=x.getDay(); x.setDate(x.getDate()-(wd===0?6:wd-1)); return x; }
+function datCapacityRange(tu,den){ document.getElementById('capacityFromDate').value=isoCuaNgay(tu); document.getElementById('capacityToDate').value=isoCuaNgay(den); renderCapacityStats(); }
+function openCapacityStats(){
+  if(!canManage2()) return;
+  const today=new Date();
+  document.getElementById('capacityFromDate').value=isoCuaNgay(thuHaiCuaTuan(today));
+  document.getElementById('capacityToDate').value=isoCuaNgay(today);
+  document.getElementById('capacityStatsModal').style.display='block'; renderCapacityStats();
+}
+document.getElementById('capacityStatsBtn').addEventListener('click',openCapacityStats);
+document.getElementById('closeCapacityStatsBtn').addEventListener('click',closeCapacityStats);
+document.getElementById('capacityQuickYesterday').addEventListener('click',()=>{ const d=new Date(); d.setDate(d.getDate()-1); datCapacityRange(d,d); });
+document.getElementById('capacityQuickLastWeek').addEventListener('click',()=>{ const a=thuHaiCuaTuan(new Date()),b=new Date(a),c=new Date(a); b.setDate(b.getDate()-7); c.setDate(c.getDate()-1); datCapacityRange(b,c); });
+document.getElementById('capacityQuickLastMonth').addEventListener('click',()=>{ const n=new Date(); datCapacityRange(new Date(n.getFullYear(),n.getMonth()-1,1),new Date(n.getFullYear(),n.getMonth(),0)); });
+document.getElementById('refreshCapacityStatsBtn').addEventListener('click',renderCapacityStats);
+document.getElementById('capacityStatsModal').addEventListener('click',e=>{if(e.target.id==='capacityStatsModal') closeCapacityStats();});
+function closeStageTest(){ document.getElementById('stageTestModal').style.display='none'; }
+function setManagerStageTest(stage){
+  if(!canManage()) return;
+  if(stage==='dan') managerStageTestMode={stage,team:document.getElementById('testDanTeam').value};
+  else if(stage==='may'){
+    const sel=document.getElementById('testMayWorker'),workerId=sel.value;
+    managerStageTestMode={stage,workerId,workerName:sel.options[sel.selectedIndex]?.text||workerId};
+  }else managerStageTestMode={stage:'dong_goi',workerId:'minh_thuan',workerName:'Minh Thuận'};
+  closeStageTest();
+  applyRoleUI();
+  if(stage==='dan'){ progressTeamSelect.value=managerStageTestMode.team; }
+  const mainBtn=document.getElementById('stageTestBtn'); mainBtn.textContent=`Kết thúc test ${stage==='dan'?'Dán':stage==='may'?'May':'Đóng gói'}`; mainBtn.style.background='var(--danger)';
+  renderProgress();
+  document.getElementById('panel-progress')?.scrollIntoView({block:'start'});
+}
+document.getElementById('stageTestBtn').addEventListener('click',()=>{
+  if(!canManage())return;
+  if(managerStageTestMode){managerStageTestMode=null;applyRoleUI();renderProgress();const b=document.getElementById('stageTestBtn');b.textContent='Test 3 công đoạn';b.style.background='#0f766e';return;}
+  document.getElementById('stageTestModal').style.display='block';
+});
+document.getElementById('closeStageTestBtn').addEventListener('click',closeStageTest);
+document.getElementById('stageTestModal').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-test-stage]'); if(btn)setManagerStageTest(btn.dataset.testStage);
+  else if(e.target.id==='stageTestModal')closeStageTest();
+});
+document.getElementById('exitStageTestBtn').addEventListener('click',()=>{managerStageTestMode=null;applyRoleUI();renderProgress();closeStageTest();const b=document.getElementById('stageTestBtn');b.textContent='Test 3 công đoạn';b.style.background='#0f766e';});
 document.getElementById('autoPlanDaySelect').addEventListener('change', renderAutoPlan);
 function syncSearchClearButton(input){
   const wrap=input && input.closest('.search-with-clear');
@@ -4886,7 +5395,7 @@ function populateProgressSelects(){
 
 // Danh sách đơn đang hiển thị theo đúng bộ lọc hiện tại của tab Tiến độ —
 // dùng chung cho việc vẽ bảng và cho nút "Hoàn thành" (nút chỉ tác động lên đúng phần đang lọc).
-function getFilteredProgressRows(){
+function getProgressRowsForCurrentFilters(chiConChoCongDoan=true,chiDungNgayGoc=false){
   const dayVal = progressDaySelect.value;
   const teamVal = progressTeamSelect.value;
   const q = progressSearchBox.value.trim().toLowerCase();
@@ -4911,12 +5420,15 @@ function getFilteredProgressRows(){
     // Mỗi tài khoản công đoạn chỉ giữ lại đúng việc còn chờ mình. Dán đủ kế hoạch,
     // May bắt kịp Dán, hoặc Đóng gói bắt kịp May thì dòng biến mất ngay.
     // Nếu công đoạn trước phát sinh thêm số, hiệu số tăng và dòng tự xuất hiện lại.
-    if(congDoanNhanVien && soLuongConChoCongDoan(r,congDoanNhanVien) <= 0) return false;
+    if(chiConChoCongDoan && congDoanNhanVien && soLuongConChoCongDoan(r,congDoanNhanVien) <= 0) return false;
     // Tài khoản gắn tổ: bỏ hẳn đơn của ngày mai trở đi, kể cả khi đang xem "Tất cả ngày"
     if(toMinh && laNgayTuongLai(r.date)) return false;
     // Nhân viên: trước 07:00 không thấy đơn hôm nay; Quản lý 2 và Quản lý không đi qua rule này.
     if(!nhanVienDuocXemNgay(r.date)) return false;
-    if(dayVal !== 'all' && !getCarryForwardDates(r).includes(dayVal)) return false;
+    if(dayVal !== 'all'){
+      if(chiDungNgayGoc){ if(r.date!==dayVal) return false; }
+      else if(!getCarryForwardDates(r).includes(dayVal)) return false;
+    }
     if(teamVal !== 'all'){
       if(dayVal !== 'all'){
         if(toPhuTrachTheoNgay(r,dayVal) !== teamVal) return false;
@@ -4929,6 +5441,8 @@ function getFilteredProgressRows(){
     return true;
   });
 }
+function getFilteredProgressRows(){ return getProgressRowsForCurrentFilters(true); }
+function getProgressTeamCardRows(ringCongDoan){ return getProgressRowsForCurrentFilters(false,ringCongDoan==='dan'); }
 
 function khoaNhapCongDoan(o, ngay){
   if(!canEdit() || !ngay || ngay === 'all') return true;
@@ -5056,31 +5570,41 @@ async function handleStageQtyChange(orderId, ngay, congDoan, rawVal){
   const entry = history[ngay] || (history[ngay] = {});
   const oldVal = soCongDoan(entry[congDoan]);
   const newVal = parsed == null ? 0 : parsed;
+  const planQty=soCongDoan(o.so_luong);
+  if(newVal>planQty){ alert(`Số lượng không được vượt kế hoạch ${planQty}.`); renderProgress(); return; }
   const totalDanMoi = tongCongDoan(o,'dan') - (congDoan==='dan' ? oldVal : 0) + (congDoan==='dan' ? newVal : 0);
   const totalMayMoi = tongCongDoan(o,'may') - (congDoan==='may' ? oldVal : 0) + (congDoan==='may' ? newVal : 0);
   const totalDongGoiMoi = tongCongDoan(o,'dong_goi') - (congDoan==='dong_goi' ? oldVal : 0) + (congDoan==='dong_goi' ? newVal : 0);
-  if(totalMayMoi > totalDanMoi){
+  if(totalMayMoi > totalDanMoi && !(canManage2() && congDoan==='may')){
     if(congDoan === 'dan') alert(`Không thể giảm Đã dán xuống ${totalDanMoi} vì đã có ${totalMayMoi} sản phẩm Đã may.`);
     else alert(`Đã may không được lớn hơn Đã dán. Hiện có thể ghi tối đa ${Math.max(0,totalDanMoi-(tongCongDoan(o,'may')-oldVal))}.`);
     renderProgress();
     return;
   }
-  if(totalDongGoiMoi > totalMayMoi){
+  if(totalDongGoiMoi > totalMayMoi && !(canManage2() && congDoan==='dong_goi')){
     if(congDoan === 'may') alert(`Không thể giảm Đã may xuống ${totalMayMoi} vì đã có ${totalDongGoiMoi} sản phẩm Đã đóng gói.`);
     else alert(`Đã đóng gói không được lớn hơn Đã may. Hiện có thể ghi tối đa ${Math.max(0,totalMayMoi-(tongCongDoan(o,'dong_goi')-oldVal))}.`);
     renderProgress();
     return;
   }
+  let actor=undefined;
+  if(CONG_DOAN_TINH_KPI_CA_NHAN.includes(congDoan)){
+    const daHoanTat=congDoan==='may' ? totalDanMoi>0&&totalMayMoi>=totalDanMoi : totalMayMoi>0&&totalDongGoiMoi>=totalMayMoi;
+    actor=daHoanTat?await chonNguoiHoanThanhCongDoan(congDoan):null;
+    if(daHoanTat&&!actor){ renderProgress(); return; }
+  }
   if(parsed == null){
     delete entry[congDoan];
     delete entry[`_${congDoan}_to`];
+    ganNguoiHoanThanhCongDoan(entry,congDoan,null);
     recordStagePatch(o,ngay,congDoan,null,null);
   }else{
     entry[congDoan] = parsed;
     // Tổ may/đóng gói là bộ phận công đoạn; KPI vẫn phải thuộc Tổ 1–5 phụ trách ngày đó.
     const toLam = toKpiKhiNhapCongDoan(o,ngay);
     if(toLam) entry[`_${congDoan}_to`] = toLam;
-    recordStagePatch(o,ngay,congDoan,parsed,toLam);
+    ganNguoiHoanThanhCongDoan(entry,congDoan,actor);
+    recordStagePatch(o,ngay,congDoan,parsed,toLam,actor?.worker_id||actor?.code||null);
   }
   delete entry._legacy;
   if(!CONG_DOAN.some(k=>entry[k] != null && entry[k] !== '')) delete history[ngay];
@@ -5091,6 +5615,36 @@ async function handleStageQtyChange(orderId, ngay, congDoan, rawVal){
   queueSave('assignments');
 }
 
+function renderOpsCommandCenter(rows, dayVal, totalPlan){
+  const flow=document.getElementById('opsStageFlow');
+  const alertBox=document.getElementById('opsAlertStrip');
+  const subtitle=document.getElementById('opsCommandSubtitle');
+  if(!flow||!alertBox) return;
+  const actual=(stage)=>rows.reduce((sum,o)=>sum+(dayVal==='all'
+    ? tongCongDoan(o,stage)
+    : soCongDoan(giaTriCongDoanNgay(o,dayVal,stage))),0);
+  const dan=actual('dan'), may=actual('may'), dongGoi=actual('dong_goi');
+  // Mỗi công đoạn sau chỉ nhận đầu vào thực tế từ công đoạn trước.
+  // Tuyệt đối không dùng kế hoạch Dán làm sản lượng thực tế của May/Đóng gói.
+  const stages=[
+    {name:'Dán',done:dan,input:totalPlan,pending:Math.max(totalPlan-dan,0)},
+    {name:'May',done:may,input:dan,pending:Math.max(dan-may,0)},
+    {name:'Đóng gói',done:dongGoi,input:may,pending:Math.max(may-dongGoi,0)}
+  ];
+  const maxPending=Math.max(0,...stages.map(s=>s.pending));
+  const stageHtml=s=>{
+    const rate=s.input>0?Math.min(100,Math.round(s.done/s.input*100)):0;
+    const state=s.pending===0&&s.input>0?'is-ok':(s.pending===maxPending&&maxPending>0?'is-danger':'is-warn');
+    const status=s.input===0?'Chưa có đầu vào':(s.pending===0?'Đã hoàn tất':`Chờ ${s.pending.toLocaleString('vi-VN')}`);
+    return `<article class="ops-stage-card ${state}"><div class="ops-stage-top"><span class="ops-stage-name">${s.name}</span><span class="ops-stage-status">${status}</span></div><div class="ops-stage-value">${s.done.toLocaleString('vi-VN')}</div><div class="ops-stage-meta"><span>Đầu vào <strong>${s.input.toLocaleString('vi-VN')}</strong></span><span>Hoàn thành <strong>${rate}%</strong></span></div></article>`;
+  };
+  flow.innerHTML=stages.map((s,i)=>stageHtml(s)+(i<stages.length-1?'<div class="ops-stage-arrow" aria-hidden="true">→</div>':'')).join('');
+  const bottleneck=stages.find(s=>s.pending===maxPending&&maxPending>0);
+  alertBox.classList.toggle('show',!!bottleneck);
+  alertBox.innerHTML=bottleneck?`<strong>⚠ Điểm cần xử lý:</strong><span>Công đoạn ${bottleneck.name} đang chờ ${bottleneck.pending.toLocaleString('vi-VN')} sản phẩm.</span>`:'';
+  if(subtitle) subtitle.textContent=`${dayVal==='all'?'Tất cả ngày':`Ngày ${dayVal}`} · Luồng thực tế Dán → May → Đóng gói`;
+}
+
 function renderProgress(){
   populateProgressSelects();
   const filtered = getFilteredProgressRows();
@@ -5099,18 +5653,15 @@ function renderProgress(){
   progressTable.classList.toggle('employee-stage-view', !!congDoanNhanVien);
   if(congDoanNhanVien) progressTable.dataset.employeeStage = congDoanNhanVien;
   else delete progressTable.dataset.employeeStage;
-  // Nhân viên chỉ xem hàng chờ công đoạn mình, nên không hiện vòng KPI theo tổ
-  // từ tập dữ liệu đã lọc (tránh tạo ra phần trăm sai và gây hiểu nhầm).
+  // Thẻ tiến độ dùng đúng công đoạn của tài khoản; May/Đóng gói không gán tỷ lệ
+  // kế hoạch của Dán mà chỉ hiện danh sách việc đang chờ.
   const dayValRing = progressDaySelect.value;
   const ringBox = document.getElementById('progressTeamRings');
-  if(congDoanNhanVien){
-    ringBox.style.display = 'none';
-    ringBox.innerHTML = '';
-  }else{
-    ringBox.style.display = '';
-    renderTeamRings('progressTeamRings', filtered, dayValRing !== 'all',
-                    currentUser && currentUser.role === 'nhan_vien', dayValRing);
-  }
+  const ringCongDoan=congDoanNhanVien||'dong_goi';
+  const ringOrders=getProgressTeamCardRows(ringCongDoan);
+  const chiTo=TEAM_OPTIONS.includes(progressTeamSelect.value)?progressTeamSelect.value:null;
+  ringBox.style.display='';
+  renderTeamRings('progressTeamRings',ringOrders,dayValRing!=='all',!!congDoanNhanVien,dayValRing,ringCongDoan,chiTo,ringCongDoan!=='dan');
 
   const dayVal = progressDaySelect.value;
   const totalPlan = filtered.filter(isPlannedOrder).reduce((a,r)=>a+keHoachTrongNgay(r,dayVal),0);
@@ -5123,6 +5674,7 @@ function renderProgress(){
   const partialCount = filtered.filter(r=>getOrderStatus(r)==='partial').length;
   const inProgressCount = filtered.length - doneCount - partialCount;
   const rate = totalPlan>0 ? Math.round((totalDone/totalPlan)*1000)/10 : 0;
+  renderOpsCommandCenter(filtered,dayVal,totalPlan);
 
   // Phần thiếu đã tách ra nhưng CHƯA được giao tổ hỗ trợ — đếm trên toàn bộ dữ liệu,
   // không lọc theo ngày, để quản lý không bỏ sót đơn nào.
@@ -6681,6 +7233,9 @@ document.getElementById('wfModal').addEventListener('click', (e)=>{
 
 // ---- Đăng nhập / đăng xuất ----
 document.getElementById('loginBtn').addEventListener('click', async ()=>{
+  if(SUPABASE_VARIANT){
+    const err=document.getElementById('loginError'); err.textContent='Hãy mở MiniApp từ Telegram để xác thực Telegram ID.'; err.style.display='block'; return;
+  }
   const input = document.getElementById('loginCodeInput');
   const err = document.getElementById('loginError');
   const btn = document.getElementById('loginBtn');
@@ -6812,13 +7367,29 @@ async function bootstrap(){
     document.documentElement.setAttribute('data-dashboard-variant','supabase');
     const versionLabel=document.querySelector('footer strong');
     if(versionLabel) versionLabel.textContent='Telegram Mini App · thử nghiệm 0.2';
+    const codeInput=document.getElementById('loginCodeInput'),loginBtn=document.getElementById('loginBtn'),viewerBtn=document.getElementById('viewerBtn');
+    if(codeInput) codeInput.style.display='none';
+    if(loginBtn){loginBtn.textContent='Mở bằng Telegram';loginBtn.disabled=true;}
+    if(viewerBtn) viewerBtn.style.display='none';
+    const loginLabel=codeInput?.previousElementSibling; if(loginLabel) loginLabel.textContent='Telegram ID được xác thực tự động';
   }
   let coSession = restoreLoginFast();
-  if(SUPABASE_VARIANT){
+  if(LOCAL_SUPABASE_UI_TEST){
+    currentUser={code:'local-ui-test',name:'Kiểm thử local',role:'quan_ly',unit:null};
+    coSession=true;
+    document.documentElement.classList.add('khsx-fast-session');
+    document.documentElement.setAttribute('data-local-ui-test','1');
+    const overlay=document.getElementById('loginOverlay');
+    if(overlay) overlay.style.display='none';
+    applyRoleUI();
+  }
+  // Local/file là chế độ kiểm thử giao diện cố định vai Quản lý. Không được để
+  // phiên Supabase cũ trong trình duyệt ghi đè thành Khách/Nhân viên sau khi trang đã hiện.
+  if(SUPABASE_VARIANT && !LOCAL_SUPABASE_UI_TEST){
     try{ coSession = (await restoreSupabaseSession()) || coSession; }
     catch(e){ console.warn('Chưa khôi phục được phiên Supabase',e); }
   }
-  if(SUPABASE_VARIANT){
+  if(SUPABASE_VARIANT && !LOCAL_SUPABASE_UI_TEST){
     const {data:{session}} = supabaseDb ? await supabaseDb.auth.getSession() : {data:{session:null}};
     if(!session){ currentUser=null; coSession=false; document.getElementById('loginOverlay').style.display='flex'; }
   }
@@ -6876,6 +7447,13 @@ async function bootstrap(){
       await flushSupabaseStageOutbox();
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
       saveLocalCache(); startPolling();
+      return;
+    }
+    if(LOCAL_SUPABASE_UI_TEST){
+      const status=document.getElementById('syncStatus');
+      if(status){status.textContent='Chế độ kiểm thử local · chưa ghi Supabase';status.style.color='var(--warning)';}
+      renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
+      startPolling();
       return;
     }
     document.getElementById('loginOverlay').style.display='flex';
