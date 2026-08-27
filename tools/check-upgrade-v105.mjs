@@ -7,7 +7,7 @@ const clone=fs.readFileSync(new URL('./build-live-clone.mjs',import.meta.url),'u
 const edgeAdmin=fs.readFileSync(new URL('../supabase/functions/khsx-admin-link-telegram/index.ts',import.meta.url),'utf8');
 
 const checks=[
-  ['version 111 + cache-busted core',/const APP_VERSION = 111;/.test(html)&&/khsx-data-core\.js\?v=111/.test(html)],
+  ['version 112 + cache-busted core',/const APP_VERSION = 112;/.test(html)&&/khsx-data-core\.js\?v=112/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -27,6 +27,14 @@ const checks=[
   ,['Supabase worker team persistence',/khsx_worker_team_assignments/.test(html)&&/khsx_worker_team_assignments/.test(schema)&&/luuGanToCoXacNhan/.test(html)]
   ,['Telegram worker provisioning',/khsx-admin-link-telegram/.test(html)&&/worker:/.test(html)&&/provisionTelegramForWorker/.test(html)&&/Deno\.serve/.test(edgeAdmin)&&/khsx_profiles/.test(edgeAdmin)&&/createUser/.test(edgeAdmin)]
   ,['Team assignment read-after-write guard',/supabaseOperationalLoadSeq/.test(html)&&/maybeSingle\(\)/.test(html)&&/response cũ/.test(html)]
+  ,['Management poison item cannot block later writes',/code==='23503'\|\|code==='22P02'/.test(html)&&/if\(ok==='terminal'\) continue/.test(html)]
+  ,['Pending management patches survive reload',/overlayPendingSupabaseManagement/.test(html)&&/Object\.keys\(supabaseManagementOutbox\)\.length/.test(html)]
+  ,['Manual orders exist remotely before assignment',/from\('khsx_orders'\)\.insert/.test(html)&&/source:'miniapp'/.test(html)&&/Chưa lưu được đơn/.test(html)]
+  ,['Deleted orders are persisted and hidden while offline',/kind==='delete'/.test(html)&&/deleted_at/.test(html)&&/pendingDeleteIds/.test(html)&&/purgeSupabaseOutboxForOrder/.test(html)]
+  ,['Dán zero still enables support assignment',/function daNhapDanTrongNgay/.test(html)&&/hasOwnProperty\.call\(entry,'dan'\)/.test(html)]
+  ,['Capacity defaults to today',/id="capacityQuickToday"/.test(html)&&/datCapacityRange\(d,d\)/.test(html)]
+  ,['Mobile manager approval remains scrollable',/#staffUsersModal[\s\S]*?#telegramAccessRequests \.table-scroll[\s\S]*?overflow-x:auto/.test(html)&&/approve-telegram-btn/.test(html)]
+  ,['Current manager excluded from Telegram link targets',/String\(p\.user_id\)!==String\(currentUser\?\.auth_user_id/.test(html)]
   ,['Test mode removed from production UI',!/stageTestMenuBtn|stageTestBtn|stageTestModal|managerStageTestMode/.test(html)]
   ,['Local Supabase requires real session',!/LOCAL_SUPABASE_UI_TEST|LOCAL_DROP_DEMO_MODE|TEST-RỚT-8/.test(html)]
 ];
@@ -37,4 +45,4 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v111 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v112 checks passed (${checks.length}/${checks.length}).`);

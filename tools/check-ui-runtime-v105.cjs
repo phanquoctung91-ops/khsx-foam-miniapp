@@ -30,6 +30,7 @@ const {chromium}=require('playwright');
   console.log('PASS  Telegram ID registration control is available');
   await page.evaluate(()=>{
     currentUser={code:'ui-test',name:'Nhân viên Tổ 1',role:'nhan_vien',unit:'Tổ 1'};
+    document.getElementById('loginOverlay').style.display='none';
     sheetRows=[{id:'ui_order_1',date:'27/08/2026',ma:'SORA15-6',dong:'Sora',ngang:'160',dai:'200',day:'15',so_luong:9,ghi_chu:'Ưu tiên kiểm tra'}];
     dynamicOrders=[];
     assignments={ui_order_1:{to:'Tổ 1',to_goc:'Tổ 1',stage_by_date:{},support_by_date:{}}};
@@ -53,17 +54,43 @@ const {chromium}=require('playwright');
   if(process.env.KHSX_EMPLOYEE_SCREENSHOT) await page.screenshot({path:process.env.KHSX_EMPLOYEE_SCREENSHOT,fullPage:true});
 
   await page.evaluate(()=>{
-    currentUser={code:'ui-manager',name:'Quản lý',role:'quan_ly',unit:''};
+    currentUser={code:'ui-manager',name:'Quản lý',role:'quan_ly',unit:'',auth_user_id:'manager-auth'};
+    assignments.ui_order_1.stage_by_date={'27/08/2026':{dan:0}};
     applyRoleUI();renderProgress();
   });
   const manager=await page.evaluate(()=>({
     workspace:getComputedStyle(document.getElementById('employeeStageWorkspace')).display,
     table:getComputedStyle(document.getElementById('progressTable')).display,
-    hasTestButton:!!document.getElementById('stageTestMenuBtn') || !!document.getElementById('stageTestBtn')
+    hasTestButton:!!document.getElementById('stageTestMenuBtn') || !!document.getElementById('stageTestBtn'),
+    supportAfterZero:document.querySelectorAll('.support-day-select[data-order-id="ui_order_1"]').length
   }));
-  if(manager.workspace!=='none'||manager.table==='none'||manager.hasTestButton)
+  if(manager.workspace!=='none'||manager.table==='none'||manager.hasTestButton||manager.supportAfterZero!==1)
     throw new Error(`Manager mobile failed: ${JSON.stringify(manager)}`);
-  console.log('PASS  manager keeps full dashboard and no test controls');
+  console.log('PASS  manager mobile + Dán 0 support assignment');
+
+  const approval=await page.evaluate(()=>{
+    supabaseAdminProfiles=[
+      {user_id:'manager-auth',display_name:'Quản lý hiện tại',role:'quan_ly',active:true},
+      {user_id:'employee-auth',display_name:'Nhân viên khác',role:'nhan_vien',active:true}
+    ];
+    supabaseWorkers=[];
+    supabaseAdminTelegramRequests=[{telegram_user_id:'123',telegram_display_name:'Người chờ duyệt'}];
+    renderSupabaseTelegramAdmin();
+    document.getElementById('staffUsersModal').style.display='block';
+    const modal=document.querySelector('#staffUsersModal>div');
+    const options=supabaseAdminProfileOptions();
+    return {
+      modalWidth:modal.getBoundingClientRect().width,
+      viewport:window.innerWidth,
+      overflow:getComputedStyle(document.querySelector('#telegramAccessRequests .table-scroll')).overflowX,
+      currentManagerHidden:!options.includes('Quản lý hiện tại'),
+      employeeVisible:options.includes('Nhân viên khác')
+    };
+  });
+  if(approval.modalWidth>approval.viewport||approval.overflow!=='auto'||!approval.currentManagerHidden||!approval.employeeVisible)
+    throw new Error(`Manager approval mobile failed: ${JSON.stringify(approval)}`);
+  console.log('PASS  mobile approval area and Telegram target filtering');
+  await page.evaluate(()=>document.getElementById('staffUsersModal').style.display='none');
 
   const ring=page.locator('#progressTeamRings .team-ring-clickable').first();
   if(await ring.count()===0) throw new Error('No clickable team order for stage-choice test');
