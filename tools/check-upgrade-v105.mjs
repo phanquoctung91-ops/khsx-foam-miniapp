@@ -7,7 +7,7 @@ const clone=fs.readFileSync(new URL('./build-live-clone.mjs',import.meta.url),'u
 const edgeAdmin=fs.readFileSync(new URL('../supabase/functions/khsx-admin-link-telegram/index.ts',import.meta.url),'utf8');
 
 const checks=[
-  ['version 110 + cache-busted core',/const APP_VERSION = 110;/.test(html)&&/khsx-data-core\.js\?v=110/.test(html)],
+  ['version 111 + cache-busted core',/const APP_VERSION = 111;/.test(html)&&/khsx-data-core\.js\?v=111/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -27,6 +27,8 @@ const checks=[
   ,['Supabase worker team persistence',/khsx_worker_team_assignments/.test(html)&&/khsx_worker_team_assignments/.test(schema)&&/luuGanToCoXacNhan/.test(html)]
   ,['Telegram worker provisioning',/khsx-admin-link-telegram/.test(html)&&/worker:/.test(html)&&/provisionTelegramForWorker/.test(html)&&/Deno\.serve/.test(edgeAdmin)&&/khsx_profiles/.test(edgeAdmin)&&/createUser/.test(edgeAdmin)]
   ,['Team assignment read-after-write guard',/supabaseOperationalLoadSeq/.test(html)&&/maybeSingle\(\)/.test(html)&&/response cũ/.test(html)]
+  ,['Test mode removed from production UI',!/stageTestMenuBtn|stageTestBtn|stageTestModal|managerStageTestMode/.test(html)]
+  ,['Local Supabase requires real session',!/LOCAL_SUPABASE_UI_TEST|LOCAL_DROP_DEMO_MODE|TEST-RỚT-8/.test(html)]
 ];
 
 let failed=0;
@@ -35,4 +37,4 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v110 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v111 checks passed (${checks.length}/${checks.length}).`);
