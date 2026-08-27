@@ -238,3 +238,49 @@ $$;
 
 revoke all on function public.khsx_set_day_locks(text,jsonb,jsonb) from public,anon,authenticated,service_role;
 grant execute on function public.khsx_set_day_locks(text,jsonb,jsonb) to authenticated;
+
+-- Phân tổ mặc định của nhân viên được lưu riêng, không lẫn với unit công đoạn
+-- trong khsx_profiles.
+create unique index if not exists khsx_profiles_worker_unique_idx
+  on public.khsx_profiles(worker_id) where worker_id is not null;
+
+create table if not exists public.khsx_worker_team_assignments (
+  worker_id text primary key references public.khsx_workers(id) on delete cascade,
+  team_name public.khsx_unit not null check (team_name in (
+    'To 1'::public.khsx_unit, 'To 2'::public.khsx_unit, 'To 3'::public.khsx_unit,
+    'To 4'::public.khsx_unit, 'To 5'::public.khsx_unit
+  )),
+  assigned_by uuid references auth.users(id),
+  updated_at timestamptz not null default now()
+);
+alter table public.khsx_worker_team_assignments enable row level security;
+revoke all on public.khsx_worker_team_assignments from anon,authenticated;
+grant select,insert,update,delete on public.khsx_worker_team_assignments to authenticated;
+drop policy if exists khsx_worker_team_assignments_select on public.khsx_worker_team_assignments;
+drop policy if exists khsx_worker_team_assignments_insert on public.khsx_worker_team_assignments;
+drop policy if exists khsx_worker_team_assignments_update on public.khsx_worker_team_assignments;
+drop policy if exists khsx_worker_team_assignments_delete on public.khsx_worker_team_assignments;
+create policy khsx_worker_team_assignments_select on public.khsx_worker_team_assignments
+  for select to authenticated using (true);
+create policy khsx_worker_team_assignments_insert on public.khsx_worker_team_assignments
+  for insert to authenticated with check ((select private.khsx_is_manager()));
+create policy khsx_worker_team_assignments_update on public.khsx_worker_team_assignments
+  for update to authenticated using ((select private.khsx_is_manager()))
+  with check ((select private.khsx_is_manager()));
+create policy khsx_worker_team_assignments_delete on public.khsx_worker_team_assignments
+  for delete to authenticated using ((select private.khsx_is_manager()));
+
+-- Khi quản lý đổi phân tổ, các thiết bị đang mở nhận ngay thay đổi thay vì
+-- phải chờ lần polling kế tiếp.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'khsx_worker_team_assignments'
+  ) then
+    alter publication supabase_realtime add table public.khsx_worker_team_assignments;
+  end if;
+end $$;
