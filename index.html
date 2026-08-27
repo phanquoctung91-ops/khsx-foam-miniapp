@@ -6879,10 +6879,9 @@ function renderSupabaseTelegramAdmin(){
   if(!box) return;
   const requests=supabaseAdminTelegramRequests||[];
   if(!requests.length){ box.innerHTML='<div style="font-size:11.5px;color:var(--text2);">Không có yêu cầu Telegram đang chờ duyệt.</div>'; return; }
-  const options=supabaseAdminProfileOptions();
   const roleOptions='<option value="">Chọn vai...</option>'+Object.entries(ROLE_LABELS).filter(([role])=>role!=='chi_xem').map(([role,label])=>`<option value="${role}">${label}</option>`).join('');
   const unitOptions='<option value="">Chọn tổ/công đoạn...</option>'+[...TEAM_OPTIONS,'Tổ may','Tổ đóng gói'].map(t=>`<option value="${t}">${t}</option>`).join('');
-  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:5px;">Yêu cầu đang chờ duyệt</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Hồ sơ</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>`<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span></td><td><select class="telegram-request-profile" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}">${options}</select></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit">${unitOptions}</select></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`).join('')}</tbody></table></div>`;
+  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:5px;">Yêu cầu đang chờ duyệt</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Worker ID</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>`<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span></td><td><input class="telegram-request-worker" placeholder="Nhập Worker ID" style="width:120px;padding:7px;border:1px solid #cbd8e8;border-radius:8px" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}" /></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit">${unitOptions}</select></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 async function loadSupabaseTelegramAdminData(){
   if(!SUPABASE_VARIANT || !supabaseDb || !canManage()) return false;
@@ -7098,12 +7097,12 @@ document.getElementById('telegramAccessRequests')?.addEventListener('click', asy
   const btn=e.target.closest('.approve-telegram-btn');
   if(!btn) return;
   const row=btn.closest('tr');
-  const profile=row?.querySelector('.telegram-request-profile');
+  const worker=row?.querySelector('.telegram-request-worker');
   const role=row?.querySelector('.telegram-request-role');
   const unit=row?.querySelector('.telegram-request-unit');
-  if(!profile || !profile.value || !role || !unit){ setAdminTelegramStatus('Chọn hồ sơ, vai và tổ trước khi duyệt.'); return; }
+  if(!worker || !worker.value.trim() || !role || !unit){ setAdminTelegramStatus('Nhập Worker ID, chọn vai và tổ trước khi duyệt.'); return; }
   btn.disabled=true;
-  try{ await approveTelegramRequest(btn.dataset.telegramId,profile.value,role.value,unit.value,profile.dataset.telegramUsername||''); }
+  try{ await approveTelegramRequest(btn.dataset.telegramId,'worker:'+worker.value.trim(),role.value,unit.value,worker.dataset.telegramUsername||''); }
   finally{ btn.disabled=false; }
 });
 document.addEventListener('keydown', (e)=>{
