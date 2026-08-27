@@ -4,9 +4,10 @@ const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const core=fs.readFileSync(new URL('../js/khsx-data-core.js',import.meta.url),'utf8');
 const schema=fs.readFileSync(new URL('../supabase/schema/miniapp_upgrade_v1.sql',import.meta.url),'utf8');
 const clone=fs.readFileSync(new URL('./build-live-clone.mjs',import.meta.url),'utf8');
+const edgeAdmin=fs.readFileSync(new URL('../supabase/functions/khsx-admin-link-telegram/index.ts',import.meta.url),'utf8');
 
 const checks=[
-  ['version 106 + cache-busted core',/const APP_VERSION = 106;/.test(html)&&/khsx-data-core\.js\?v=106/.test(html)],
+  ['version 110 + cache-busted core',/const APP_VERSION = 110;/.test(html)&&/khsx-data-core\.js\?v=110/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -20,6 +21,12 @@ const checks=[
   ['clone reports chain issues without auto-fix',/const chainIssues=\[\]/.test(clone)&&!/function raiseStage\(/.test(clone)]
   ,['manager gets explicit chain review list',/id="dataIntegrityAlert"/.test(html)&&/function saiChuoiCongDoan\(/.test(html)]
   ,['Supabase day-lock save path',/saveSupabaseDayLocks/.test(html)&&/khsx_set_day_locks/.test(html)&&/p_lock_changes/.test(schema)]
+  ,['Realtime reconnect fallback',/scheduleSupabaseRealtimeReconnect/.test(html)&&/CHANNEL_ERROR/.test(html)&&/TIMED_OUT/.test(html)&&/supabaseRealtimeHealthy/.test(html)]
+  ,['Telegram ID registration',/id="telegramRegisterBtn"/.test(html)&&/async function registerTelegramId\(\)/.test(html)&&/ACCESS_NOT_PROVISIONED/.test(html)]
+  ,['Telegram admin linking',/id="supabaseTelegramAdmin"/.test(html)&&/khsx_telegram_links/.test(html)&&/linkTelegramToProfile/.test(html)]
+  ,['Supabase worker team persistence',/khsx_worker_team_assignments/.test(html)&&/khsx_worker_team_assignments/.test(schema)&&/luuGanToCoXacNhan/.test(html)]
+  ,['Telegram worker provisioning',/khsx-admin-link-telegram/.test(html)&&/worker:/.test(html)&&/provisionTelegramForWorker/.test(html)&&/Deno\.serve/.test(edgeAdmin)&&/khsx_profiles/.test(edgeAdmin)&&/createUser/.test(edgeAdmin)]
+  ,['Team assignment read-after-write guard',/supabaseOperationalLoadSeq/.test(html)&&/maybeSingle\(\)/.test(html)&&/response cũ/.test(html)]
 ];
 
 let failed=0;
@@ -28,4 +35,4 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v106 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v110 checks passed (${checks.length}/${checks.length}).`);

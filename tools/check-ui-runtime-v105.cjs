@@ -20,6 +20,14 @@ const {chromium}=require('playwright');
     await browser.close();
     throw new Error(`Bootstrap timeout: ${JSON.stringify(state)}; page errors: ${errors.join(' | ')}`);
   }
+  const telegramRegistration=await page.evaluate(()=>({
+    exists:!!document.getElementById('telegramRegisterBtn'),
+    display:getComputedStyle(document.getElementById('telegramRegisterBtn')).display,
+    status:!!document.getElementById('telegramRegisterStatus')
+  }));
+  if(!telegramRegistration.exists||telegramRegistration.display==='none'||!telegramRegistration.status)
+    throw new Error(`Telegram registration UI failed: ${JSON.stringify(telegramRegistration)}`);
+  console.log('PASS  Telegram ID registration control is available');
   await page.evaluate(()=>{
     currentUser={code:'ui-test',name:'Nhân viên Tổ 1',role:'nhan_vien',unit:'Tổ 1'};
     sheetRows=[{id:'ui_order_1',date:'27/08/2026',ma:'SORA15-6',dong:'Sora',ngang:'160',dai:'200',day:'15',so_luong:9,ghi_chu:'Ưu tiên kiểm tra'}];
