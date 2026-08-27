@@ -103,8 +103,30 @@ const movedTo20=new Set([
 const fixedOnPlanDate=new Map([
   ['r_15_08_2026_LAEZ10_2_120_200_10_2_1',{date:'15/08/2026',qty:2,team:'Tổ 4'}]
 ]);
+// Hiệu chỉnh dữ liệu cũ đã được quản lý xác nhận: hai dòng hoàn tất ngày 20/08
+// nhưng sheet nguồn thiếu tổ. Gán Tổ 4 để KPI lịch sử không bị treo; dữ liệu mới
+// không đi qua bảng này và vẫn lấy tổ/người từ tài khoản thực hiện.
+const verifiedLegacyTeam4=new Set([
+  'r_20_08_2026_SORA15_8_180_220_15_1_1',
+  'r_20_08_2026_SORA20_4_140_160_30_1_1'
+]);
+const verifiedChainBalance=new Map([
+  ['r_24_08_2026_SORA10_4_140_200_10_15_1',{date:'24/08/2026',may:15,team:'Tổ 4'}]
+]);
 for(const [id,o] of orderMap){
   const a=assignments[id]||(assignments[id]={});
+  if(verifiedLegacyTeam4.has(id)){
+    a.to='Tổ 4';
+    Object.values(a.stage_by_date||{}).forEach(e=>{
+      ['dan','may','dong_goi'].forEach(stage=>{ if(e[stage]!=null) e[`_${stage}_to`]='Tổ 4'; });
+    });
+  }
+  const balance=verifiedChainBalance.get(id);
+  if(balance){
+    const e=a.stage_by_date?.[balance.date]||(a.stage_by_date||(a.stage_by_date={}))[balance.date]||{};
+    e.may=balance.may; e._may_to=balance.team;
+    a.stage_by_date[balance.date]=e;
+  }
   if(movedTo20.has(id)&&a.stage_by_date?.['21/08/2026']) delete a.stage_by_date['21/08/2026'];
   const fixed=fixedOnPlanDate.get(id);
   if(fixed){

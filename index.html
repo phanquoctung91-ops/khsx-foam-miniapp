@@ -9,7 +9,7 @@
 <title>Kế Hoạch sản xuất - Tổ Mút Foam</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
-<script src="js/khsx-data-core.js?v=105"></script>
+<script src="js/khsx-data-core.js?v=106"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   :root{
@@ -1124,7 +1124,7 @@ html[data-local-ui-test="1"] #loginOverlay{display:none !important;}
     <div class="kpis" id="progressKpis" style="margin-bottom:16px;"></div>
     <div class="team-ring-row" id="progressTeamRings" style="margin-bottom:16px;"></div>
     <section id="employeeStageWorkspace" class="employee-stage-workspace" aria-label="Công việc công đoạn">
-      <div id="employeeStageHead" class="employee-stage-head"></div>
+      <div id="employeeStageHead" class="employee-stage-head"><button id="exitStagePreviewBtn" type="button" class="capacity-quick-btn" style="display:none;">Trở về giao diện quản lý</button></div>
       <div id="employeeCapacityAlert" class="employee-capacity-alert"></div>
       <div id="employeeOrderList" class="employee-order-list"></div>
     </section>
@@ -1189,6 +1189,17 @@ html[data-local-ui-test="1"] #loginOverlay{display:none !important;}
       <label class="capacity-section"><strong>Tổ May</strong><select id="testMayWorker" style="width:100%;margin:8px 0;"><option value="loan_anh">Loan Anh</option><option value="thao_vy">Thảo Vy</option><option value="bao_cham">Bảo Chăm</option></select><button class="primary-btn" data-test-stage="may">Mở giao diện May</button></label>
       <div class="capacity-section"><strong>Tổ Đóng gói</strong><div style="margin:8px 0;color:var(--text2);">Minh Thuận</div><button class="primary-btn" data-test-stage="dong_goi">Mở giao diện Đóng gói</button></div>
       <button id="exitStageTestBtn" class="capacity-quick-btn" style="display:none;">Trở về giao diện quản lý</button>
+    </div>
+  </div>
+</div>
+
+<div id="stageChoiceModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="stageChoiceTitle">
+  <div class="capacity-dialog" style="max-width:420px;">
+    <div class="capacity-head"><h3 id="stageChoiceTitle" style="margin:0;font-size:18px;">Chọn công đoạn cần nhập</h3><button id="closeStageChoiceBtn" class="capacity-quick-btn" type="button">Đóng</button></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <button class="primary-btn" type="button" data-stage-choice="dan">Dán</button>
+      <button class="primary-btn" type="button" data-stage-choice="may">May</button>
+      <button class="primary-btn" type="button" data-stage-choice="dong_goi">Đóng gói</button>
     </div>
   </div>
 </div>
@@ -2453,7 +2464,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 105;
+const APP_VERSION = 106;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3138,6 +3149,28 @@ function persistSupabaseManagementOutbox(){
 }
 function dmyToIso(v){
   const p=parseDMY(v); return p ? `${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}` : null;
+}
+async function saveSupabaseDayLocks(kind,picked,allDates, snapshots={}){
+  if(!SUPABASE_VARIANT || !supabaseDb) return {ok:false,error:new Error('SUPABASE_UNAVAILABLE')};
+  const dates=Array.from(new Set((picked||[]).map(dmyToIso).filter(Boolean)));
+  const changes=Object.fromEntries(Array.from(new Set(allDates||[])).map(d=>[dmyToIso(d),dates.includes(dmyToIso(d))]));
+  const snapshotRows={};
+  if(kind==='plan'){
+    dates.forEach(iso=>{
+      const d=isoToDMY(iso), rows=snapshots[d];
+      if(Array.isArray(rows) && rows.length) snapshotRows[iso]=rows;
+    });
+  }
+  const {data:{session}}=await supabaseDb.auth.getSession();
+  if(!session) return {ok:false,error:new Error('SESSION_REQUIRED')};
+  const {error}=await supabaseDb.rpc('khsx_set_day_locks',{
+    p_lock_kind:kind,p_lock_changes:changes,p_snapshot_rows:snapshotRows
+  });
+  if(error){
+    console.warn('Supabase không lưu được chốt ngày',kind,error);
+    return {ok:false,error};
+  }
+  return {ok:true};
 }
 function queueSupabaseManagementPatch(kind,o,ngay=null){
   if(!SUPABASE_VARIANT || !o) return;
@@ -4822,10 +4855,29 @@ async function moPopupNhapNhanhCongDoan(ids,ngay,congDoan){
   const raw=prompt(`${nhan} — ${o.dong||o.ma||''} ${formatKichThuoc(o)} — ngày ${ngay}:\nNhập số lượng đã làm`,hienTai!=null?String(hienTai):'');
   if(raw!=null) await handleStageQtyChange(id,ngay,congDoan,raw);
 }
+let pendingStageChoice=null;
+function moPopupChonCongDoan(ids,ngay){
+  pendingStageChoice={ids,ngay};
+  const modal=document.getElementById('stageChoiceModal'); if(modal) modal.style.display='block';
+}
+function dongPopupChonCongDoan(){
+  pendingStageChoice=null;
+  const modal=document.getElementById('stageChoiceModal'); if(modal) modal.style.display='none';
+}
 document.getElementById('progressTeamRings').addEventListener('click',e=>{
   const t=e.target.closest('.team-ring-clickable'); if(!t)return;
   const ids=(t.dataset.ids||'').split('|').filter(Boolean);
-  if(ids.length&&t.dataset.ngay&&t.dataset.stage) moPopupNhapNhanhCongDoan(ids,t.dataset.ngay,t.dataset.stage);
+  if(!ids.length||!t.dataset.ngay)return;
+  if(canManage2() && !managerStageTestMode) moPopupChonCongDoan(ids,t.dataset.ngay);
+  else if(t.dataset.stage) moPopupNhapNhanhCongDoan(ids,t.dataset.ngay,t.dataset.stage);
+});
+document.getElementById('closeStageChoiceBtn').addEventListener('click',dongPopupChonCongDoan);
+document.getElementById('stageChoiceModal').addEventListener('click',async e=>{
+  if(e.target.id==='stageChoiceModal'){dongPopupChonCongDoan();return;}
+  const btn=e.target.closest('[data-stage-choice]');
+  if(!btn||!pendingStageChoice)return;
+  const {ids,ngay}=pendingStageChoice; dongPopupChonCongDoan();
+  await moPopupNhapNhanhCongDoan(ids,ngay,btn.dataset.stageChoice);
 });
 function tinhNangLucCaNhan(congDoan,tuKhoa,denKhoa){
   if(SUPABASE_VARIANT && supabaseStageCredits.length){
@@ -4965,12 +5017,14 @@ function setManagerStageTest(stage){
   applyRoleUI();
   if(stage==='dan'){ progressTeamSelect.value=managerStageTestMode.team; }
   const mainBtn=document.getElementById('stageTestBtn'); mainBtn.textContent=`Kết thúc test ${stage==='dan'?'Dán':stage==='may'?'May':'Đóng gói'}`; mainBtn.style.background='var(--danger)';
+  const exitBtn=document.getElementById('exitStageTestBtn'); if(exitBtn) exitBtn.style.display='inline-flex';
+  const previewExit=document.getElementById('exitStagePreviewBtn'); if(previewExit) previewExit.style.display='inline-flex';
   renderProgress();
   document.getElementById('panel-progress')?.scrollIntoView({block:'start'});
 }
 document.getElementById('stageTestBtn').addEventListener('click',()=>{
   if(!canManage())return;
-  if(managerStageTestMode){managerStageTestMode=null;applyRoleUI();renderProgress();const b=document.getElementById('stageTestBtn');b.textContent='Test 3 công đoạn';b.style.background='#0f766e';return;}
+  if(managerStageTestMode){managerStageTestMode=null;applyRoleUI();renderProgress();const b=document.getElementById('stageTestBtn');b.textContent='Test 3 công đoạn';b.style.background='#0f766e';const exitBtn=document.getElementById('exitStageTestBtn');if(exitBtn)exitBtn.style.display='none';const previewExit=document.getElementById('exitStagePreviewBtn');if(previewExit)previewExit.style.display='none';return;}
   document.getElementById('stageTestModal').style.display='block';
 });
 document.getElementById('closeStageTestBtn').addEventListener('click',closeStageTest);
@@ -4978,7 +5032,9 @@ document.getElementById('stageTestModal').addEventListener('click',e=>{
   const btn=e.target.closest('[data-test-stage]'); if(btn)setManagerStageTest(btn.dataset.testStage);
   else if(e.target.id==='stageTestModal')closeStageTest();
 });
-document.getElementById('exitStageTestBtn').addEventListener('click',()=>{managerStageTestMode=null;applyRoleUI();renderProgress();closeStageTest();const b=document.getElementById('stageTestBtn');b.textContent='Test 3 công đoạn';b.style.background='#0f766e';});
+function exitManagerStagePreview(){ managerStageTestMode=null; applyRoleUI(); renderProgress(); closeStageTest(); const b=document.getElementById('stageTestBtn'); if(b){b.textContent='Test 3 công đoạn';b.style.background='#0f766e';} const exitBtn=document.getElementById('exitStageTestBtn');if(exitBtn)exitBtn.style.display='none'; const previewExit=document.getElementById('exitStagePreviewBtn');if(previewExit)previewExit.style.display='none'; }
+document.getElementById('exitStageTestBtn').addEventListener('click',exitManagerStagePreview);
+document.getElementById('exitStagePreviewBtn').addEventListener('click',exitManagerStagePreview);
 document.getElementById('autoPlanDaySelect').addEventListener('change', renderAutoPlan);
 function syncSearchClearButton(input){
   const wrap=input && input.closest('.search-with-clear');
@@ -5823,9 +5879,13 @@ function renderEmployeeStageWorkspace(rows,stage,dayVal){
   const dropped=rows.filter(o=>isPastDate(o.date)).length;
   const rate=input>0?Math.min(100,Math.round(done/input*100)):0;
   const rating=rate>=100?'Đạt':rate>=80?'Gần đạt':'Cần xử lý';
-  document.getElementById('employeeStageHead').innerHTML=`
+  const head=document.getElementById('employeeStageHead');
+  head.innerHTML=`
     <div class="employee-stage-identity"><div><div class="employee-stage-name">${thoatHtml(currentUser?.name||stageName)} · ${stageName}</div><div class="employee-stage-date">${dayVal==='all'?'Tất cả ngày':`Ngày ${dayVal}`} · Dữ liệu đã xác nhận</div></div><div class="employee-stage-score"><strong>${rate}%</strong><span>${rating}</span></div></div>
-    <div class="employee-stage-metrics"><div class="employee-stage-metric">Đầu vào<strong>${input.toLocaleString('vi-VN')}</strong></div><div class="employee-stage-metric">Hoàn thành<strong>${done.toLocaleString('vi-VN')}</strong></div><div class="employee-stage-metric">Còn chờ<strong>${waiting.toLocaleString('vi-VN')}</strong></div></div>`;
+    <div class="employee-stage-metrics"><div class="employee-stage-metric">Đầu vào<strong>${input.toLocaleString('vi-VN')}</strong></div><div class="employee-stage-metric">Hoàn thành<strong>${done.toLocaleString('vi-VN')}</strong></div><div class="employee-stage-metric">Còn chờ<strong>${waiting.toLocaleString('vi-VN')}</strong></div></div>
+    ${managerStageTestMode?'<button id="exitStagePreviewBtn" type="button" class="capacity-quick-btn" style="margin-top:8px;">Trở về giao diện quản lý</button>':''}`;
+  const previewExit=document.getElementById('exitStagePreviewBtn');
+  if(previewExit) previewExit.addEventListener('click',exitManagerStagePreview);
   const alert=document.getElementById('employeeCapacityAlert');
   alert.style.display=waiting||dropped?'block':'none';
   alert.textContent=dropped?`${dropped} đơn rớt đang chờ ${stageName.toLowerCase()} · ưu tiên xử lý trước`:`Còn ${waiting.toLocaleString('vi-VN')} sản phẩm chờ ${stageName.toLowerCase()} · ${completed} đơn đã hoàn thành`;
@@ -6312,6 +6372,8 @@ document.getElementById('saveLockPlanBtn').addEventListener('click', async ()=>{
   const statusEl = document.getElementById('lockPlanStatus');
   statusEl.textContent = 'Đang lưu...';
   statusEl.style.color = 'var(--text2)';
+  const oldLockedPlanDates=[...lockedPlanDates];
+  const oldPlanSnapshots={...planSnapshots};
 
   // Ngày mới được chốt -> chụp lại danh sách đơn hiện tại của ngày đó và lưu lên Google.
   const added = picked.filter(d=>!lockedPlanDates.includes(d));
@@ -6337,15 +6399,21 @@ document.getElementById('saveLockPlanBtn').addEventListener('click', async ()=>{
     planSnapshots[d] = chupNgay(d);
   });
   removed.forEach(d=>{ delete planSnapshots[d]; });
-  lockedPlanDates = picked;
-
-  let savedOk = await storageSet(LOCKED_PLAN_KEY, lockedPlanDates);
-  for(const d of added){ savedOk = (await storageSet(snapshotKey(d), planSnapshots[d])) && savedOk; }
-  for(const d of removed){ savedOk = (await storageSet(snapshotKey(d), [])) && savedOk; }   // mở khoá -> dọn ảnh chụp cũ
-  if(added.length || removed.length){
-    snapVersionSeen = Date.now();
-    savedOk = (await storageSet(SNAP_VERSION_KEY, snapVersionSeen)) && savedOk;              // báo cho các máy khác đọc lại
+  let savedOk=false;
+  if(SUPABASE_VARIANT){
+    savedOk=(await saveSupabaseDayLocks('plan',picked,allOrderDatesSorted(),planSnapshots)).ok;
+  }else{
+    lockedPlanDates = picked;
+    savedOk = await storageSet(LOCKED_PLAN_KEY, lockedPlanDates);
+    for(const d of added){ savedOk = (await storageSet(snapshotKey(d), planSnapshots[d])) && savedOk; }
+    for(const d of removed){ savedOk = (await storageSet(snapshotKey(d), [])) && savedOk; }   // mở khoá -> dọn ảnh chụp cũ
+    if(added.length || removed.length){
+      snapVersionSeen = Date.now();
+      savedOk = (await storageSet(SNAP_VERSION_KEY, snapVersionSeen)) && savedOk;              // báo cho các máy khác đọc lại
+    }
   }
+  if(savedOk) lockedPlanDates=picked;
+  else { lockedPlanDates=oldLockedPlanDates; planSnapshots=oldPlanSnapshots; }
   saveLocalCache();
 
   statusEl.textContent = savedOk ? `Đã chốt đầu vào ${picked.length} ngày.` : 'Chưa lưu được, bảng vẫn mở để thử lại.';
@@ -6370,8 +6438,11 @@ document.getElementById('saveLockProgressBtn').addEventListener('click', async (
   const statusEl = document.getElementById('lockProgressStatus');
   statusEl.textContent = 'Đang lưu...';
   statusEl.style.color = 'var(--text2)';
-  lockedProgressDates = picked;
-  const savedOk = await storageSet(LOCKED_PROGRESS_KEY, lockedProgressDates);
+  const oldLockedProgressDates=[...lockedProgressDates];
+  let savedOk=false;
+  if(SUPABASE_VARIANT) savedOk=(await saveSupabaseDayLocks('progress',picked,assignedOrderDatesSorted())).ok;
+  else savedOk=await storageSet(LOCKED_PROGRESS_KEY,picked);
+  lockedProgressDates=savedOk?picked:oldLockedProgressDates;
   saveLocalCache();
   statusEl.textContent = savedOk ? `Đã chốt tiến độ ${picked.length} ngày.` : 'Chưa lưu được, bảng vẫn mở để thử lại.';
   statusEl.style.color = savedOk ? 'var(--success)' : 'var(--danger)';

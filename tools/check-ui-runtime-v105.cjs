@@ -58,6 +58,44 @@ const {chromium}=require('playwright');
     throw new Error(`Manager mobile failed: ${JSON.stringify(manager)}`);
   console.log('PASS  manager keeps full dashboard and 3-stage test control');
 
+  await page.locator('#managementToolsBtn').click();
+  await page.locator('#stageTestMenuBtn').click();
+  const testModal=await page.evaluate(()=>getComputedStyle(document.getElementById('stageTestModal')).display);
+  if(testModal==='none') throw new Error('Stage test modal did not open from manager control');
+  await page.locator('#testMayWorker').selectOption('loan_anh');
+  await page.locator('#stageTestModal [data-test-stage="may"]').click();
+  const clickedPreview=await page.evaluate(()=>({
+    workspace:getComputedStyle(document.getElementById('employeeStageWorkspace')).display,
+    table:getComputedStyle(document.getElementById('progressTable')).display,
+    stage:document.body.className
+  }));
+  if(clickedPreview.workspace==='none'||clickedPreview.table!=='none'||!clickedPreview.stage.includes('stage-view-may'))
+    throw new Error(`Stage test button flow failed: ${JSON.stringify(clickedPreview)}`);
+  console.log('PASS  manager stage test button opens May workspace');
+  await page.locator('#exitStagePreviewBtn').click();
+
+  await page.evaluate(()=>{
+    managerStageTestMode={stage:'may',workerId:'loan_anh',workerName:'Loan Anh'};
+    applyRoleUI(); renderProgress();
+  });
+  const stagePreview=await page.evaluate(()=>({
+    workspace:getComputedStyle(document.getElementById('employeeStageWorkspace')).display,
+    table:getComputedStyle(document.getElementById('progressTable')).display,
+    stage:document.body.className
+  }));
+  if(stagePreview.workspace==='none'||stagePreview.table!=='none'||!stagePreview.stage.includes('stage-view-may'))
+    throw new Error(`Manager stage preview failed: ${JSON.stringify(stagePreview)}`);
+  console.log('PASS  manager can preview stage UI on mobile');
+  await page.evaluate(()=>{managerStageTestMode=null;applyRoleUI();renderProgress();});
+
+  const ring=page.locator('#progressTeamRings .team-ring-clickable').first();
+  if(await ring.count()===0) throw new Error('No clickable team order for stage-choice test');
+  await ring.click();
+  const choiceModal=await page.evaluate(()=>getComputedStyle(document.getElementById('stageChoiceModal')).display);
+  if(choiceModal==='none') throw new Error('Manager team order did not open stage-choice modal');
+  console.log('PASS  manager team order opens stage-choice modal');
+  await page.locator('#closeStageChoiceBtn').click();
+
   await page.setViewportSize({width:1280,height:720});
   await page.evaluate(()=>renderProgress());
   const desktop=await page.evaluate(()=>({
