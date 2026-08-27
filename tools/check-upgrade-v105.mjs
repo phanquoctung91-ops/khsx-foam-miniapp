@@ -7,7 +7,7 @@ const clone=fs.readFileSync(new URL('./build-live-clone.mjs',import.meta.url),'u
 const edgeAdmin=fs.readFileSync(new URL('../supabase/functions/khsx-admin-link-telegram/index.ts',import.meta.url),'utf8');
 
 const checks=[
-  ['version 112 + cache-busted core',/const APP_VERSION = 112;/.test(html)&&/khsx-data-core\.js\?v=112/.test(html)],
+  ['version 114 + cache-busted core',/const APP_VERSION = 114;/.test(html)&&/khsx-data-core\.js\?v=114/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -31,7 +31,7 @@ const checks=[
   ,['Pending management patches survive reload',/overlayPendingSupabaseManagement/.test(html)&&/Object\.keys\(supabaseManagementOutbox\)\.length/.test(html)]
   ,['Manual orders exist remotely before assignment',/from\('khsx_orders'\)\.insert/.test(html)&&/source:'miniapp'/.test(html)&&/Chưa lưu được đơn/.test(html)]
   ,['Deleted orders are persisted and hidden while offline',/kind==='delete'/.test(html)&&/deleted_at/.test(html)&&/pendingDeleteIds/.test(html)&&/purgeSupabaseOutboxForOrder/.test(html)]
-  ,['Dán zero still enables support assignment',/function daNhapDanTrongNgay/.test(html)&&/hasOwnProperty\.call\(entry,'dan'\)/.test(html)]
+  ,['Support assignment honors explicit Dán=0 but blocks completed output',/function coTheGanHoTroTrongNgay/.test(html)&&/daNhap=daNhapDanTrongNgay/.test(html)&&/daDan>=keHoach/.test(html)&&/source_order_id/.test(html)]
   ,['Capacity defaults to today',/id="capacityQuickToday"/.test(html)&&/datCapacityRange\(d,d\)/.test(html)]
   ,['Mobile manager approval remains scrollable',/#staffUsersModal[\s\S]*?#telegramAccessRequests \.table-scroll[\s\S]*?overflow-x:auto/.test(html)&&/approve-telegram-btn/.test(html)]
   ,['Current manager excluded from Telegram link targets',/String\(p\.user_id\)!==String\(currentUser\?\.auth_user_id/.test(html)]
@@ -45,4 +45,5 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v112 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v114 checks passed (${checks.length}/${checks.length}).`);
+
