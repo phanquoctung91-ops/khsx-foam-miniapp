@@ -8,7 +8,7 @@ function namedKey(jsonName: string, legacyNames: string[]) {
     const values = JSON.parse(Deno.env.get(jsonName) ?? "{}") as Record<string, string>;
     if (values.default) return values.default;
   } catch {
-    // Tương thích với biến bí mật cũ.
+    // Dự án cũ có thể vẫn dùng biến secret đơn.
   }
   for (const name of legacyNames) {
     const value = Deno.env.get(name);
@@ -23,6 +23,11 @@ const ALLOWED_ORIGINS = new Set(
   (Deno.env.get("KHSX_ALLOWED_ORIGINS") ?? "")
     .split(",").map((value) => value.trim()).filter(Boolean),
 );
+const APPROVAL_ROLES = new Set(["quan_ly", "quan_ly_2", "nhan_vien"]);
+const APPROVAL_UNITS = new Set(["To 1", "To 2", "To 3", "To 4", "To 5", "To may", "To dong goi"]);
+
+type AdminClient = ReturnType<typeof createClient>;
+type AuthUser = { id: string; email?: string | null };
 
 function cors(req: Request) {
   const origin = req.headers.get("origin") ?? "";
@@ -39,31 +44,34 @@ function json(req: Request, body: unknown, status = 200) {
   return Response.json(body, { status, headers: cors(req) });
 }
 
+function normalizeUnit(value: unknown) {
+  const unit = String(value ?? "").trim();
+  const aliases: Record<string, string> = {
+    "Tổ 1": "To 1", "Tổ 2": "To 2", "Tổ 3": "To 3", "Tổ 4": "To 4", "Tổ 5": "To 5",
+    "Tổ may": "To may", "Tổ đóng gói": "To dong goi",
+  };
+  return aliases[unit] ?? unit;
+}
+
 function randomPassword() {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return "Kx!" + Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
-async function findAuthUserByEmail(admin: ReturnType<typeof createClient>, email: string) {
-  for (let page = 1; page <= 50; page++) {
-    const result = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-    if (result.error) return { user: null, error: result.error };
-    const user = result.data.users.find((item) => String(item.email ?? "").toLowerCase() === email.toLowerCase());
-    if (user) return { user, error: null };
-    if (result.data.users.length < 1000) break;
-  }
-  return { user: null, error: null };
+function publicDbError(error: { code?: string; message?: string } | null | undefined) {
+  return { db_code: error?.code ?? "UNKNOWN" };
 }
 
-const APPROVAL_ROLES = new Set(["quan_ly", "quan_ly_2", "nhan_vien"]);
-const APPROVAL_UNITS = new Set(["To 1", "To 2", "To 3", "To 4", "To 5", "To may", "To dong goi"]);
-function normalizeUnit(value: unknown) {
-  const unit = String(value ?? "").trim();
-  const map: Record<string, string> = {
-    "Tổ 1": "To 1", "Tổ 2": "To 2", "Tổ 3": "To 3", "Tổ 4": "To 4", "Tổ 5": "To 5",
-    "Tổ may": "To may", "Tổ đóng gói": "To dong goi",
-  };
-  return map[unit] ?? unit;
+async function findAuthUserByEmails(admin: AdminClient, emails: string[]) {
+  const wanted = new Set(emails.map((email) => email.toLowerCase()));
+  for (let page = 1; page <= 50; page++) {
+    const result = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (result.error) return { user: null as AuthUser | null, error: result.error };
+    const user = result.data.users.find((item) => wanted.has(String(item.email ?? "").toLowerCase()));
+    if (user) return { user: user as AuthUser, error: null };
+    if (result.data.users.length < 1000) break;
+  }
+  return { user: null as AuthUser | null, error: null };
 }
 
 Deno.serve(async (req: Request) => {
@@ -92,161 +100,142 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json(req, { error: "INVALID_REQUEST" }, 400);
   }
+
   const telegramId = String(body.telegram_user_id ?? "").trim();
-  const requestedRole = String(body.role ?? "nhan_vien").trim();
-  const requestedUnit = normalizeUnit(body.unit_name);
-  const requestedName = String(body.display_name ?? "").trim();
-  if (!/^\d{4,20}$/.test(telegramId) || !APPROVAL_ROLES.has(requestedRole)) {
+  const role = String(body.role ?? "").trim();
+  const unit = role === "nhan_vien" ? normalizeUnit(body.unit_name) : "";
+  const displayName = String(body.display_name ?? "").trim() || `Telegram ${telegramId}`;
+  if (!/^\d{4,20}$/.test(telegramId) || !APPROVAL_ROLES.has(role)) {
     return json(req, { error: "INVALID_INPUT" }, 400);
   }
-  if (requestedRole === "nhan_vien" && !APPROVAL_UNITS.has(requestedUnit)) {
-    return json(req, { error: requestedUnit ? "UNIT_INVALID" : "UNIT_REQUIRED" }, 400);
+  if (role === "nhan_vien" && !APPROVAL_UNITS.has(unit)) {
+    return json(req, { error: unit ? "UNIT_INVALID" : "UNIT_REQUIRED" }, 400);
   }
 
-  const client = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
+  const caller = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: authData, error: authError } = await client.auth.getUser();
-  if (authError || !authData.user) return json(req, { error: "AUTH_REQUIRED" }, 401);
+  const { data: callerAuth, error: callerError } = await caller.auth.getUser();
+  if (callerError || !callerAuth.user) return json(req, { error: "AUTH_REQUIRED" }, 401);
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: manager, error: managerError } = await admin.from("khsx_profiles")
+  const managerResult = await admin.from("khsx_profiles")
     .select("role,active")
-    .eq("user_id", authData.user.id)
+    .eq("user_id", callerAuth.user.id)
     .maybeSingle();
-  if (managerError) return json(req, { error: "MANAGER_LOOKUP_FAILED" }, 503);
-  if (!manager?.active || !["quan_ly", "quan_ly_2"].includes(manager.role)) {
+  if (managerResult.error) return json(req, { error: "MANAGER_LOOKUP_FAILED", ...publicDbError(managerResult.error) }, 503);
+  if (!managerResult.data?.active || !["quan_ly", "quan_ly_2"].includes(managerResult.data.role)) {
     return json(req, { error: "MANAGER_REQUIRED" }, 403);
   }
 
-  // Không còn tra cứu Worker ID do quản lý nhập. Nếu người dùng thuộc May/
-  // Đóng gói, tạo một worker nội bộ theo Telegram ID để các lần nhập công
-  // đoạn sau vẫn có định danh hợp lệ; người dùng thuộc Tổ 1–5 không cần worker.
-  const requestedStage = requestedRole === "nhan_vien"
-    ? requestedUnit === "To may" ? "may" : requestedUnit === "To dong goi" ? "dong_goi" : ""
-    : "";
-  const generatedWorkerId = requestedStage ? `tg_${telegramId}` : "";
-  const unitName = requestedRole === "nhan_vien" ? requestedUnit : null;
-  let workerIdForProfile = generatedWorkerId || null;
-  if (generatedWorkerId) {
-    const workerResult = await admin.from("khsx_workers").upsert({
-      id: generatedWorkerId,
-      display_name: requestedName || `Telegram ${telegramId}`,
-      stage: requestedStage,
-      active: true,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "id" }).select("id,display_name,stage,active").single();
-    if (workerResult.error || !workerResult.data) return json(req, { error: "WORKER_AUTO_PROVISION_FAILED" }, 500);
-    workerIdForProfile = workerResult.data.id;
-  }
+  // Một Telegram ID dùng đúng một định danh trong Auth, profile và link.
+  const loginCodeKey = `telegram:${telegramId}`;
+  const authEmail = `tg_${telegramId}@khsx.internal`;
+  const legacyEmail = `telegram_${telegramId}@khsx.internal`;
+  const telegramNumber = Number(telegramId);
 
-  // Nếu ID Telegram đã tồn tại thì dùng lại đúng hồ sơ đó (idempotent). Chỉ
-  // từ chối khi nó đang trỏ sang hồ sơ khác, thay vì trả lỗi chung chung.
-  const existingLinkResult = await admin.from("khsx_telegram_links")
-    .select("telegram_user_id,auth_user_id,active")
-    .eq("telegram_user_id", Number(telegramId))
-    .order("updated_at", { ascending: false })
-    .limit(1);
-  if (existingLinkResult.error) return json(req, { error: "TELEGRAM_LINK_LOOKUP_FAILED" }, 503);
-  let existingLink = existingLinkResult.data?.[0] ?? null;
-  let { data: profile, error: profileError } = existingLink
-    ? await admin.from("khsx_profiles").select("user_id,display_name,role,unit_name,active,worker_id").eq("user_id", existingLink.auth_user_id).maybeSingle()
-    : { data: null, error: null };
-  if (profileError) return json(req, { error: "PROFILE_LOOKUP_FAILED" }, 503);
-  let createdAuthUserId: string | null = null;
-
-  if (!profile) {
-    const email = "telegram_" + telegramId + "@khsx.internal";
-    let authUserId = existingLink?.auth_user_id ? String(existingLink.auth_user_id) : "";
-    if (authUserId) {
-      const linkedAuth = await admin.auth.admin.getUserById(authUserId);
-      if (linkedAuth.error || !linkedAuth.data.user) {
-        await admin.from("khsx_telegram_links").delete().eq("telegram_user_id", Number(telegramId));
-        existingLink = null;
-        authUserId = "";
-      }
-    }
-    if (!authUserId) {
-      const existingAuth = await findAuthUserByEmail(admin, email);
-      if (existingAuth.error) return json(req, { error: "AUTH_USER_LOOKUP_FAILED", code: existingAuth.error.code }, 503);
-      authUserId = existingAuth.user?.id ?? "";
-    }
-    if (!authUserId) {
-      const created = await admin.auth.admin.createUser({
-        email,
-        password: randomPassword(),
-        email_confirm: true,
-        user_metadata: { display_name: requestedName || ("Telegram " + telegramId), worker_id: workerIdForProfile },
-      });
-      if (created.error || !created.user) {
-        return json(req, { error: "AUTH_USER_CREATE_FAILED", code: created.error?.code }, 500);
-      }
-      authUserId = created.user.id;
-      createdAuthUserId = created.user.id;
-    }
-    const inserted = await admin.from("khsx_profiles").upsert({
-      user_id: authUserId,
-      display_name: requestedName || ("Telegram " + telegramId),
-      role: requestedRole,
-      unit_name: unitName,
-      worker_id: workerIdForProfile,
-      active: true,
-    }, { onConflict: "user_id" }).select("user_id,display_name,role,unit_name,active,worker_id").single();
-    if (inserted.error || !inserted.data) {
-      if (createdAuthUserId) await admin.auth.admin.deleteUser(createdAuthUserId);
-      return json(req, { error: "PROFILE_UPSERT_FAILED", code: inserted.error?.code }, 500);
-    }
-    profile = inserted.data;
-  }
-  if (!profile.active) return json(req, { error: "ACCOUNT_DISABLED" }, 403);
-
-  if (existingLink && String(existingLink.auth_user_id) !== String(profile.user_id)) {
+  const [linkResult, keyedProfileResult] = await Promise.all([
+    admin.from("khsx_telegram_links")
+      .select("auth_user_id")
+      .eq("telegram_user_id", telegramNumber)
+      .maybeSingle(),
+    admin.from("khsx_profiles")
+      .select("user_id")
+      .eq("login_code_key", loginCodeKey)
+      .maybeSingle(),
+  ]);
+  if (linkResult.error) return json(req, { error: "TELEGRAM_LINK_LOOKUP_FAILED", ...publicDbError(linkResult.error) }, 503);
+  if (keyedProfileResult.error) return json(req, { error: "PROFILE_LOOKUP_FAILED", ...publicDbError(keyedProfileResult.error) }, 503);
+  if (linkResult.data?.auth_user_id && keyedProfileResult.data?.user_id &&
+      String(linkResult.data.auth_user_id) !== String(keyedProfileResult.data.user_id)) {
     return json(req, { error: "TELEGRAM_ID_ALREADY_LINKED" }, 409);
   }
-  const accountLink = await admin.from("khsx_telegram_links")
-    .select("telegram_user_id")
-    .eq("auth_user_id", profile.user_id)
-    .neq("telegram_user_id", Number(telegramId))
-    .limit(1);
-  if (accountLink.error) return json(req, { error: "TELEGRAM_LINK_LOOKUP_FAILED" }, 503);
-  if (accountLink.data?.length) return json(req, { error: "ACCOUNT_ALREADY_LINKED" }, 409);
 
-  const linked = await admin.from("khsx_telegram_links").upsert({
-    telegram_user_id: Number(telegramId),
-    auth_user_id: profile.user_id,
+  let authUserId = String(linkResult.data?.auth_user_id ?? keyedProfileResult.data?.user_id ?? "");
+  if (authUserId) {
+    const existing = await admin.auth.admin.getUserById(authUserId);
+    if (existing.error || !existing.data.user) authUserId = "";
+  }
+  if (!authUserId) {
+    const found = await findAuthUserByEmails(admin, [authEmail, legacyEmail]);
+    if (found.error) return json(req, { error: "AUTH_USER_LOOKUP_FAILED", code: found.error.code }, 503);
+    authUserId = found.user?.id ?? "";
+  }
+
+  let createdAuthUserId = "";
+  if (!authUserId) {
+    const created = await admin.auth.admin.createUser({
+      email: authEmail,
+      password: randomPassword(),
+      email_confirm: true,
+      user_metadata: { display_name: displayName },
+      app_metadata: { provider: "telegram-miniapp", telegram_user_id: telegramNumber },
+    });
+    if (created.error || !created.data.user) {
+      return json(req, { error: "AUTH_USER_CREATE_FAILED", code: created.error?.code ?? "UNKNOWN" }, 500);
+    }
+    authUserId = created.data.user.id;
+    createdAuthUserId = authUserId;
+  }
+
+  const stage = role === "nhan_vien"
+    ? unit === "To may" ? "may" : unit === "To dong goi" ? "dong_goi" : ""
+    : "";
+  const workerId = stage ? `tg_${telegramId}` : null;
+  if (workerId) {
+    const workerResult = await admin.from("khsx_workers").upsert({
+      id: workerId,
+      display_name: displayName,
+      stage,
+      active: true,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "id" }).select("id").single();
+    if (workerResult.error || !workerResult.data) {
+      if (createdAuthUserId) await admin.auth.admin.deleteUser(createdAuthUserId);
+      return json(req, { error: "WORKER_AUTO_PROVISION_FAILED", ...publicDbError(workerResult.error) }, 500);
+    }
+  }
+
+  const profileResult = await admin.from("khsx_profiles").upsert({
+    user_id: authUserId,
+    login_code_key: loginCodeKey,
+    display_name: displayName,
+    role,
+    unit_name: role === "nhan_vien" ? unit : null,
+    worker_id: workerId,
+    active: true,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" })
+    .select("user_id,display_name,role,unit_name,active,worker_id")
+    .single();
+  if (profileResult.error || !profileResult.data) {
+    if (createdAuthUserId) await admin.auth.admin.deleteUser(createdAuthUserId);
+    return json(req, { error: "PROFILE_UPSERT_FAILED", ...publicDbError(profileResult.error) }, 500);
+  }
+
+  const linkResultWrite = await admin.from("khsx_telegram_links").upsert({
+    telegram_user_id: telegramNumber,
+    auth_user_id: authUserId,
     telegram_username: String(body.telegram_username ?? "").trim() || null,
     active: true,
-    linked_by: authData.user.id,
+    linked_by: callerAuth.user.id,
     linked_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }, { onConflict: "telegram_user_id" });
-  if (linked.error) {
-    if (createdAuthUserId) {
-      await admin.from("khsx_profiles").delete().eq("user_id", createdAuthUserId);
-      await admin.auth.admin.deleteUser(createdAuthUserId);
-    }
-    const duplicate = linked.error.code === "23505" || /duplicate|unique/i.test(linked.error.message || "");
-    return json(req, { error: duplicate ? "ACCOUNT_ALREADY_LINKED" : "TELEGRAM_LINK_FAILED" }, 409);
+  if (linkResultWrite.error) {
+    const duplicate = linkResultWrite.error.code === "23505";
+    return json(req, {
+      error: duplicate ? "TELEGRAM_ID_ALREADY_LINKED" : "TELEGRAM_LINK_FAILED",
+      ...publicDbError(linkResultWrite.error),
+    }, duplicate ? 409 : 500);
   }
-  const updatedProfile = await admin.from("khsx_profiles")
-    .update({ role: requestedRole, unit_name: unitName, worker_id: workerIdForProfile })
-    .eq("user_id", profile.user_id)
-    .select("user_id,display_name,role,unit_name,active,worker_id")
-    .single();
-  if (updatedProfile.error || !updatedProfile.data) return json(req, { error: "PROFILE_UPDATE_FAILED" }, 500);
-  await admin.from("khsx_telegram_access_requests").delete().eq("telegram_user_id", Number(telegramId));
-  return json(req, {
-    ok: true,
-    profile: {
-      user_id: updatedProfile.data.user_id,
-      display_name: updatedProfile.data.display_name,
-      role: updatedProfile.data.role,
-      unit_name: updatedProfile.data.unit_name,
-      active: updatedProfile.data.active,
-      worker_id: updatedProfile.data.worker_id,
-    },
-  });
+
+  await admin.from("khsx_telegram_access_requests")
+    .delete()
+    .eq("telegram_user_id", telegramNumber);
+
+  return json(req, { ok: true, profile: profileResult.data });
 });

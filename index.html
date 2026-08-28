@@ -1699,7 +1699,7 @@ function computeAndRenderKpis(){
   const tocDoQuy = tinhTocDoQuy();
   speedDetailStore.quarter = tocDoQuy;
   const tocDoQuyHtml = tocDoQuy.mucTieu>0
-    ? `<div class="kpi-phu">Mục tiêu/ngày <b>${tocDoQuy.mucTieuNgay.toLocaleString('vi-VN',{maximumFractionDigits:1})}</b> · thực tế <b>${tocDoQuy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}</b> tấm/ngày</div><div class="kpi-phu">Đã qua <b>${tocDoQuy.elapsedWorkdays}</b>/<b>${tocDoQuy.totalWorkdays}</b> ngày đăng ký · dự báo cuối quý <b>${Math.round(tocDoQuy.duBao).toLocaleString()}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;line-height:1.4;">${tocDoQuy.danhGia}</div><span class="speed-kpi-hint">Bấm để xem cách tính</span>`
+    ? `<div class="kpi-phu">Mục tiêu/ngày <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b> · thực tế quý <b>${formatTocDo(tocDoQuy.thucTe)}</b> tấm/ngày</div><div class="kpi-phu">Độ phủ dữ liệu <b>${tocDoQuy.partialWorkdays}/${tocDoQuy.elapsedWorkdays}</b> ngày đã qua${tocDoQuy.dataComplete?` · dự báo <b>${Math.round(tocDoQuy.duBao).toLocaleString('vi-VN')}</b>`:' · chưa dự báo'}</div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;line-height:1.4;">${tocDoQuy.danhGia}</div><span class="speed-kpi-hint">Bấm để kiểm chứng nguồn và công thức</span>`
     : '<div class="kpi-phu">Chưa nhập mục tiêu quý để tính tốc độ.</div>';
 
   kpiRow.innerHTML = `
@@ -1746,7 +1746,7 @@ function computeAndRenderKpis(){
     </div>
     <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="quarter" aria-label="Xem cách tính Tốc độ quý" style="border-top-color:${mauTocDo(tocDoQuy.trangThai)};">
       <div class="label">Tốc độ quý ${tocDoQuy.quy}/${tocDoQuy.nam}</div>
-      <div class="value" style="color:${mauTocDo(tocDoQuy.trangThai)};">${tocDoQuy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:13px;color:var(--text2);"> tấm/ngày</span></div>
+      <div class="value" style="color:${mauTocDo(tocDoQuy.trangThai)};">${formatTocDo(tocDoQuy.thucTe)}<span style="font-size:13px;color:var(--text2);"> tấm/ngày</span></div>
       ${tocDoQuyHtml}
     </div>
   `;
@@ -2288,45 +2288,61 @@ function mucTieuNgayTheoQuy(nam,quy){
   return target>0&&days>0?target/days:0;
 }
 function formatTocDo(value){
-  return Number(value||0).toLocaleString('vi-VN',{minimumFractionDigits:0,maximumFractionDigits:1});
+  if(value==null || !Number.isFinite(Number(value))) return '—';
+  return Number(value).toLocaleString('vi-VN',{minimumFractionDigits:0,maximumFractionDigits:1});
 }
 function tinhTocDoQuy(){
   const quy=tinhTienDoQuyHienTai();
   const ngayDangKy=workDatesForQuarter(quy.nam,quy.quy).slice().sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
   const ngayDaQua=ngayLamViecDaQuaCuaQuy(quy.nam,quy.quy);
-  const today=isoSoNgay(ngayHienTaiIso());
-  const keys=keysTheoQuy(quy.nam,quy.quy).filter(k=>isoSoNgay(allDays[k]?.date||'')<=today);
+  const ngayDaQuaSet=new Set(ngayDaQua);
+  // Tử số và mẫu số phải dùng đúng cùng tập ngày làm việc đã đăng ký.
+  // Ngày chưa tồn tại trong nguồn là "chưa có dữ liệu", không tự suy diễn là 0.
+  const keys=keysTheoQuy(quy.nam,quy.quy).filter(k=>ngayDaQuaSet.has(dmyToIso(allDays[k]?.date||'')));
+  const sourceDates=Array.from(new Set(keys.map(k=>dmyToIso(allDays[k]?.date||'')).filter(Boolean)))
+    .sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
+  const sourceDateSet=new Set(sourceDates);
+  const missingElapsedDates=ngayDaQua.filter(iso=>!sourceDateSet.has(iso));
+  const dataComplete=missingElapsedDates.length===0;
   const kpi=tongKpiTuRowsTheoKeys(keys);
   const tongNgay=ngayDangKy.length;
   const ngayDaQuaCount=ngayDaQua.length;
   const ngayConLai=Math.max(0,tongNgay-ngayDaQuaCount);
   const mucTieuNgay=tongNgay>0&&quy.mucTieu>0?quy.mucTieu/tongNgay:0;
-  const thucTe=ngayDaQuaCount>0?Number(kpi.throughput||0)/ngayDaQuaCount:0;
-  const duBao=Number(kpi.throughput||0)+thucTe*ngayConLai;
-  const chenhlech=thucTe-mucTieuNgay;
-  const tyLe=mucTieuNgay>0?thucTe/mucTieuNgay:null;
+  const partialWorkdays=sourceDates.length;
+  const partialSpeed=partialWorkdays>0?Number(kpi.throughput||0)/partialWorkdays:null;
+  const thucTe=dataComplete&&ngayDaQuaCount>0?Number(kpi.throughput||0)/ngayDaQuaCount:null;
+  const duBao=thucTe==null?null:Number(kpi.throughput||0)+thucTe*ngayConLai;
+  const chenhlech=thucTe==null?null:thucTe-mucTieuNgay;
+  const tyLe=mucTieuNgay>0&&thucTe!=null?thucTe/mucTieuNgay:null;
   const trangThai=tyLe==null?'none':tyLe>=1?'green':tyLe>=.9?'yellow':'red';
   const thieuSoVoiMucTieu=Math.max(0,Number(quy.mucTieu||0)-Number(kpi.throughput||0));
-  const tocDoCanChoPhanConLai=ngayConLai>0?thieuSoVoiMucTieu/ngayConLai:0;
-  const canThemMoiNgay=ngayConLai>0?Math.max(0,tocDoCanChoPhanConLai-thucTe):thieuSoVoiMucTieu;
+  const tocDoCanChoPhanConLai=dataComplete&&ngayConLai>0?thieuSoVoiMucTieu/ngayConLai:null;
+  const canThemMoiNgay=tocDoCanChoPhanConLai==null||thucTe==null?null:Math.max(0,tocDoCanChoPhanConLai-thucTe);
+  const capacity11h=180;
+  const vuotNangLuc11h=tocDoCanChoPhanConLai!=null&&tocDoCanChoPhanConLai>capacity11h;
   let danhGia='Chưa nhập mục tiêu quý hoặc chưa có ngày làm việc.';
-  if(mucTieuNgay>0){
+  if(!dataComplete){
+    danhGia=`Chưa đủ dữ liệu để tính tốc độ quý: mới có ${partialWorkdays}/${ngayDaQuaCount} ngày làm việc đã qua. Tốc độ tạm ${formatTocDo(partialSpeed)} tấm/ngày chỉ phản ánh phần dữ liệu đã nạp.`;
+  }else if(mucTieuNgay>0){
     if(Number(kpi.throughput||0)>=Number(quy.mucTieu||0)){
       danhGia=`Đã đạt mục tiêu quý theo số đóng gói thực tế (${Number(kpi.throughput||0).toLocaleString('vi-VN')} tấm).`;
     }else if(duBao>=quy.mucTieu){
       danhGia=`Đang nhanh hơn mục tiêu ${formatTocDo(chenhlech)} tấm/ngày; giữ nhịp hiện tại sẽ đạt khoảng ${Math.round(duBao).toLocaleString('vi-VN')} tấm cuối quý.`;
+    }else if(vuotNangLuc11h){
+      danhGia=`Không khả thi với trần năng lực 11 giờ ${capacity11h} tấm/ngày: phần còn lại đang cần ${formatTocDo(tocDoCanChoPhanConLai)} tấm/ngày.`;
     }else if(ngayConLai>0){
       danhGia=`Dự báo hiện tại đạt khoảng ${Math.round(duBao).toLocaleString('vi-VN')} tấm; cần thêm ${formatTocDo(canThemMoiNgay)} tấm/ngày trong ${ngayConLai} ngày còn lại để đạt mục tiêu.`;
     }else{
       danhGia=`Đã hết ngày làm việc đăng ký; còn thiếu ${formatTocDo(thieuSoVoiMucTieu)} tấm so với mục tiêu quý.`;
     }
   }
-  const sourceDates=keys.map(k=>dmyToIso(allDays[k]?.date||'')).filter(Boolean).sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
   return {...quy,kind:'quarter',keys,sourceDates,output:Number(kpi.throughput||0),registeredDates:ngayDangKy,
     elapsedDates:ngayDaQua,totalWorkdays:tongNgay,elapsedWorkdays:ngayDaQuaCount,
     remainingWorkdays:ngayConLai,ngaySanXuat:ngayDaQuaCount,mucTieuNgay,thucTe,duBao,
     tocDoCanChoPhanConLai,canThemMoiNgay,thieuSoVoiMucTieu,
-    chenhlech,trangThai,danhGia,normalizedOutput:Number(kpi.throughput||0)};
+    chenhlech,trangThai,danhGia,normalizedOutput:Number(kpi.throughput||0),dataComplete,
+    missingElapsedDates,partialWorkdays,partialSpeed,capacity11h,vuotNangLuc11h};
 }
 
 // Tốc độ bộ lọc chỉ mô tả đúng khoảng ngày người dùng đang xem. Nó không tạo
@@ -2380,28 +2396,33 @@ function moPopupTocDo(kind){
   const dates=(detail.registeredDates||[]).map(speedDateLabel);
   const source=(detail.sourceDates||detail.keys?.map(k=>allDays[k]?.date).filter(Boolean)||[]).map(x=>x.includes('/')?x:speedDateLabel(x));
   const knownSourceDates=new Set(detail.sourceDates||((detail.keys||[]).map(k=>dmyToIso(allDays[k]?.date||'')).filter(Boolean)));
-  const missing=(detail.elapsedDates||[]).filter(x=>!knownSourceDates.has(x)).map(speedDateLabel);
+  const missing=(detail.missingElapsedDates||(detail.elapsedDates||[]).filter(x=>!knownSourceDates.has(x))).map(speedDateLabel);
+  const sourceRange=source.length?`${source[0]} → ${source[source.length-1]}`:'Chưa có dữ liệu';
   const benchmark=detail.mucTieuNgay>0?`<div class="speed-detail-row"><span>Tốc độ mục tiêu quý</span><strong>${formatTocDo(detail.mucTieuNgay)} tấm/ngày</strong></div>`:'';
   body.innerHTML=`
     <div class="speed-detail-lead">${isQuarter
-      ? 'Tốc độ quý chỉ dùng Đóng gói lũy kế cuối cùng của đơn và lịch làm việc đã đăng ký.'
+      ? 'Tốc độ quý chỉ được công nhận khi Đóng gói và số ngày đã qua lấy từ cùng một danh sách ngày làm việc đã đăng ký.'
       : 'Tốc độ này chỉ phản ánh đúng phạm vi ngày đang xem; không thay thế Tốc độ quý.'}</div>
     <div class="speed-detail-grid">
       <div class="speed-detail-row"><span>Phạm vi</span><strong>${isQuarter?`Quý ${detail.quy}/${detail.nam}`:`${speedDateLabel(detail.fromIso)} → ${speedDateLabel(detail.toIso)}`}</strong></div>
       <div class="speed-detail-row"><span>Đóng gói dùng để tính</span><strong>${Number(detail.output||0).toLocaleString('vi-VN')} tấm</strong></div>
-      <div class="speed-detail-row"><span>Ngày làm việc làm mẫu số</span><strong>${detail.totalWorkdays||0} ngày</strong></div>
-      ${isQuarter?`<div class="speed-detail-row"><span>Đã qua / còn lại</span><strong>${detail.elapsedWorkdays||0} / ${detail.remainingWorkdays||0} ngày</strong></div>`:''}
-      <div class="speed-detail-row"><span>Kết quả</span><strong>${formatTocDo(detail.thucTe)} tấm/ngày</strong></div>
+      <div class="speed-detail-row"><span>${isQuarter?'Lịch làm việc cả quý':'Ngày làm việc làm mẫu số'}</span><strong>${detail.totalWorkdays||0} ngày</strong></div>
+      ${isQuarter?`<div class="speed-detail-row"><span>Đã qua / còn lại</span><strong>${detail.elapsedWorkdays||0} / ${detail.remainingWorkdays||0} ngày</strong></div><div class="speed-detail-row"><span>Độ phủ dữ liệu đã qua</span><strong>${detail.partialWorkdays||0} / ${detail.elapsedWorkdays||0} ngày</strong></div><div class="speed-detail-row"><span>Phạm vi nguồn hiện có</span><strong>${sourceRange}</strong></div>`:''}
+      <div class="speed-detail-row"><span>${isQuarter?'Tốc độ quý':'Kết quả'}</span><strong>${formatTocDo(detail.thucTe)} tấm/ngày</strong></div>
+      ${isQuarter&&!detail.dataComplete?`<div class="speed-detail-row"><span>Tốc độ tạm của phần đã nạp</span><strong>${formatTocDo(detail.partialSpeed)} tấm/ngày</strong></div>`:''}
       ${benchmark}
-      ${isQuarter&&detail.remainingWorkdays>0?`<div class="speed-detail-row"><span>Tốc độ cần từ nay</span><strong>${formatTocDo(detail.tocDoCanChoPhanConLai)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Cần tăng thêm</span><strong>${formatTocDo(detail.canThemMoiNgay)} tấm/ngày</strong></div>`:''}
-      ${isQuarter?`<div class="speed-detail-row"><span>Dự báo cuối quý</span><strong>${Math.round(detail.duBao||0).toLocaleString('vi-VN')} tấm</strong></div>`:''}
+      ${isQuarter&&detail.dataComplete&&detail.remainingWorkdays>0?`<div class="speed-detail-row"><span>Tốc độ cần từ nay</span><strong>${formatTocDo(detail.tocDoCanChoPhanConLai)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Cần tăng thêm so với thực tế</span><strong>${formatTocDo(detail.canThemMoiNgay)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Trần năng lực 11 giờ</span><strong>${formatTocDo(detail.capacity11h)} tấm/ngày</strong></div>`:''}
+      ${isQuarter&&detail.dataComplete?`<div class="speed-detail-row"><span>Dự báo cuối quý</span><strong>${Math.round(detail.duBao||0).toLocaleString('vi-VN')} tấm</strong></div>`:''}
     </div>
     <div class="speed-detail-formula"><strong>Công thức</strong><br>${isQuarter
-      ? `Mục tiêu/ngày = ${Number(detail.mucTieu||0).toLocaleString('vi-VN')} / ${detail.totalWorkdays||0} ngày. Tốc độ thực tế = ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.elapsedWorkdays||0} ngày đã qua. Dự báo = Đóng gói đã đạt + Tốc độ thực tế × ${detail.remainingWorkdays||0} ngày còn lại.`
+      ? (detail.dataComplete
+        ? `Mục tiêu/ngày = ${Number(detail.mucTieu||0).toLocaleString('vi-VN')} / ${detail.totalWorkdays||0} ngày. Tốc độ quý = ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.elapsedWorkdays||0} ngày đã qua. Dự báo = Đóng gói đã đạt + Tốc độ quý × ${detail.remainingWorkdays||0} ngày còn lại.`
+        : `Chưa tính tốc độ quý vì nguồn mới phủ ${detail.partialWorkdays||0}/${detail.elapsedWorkdays||0} ngày đã qua. Số ${formatTocDo(detail.partialSpeed)} chỉ là ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.partialWorkdays||0} ngày có dữ liệu, không phải tốc độ quý.`)
       : `Tốc độ bộ lọc = ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.totalWorkdays||0} ngày làm việc trong khoảng lọc.`}</div>
-    <div class="speed-detail-source"><strong>Ngày làm việc được tính:</strong> ${dates.length?dates.join(', '):'Không có'}.</div>
+    <div class="speed-detail-source"><strong>${isQuarter?'Lịch làm việc đã đăng ký':'Ngày làm việc được tính'}:</strong> ${dates.length?dates.join(', '):'Không có'}.</div>
     ${source.length?`<div class="speed-detail-source"><strong>Ngày có dữ liệu nguồn:</strong> ${source.join(', ')}.</div>`:''}
-    ${missing.length?`<div class="speed-detail-warning"><strong>Ngày đã đăng ký nhưng chưa có dòng dữ liệu:</strong> ${missing.join(', ')}. Các ngày này vẫn nằm trong mẫu số.</div>`:''}
+    ${missing.length?`<div class="speed-detail-warning"><strong>Ngày làm việc đã qua nhưng chưa có dữ liệu nguồn:</strong> ${missing.join(', ')}. Hệ thống dừng tính tốc độ và dự báo quý cho đến khi đủ dữ liệu.</div>`:''}
+    ${isQuarter&&detail.vuotNangLuc11h?`<div class="speed-detail-warning"><strong>Cảnh báo năng lực:</strong> tốc độ cần thiết vượt trần 11 giờ ${formatTocDo(detail.capacity11h)} tấm/ngày.</div>`:''}
     <div class="speed-detail-result">${detail.danhGia}</div>`;
   modal.style.display='block';
 }

@@ -48,6 +48,7 @@ const checks=[
   ,['Snapshot warning is admin-only',/id="autoPlanIntegrityWarning"/.test(html)&&/getElementById\('autoPlanIntegrityWarning'\)/.test(html)&&/!canManage2\(\) \|\| !xau\.length/.test(html)]
   ,['Filtered daily chart and production speed KPI',/const dailyPlan = keysToUse\.map/.test(html)&&/function tinhTocDoQuy\(/.test(html)&&/danhGia/.test(html)]
   ,['Telegram approval uses Telegram ID, role and unit',/APPROVAL_UNITS/.test(edgeAdmin)&&!/worker_id\?:/.test(edgeAdmin)&&/chosenRole==='nhan_vien'\?selectedUnit:''/.test(html)&&/displayName/.test(html)]
+  ,['Telegram profile has required deterministic login key',/const loginCodeKey = `telegram:\$\{telegramId\}`/.test(edgeAdmin)&&/login_code_key: loginCodeKey/.test(edgeAdmin)&&/const authEmail = `tg_\$\{telegramId\}@khsx\.internal`/.test(edgeAdmin)]
   ,['Warranty Sheet range is open-ended',/range=A7:ZZ/.test(html)&&!/range=A7:Z1000/.test(html)]
   ,['Dark mode exists and persists',/id="darkModeBtn"/.test(html)&&/body\.dark-mode/.test(html)&&/DARK_MODE_KEY/.test(html)&&/managementToolsBtn[\s\S]*?id="darkModeBtn"/.test(html)&&!/managementToolsMenu[\s\S]*?id="darkModeBtn"/.test(html)]
   ,['KPI uses actual packing date consistently',/function rowsNguonKpiNgay/.test(html)&&/totalDG = tongKpi\.throughput/.test(html)&&/rangeDone = rangeKpi\.throughput/.test(html)]
@@ -64,7 +65,8 @@ const checks=[
   ,['Structured overtime records and normalized speed',/OVERTIME_RECORDS_KEY/.test(html)&&/normalizedOutput/.test(html)&&/khsx_overtime_records/.test(release118)]
   ,['Fixed Apps Script source only',/Apps Script cố định/.test(html)&&!/SHEET_CSV_URL/.test(html)]
   ,['No-plan ratio is dash',/dayRate==null\?'—'/.test(html)&&/rangeRate==null\?'—'/.test(html)]
-  ,['Telegram approval repairs partial auth/profile',/findAuthUserByEmail/.test(edgeAdmin)&&/getUserById/.test(edgeAdmin)&&/PROFILE_UPSERT_FAILED/.test(edgeAdmin)]
+  ,['Telegram approval repairs partial auth/profile',/findAuthUserByEmails/.test(edgeAdmin)&&/getUserById/.test(edgeAdmin)&&/PROFILE_UPSERT_FAILED/.test(edgeAdmin)]
+  ,['Quarter speed stops when elapsed source dates are missing',/missingElapsedDates/.test(html)&&/dataComplete/.test(html)&&/Hệ thống dừng tính tốc độ và dự báo quý/.test(html)&&/capacity11h=180/.test(html)]
   ,['Test mode removed from production UI',!/stageTestMenuBtn|stageTestBtn|stageTestModal|managerStageTestMode/.test(html)]
   ,['Local Supabase requires real session',!/LOCAL_SUPABASE_UI_TEST|LOCAL_DROP_DEMO_MODE|TEST-RỚT-8/.test(html)]
 ];
