@@ -89,6 +89,20 @@ for(const d of lockedPlan){const rows=snaps[`khsx_snap_${d.replaceAll('/','-')}`
 for(const o of current) if(!lockedPlan.includes(o.date)||!(snaps[`khsx_snap_${o.date.replaceAll('/','-')}`]||[]).length) orderMap.set(o.id,o);
 for(const o of (base.khsx_dynamic_orders||[])) orderMap.set(o.id,o);
 for(const [date,x] of Object.entries(warranty.ngay||{})){const qty=Number(x.tong)||0;if(qty>0)orderMap.set(`bh_${date.replaceAll('/','-')}`,{id:`bh_${date.replaceAll('/','-')}`,date,ma:'',dong:'Bảo hành',ngang:'',dai:'',day:'',so_luong:qty,ghi_chu:'',is_warranty:true,bh_theo_to:x.theoTo||{},bh_chi_tiet:x.chiTiet||[]})}
+// Clone chỉ phát hành một dòng bảo hành mỗi ngày; nếu storage cũ đã có dòng
+// mồ côi cùng ngày thì không đưa thêm bản trùng sang Supabase.
+for(const [key,o] of [...orderMap]){
+  if(!o?.is_warranty) continue;
+  const canonicalKey=`bh_${String(o.date||'').replaceAll('/','-')}`;
+  if(key===canonicalKey) continue;
+  const current=orderMap.get(canonicalKey);
+  if(current){
+    const score=x=>(Array.isArray(x.bh_chi_tiet)?x.bh_chi_tiet.length:0)*100000
+      +Object.values(x.bh_theo_to||{}).reduce((s,v)=>s+(Number(v)||0),0)+Number(x.so_luong||0);
+    if(score(o)>score(current)) orderMap.set(canonicalKey,{...o,id:canonicalKey});
+  } else orderMap.set(canonicalKey,{...o,id:canonicalKey});
+  orderMap.delete(key);
+}
 const deleted=new Set(base.khsx_deleted_orders||[]), priorities=new Set(base.khsx_priority_orders||[]);
 for(const [id,o] of [...orderMap]) if(deleted.has(id)||isHistoricalDrop(o)) orderMap.delete(id);
 

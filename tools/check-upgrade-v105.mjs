@@ -8,7 +8,7 @@ const edgeAdmin=fs.readFileSync(new URL('../supabase/functions/khsx-admin-link-t
 const guestSchema=fs.readFileSync(new URL('../supabase/schema/guest_readonly_v116.sql',import.meta.url),'utf8');
 
 const checks=[
-  ['version 116 + cache-busted core',/const APP_VERSION = 116;/.test(html)&&/khsx-data-core\.js\?v=116/.test(html)],
+  ['version 117 + cache-busted core',/const APP_VERSION = 117;/.test(html)&&/khsx-data-core\.js\?v=117/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -38,12 +38,17 @@ const checks=[
   ,['Approved Telegram list hides current manager and UUID',/activeLinks\.has\(String\(u\.auth_user_id\)\)/.test(html)&&/Đang hoạt động/.test(html)]
   ,['Manager 2 cannot receive a team',/chosenRole==='nhan_vien'\?selectedUnit:''/.test(html)&&/currentUser\.role !== 'nhan_vien'/.test(html)]
   ,['Deleted orders cannot return from cache',/supabaseOrdersLoaded/.test(html)&&/!supabaseActiveOrderIds\.has/.test(html)]
-  ,['Warranty source is preserved and de-duplicated',/bh_chi_tiet:o\.is_warranty/.test(html)&&/const byId=new Map\(\)/.test(html)]
+  ,['Warranty source is preserved and de-duplicated',/bh_chi_tiet:o\.is_warranty/.test(html)&&/const byId=new Map\(\)/.test(html)&&/warranty\|\$\{o\.date\}/.test(html)&&/canonicalKey=`bh_/.test(clone)]
   ,['Product chart is horizontal and drillable',/type:'bar'/.test(html)&&/indexAxis:'y'/.test(html)&&/openProductDetail/.test(html)]
   ,['Guest uses one sanitized read-only RPC',/rpc\('khsx_guest_dashboard_v116'\)/.test(html)&&/revoke all on public\.khsx_orders/.test(guestSchema)&&/security definer/.test(guestSchema)&&/set search_path = ''/.test(guestSchema)&&/revoke all on function public\.khsx_guest_dashboard_v116\(\) from authenticated/.test(guestSchema)&&/grant execute on function public\.khsx_guest_dashboard_v116\(\) to anon/.test(guestSchema)&&!/as\s+source_payload/i.test(guestSchema)]
   ,['Guest has full Statistics/KHSX tabs and compact PC layout',/public-view-mode/.test(html)&&/monthlyTab\.textContent='📊 Thống kê'/.test(html)&&/khsxTab\.textContent='📋 KHSX'/.test(html)&&/body\.public-view-mode \.wrap\{max-width:1440px/.test(html)]
   ,['Manager employee-stage entry is reversible',/id="managerStageModal"/.test(html)&&/id="exitManagerStageBtn"/.test(html)&&/managerStageOriginalUser/.test(html)]
-  ,['Dark mode exists and persists',/id="darkModeBtn"/.test(html)&&/body\.dark-mode/.test(html)&&/DARK_MODE_KEY/.test(html)]
+  ,['Manager 2 gets direct interactive stage-entry button',/id="managerStageViewBtn" class="only-manager2"/.test(html)&&/managementTools[\s\S]*?id="managerStageViewBtn" class="only-manager2"/.test(html)&&!/managementToolsMenu[\s\S]*?id="managerStageViewBtn"/.test(html)&&/managerStageModal" class="only-manager2/.test(html)&&/if\(!canManage2\(\)\) return;/.test(html)]
+  ,['Snapshot warning is admin-only',/id="autoPlanIntegrityWarning"/.test(html)&&/getElementById\('autoPlanIntegrityWarning'\)/.test(html)&&/!canManage2\(\) \|\| !xau\.length/.test(html)]
+  ,['Filtered daily chart and production speed KPI',/const dailyPlan = keysToUse\.map/.test(html)&&/function tinhTocDoQuy\(/.test(html)&&/danhGia/.test(html)]
+  ,['Telegram manager approval does not require Worker ID',/requestedRole === "nhan_vien" && !workerId/.test(edgeAdmin)&&/chosenRole!=='nhan_vien'/.test(html)&&/displayName/.test(html)]
+  ,['Warranty Sheet range is open-ended',/range=A7:ZZ/.test(html)&&!/range=A7:Z1000/.test(html)]
+  ,['Dark mode exists and persists',/id="darkModeBtn"/.test(html)&&/body\.dark-mode/.test(html)&&/DARK_MODE_KEY/.test(html)&&/managementToolsBtn[\s\S]*?id="darkModeBtn"/.test(html)&&!/managementToolsMenu[\s\S]*?id="darkModeBtn"/.test(html)]
   ,['KPI uses one source layer and capped cohort',/function rowsNguonKpiNgay/.test(html)&&/Math\.min\(v,cohortCaps\.get/.test(html)&&/Sản lượng đóng gói trong kỳ/.test(html)]
   ,['Test mode removed from production UI',!/stageTestMenuBtn|stageTestBtn|stageTestModal|managerStageTestMode/.test(html)]
   ,['Local Supabase requires real session',!/LOCAL_SUPABASE_UI_TEST|LOCAL_DROP_DEMO_MODE|TEST-RỚT-8/.test(html)]
@@ -55,5 +60,5 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v116 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v117 checks passed (${checks.length}/${checks.length}).`);
 
