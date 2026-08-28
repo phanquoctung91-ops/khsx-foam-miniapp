@@ -30,19 +30,12 @@
   body.dark-mode .panel,body.dark-mode .card,body.dark-mode .kpi,body.dark-mode [role="dialog"]>div{background:linear-gradient(145deg,#102238,#0b1827)!important;color:var(--text);}
   body.dark-mode [style*="background:#f8f9fb"],body.dark-mode [style*="background:#f7fbff"],body.dark-mode [style*="background:#f4f6fa"],body.dark-mode [style*="background:#fff"],body.dark-mode [style*="background: white"],body.dark-mode [style*="background:white"]{background:#10243a!important;color:var(--text)!important;}
   body.dark-mode [style*="color:#1a1d23"],body.dark-mode [style*="color:#111"],body.dark-mode [style*="color:black"]{color:var(--text)!important;}
-  body.dark-mode [id$="Modal"] [style*="color:#1f4d78"],body.dark-mode [id$="Modal"] [style*="color:#6840a3"],body.dark-mode [id$="Modal"] [style*="color:#6f4700"],body.dark-mode [id$="Modal"] [style*="color:#8a5200"]{color:var(--text)!important;}
-  body.dark-mode [id$="Modal"] [style*="border:1px solid #cfd6e4"],body.dark-mode [id$="Modal"] [style*="border:1px solid #cfe0ef"]{border-color:var(--border)!important;}
   body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#091827;border:1px solid var(--border);}
   body.dark-mode .tab-btn,body.dark-mode .management-tools-menu button{color:var(--text2);background:#0d2032;}
   body.dark-mode .tab-btn.active{color:var(--primary)!important;box-shadow:0 0 14px rgba(56,217,255,.24);}
   body.dark-mode .table-scroll,body.dark-mode table td{background:var(--card);color:var(--text);border-color:var(--border);}
   body.dark-mode tr:hover td{background:#10283c!important;}
-  body.dark-mode tr.row-ghost td,body.dark-mode tr.row-new td,body.dark-mode tr.row-baohanh td,body.dark-mode tr.row-uutien td,body.dark-mode tr.row-changed td,body.dark-mode tr.row-rot td,body.dark-mode tr.row-split-source td{background:#10243a!important;color:var(--text)!important;border-color:var(--border)!important;}
-  body.dark-mode .stage-summary-item,body.dark-mode .ops-stage-card,body.dark-mode .employee-order-card,body.dark-mode .employee-empty{background:#10243a!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode .modal-overlay,body.dark-mode [id$="Modal"]{color:var(--text);}
-  body.dark-mode .modal-overlay,body.dark-mode [id$="Modal"]{background:rgba(2,8,18,.82)!important;}
-  body.dark-mode [id$="Modal"]>div,body.dark-mode .capacity-modal>div,body.dark-mode .modal-card{background:linear-gradient(145deg,#102238,#081522)!important;color:var(--text)!important;border-color:var(--border)!important;box-shadow:0 0 28px rgba(56,217,255,.14)!important;}
-  body.dark-mode .wf-note,body.dark-mode .data-integrity-alert{color:var(--text)!important;background:var(--warning-l)!important;border-color:var(--warning)!important;}
   body.dark-mode .kpi{box-shadow:0 0 18px rgba(56,217,255,.08);}
   /* Link khách trên PC ưu tiên mật độ thông tin: đủ hai tab nhưng gọn hơn dashboard quản lý. */
   @media(min-width:901px){
@@ -172,7 +165,6 @@
   @media(max-width:900px){
     .grid2{grid-template-columns:1fr;}
     .wrap{padding:20px 16px 44px;}
-    [id$="Modal"]>div,.capacity-modal>div{width:min(100%,720px)!important;max-width:calc(100vw - 24px)!important;margin:0 auto;}
   }
   /* Điện thoại nằm ngang & tablet nhỏ */
   @media(max-width:700px){
@@ -1104,11 +1096,6 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <div class="card">
     <h3>Kế hoạch sản xuất — Tổ Mút Foam</h3>
     <div class="wf-link" data-wf="khsx">🔗 Workflow hoạt động</div>
-    <div class="only-manager" style="margin:8px 0 12px;font-size:11.5px;color:var(--text2);line-height:1.45;">
-      Nguồn dữ liệu cố định:
-      <a href="https://docs.google.com/spreadsheets/d/1qNC55iN4KKF9hJRrfc4egnHIqnC_-GKEKC2jwXDFxMQ/edit#gid=1960770014" target="_blank" rel="noopener">mở Sheet KHSX công ty</a>
-      · <a href="https://docs.google.com/spreadsheets/d/177wqQjNq8B5n3dG-Fe1N43atitmX66J5phaWYsLyJq0/edit" target="_blank" rel="noopener">mở Sheet bảo hành</a>
-    </div>
     <div class="btn-row">
       <button id="autoPlanRefreshBtn" class="primary-btn">↻ Làm mới dữ liệu</button>
       <button id="addManualOrderBtn" class="primary-btn only-manager2" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
@@ -1699,10 +1686,7 @@ function computeAndRenderKpis(){
   `;
   document.getElementById('refreshWarrantyKpiBtn')?.addEventListener('click',async e=>{
     const btn=e.currentTarget; btn.classList.add('is-loading');
-    await fetchBaoHanh({force:true});
-    const day=document.getElementById('autoPlanDaySelect')?.value;
-    if(day&&day!=='all') await fetchBaoHanhNgay(day);
-    btn.classList.remove('is-loading');
+    await fetchBaoHanh({force:true}); btn.classList.remove('is-loading');
   });
   chayDemSo(kpiRow);
 }
@@ -1909,14 +1893,14 @@ function renderMonthly(){
   rangeDone = rangeKpi.throughput;
 
   const rangeRate = rangePlan>0 ? Math.round((rangeDone/rangePlan)*1000)/10 : null;
-  const tocDoKy = tinhTocDoBoLoc(keysToUse.map(k=>allDays[k]?.date).filter(Boolean),rangeKpi.throughput);
+  const tocDoKy = tinhTocDoQuy(keysToUse,rangeKpi,rangeActiveDays);
   document.getElementById('monthlyKpis').innerHTML = `
     <div class="kpi k-accent"><div class="label">Tổng kế hoạch</div><div class="value">${rangePlan.toLocaleString()}</div></div>
     <div class="kpi k-success"><div class="label">Tổng hoàn thành</div><div class="value">${rangeDone.toLocaleString()}</div></div>
     <div class="kpi ${rangeRate==null?'':rangeRate>=95?'k-success':'k-warning'}"><div class="label">Tỷ lệ hoàn thành</div><div class="value" style="color:${rangeRate==null?'var(--text2)':rangeRate>=95?'var(--success)':rangeRate>=80?'var(--warning)':'var(--danger)'}">${rangeRate==null?'—':rangeRate+'%'}</div></div>
     <div class="kpi k-accent"><div class="label">Đóng gói trong kỳ</div><div class="value">${rangeKpi.throughput.toLocaleString()}</div></div>
     <div class="kpi k-accent"><div class="label">Số ngày có sản xuất</div><div class="value">${rangeActiveDays}</div></div>
-    <div class="kpi" style="border-top-color:${mauTocDo(tocDoKy.trangThai)};"><div class="label">Tốc độ theo kỳ lọc</div><div class="value" style="color:${mauTocDo(tocDoKy.trangThai)};">${tocDoKy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoKy.workDays} ngày làm việc trong phạm vi lọc</div><div class="kpi-phu" style="color:${mauTocDo(tocDoKy.trangThai)};font-weight:700;line-height:1.35;">${tocDoKy.danhGia}</div></div>
+    <div class="kpi" style="border-top-color:${mauTocDo(tocDoKy.trangThai)};"><div class="label">Tốc độ theo kỳ lọc</div><div class="value" style="color:${mauTocDo(tocDoKy.trangThai)};">${tocDoKy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">Dự báo quý: <b>${Math.round(tocDoKy.duBao).toLocaleString()}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoKy.trangThai)};font-weight:700;line-height:1.35;">${tocDoKy.danhGia}</div></div>
   `;
 
   const products = Object.entries(productMap).map(([name,total])=>({name,total})).sort((a,b)=>b.total-a.total);
@@ -2174,25 +2158,20 @@ function tinhTienDoQuyHienTai(){
   });
   const daLam = tongKpiTuRowsTheoKeys(quyKeys).throughput;
   const daLamThang = tongKpiTuRowsTheoKeys(thangKeys).throughput;
-  const ngayDaQuaQuy = workDatesForQuarter(nam,quy).filter(iso=>{
-    const d=new Date(`${iso}T00:00:00`),today=new Date(); today.setHours(0,0,0,0); return d<=today;
-  }).length;
-  const ngayDaQuaThang = workDatesForQuarter(nam,quy).filter(iso=>{
-    const p=parseDMY(isoToDMY(iso)),today=new Date(); today.setHours(0,0,0,0);
-    return p && p.m===thangHienTai && new Date(`${iso}T00:00:00`)<=today;
-  }).length;
+  const ngaySanXuatQuy = quyKeys.filter(k=>tongKpiTuRowsTheoKeys([k]).throughput>0).length;
+  const ngaySanXuatThang = thangKeys.filter(k=>tongKpiTuRowsTheoKeys([k]).throughput>0).length;
   const mucTieu = quarterTargets[key] || 0;
   const soNgayDuKien = tinhSoNgayLamViecQuy(nam,quy);
   const mucTieuNgay = mucTieu>0 && soNgayDuKien>0 ? mucTieu/soNgayDuKien : 0;
-  const tbQuy = ngayDaQuaQuy>0 ? daLam/ngayDaQuaQuy : 0;
-  const tbThang = ngayDaQuaThang>0 ? daLamThang/ngayDaQuaThang : 0;
+  const tbQuy = ngaySanXuatQuy>0 ? daLam/ngaySanXuatQuy : 0;
+  const tbThang = ngaySanXuatThang>0 ? daLamThang/ngaySanXuatThang : 0;
   const tyLeQuy = mucTieuNgay>0 ? Math.round((tbQuy/mucTieuNgay)*1000)/10 : null;
   const tyLeThang = mucTieuNgay>0 ? Math.round((tbThang/mucTieuNgay)*1000)/10 : null;
   const phanTram = mucTieu>0 ? Math.round((daLam/mucTieu)*1000)/10 : null;
-  return {nam, quy, mucTieu, soNgayDuKien, ngayDaQuaQuy, ngayDaQuaThang, mucTieuNgay, daLam, phanTram, tbQuy, tbThang, tyLeQuy, tyLeThang};
+  return {nam, quy, mucTieu, soNgayDuKien, mucTieuNgay, daLam, phanTram, tbQuy, tbThang, tyLeQuy, tyLeThang};
 }
-// Tốc độ quý: chỉ dùng toàn bộ dữ liệu quý, mẫu số là mọi ngày làm việc đã
-// đăng ký và đã đi qua (kể cả ngày có sản lượng bằng 0). OT không thay đổi KPI.
+// Chỉ số tốc độ dùng chung cho Tổng hợp tháng và KHSX. Mẫu số sản xuất là số
+// ngày có đóng gói thực tế; tuyệt đối không lấy số ngày có kế hoạch thay thế.
 function tinhTocDoQuy(keysOverride=null, outputOverride=null, activeDaysOverride=null){
   const quy=tinhTienDoQuyHienTai();
   const keys=Array.isArray(keysOverride) ? keysOverride : Object.keys(allDays).filter(k=>{
@@ -2200,14 +2179,20 @@ function tinhTocDoQuy(keysOverride=null, outputOverride=null, activeDaysOverride
     return p && p.y===quy.nam && Math.floor((p.m-1)/3)+1===quy.quy;
   });
   const kpi=outputOverride || tongKpiTuRowsTheoKeys(keys);
-  const activeDays=activeDaysOverride==null ? quy.ngayDaQuaQuy : Number(activeDaysOverride)||0;
+  const activeDays=activeDaysOverride==null
+    ? keys.filter(k=>tongKpiTuRowsTheoKeys([k]).throughput>0).length
+    : Number(activeDaysOverride)||0;
   const ngayBatDau=new Date(quy.nam,(quy.quy-1)*3,1);
   const ngayCuoi=new Date(quy.nam,quy.quy*3,0);
   const homNay=new Date(); homNay.setHours(0,0,0,0);
   const denNgay=homNay<ngayBatDau?ngayBatDau:new Date(Math.min(homNay.getTime(),ngayCuoi.getTime()));
   const ngayDaQua=workDatesForQuarter(quy.nam,quy.quy).filter(iso=>new Date(`${iso}T00:00:00`)<=denNgay).length;
   const ngayConLai=Math.max(0,quy.soNgayDuKien-Math.min(quy.soNgayDuKien,ngayDaQua));
-  const normalizedOutput=Number(kpi.throughput||0);
+  const normalizedOutput=outputOverride?Number(kpi.throughput||0):keys.reduce((sum,k)=>{
+    const day=allDays[k]?.date,qty=tongKpiTuRowsTheoKeys([k]).throughput,records=overtimeFor(day,null,'dong_goi');
+    const avg=records.length?records.reduce((s,x)=>s+gioCaTheoOT(x.hours),0)/records.length:8;
+    return sum+(avg>0?qty*8/avg:qty);
+  },0);
   const thucTe=activeDays>0 ? normalizedOutput/activeDays : 0;
   const duBao=Number(kpi.throughput||0)+thucTe*ngayConLai;
   const tyLe=quy.mucTieuNgay>0 ? thucTe/quy.mucTieuNgay : null;
@@ -2219,21 +2204,6 @@ function tinhTocDoQuy(keysOverride=null, outputOverride=null, activeDaysOverride
     else danhGia=`Tiến độ đang chậm đáng kể. Nếu duy trì tốc độ hiện tại, dự kiến thiếu ${Math.max(0,Math.round(quy.mucTieu-duBao)).toLocaleString()} tấm vào cuối quý — cần điều chỉnh kế hoạch sản xuất.`;
   }
   return {...quy,ngaySanXuat:activeDays,ngayConLai,thucTe,duBao,trangThai,danhGia,normalizedOutput};
-}
-// Tốc độ theo bộ lọc là KPI độc lập: chỉ đánh giá các ngày đang xem, không
-// dựng dự báo quý và không dùng để thay thế thẻ Tốc độ quý.
-function tinhTocDoBoLoc(dates,output){
-  const quy=tinhTienDoQuyHienTai();
-  const ds=new Set((dates||[]).map(String));
-  const workDays=workDatesForQuarter(quy.nam,quy.quy).filter(iso=>ds.has(isoToDMY(iso))).length;
-  const thucTe=workDays>0?Number(output||0)/workDays:0;
-  const tyLe=quy.mucTieuNgay>0?thucTe/quy.mucTieuNgay:null;
-  const trangThai=tyLe==null?'none':tyLe>=1?'green':tyLe>=.9?'yellow':'red';
-  const chenhlech=quy.mucTieuNgay-thucTe;
-  const danhGia=tyLe==null?'Chưa nhập mục tiêu quý để so sánh tốc độ.':
-    chenhlech<=0?`Đang nhanh hơn mục tiêu ${Math.abs(chenhlech).toLocaleString('vi-VN',{maximumFractionDigits:1})} tấm/ngày.`:
-    `Đang chậm hơn mục tiêu ${chenhlech.toLocaleString('vi-VN',{maximumFractionDigits:1})} tấm/ngày.`;
-  return {thucTe,trangThai,danhGia,workDays};
 }
 function mauTocDo(trangThai){ return trangThai==='green'?'var(--success)':trangThai==='yellow'?'var(--warning)':trangThai==='red'?'var(--danger)':'var(--text2)'; }
 async function saveQuarterTarget(nam, quy, soLuong,workDates=null){
@@ -3204,7 +3174,6 @@ let supabaseReloadTimer = null;
 let supabaseRealtimeRetryTimer = null;
 let supabaseRealtimeRetryAttempt = 0;
 let supabaseRealtimeHealthy = false;
-let legacyFallbackActive = false;
 const SUPABASE_STAGE_OUTBOX_KEY = 'khsx_supabase_stage_outbox_v1';
 const SUPABASE_DEVICE_ID_KEY = 'khsx_supabase_device_id_v1';
 let supabaseStageOutbox = {};
@@ -3397,32 +3366,6 @@ async function restoreSupabaseSession(){
   applyRoleUI();
   return true;
 }
-async function revalidateSupabaseSessionBackground(){
-  if(!supabaseDb || currentUser?._manager_preview) return true;
-  const {data:{session}}=await supabaseDb.auth.getSession();
-  if(!session) return false;
-  const {data,error}=await supabaseDb.from('khsx_profiles')
-    .select('display_name,role,unit_name,active,worker_id')
-    .eq('user_id',session.user.id).maybeSingle();
-  // Lỗi mạng không được biến thành đăng xuất giả; lượt sau sẽ kiểm tra lại.
-  if(error) return true;
-  if(!data?.active){
-    await supabaseDb.auth.signOut().catch(()=>{});
-    if(typeof stopSupabaseRealtime==='function') stopSupabaseRealtime();
-    clearLoginSession();
-    currentUser=null;
-    applyRoleUI();
-    const ov=document.getElementById('loginOverlay'); if(ov) ov.style.display='flex';
-    const err=document.getElementById('loginError');
-    if(err){err.textContent='Quyền Telegram đã bị thu hồi. Hãy đăng ký lại với quản lý nếu cần.';err.style.display='block';}
-    return false;
-  }
-  const oldCode=currentUser?.code||'';
-  currentUser={code:oldCode,name:data.display_name,role:data.role,unit:supabaseUnitToUi(data.unit_name),worker_id:data.worker_id||null,auth_user_id:session.user.id};
-  saveLoginSession(currentUser);
-  applyRoleUI();
-  return true;
-}
 async function supabaseSelectAll(table,columns='*',configure=null){
   const pageSize=1000,all=[];
   for(let from=0;;from+=pageSize){
@@ -3538,15 +3481,8 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     day:o.thickness_mm==null?'':String(o.thickness_mm),so_luong:Number(o.plan_qty)||0,
     ghi_chu:o.note||'',nhom_don_hang:o.order_group||'',is_lot:!!o.is_lot,lot_label:o.lot_label||''
   }));
-  const legacyPlanRows=!allowPublic&&Array.isArray(legacyLocalCache?.sheetRows)?legacyLocalCache.sheetRows:[];
-  const legacyDynamicRows=!allowPublic&&Array.isArray(legacyLocalCache?.dynamicOrders)?legacyLocalCache.dynamicOrders:[];
-  const mergeMissingById=(live,old)=>{
-    const out=[...(live||[])],seen=new Set(out.map(x=>String(x.id)));
-    (old||[]).forEach(x=>{if(x&&x.id&&!seen.has(String(x.id))){out.push(x);seen.add(String(x.id));}});
-    return out;
-  };
-  const mergedPlanRows=mergeMissingById(remotePlanRows,legacyPlanRows);
-  const remoteDynamicRows=visibleOrd.filter(o=>o.is_manual||o.is_drop||o.is_ghost||o.is_warranty).map(o=>{
+  sheetRows=remotePlanRows;
+  dynamicOrders=visibleOrd.filter(o=>o.is_manual||o.is_drop||o.is_ghost||o.is_warranty).map(o=>{
     const liveRow=o.source_payload&&o.source_payload.live_row||{};
     return {
       id:o.id,date:isoToDMY(o.production_date),ma:o.product_code||'',dong:o.product_name||'',
@@ -3559,13 +3495,6 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
       bh_chi_tiet:o.is_warranty?(liveRow.bh_chi_tiet||o.bh_chi_tiet||[]):undefined
     };
   });
-  const mergedDynamicRows=mergeMissingById(remoteDynamicRows,legacyDynamicRows);
-  const legacyFallbackCount=(mergedPlanRows.length-remotePlanRows.length)+(mergedDynamicRows.length-remoteDynamicRows.length);
-  legacyFallbackActive=!!legacyLocalCache && (
-    mergedPlanRows.length>remotePlanRows.length || mergedDynamicRows.length>remoteDynamicRows.length
-  );
-  sheetRows=mergedPlanRows;
-  dynamicOrders=mergedDynamicRows;
   // Nếu trước đó quản lý nạp file KH lúc mất mạng, lần online đầu tiên phải
   // đối chiếu file tạm với dữ liệu sống, đưa dòng thay đổi lên đầu và chờ xác nhận/tách.
   if(offlinePlanActive && !allowPublic){
@@ -3579,11 +3508,6 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     cancelledOrderMeta[o.id]={order:row,assignment:nextAssignments[o.id]||null,reason:o.cancel_reason||'Đã hủy trước bản v118',cancelledAt:o.deleted_at};
   });
   if(remoteCancelled.length)persistCancelledOrders();
-  // Giữ các phân công/tiến độ cũ chưa có bản ghi Supabase để người quản lý
-  // nhìn thấy và đối chiếu, thay vì bị mất khỏi giao diện sau khi đổi phiên bản.
-  if(!allowPublic) Object.entries(legacyLocalCache?.assignments||{}).forEach(([id,a])=>{
-    if(!nextAssignments[id]) nextAssignments[id]=JSON.parse(JSON.stringify(a||{}));
-  });
   assignments=applySupabaseOrderTeamGuards(
     applyVerifiedDataCorrections(overlayPendingAssignments(
       overlayPendingSupabaseManagement(nextAssignments),assignments))
@@ -3603,9 +3527,7 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   rebuildOrderEntityStore();
   autoPlanLoaded=true;
   saveLocalCache();
-  supabaseStatus(legacyFallbackActive
-    ? `Supabase đã đồng bộ · đang giữ ${legacyFallbackCount} đơn từ bản cũ để đối chiếu`
-    : `Supabase đã đồng bộ · ${visibleOrd.length} đơn`,!legacyFallbackActive);
+  supabaseStatus(`Supabase đã đồng bộ · ${visibleOrd.length} đơn`,true);
   return true;
 }
 async function refreshFromPrimarySupabase(){
@@ -4051,10 +3973,6 @@ async function storageSet(key, value){
 // v2 cố ý bỏ cache hiển thị của bản cũ khi triển khai cơ chế đồng bộ tin cậy.
 // Hàng đợi chưa gửi dùng khoá riêng và vẫn được giữ để không mất số nhân viên đã nhập.
 const LOCAL_CACHE_KEY = SUPABASE_VARIANT ? 'khsx_supabase_local_cache_v1' : 'khsx_local_cache_v2';
-// Không xóa bản lưu chỉ vì phiên bản giao diện tăng. Bản lưu cũ là nguồn
-// khôi phục cuối cùng khi dữ liệu chưa kịp migrate sang Supabase.
-const LEGACY_LOCAL_CACHE_KEY = `${LOCAL_CACHE_KEY}_legacy`;
-let legacyLocalCache = null;
 
 // Hiệu chỉnh nghiệp vụ đã xác minh: ngày 20/08 hệ thống không ghi nhận được tiến độ,
 // nên ba đơn hoàn tất trong ngày bị dồn nhầm sang 21/08. Chỉ chuyển ngày ghi nhận;
@@ -4141,28 +4059,17 @@ function saveLocalCache(){
 function loadLocalCache(){
   try{
     const raw = localStorage.getItem(LOCAL_CACHE_KEY);
-    if(!raw){
-      const old=JSON.parse(localStorage.getItem(LEGACY_LOCAL_CACHE_KEY)||'null');
-      if(old&&typeof old==='object'){legacyLocalCache=old;return old;}
-      return null;
-    }
+    if(!raw) return null;
     const cached = JSON.parse(raw);
     // Lối tắt trên điện thoại có thể giữ localStorage lâu hơn file giao diện.
-    // Cache khác phiên bản vẫn phải được giữ lại để khôi phục/migrate. Không
-    // xóa âm thầm vì thao tác đó khiến người dùng tưởng dữ liệu đã mất.
+    // Cache của bản cũ không được phép dựng đơn sai trước khi nguồn thật tải về.
+    // Chỉ bỏ cache hiển thị; phiên đăng nhập và hàng đợi nhập liệu dùng khoá riêng nên vẫn giữ.
     if(Number(cached && cached.appVersion) !== APP_VERSION){
-      legacyLocalCache = {...cached,_legacyVersion:Number(cached.appVersion)||null};
-      try{ localStorage.setItem(LEGACY_LOCAL_CACHE_KEY,JSON.stringify(legacyLocalCache)); }catch(e){}
-      return legacyLocalCache;
+      localStorage.removeItem(LOCAL_CACHE_KEY);
+      return null;
     }
     return cached;
-  }catch(e){
-    try{
-      const old=JSON.parse(localStorage.getItem(LEGACY_LOCAL_CACHE_KEY)||'null');
-      if(old&&typeof old==='object'){legacyLocalCache=old;return old;}
-    }catch(_){}
-    return null;
-  }
+  }catch(e){ return null; }
 }
 
 // Nền: khoá cũ (đứng yên, không ghi nữa) + các khoá tháng (đang hoạt động).
@@ -5122,22 +5029,9 @@ function dongNhanSuTuGviz(data){
 }
 async function taiNhanSuBaoHanhTuSheet(ngay){
   const p=String(ngay||'').split('/'); if(p.length!==3)return [];
-  const tab=tenSheetBaoHanh(ngay);
+  const tab=`BC BẢO HÀNH MÚT ${p[0]}${p[1]}${p[2].slice(-2)}`;
   // Không khóa cứng số dòng: các tab bảo hành có thể vượt 1.000 dòng.
   return dongNhanSuTuGviz(await gvizJsonpRequest(`https://docs.google.com/spreadsheets/d/${WARRANTY_SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tab)}&range=A7:ZZ&_cb=${Date.now()}`));
-}
-function tenSheetBaoHanh(ngay){
-  const p=String(ngay||'').split('/');
-  return p.length===3?`BC BẢO HÀNH MÚT ${p[0]}${p[1]}${p[2].slice(-2)}`:'';
-}
-async function taiBaoHanhNgayTuSheet(ngay){
-  const tab=tenSheetBaoHanh(ngay);
-  if(!tab) throw new Error('Ngày bảo hành không hợp lệ');
-  try{
-    const rows=await taiNhanSuBaoHanhTuSheet(ngay),theoTo={},chiTiet=rows.map(x=>({...x}));
-    chiTiet.forEach(x=>{const to=chuanToBaoHanh(x.to);theoTo[to]=(theoTo[to]||0)+soCongDoan(x.so_luong);});
-    return {tong:chiTiet.reduce((s,x)=>s+soCongDoan(x.so_luong),0),theoTo,chiTiet:phanBoNhanSuBaoHanh(ngay,chiTiet)};
-  }catch(e){ throw new Error(`Chưa tìm thấy Sheet ${tab}`); }
 }
 function tenNhanSuBaoHanh(x,congDoan){
   const fields=congDoan==='may'?['bh_may_ten','may_tay','may','nguoi_may','may_by_name']:['bh_dong_goi_ten','dong_goi','donggoi','nguoi_dong_goi','dong_goi_by_name'];
@@ -5196,7 +5090,7 @@ async function fetchBaoHanh({silent=false,force=false}={}){
     console.warn('Không đọc được dữ liệu bảo hành', e);
     if(!silent){
       const el=document.getElementById('autoPlanStatus');
-      if(el){ el.textContent=e?.message&&/Chưa tìm thấy Sheet/.test(e.message)?e.message:'Không tải được bảo hành — đang giữ bản lưu cũ.'; el.style.color='var(--danger)'; }
+      if(el){ el.textContent='Không tải được bảo hành — đang giữ bản lưu cũ.'; el.style.color='var(--danger)'; }
     }
     return false;
   }
@@ -5234,27 +5128,7 @@ function baoHanhCuaTo(team, cacNgay){
   return t;
 }
 
-async function syncSheetRowsIntoSupabase(rows){
-  if(!SUPABASE_VARIANT||!supabaseDb||!Array.isArray(rows)||!rows.length) return {ok:false,skipped:true};
-  const {data:{session}}=await supabaseDb.auth.getSession();
-  if(!session) return {ok:false,error:new Error('SESSION_EXPIRED')};
-  const missing=rows.filter(r=>r&&r.id&&!supabaseActiveOrderIds.has(String(r.id)));
-  if(!missing.length) return {ok:true,inserted:0};
-  const payload=missing.map(r=>{
-    return {id:String(r.id),production_date:dmyToIso(r.date),product_code:r.ma||'',product_name:r.dong||'',
-      width_mm:Number(r.ngang)||null,length_mm:Number(r.dai)||null,thickness_mm:Number(r.day)||null,
-      plan_qty:Number(r.so_luong)||0,note:r.ghi_chu||'',order_group:r.nhom_don_hang||'KHSX',
-      source_order_id:null,is_manual:false,is_drop:false,is_ghost:false,is_warranty:false,is_lot:!!r.is_lot,
-      lot_label:r.lot_label||'',source_payload:{source:'company_sheet',synced_by:session.user.id,live_row:r}};
-  });
-  for(let i=0;i<payload.length;i+=100){
-    const {error}=await supabaseDb.from('khsx_orders').upsert(payload.slice(i,i+100),{onConflict:'id',ignoreDuplicates:true});
-    if(error) return {ok:false,error};
-  }
-  return {ok:true,inserted:payload.length};
-}
-
-async function fetchAutoPlan({syncSupabase=false}={}){
+async function fetchAutoPlan(){
   const statusEl = document.getElementById('autoPlanStatus');
   statusEl.textContent = 'Đang tải dữ liệu từ Google Sheet...';
   statusEl.style.color = 'var(--text2)';
@@ -5276,11 +5150,6 @@ async function fetchAutoPlan({syncSupabase=false}={}){
         + `dd/mm/yyyy chưa (đặt cột Ngày thành "Văn bản thuần" trước khi dán).`);
     }
     sheetRows = applyLotSplitRule(assignStableIds(rows));
-    if(syncSupabase){
-      const synced=await syncSheetRowsIntoSupabase(sheetRows);
-      if(!synced.ok&&!synced.skipped) throw synced.error||new Error('Không nạp được KHSX vào Supabase');
-      if(synced.inserted) supabaseStatus(`Đã nạp ${synced.inserted} đơn KHSX mới vào Supabase`,true);
-    }
     autoPlanLoaded = true;
     // Bây giờ mới có đủ đơn Sheet để áp quy ước hoàn thành lịch sử.
     assignments = applyVerifiedDataCorrections(assignments);
@@ -5526,13 +5395,7 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
 function renderAutoPlanDaySelect(){
   const sel = document.getElementById('autoPlanDaySelect');
   const prev = sel.value || 'all';
-  const quarterNow=quyCuaNgay(new Date());
-  // Cho phép chọn cả ngày làm việc không xuất hiện trong Sheet: ngày đó là
-  // ngày không có kế hoạch và KPI phải hiện 0, không bị biến mất khỏi bộ lọc.
-  const dates = Array.from(new Set([
-    ...getOrders().flatMap(r=>getCarryForwardDates(r)),
-    ...workDatesForQuarter(quarterNow.nam,quarterNow.quy).map(isoToDMY)
-  ])).sort((a,b)=>{
+  const dates = Array.from(new Set(getOrders().flatMap(r=>getCarryForwardDates(r)))).sort((a,b)=>{
     const da = a.split('/').reverse().join(''), db = b.split('/').reverse().join('');
     return da.localeCompare(db);
   });
@@ -5585,23 +5448,16 @@ function renderAutoPlan(){
     : soCongDoan(giaTriCongDoanNgay(r,dayVal,'dong_goi'))),0);
   const rotCount = filtered.filter(r=>getOrderStatus(r)==='rot').length;
   const dangSXCount = filtered.filter(r=>getOrderStatus(r)==='dang_san_xuat').length;
-  // Tốc độ bộ lọc chỉ tính phạm vi ngày đang xem và luôn lấy toàn team.
-  // Không truyền output lọc vào hàm tốc độ quý vì sẽ làm sai dự báo quý.
-  const qNow=quyCuaNgay(new Date());
-  const speedDates = dayVal==='all'
-    ? workDatesForQuarter(qNow.nam,qNow.quy).filter(iso=>iso<=isoDateLocal(new Date())).map(isoToDMY)
-    : [dayVal];
-  const speedRows = getOrders().filter(r=>dayVal==='all'||getCarryForwardDates(r).includes(dayVal));
-  const speedOutput = speedRows.reduce((sum,r)=>sum+(dayVal==='all'
-    ? tongCongDoan(r,'dong_goi')
-    : soCongDoan(giaTriCongDoanNgay(r,dayVal,'dong_goi'))),0);
-  const tocDoLoc = tinhTocDoBoLoc(speedDates,speedOutput);
+  const filteredActiveDays = dayVal==='all'
+    ? new Set(filtered.flatMap(r=>Object.entries(assignments[r.id]?.stage_by_date||{}).filter(([,e])=>soCongDoan(e?.dong_goi)>0).map(([d])=>d))).size
+    : (hoanThanh>0?1:0);
+  const tocDoLoc = tinhTocDoQuy(null,{throughput:hoanThanh},filteredActiveDays);
   document.getElementById('autoPlanKpis').innerHTML = `
     <div class="kpi k-accent"><div class="label">Kế hoạch sản xuất</div><div class="value">${kesHoachSanXuat.toLocaleString()}</div></div>
     <div class="kpi k-success"><div class="label">Hoàn thành</div><div class="value">${hoanThanh.toLocaleString()}</div></div>
     <div class="kpi k-warning"><div class="label">Đang sản xuất</div><div class="value">${dangSXCount}</div></div>
     <div class="kpi" style="border-top-color:var(--danger);"><div class="label">Đơn rớt chưa sản xuất</div><div class="value" style="color:var(--danger);">${rotCount}</div></div>
-    <div class="kpi" style="border-top-color:${mauTocDo(tocDoLoc.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoLoc.trangThai)};">${tocDoLoc.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoLoc.workDays} ngày làm việc trong phạm vi xem</div><div class="kpi-phu" style="color:${mauTocDo(tocDoLoc.trangThai)};font-weight:700;line-height:1.35;">${tocDoLoc.danhGia}</div></div>
+    <div class="kpi" style="border-top-color:${mauTocDo(tocDoLoc.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoLoc.trangThai)};">${tocDoLoc.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">Dự báo quý: <b>${Math.round(tocDoLoc.duBao).toLocaleString()}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoLoc.trangThai)};font-weight:700;line-height:1.35;">${tocDoLoc.danhGia}</div></div>
   `;
   renderTeamRings('autoPlanTeamRings', filtered, dayVal !== 'all', false, dayVal);   // 'Tất cả ngày' -> chỉ hiện vòng tròn %
   canhBaoAnhChupRong();
@@ -5663,8 +5519,7 @@ function parseDMYForDate(dmy){
 }
 
 document.getElementById('autoPlanRefreshBtn').addEventListener('click', async ()=>{
-  await Promise.all([fetchAutoPlan({syncSupabase:SUPABASE_VARIANT}), fetchOrderGroups(), fetchBaoHanh()]);
-  if(SUPABASE_VARIANT&&supabasePrimaryActive) await refreshFromPrimarySupabase();
+  await Promise.all([fetchAutoPlan(), fetchOrderGroups(), fetchBaoHanh()]);
   renderAutoPlan();
 });
 document.getElementById('autoPlanTable').addEventListener('click',e=>{
@@ -5838,10 +5693,7 @@ document.getElementById('capacityQuickLastWeek').addEventListener('click',()=>{ 
 document.getElementById('capacityQuickLastMonth').addEventListener('click',()=>{ const n=new Date(); datCapacityRange(new Date(n.getFullYear(),n.getMonth()-1,1),new Date(n.getFullYear(),n.getMonth(),0)); });
 document.getElementById('refreshCapacityStatsBtn').addEventListener('click',renderCapacityStats);
 document.getElementById('capacityStatsModal').addEventListener('click',e=>{if(e.target.id==='capacityStatsModal') closeCapacityStats();});
-document.getElementById('autoPlanDaySelect').addEventListener('change', async e=>{
-  renderAutoPlan();
-  if(e.target.value&&e.target.value!=='all'&&!baoHanhTheoNgay[e.target.value]) await fetchBaoHanhNgay(e.target.value);
-});
+document.getElementById('autoPlanDaySelect').addEventListener('change', renderAutoPlan);
 function syncSearchClearButton(input){
   const wrap=input && input.closest('.search-with-clear');
   if(wrap) wrap.classList.toggle('has-value',!!input.value);
@@ -6712,19 +6564,6 @@ function suaCongDoanCellHtml(o, ngay){
   }
   return `<div style="display:flex;gap:4px;flex-wrap:wrap"><button class="reset-stage-btn" data-order-id="${o.id}" data-day="${ngay}" data-stage="${congDoanNhanVien || ''}" style="font-size:11.5px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;">Sửa</button>${completeBtn}</div>`;
 }
-
-async function fetchBaoHanhNgay(ngay,{silent=false}={}){
-  if(!ngay||ngay==='all') return false;
-  try{
-    const data=await taiBaoHanhNgayTuSheet(ngay);
-    baoHanhTheoNgay={...baoHanhTheoNgay,[ngay]:data};
-    saveLocalCache(); syncOrdersToMonthlyData(); renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress();
-    return true;
-  }catch(e){
-    if(!silent){const el=document.getElementById('autoPlanStatus');if(el){el.textContent=e.message;el.style.color='var(--danger)';}}
-    return false;
-  }
-}
 async function completeOrderForDay(o,ngay){
   if(!canManage2()||!o||khoaNhapCongDoan(o,ngay))return false;
   const target=soCongDoan(o.so_luong);if(target<=0)return false;
@@ -6987,12 +6826,9 @@ progressTeamSelect.addEventListener('change', renderProgress);
 progressSearchBox.addEventListener('input',window.KhsxDataCore.debounce(renderProgress,160));
 function renderOvertimeWorkers(){
   const sel=document.getElementById('overtimeWorker');if(!sel)return;
-  const stage=document.getElementById('overtimeStage')?.value||'';
-  const rows=(supabaseWorkers?.length?supabaseWorkers:staffUsers.filter(x=>x.role==='nhan_vien').map(x=>({id:x.worker_id||x.code,display_name:x.name||x.code,stage:x.stage||''})))
-    .filter(x=>!stage||!x.stage||x.stage===stage);
+  const rows=(supabaseWorkers?.length?supabaseWorkers:staffUsers.filter(x=>x.role==='nhan_vien').map(x=>({id:x.worker_id||x.code,display_name:x.name||x.code})));
   sel.innerHTML='<option value="">Chọn nhân viên</option>'+rows.map(x=>`<option value="${thoatHtml(x.id)}">${thoatHtml(x.display_name||x.id)}</option>`).join('');
 }
-document.getElementById('overtimeStage')?.addEventListener('change',renderOvertimeWorkers);
 document.getElementById('overtimeBtn')?.addEventListener('click',()=>{
   const p=document.getElementById('overtimePanel');p.style.display=p.style.display==='none'?'block':'none';renderOvertimeWorkers();
 });
@@ -7180,13 +7016,10 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
     // Xác thực lại phiên (mã bị thu hồi) — không cần làm mỗi lượt, đỡ tốn mạng trên điện thoại
     pollCount++;
     checkAppVersion();
-    const shouldRevalidateSession=supabasePrimaryActive || pollCount % REVALIDATE_EVERY === 1;
-    if(shouldRevalidateSession){
+    if(pollCount % REVALIDATE_EVERY === 1 && !supabasePrimaryActive){
       // Xác thực nền tách khỏi đồng bộ: lỗi mạng tuyệt đối không xoá phiên đăng nhập.
-      const sessionOk=supabasePrimaryActive
-        ? await revalidateSupabaseSessionBackground()
-        : (await revalidateSessionBackground(),!!currentUser);
-      if(!sessionOk || !currentUser) return;
+      await revalidateSessionBackground();
+      if(!currentUser) return;
     }
     const refreshSource = forceSourceRefresh || pollCount % SOURCE_REFRESH_EVERY === 1;
     if(refreshSource){
@@ -7210,7 +7043,6 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
     // Khi lượt đọc Supabase đầu tiên đã thành công, không cho Apps Script cũ đè
     // ngược dữ liệu vận hành. Realtime là đường chính; polling này là lưới dự phòng.
     if(supabasePrimaryActive){
-      if(forceSourceRefresh) await fetchAutoPlan({syncSupabase:true});
       const ok=await refreshFromPrimarySupabase();
       if(ok) markSyncedOrPending();
       else markSynced(false);
@@ -7530,13 +7362,6 @@ async function provisionTelegramForWorker(telegramId,workerId='',telegramUsernam
   if(!response.ok) return {error:data?.error||'LINK_FAILED'};
   return data||{ok:true};
 }
-async function revokeTelegramAccess(telegramId){
-  const {data:{session}}=await supabaseDb.auth.getSession();
-  if(!session) return {error:'SESSION_EXPIRED'};
-  const response=await fetch(SUPABASE_ADMIN_LINK_TELEGRAM_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({action:'revoke',telegram_user_id:telegramId})});
-  const data=await response.json().catch(()=>null);
-  return response.ok?(data||{ok:true}):{error:data?.error||'REVOKE_FAILED'};
-}
 async function linkTelegramToProfile(telegramId,authUserId,telegramUsername='',requestId=null){
   if(!canManage() || !supabaseDb) return false;
   const id=String(telegramId||'').trim();
@@ -7547,15 +7372,7 @@ async function linkTelegramToProfile(telegramId,authUserId,telegramUsername='',r
     const provisioned=await provisionTelegramForWorker(id,workerId,telegramUsername);
     if(provisioned.error){
       console.warn('Không tạo được hồ sơ/liên kết Telegram',provisioned.error);
-      const msg={
-        TELEGRAM_LINK_FAILED:'Telegram ID hoặc nhân viên đã liên kết với tài khoản khác.',
-        WORKER_LOOKUP_FAILED:'Không tra được Worker ID. Kiểm tra kết nối Supabase rồi thử lại.',
-        WORKER_CREATE_FAILED:'Không tạo được Worker ID mới. Kiểm tra mã và quyền quản lý.',
-        WORKER_STAGE_REQUIRED:'Worker mới phải chọn Tổ may, Tổ đóng gói hoặc Tổ 1–5 để xác định công đoạn.',
-        WORKER_DISABLED:'Worker ID này đã bị vô hiệu hóa, hãy dùng mã khác hoặc khôi phục Worker.',
-        WORKER_REACTIVATE_FAILED:'Không mở lại được Worker ID cũ. Kiểm tra quyền hoặc thử lại.'
-      }[provisioned.error]||'Không tạo được hồ sơ nhân viên. Kiểm tra Edge Function và quyền quản lý.';
-      setAdminTelegramStatus(msg);
+      setAdminTelegramStatus(provisioned.error==='TELEGRAM_LINK_FAILED'?'Telegram ID hoặc nhân viên đã liên kết với tài khoản khác.':'Không tạo được hồ sơ nhân viên. Kiểm tra Edge Function và quyền quản lý.');
       return false;
     }
     if(requestId!=null) await supabaseDb.from('khsx_telegram_access_requests').delete().eq('telegram_user_id',Number(id));
@@ -7604,7 +7421,7 @@ async function approveTelegramRequest(telegramId,profileTarget,role,unit,telegra
     const workerId=target.startsWith('worker:') ? target.slice(7).trim() : '';
     const provisioned=await provisionTelegramForWorker(id,workerId,telegramUsername,chosenRole,chosenUnit,displayName);
     if(provisioned.error){
-      const msg={TELEGRAM_ID_ALREADY_LINKED:'Telegram ID đã liên kết với tài khoản khác.',ACCOUNT_ALREADY_LINKED:'Tài khoản đã liên kết Telegram ID khác.',WORKER_NOT_FOUND:'Không tìm thấy Worker ID trong danh mục.',WORKER_STAGE_UNSUPPORTED:'Worker này chưa thuộc công đoạn May/Đóng gói.',WORKER_PROFILE_ALREADY_EXISTS:'Worker ID này đang thuộc hồ sơ khác. Hãy thu hồi hồ sơ cũ trước.',WORKER_REACTIVATE_FAILED:'Không mở lại được Worker ID cũ. Kiểm tra quyền hoặc thử lại.',AUTH_USER_LOOKUP_FAILED:'Không đọc được tài khoản Auth hiện có. Thử lại sau.',AUTH_USER_CREATE_FAILED:'Không tạo được tài khoản Auth mới.',PROFILE_UPSERT_FAILED:'Không tạo/cập nhật được hồ sơ người dùng.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền duyệt.'}[provisioned.error];
+      const msg={TELEGRAM_ID_ALREADY_LINKED:'Telegram ID đã liên kết với tài khoản khác.',ACCOUNT_ALREADY_LINKED:'Tài khoản đã liên kết Telegram ID khác.',WORKER_NOT_FOUND:'Không tìm thấy Worker ID trong danh mục.',WORKER_STAGE_UNSUPPORTED:'Worker này chưa thuộc công đoạn May/Đóng gói.',WORKER_PROFILE_ALREADY_EXISTS:'Worker ID này đang thuộc hồ sơ khác. Hãy thu hồi hồ sơ cũ trước.',AUTH_USER_LOOKUP_FAILED:'Không đọc được tài khoản Auth hiện có. Thử lại sau.',AUTH_USER_CREATE_FAILED:'Không tạo được tài khoản Auth mới.',PROFILE_UPSERT_FAILED:'Không tạo/cập nhật được hồ sơ người dùng.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền duyệt.'}[provisioned.error];
       setAdminTelegramStatus(msg||`Không duyệt được (${provisioned.error}). Kiểm tra Edge Function/log.`);
       return false;
     }
@@ -7850,13 +7667,17 @@ document.getElementById('staffUsersList').addEventListener('click', async (e)=>{
   let revoked=false;
   if(SUPABASE_VARIANT){
     const profileId=u.auth_user_id;
-    const link=supabaseAdminTelegramLinks.find(x=>String(x.auth_user_id)===String(profileId));
-    const result=link?await revokeTelegramAccess(link.telegram_user_id):{ok:false,error:'TELEGRAM_LINK_NOT_FOUND'};
-    revoked=!!result.ok;
+    const [linkResult,profileResult]=await Promise.all([
+      supabaseDb.from('khsx_telegram_links').update({active:false,updated_at:new Date().toISOString()}).eq('auth_user_id',profileId).select('auth_user_id,active'),
+      supabaseDb.from('khsx_profiles').update({active:false,updated_at:new Date().toISOString()}).eq('user_id',profileId).select('user_id,active')
+    ]);
+    // Hồ sơ là nguồn quyền chính. Một hồ sơ có thể chưa có dòng Telegram,
+    // nên không được coi đó là lỗi thu hồi chỉ vì UPDATE link trả về 0 dòng.
+    revoked=!linkResult.error&&!profileResult.error&&(profileResult.data||[]).length>0;
     if(revoked){
       staffUsers=staffUsers.filter(x=>String(x.auth_user_id)!==String(profileId));
       supabaseAdminTelegramLinks=supabaseAdminTelegramLinks.map(x=>String(x.auth_user_id)===String(profileId)?{...x,active:false}:x);
-    }else console.warn('Thu hồi Telegram thất bại',result.error);
+    }else console.warn('Thu hồi Telegram thất bại',linkResult.error||profileResult.error);
   }else{
     await sendUserCommand({action:'deleteUser', targetCode:code});
     revoked=!staffUsers.some(x=>x.code===code);
@@ -9098,12 +8919,6 @@ async function bootstrap(){
   // ô mã cũ để kiểm thử các vai trò trước khi phát hành bot.
   if(SUPABASE_VARIANT){
     if(PUBLIC_VIEW_MODE){
-      // Link khách chỉ được dựng từ RPC public đã khử thông tin nhạy cảm;
-      // tuyệt đối không lấy cache quản lý còn sót trên cùng thiết bị.
-      sheetRows=[]; dynamicOrders=[]; assignments={}; deletedOrderIds=[];
-      lockedPlanDates=[]; lockedProgressDates=[]; planSnapshots={};
-      backupRowsByDate={}; baoHanhTheoNgay={};
-      syncOrdersToMonthlyData();
       currentUser=VIEWER_USER;
       document.getElementById('loginOverlay').style.display='none';
       applyRoleUI();
@@ -9135,10 +8950,6 @@ async function bootstrap(){
     if(coSession && await loadSupabaseOperationalData()){
       supabasePrimaryActive=true;
       document.documentElement.setAttribute('data-primary-source','supabase');
-      // Lần đầu mở bản Supabase: nạp kế hoạch từ Sheet cố định vào kho chính,
-      // chỉ thêm các đơn chưa có, không ghi đè tiến độ đang sống.
-      await fetchAutoPlan({syncSupabase:true});
-      await loadSupabaseOperationalData();
       await startSupabaseRealtime();
       await flushSupabaseStageOutbox();
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();

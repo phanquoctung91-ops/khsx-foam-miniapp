@@ -80,7 +80,6 @@ Deno.serve(async (req: Request) => {
   }
 
   let body: {
-    action?: string;
     worker_id?: string;
     telegram_user_id?: number | string;
     telegram_username?: string;
@@ -124,27 +123,7 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: "MANAGER_REQUIRED" }, 403);
   }
 
-  if (body.action === "revoke") {
-    const link = await admin.from("khsx_telegram_links").select("telegram_user_id,auth_user_id")
-      .eq("telegram_user_id", Number(telegramId)).maybeSingle();
-    if (link.error) return json(req, { error: "TELEGRAM_LINK_LOOKUP_FAILED" }, 503);
-    if (!link.data) return json(req, { ok: true, revoked: false });
-    const [linkUpdate, profileUpdate] = await Promise.all([
-      admin.from("khsx_telegram_links").update({ active: false, updated_at: new Date().toISOString() })
-        .eq("telegram_user_id", Number(telegramId)),
-      admin.from("khsx_profiles").update({ active: false, updated_at: new Date().toISOString() })
-        .eq("user_id", link.data.auth_user_id),
-    ]);
-    if (linkUpdate.error || profileUpdate.error) return json(req, { error: "REVOKE_FAILED" }, 500);
-    try { await admin.auth.admin.signOut(link.data.auth_user_id); } catch (e) { console.warn("SESSION_REVOKE_FAILED", e); }
-    await admin.from("khsx_telegram_access_requests").delete().eq("telegram_user_id", Number(telegramId));
-    return json(req, { ok: true, revoked: true });
-  }
-
   let worker: { id: string; display_name: string; stage: string; active: boolean } | null = null;
-  const stageFromUnit = requestedUnit === "To may" ? "may"
-    : requestedUnit === "To dong goi" ? "dong_goi"
-    : /^To [1-5]$/.test(requestedUnit) ? "dan" : "";
   if (workerId) {
     const result = await admin.from("khsx_workers")
       .select("id,display_name,stage,active")
@@ -152,39 +131,9 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (result.error) return json(req, { error: "WORKER_LOOKUP_FAILED" }, 503);
     worker = result.data;
-    if (result.data && !result.data.active) {
-      const reactivated = await admin.from("khsx_workers")
-        .update({ active: true, updated_at: new Date().toISOString() })
-        .eq("id", workerId)
-        .select("id,display_name,stage,active")
-        .single();
-      if (reactivated.error || !reactivated.data) {
-        return json(req, { error: "WORKER_REACTIVATE_FAILED" }, 409);
-      }
-      worker = reactivated.data;
-    }
-    if (!worker) {
-      if (!stageFromUnit) return json(req, { error: "WORKER_STAGE_REQUIRED" }, 400);
-      const created = await admin.from("khsx_workers").insert({
-        id: workerId,
-        display_name: requestedName || workerId,
-        stage: stageFromUnit,
-        active: true,
-      }).select("id,display_name,stage,active").single();
-      if (created.error || !created.data) {
-        if (created.error?.code === "23505") {
-          const retry = await admin.from("khsx_workers").select("id,display_name,stage,active").eq("id", workerId).maybeSingle();
-          if (retry.error || !retry.data) return json(req, { error: "WORKER_LOOKUP_FAILED" }, 503);
-          worker = retry.data;
-        } else {
-          return json(req, { error: "WORKER_CREATE_FAILED", code: created.error?.code }, 500);
-        }
-      } else worker = created.data;
-    }
+    if (!worker?.active) return json(req, { error: "WORKER_NOT_FOUND" }, 404);
   }
-  const workerUnit = worker?.stage === "may" ? "To may"
-    : worker?.stage === "dong_goi" ? "To dong goi"
-    : worker?.stage === "dan" ? (requestedUnit || null) : null;
+  const workerUnit = worker?.stage === "may" ? "To may" : worker?.stage === "dong_goi" ? "To dong goi" : null;
   if (requestedRole === "nhan_vien" && !workerUnit) return json(req, { error: "WORKER_STAGE_UNSUPPORTED" }, 400);
   const unitName = requestedRole === "nhan_vien" ? (requestedUnit || workerUnit) : null;
 
@@ -249,8 +198,7 @@ Deno.serve(async (req: Request) => {
     }
     profile = inserted.data;
   }
-  // Quản lý có thể duyệt lại hồ sơ đã bị vô hiệu hóa (ví dụ đổi điện thoại/
-  // đổi Telegram ID). Không tạo hồ sơ trùng; chỉ mở lại đúng hồ sơ Worker cũ.
+  if (!profile.active) return json(req, { error: "ACCOUNT_DISABLED" }, 403);
 
   if (existingLink && String(existingLink.auth_user_id) !== String(profile.user_id)) {
     return json(req, { error: "TELEGRAM_ID_ALREADY_LINKED" }, 409);
@@ -258,7 +206,6 @@ Deno.serve(async (req: Request) => {
   const accountLink = await admin.from("khsx_telegram_links")
     .select("telegram_user_id")
     .eq("auth_user_id", profile.user_id)
-    .eq("active", true)
     .neq("telegram_user_id", Number(telegramId))
     .limit(1);
   if (accountLink.error) return json(req, { error: "TELEGRAM_LINK_LOOKUP_FAILED" }, 503);
@@ -282,7 +229,7 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: duplicate ? "ACCOUNT_ALREADY_LINKED" : "TELEGRAM_LINK_FAILED" }, 409);
   }
   const updatedProfile = await admin.from("khsx_profiles")
-    .update({ role: requestedRole, unit_name: unitName, active: true, updated_at: new Date().toISOString() })
+    .update({ role: requestedRole, unit_name: unitName })
     .eq("user_id", profile.user_id)
     .select("user_id,display_name,role,unit_name,active,worker_id")
     .single();
