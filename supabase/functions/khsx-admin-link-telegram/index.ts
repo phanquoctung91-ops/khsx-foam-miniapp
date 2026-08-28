@@ -44,6 +44,17 @@ function randomPassword() {
   return "Kx!" + Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
+async function findAuthUserByEmail(admin: ReturnType<typeof createClient>, email: string) {
+  for (let page = 1; page <= 50; page++) {
+    const result = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (result.error) return { user: null, error: result.error };
+    const user = result.data.users.find((item) => String(item.email ?? "").toLowerCase() === email.toLowerCase());
+    if (user) return { user, error: null };
+    if (result.data.users.length < 1000) break;
+  }
+  return { user: null, error: null };
+}
+
 const APPROVAL_ROLES = new Set(["quan_ly", "quan_ly_2", "nhan_vien"]);
 function normalizeUnit(value: unknown) {
   const unit = String(value ?? "").trim();
@@ -134,39 +145,56 @@ Deno.serve(async (req: Request) => {
     .order("updated_at", { ascending: false })
     .limit(1);
   if (existingLinkResult.error) return json(req, { error: "TELEGRAM_LINK_LOOKUP_FAILED" }, 503);
-  const existingLink = existingLinkResult.data?.[0] ?? null;
+  let existingLink = existingLinkResult.data?.[0] ?? null;
   let { data: profile, error: profileError } = existingLink
     ? await admin.from("khsx_profiles").select("user_id,display_name,role,unit_name,active,worker_id").eq("user_id", existingLink.auth_user_id).maybeSingle()
     : worker
       ? await admin.from("khsx_profiles").select("user_id,display_name,role,unit_name,active,worker_id").eq("worker_id", worker.id).maybeSingle()
       : { data: null, error: null };
   if (profileError) return json(req, { error: "PROFILE_LOOKUP_FAILED" }, 503);
-  if (existingLink && !profile) return json(req, { error: "LINKED_PROFILE_MISSING" }, 409);
   let createdAuthUserId: string | null = null;
 
   if (!profile) {
     const email = worker ? "worker_" + worker.id + "@khsx.internal" : "telegram_" + telegramId + "@khsx.internal";
-    const created = await admin.auth.admin.createUser({
-      email,
-      password: randomPassword(),
-      email_confirm: true,
-      user_metadata: { display_name: requestedName || worker?.display_name || ("Telegram " + telegramId), worker_id: worker?.id || null },
-    });
-    if (created.error || !created.user) {
-      return json(req, { error: "PROFILE_CREATE_FAILED" }, 500);
+    let authUserId = existingLink?.auth_user_id ? String(existingLink.auth_user_id) : "";
+    if (authUserId) {
+      const linkedAuth = await admin.auth.admin.getUserById(authUserId);
+      if (linkedAuth.error || !linkedAuth.data.user) {
+        await admin.from("khsx_telegram_links").delete().eq("telegram_user_id", Number(telegramId));
+        existingLink = null;
+        authUserId = "";
+      }
     }
-    createdAuthUserId = created.user.id;
-    const inserted = await admin.from("khsx_profiles").insert({
-      user_id: created.user.id,
+    if (!authUserId) {
+      const existingAuth = await findAuthUserByEmail(admin, email);
+      if (existingAuth.error) return json(req, { error: "AUTH_USER_LOOKUP_FAILED", code: existingAuth.error.code }, 503);
+      authUserId = existingAuth.user?.id ?? "";
+    }
+    if (!authUserId) {
+      const created = await admin.auth.admin.createUser({
+        email,
+        password: randomPassword(),
+        email_confirm: true,
+        user_metadata: { display_name: requestedName || worker?.display_name || ("Telegram " + telegramId), worker_id: worker?.id || null },
+      });
+      if (created.error || !created.user) {
+        return json(req, { error: "AUTH_USER_CREATE_FAILED", code: created.error?.code }, 500);
+      }
+      authUserId = created.user.id;
+      createdAuthUserId = created.user.id;
+    }
+    const inserted = await admin.from("khsx_profiles").upsert({
+      user_id: authUserId,
       display_name: requestedName || worker?.display_name || ("Telegram " + telegramId),
       role: requestedRole,
       unit_name: unitName,
       worker_id: worker?.id || null,
       active: true,
-    }).select("user_id,display_name,role,unit_name,active,worker_id").single();
+    }, { onConflict: "user_id" }).select("user_id,display_name,role,unit_name,active,worker_id").single();
     if (inserted.error || !inserted.data) {
-      await admin.auth.admin.deleteUser(created.user.id);
-      return json(req, { error: "PROFILE_CREATE_FAILED" }, 500);
+      if (createdAuthUserId) await admin.auth.admin.deleteUser(createdAuthUserId);
+      const duplicateWorker = inserted.error?.code === "23505";
+      return json(req, { error: duplicateWorker ? "WORKER_PROFILE_ALREADY_EXISTS" : "PROFILE_UPSERT_FAILED", code: inserted.error?.code }, duplicateWorker ? 409 : 500);
     }
     profile = inserted.data;
   }

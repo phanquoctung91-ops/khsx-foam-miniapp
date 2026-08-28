@@ -6,9 +6,10 @@ const schema=fs.readFileSync(new URL('../supabase/schema/miniapp_upgrade_v1.sql'
 const clone=fs.readFileSync(new URL('./build-live-clone.mjs',import.meta.url),'utf8');
 const edgeAdmin=fs.readFileSync(new URL('../supabase/functions/khsx-admin-link-telegram/index.ts',import.meta.url),'utf8');
 const guestSchema=fs.readFileSync(new URL('../supabase/schema/guest_readonly_v116.sql',import.meta.url),'utf8');
+const release118=fs.readFileSync(new URL('../supabase/schema/release_v118_business_rules.sql',import.meta.url),'utf8');
 
 const checks=[
-  ['version 117 + cache-busted core',/const APP_VERSION = 117;/.test(html)&&/khsx-data-core\.js\?v=117/.test(html)],
+  ['version 118 + cache-busted core',/const APP_VERSION = 118;/.test(html)&&/khsx-data-core\.js\?v=118/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -49,7 +50,21 @@ const checks=[
   ,['Telegram manager approval does not require Worker ID',/requestedRole === "nhan_vien" && !workerId/.test(edgeAdmin)&&/chosenRole!=='nhan_vien'/.test(html)&&/displayName/.test(html)]
   ,['Warranty Sheet range is open-ended',/range=A7:ZZ/.test(html)&&!/range=A7:Z1000/.test(html)]
   ,['Dark mode exists and persists',/id="darkModeBtn"/.test(html)&&/body\.dark-mode/.test(html)&&/DARK_MODE_KEY/.test(html)&&/managementToolsBtn[\s\S]*?id="darkModeBtn"/.test(html)&&!/managementToolsMenu[\s\S]*?id="darkModeBtn"/.test(html)]
-  ,['KPI uses one source layer and capped cohort',/function rowsNguonKpiNgay/.test(html)&&/Math\.min\(v,cohortCaps\.get/.test(html)&&/Sản lượng đóng gói trong kỳ/.test(html)]
+  ,['KPI uses actual packing date consistently',/function rowsNguonKpiNgay/.test(html)&&/totalDG = tongKpi\.throughput/.test(html)&&/rangeDone = rangeKpi\.throughput/.test(html)]
+  ,['Manager cannot bypass stage chain',!/canManage2\(\) && congDoan==='may'/.test(html)&&!/canManage2\(\) && congDoan==='dong_goi'/.test(html)]
+  ,['Per-order manager complete action',/complete-row-btn/.test(html)&&/function completeOrderForDay/.test(html)]
+  ,['Source changes require confirm or split',/pendingSheetChanges/.test(html)&&/function xuLyThayDoiNguon/.test(html)&&/function tachLichSuTheoTran/.test(html)]
+  ,['Cancel is soft with reason and restore',/CANCELLED_ORDER_META_KEY/.test(html)&&/cancel_reason/.test(html)&&/restore-order-btn/.test(html)]
+  ,['Offline KH and warranty import',/id="offlinePlanFile"/.test(html)&&/id="offlineWarrantyFile"/.test(html)&&/readOfflineTables/.test(html)]
+  ,['Offline KH reconciles against live data',/OFFLINE_PLAN_ACTIVE_KEY/.test(html)&&/if\(offlinePlanActive && !allowPublic\)/.test(html)&&/detectSheetChanges\(remotePlanRows\)/.test(html)]
+  ,['Split failures preserve the original order',/Không tạo được đơn phát sinh nên đơn gốc chưa bị hủy/.test(html)&&/Không tạo được đơn phát sinh cho phần vượt nên chưa áp dụng số lượng mới/.test(html)]
+  ,['Restore cannot duplicate split production',/splitOrderId:splitOrder\?\.id/.test(html)&&/Khôi phục sau khi đã tách tiến độ sang/.test(html)]
+  ,['Warranty hourly gate and force refresh',/WARRANTY_REFRESH_MS = 60\*60\*1000/.test(html)&&/warrantyPayloadDaDu/.test(html)&&/refreshWarrantyKpiBtn/.test(html)]
+  ,['Quarter calendar uses selected work dates',/QUARTER_CALENDAR_KEY/.test(html)&&/defaultQuarterWorkDates/.test(html)&&/quarter-workday/.test(html)&&/work_dates/.test(release118)]
+  ,['Structured overtime records and normalized speed',/OVERTIME_RECORDS_KEY/.test(html)&&/normalizedOutput/.test(html)&&/khsx_overtime_records/.test(release118)]
+  ,['Fixed Apps Script source only',/Apps Script cố định/.test(html)&&!/SHEET_CSV_URL/.test(html)]
+  ,['No-plan ratio is dash',/dayRate==null\?'—'/.test(html)&&/rangeRate==null\?'—'/.test(html)]
+  ,['Telegram approval repairs partial auth/profile',/findAuthUserByEmail/.test(edgeAdmin)&&/getUserById/.test(edgeAdmin)&&/PROFILE_UPSERT_FAILED/.test(edgeAdmin)]
   ,['Test mode removed from production UI',!/stageTestMenuBtn|stageTestBtn|stageTestModal|managerStageTestMode/.test(html)]
   ,['Local Supabase requires real session',!/LOCAL_SUPABASE_UI_TEST|LOCAL_DROP_DEMO_MODE|TEST-RỚT-8/.test(html)]
 ];
@@ -60,5 +75,5 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v117 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v118 checks passed (${checks.length}/${checks.length}).`);
 

@@ -79,7 +79,7 @@ select jsonb_build_object(
   'plan_snapshots','[]'::jsonb,
   'quarter_targets',coalesce((
     select jsonb_agg(to_jsonb(q)) from (
-      select t.year,t.quarter,t.target_qty
+      select t.year,t.quarter,t.target_qty,t.work_dates
       from public.khsx_quarter_targets t order by t.year,t.quarter
     ) q
   ),'[]'::jsonb)
