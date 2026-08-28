@@ -9,7 +9,7 @@
 <title>Kế Hoạch sản xuất - Tổ Mút Foam</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
-<script src="js/khsx-data-core.js?v=114"></script>
+<script src="js/khsx-data-core.js?v=116"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   :root{
@@ -21,6 +21,40 @@
     --danger:#c0332f; --danger-l:#fbeaea;
     --accent:#2E8FB5; --accent-l:#e6f2f8;
     --shadow:0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.04);
+  }
+  body.dark-mode{--bg:#101722;--card:#182231;--text:#edf4ff;--text2:#aebbd0;--border:#33445d;--primary-l:#263a58;--shadow:0 3px 14px rgba(0,0,0,.28);background:var(--bg);color:var(--text);}
+  body.dark-mode select,body.dark-mode input,body.dark-mode textarea{background:#111b29;color:var(--text);border-color:var(--border);}
+  body.dark-mode table th{background:#1d2a3b;color:var(--text);}
+  body.dark-mode .panel,body.dark-mode .card,body.dark-mode .kpi{background:var(--card);}
+  body.dark-mode [style*="background:#f8f9fb"],body.dark-mode [style*="background:#f7fbff"],body.dark-mode [style*="background:#f4f6fa"]{background:#1d2a3b !important;color:var(--text) !important;}
+  body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#162131;border-color:var(--border);}
+  body.dark-mode .tab-btn,body.dark-mode .management-tools-menu button{color:var(--text);background:#1d2a3b;}
+  body.dark-mode .table-scroll,body.dark-mode table td{background:var(--card);color:var(--text);border-color:var(--border);}
+  /* Link khách trên PC ưu tiên mật độ thông tin: đủ hai tab nhưng gọn hơn dashboard quản lý. */
+  @media(min-width:901px){
+    body.public-view-mode .wrap{max-width:1440px;padding:14px 18px 36px;}
+    body.public-view-mode header{margin-bottom:14px;padding-bottom:12px;}
+    body.public-view-mode .brand-logo{width:76px;height:52px;}
+    body.public-view-mode .brand-name{font-size:15px;}
+    body.public-view-mode .brand-sub{font-size:11px;margin-top:2px;}
+    body.public-view-mode .page-title{font-size:17px;margin-bottom:3px;}
+    body.public-view-mode #userBarName{font-size:13px;}
+    body.public-view-mode #userBarRole{font-size:11px;margin-top:1px;}
+    body.public-view-mode .tabs{margin-bottom:12px;padding:4px;}
+    body.public-view-mode .tab-btn{padding:7px 13px;font-size:12px;}
+    body.public-view-mode .kpis{gap:10px;}
+    body.public-view-mode .kpi{padding:13px 15px;}
+    body.public-view-mode .kpi .label{font-size:10.5px;margin-bottom:4px;}
+    body.public-view-mode .kpi .value{font-size:21px;}
+    body.public-view-mode .kpi-phu{font-size:10px;}
+    body.public-view-mode .card{padding:14px 16px;margin-bottom:12px;}
+    body.public-view-mode .card h3{font-size:13px;margin-bottom:10px;}
+    body.public-view-mode #panel-monthly .chart-wrap{height:265px!important;}
+    body.public-view-mode #panel-monthly>.card:last-child .chart-wrap{height:205px!important;}
+    body.public-view-mode table{font-size:11.5px;}
+    body.public-view-mode th{height:44px;padding:8px 5px;font-size:10px;}
+    body.public-view-mode td{padding:7px 5px;}
+    body.public-view-mode .table-scroll{max-height:610px;}
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
@@ -892,13 +926,45 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       </div>
       <div id="supabaseTelegramAdmin" style="display:none;margin:4px 0 14px;padding:12px;border:1px solid #cfe0ef;border-radius:11px;background:#f7fbff;">
         <div style="font-size:12.5px;font-weight:800;color:#1f4d78;margin-bottom:5px;">🔗 Duyệt tài khoản Telegram</div>
-        <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:9px;">Nhân viên tự gửi Telegram ID từ màn hình đăng nhập. Quản lý chọn hồ sơ, vai và tổ rồi bấm Duyệt; không nhập Telegram ID thủ công tại đây.</div>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:9px;">Nhân viên tự gửi Telegram ID. Quản lý nhập Worker ID, chọn vai; chỉ vai Nhân viên mới chọn tổ/công đoạn rồi bấm Duyệt.</div>
         <div id="adminTelegramStatus" aria-live="polite" style="display:none;margin-top:8px;font-size:11.5px;line-height:1.4;"></div>
         <div id="telegramAccessRequests" style="margin-top:10px;"></div>
       </div>
       <div id="staffUsersList"></div>
   </div>
 </div>
+
+<div id="productDetailModal" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(18,20,26,.55);padding:18px;overflow:auto;">
+  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.28);max-width:820px;margin:36px auto;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+      <h3 id="productDetailTitle" style="margin:0;font-size:17px;">Chi tiết sản xuất</h3>
+      <button id="closeProductDetailBtn" type="button" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;">Đóng</button>
+    </div>
+    <div id="productDetailBody"></div>
+  </div>
+</div>
+
+<div id="managerStageModal" class="only-manager" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.55);padding:18px;overflow:auto;">
+  <div style="background:var(--card);border-radius:14px;max-width:460px;margin:52px auto;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.28);">
+    <h3 style="margin:0 0 6px;">Vào giao diện công đoạn</h3>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;">Quản lý thao tác thật dưới công đoạn đã chọn; lịch sử vẫn ghi tài khoản quản lý.</div>
+    <label style="display:block;font-size:12px;margin-bottom:5px;">Công đoạn</label>
+    <select id="managerStageSelect" style="width:100%;margin-bottom:12px;">
+      <option value="dan">Dán</option><option value="may">May</option><option value="dong_goi">Đóng gói</option>
+    </select>
+    <div id="managerStageTeamWrap">
+      <label style="display:block;font-size:12px;margin-bottom:5px;">Tổ dán</label>
+      <select id="managerStageTeam" style="width:100%;margin-bottom:12px;">
+        <option>Tổ 1</option><option>Tổ 2</option><option>Tổ 3</option><option>Tổ 4</option><option>Tổ 5</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:9px;justify-content:flex-end;">
+      <button id="cancelManagerStageBtn" type="button">Hủy</button>
+      <button id="enterManagerStageBtn" type="button" class="primary-btn">Vào công đoạn</button>
+    </div>
+  </div>
+</div>
+<button id="exitManagerStageBtn" type="button" style="display:none;position:fixed;right:14px;bottom:14px;z-index:9400;padding:10px 14px;border:0;border-radius:10px;background:#b42318;color:#fff;font-weight:800;box-shadow:0 5px 18px rgba(0,0,0,.3);">Thoát giao diện công đoạn</button>
 
 <div class="wrap">
 
@@ -927,6 +993,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <button id="managementToolsBtn" type="button" aria-expanded="false">⚙️ Công cụ</button>
       <div class="management-tools-menu" id="managementToolsMenu">
         <button id="logoutBtn" title="Đăng xuất và nhập mã khác">↪ Đổi người dùng</button>
+        <button id="managerStageViewBtn" class="only-manager" type="button" title="Xem và nhập như tài khoản công đoạn">👷 Vào giao diện công đoạn</button>
+        <button id="darkModeBtn" type="button" title="Đổi giao diện sáng/tối">🌙 Chế độ tối</button>
         <button id="telegramFullscreenBtn" type="button" style="display:none;" title="Mở rộng MiniApp trên Telegram Desktop">⛶ Mở rộng cửa sổ</button>
         <button id="staffUsersBtn" class="only-manager" title="Tạo và thu hồi mã đăng nhập cho nhân viên">👥 Tạo mã đăng nhập</button>
         <button id="customerViewLinkBtn" class="only-manager" type="button" title="Sao chép link chỉ xem cho khách">🔗 Link khách xem</button>
@@ -1363,7 +1431,7 @@ const FALLBACK_PALETTE = ['#d97706','#7c3aed','#0d9488','#db2777','#64748b','#ea
 function buildProductColorMap(){
   const totals = {};
   dayKeys.forEach(k=>{
-    allDays[k].rows.forEach(r=>{
+    rowsNguonKpiNgay(k).forEach(r=>{
       const name = (r.ten_hang||'').trim();
       if(!name || name === 'Ngưng SX') return;
       totals[name] = (totals[name]||0) + (r.ke_hoach||0);
@@ -1426,6 +1494,15 @@ function laBaoHanh(r){
   return t.indexOf('BAOHANH') !== -1;
 }
 
+// Mỗi ngày chỉ dùng MỘT lớp dữ liệu. Bản Supabase (_from_foam) là nguồn chuẩn;
+// dữ liệu lịch sử nhúng trong HTML chỉ là phương án lùi khi ngày đó chưa được clone.
+// Không trộn hai lớp vì sẽ nhân đôi KH, HT và bảo hành.
+function rowsNguonKpiNgay(k){
+  const rows=(allDays[k]&&allDays[k].rows)||[];
+  const foam=rows.filter(r=>r._from_foam);
+  return foam.length ? foam : rows.filter(r=>!r._from_foam);
+}
+
 // ---- KPI row ----
 // v8.6 — KPI lấy đúng lớp dữ liệu vận hành đã đồng bộ (_from_foam).
 // Quy tắc:
@@ -1435,53 +1512,48 @@ function laBaoHanh(r){
 //   • Bảo hành tách riêng.
 // Nếu một ngày chưa có dữ liệu _from_foam (dữ liệu lịch sử cũ), giữ cách tính cũ để không mất số.
 function tongKpiTuRowsTheoKeys(keys){
-  let plan=0, done=0, warranty=0;
-  const familyDone=new Map();
-  const familyCap=new Map();
-
-  (keys||[]).forEach(k=>{
-    const rows=(allDays[k]&&allDays[k].rows)||[];
-    const foam=rows.filter(r=>r._from_foam);
-    const foamWarranty=foam.filter(laBaoHanh);
-    const rawWarranty=rows.filter(r=>!r._from_foam && laBaoHanh(r));
-    // Có bảo hành mới từ API thì dùng số mới; chưa có thì giữ số lịch sử cũ (không làm mất 01/08).
-    const warrantySrc=foamWarranty.length ? foamWarranty : rawWarranty;
-    warrantySrc.forEach(r=>{ warranty += Number(r.dong_goi)||0; });
-
-    const foamWork=foam.filter(r=>!laBaoHanh(r));
-    const rawWork=rows.filter(r=>!r._from_foam && !laBaoHanh(r));
-    const workSrc=foamWork.length ? foamWork : rawWork;
-
-    workSrc.forEach(r=>{
-      if(!foamWork.length){
-        // Dữ liệu lịch sử cũ: giữ nguyên số đã lưu, không suy diễn lại.
-        plan += Number(r.ke_hoach)||0;
-        done += Number(r.dong_goi)||0;
-        return;
-      }
-      if(r._is_ghost) return;
-      plan += Number(r.ke_hoach)||0;
+  let plan=0,done=0,warranty=0,throughput=0,carryover=0;
+  const selected=new Set(keys||[]),cohortCaps=new Map(),cohortDone=new Map();
+  let hasFoam=false;
+  selected.forEach(k=>{
+    const rows=rowsNguonKpiNgay(k);
+    if(rows.some(r=>r._from_foam)) hasFoam=true;
+    rows.forEach(r=>{
+      if(laBaoHanh(r)){warranty+=Number(r.dong_goi)||0;return;}
+      if(!r._from_foam||r._is_ghost||r._is_drop) return;
+      const qty=Number(r.ke_hoach)||0;
       const rid=String(r._root_id||r._order_id||'');
-      const val=Number(r.dong_goi)||0;
-      if(!rid){ done += val; return; }
-      familyDone.set(rid,(familyDone.get(rid)||0)+val);
-      const cap=Number(r._root_qty)||0;
-      if(cap>0) familyCap.set(rid,Math.max(familyCap.get(rid)||0,cap));
+      if(qty>0&&rid){
+        cohortCaps.set(rid,Math.max(cohortCaps.get(rid)||0,Number(r._root_qty)||qty));
+      }
     });
   });
-
-  familyDone.forEach((v,id)=>{
-    const cap=familyCap.get(id)||0;
-    done += cap>0 ? Math.min(v,cap) : v;
-  });
-  return {plan,done,warranty};
+  if(!hasFoam){
+    selected.forEach(k=>rowsNguonKpiNgay(k).forEach(r=>{
+      if(laBaoHanh(r)){warranty+=Number(r.dong_goi)||0;return;}
+      const p=Number(r.ke_hoach)||0,d=Number(r.dong_goi)||0;
+      plan+=p;done+=p>0?Math.min(d,p):0;throughput+=d;
+    }));
+    return {plan,done,warranty,throughput,carryover};
+  }
+  cohortCaps.forEach(v=>{plan+=v;});
+  Object.entries(allDays).forEach(([k,day])=>((day&&day.rows)||[]).forEach(r=>{
+    if(!r._from_foam||laBaoHanh(r)||r._is_ghost) return;
+    const rid=String(r._root_id||r._order_id||'');
+    const qty=Number(r.dong_goi)||0;
+    if(selected.has(k)) throughput+=qty;
+    if(cohortCaps.has(rid)) cohortDone.set(rid,(cohortDone.get(rid)||0)+qty);
+    else if(selected.has(k)&&qty>0) carryover+=qty;
+  }));
+  cohortDone.forEach((v,id)=>{done+=Math.min(v,cohortCaps.get(id)||0);});
+  return {plan,done,warranty,throughput,carryover};
 }
 
 function computeAndRenderKpis(){
   // Ngày thực tế có sản xuất: phải có sản lượng hoàn thành và không tính hàng bảo hành.
   // Không dùng số dòng kế hoạch vì ngày có kế hoạch nhưng chưa làm không phải ngày sản xuất.
   let activeDays=0;
-  dayKeys.forEach(k=>{ if(tongKpiTuRowsTheoKeys([k]).done>0) activeDays++; });
+  dayKeys.forEach(k=>{ if(tongKpiTuRowsTheoKeys([k]).throughput>0) activeDays++; });
   const tongKpi = tongKpiTuRowsTheoKeys(dayKeys);
   let totalPlan = tongKpi.plan;
   let totalDG = tongKpi.done;
@@ -1495,15 +1567,13 @@ function computeAndRenderKpis(){
     ? `Mục tiêu Quý ${quy.quy}/${quy.nam}: <b>${quy.mucTieu.toLocaleString()}</b> · đã đạt <b>${quy.phanTram}%</b>`
     : `Chưa nhập mục tiêu Quý ${quy.quy}/${quy.nam}`;
   const coMucTieuNgay = quy.mucTieuNgay>0;
-  const tbKhoangNgay = activeDays>0 ? totalDG/activeDays : 0;
+  const tbKhoangNgay = activeDays>0 ? tongKpi.throughput/activeDays : 0;
   const danhGiaTocDo = (thucTe)=>{
     const chenhlech = thucTe - quy.mucTieuNgay;
     const nhanh = chenhlech >= 0;
     return `<span style="color:${nhanh?'var(--success)':'var(--warning)'};font-weight:700;">${nhanh?'nhanh':'chậm'} ${Math.abs(chenhlech).toLocaleString('vi-VN',{maximumFractionDigits:1})} tấm/ngày</span>`;
   };
-  const trungBinhThangQuyHtml = coMucTieuNgay
-    ? `TB tháng: <b>${quy.tyLeThang}%</b> · quý: <b>${quy.tyLeQuy}%</b> mục tiêu/ngày · ${danhGiaTocDo(quy.tbQuy)}`
-    : 'Chưa có mục tiêu tính toán';
+  const trungBinhThangQuyHtml = `Đúng tập đơn đã chọn · không vượt quá KH${tongKpi.carryover>0?` · chuyển kỳ: <b>${tongKpi.carryover.toLocaleString()}</b>`:''}`;
   const trungBinhNgayHtml = coMucTieuNgay
     ? `TB đóng gói: <b>${tbKhoangNgay.toLocaleString('vi-VN',{maximumFractionDigits:1})} tấm/ngày</b> · ${danhGiaTocDo(tbKhoangNgay)}`
     : 'Chưa có mục tiêu tính toán';
@@ -1524,6 +1594,11 @@ function computeAndRenderKpis(){
       <div class="label">Tỷ lệ hoàn thành đóng gói</div>
       <div class="value" style="color:${mauTyLe}" data-dem="${rate}" data-hau="%">${rate}%</div>
       <div class="kpi-thanh"><i style="width:${Math.min(100,rate)}%;background:${mauTyLe};"></i></div>
+    </div>
+    <div class="kpi k-accent">
+      <div class="label">Sản lượng đóng gói trong kỳ</div>
+      <div class="value" data-dem="${tongKpi.throughput}">${tongKpi.throughput.toLocaleString()}</div>
+      <div class="kpi-phu">Theo đúng ngày thực tế nhập đóng gói</div>
     </div>
     <div class="kpi k-accent">
       <div class="label">Số ngày có sản xuất</div>
@@ -1713,7 +1788,7 @@ function renderMonthly(){
     allDays[k].rows.forEach(r=>{
       const warranty = laBaoHanh(r);
       const name = (r.ten_hang||'').trim();
-      if(!warranty && name && name !== 'Ngưng SX'){
+      if(!warranty && !r._is_drop && !r._is_ghost && name && name !== 'Ngưng SX'){
         productMap[name] = (productMap[name]||0) + (r.ke_hoach||0);
       }
       if(r.to !== null && r.to !== undefined){
@@ -1731,7 +1806,7 @@ function renderMonthly(){
       rangePlan += r.ke_hoach||0;
       rangeDone += r.dong_goi||0;
     });
-    if(coSanXuat) rangeActiveDays++;
+    if(tongKpiTuRowsTheoKeys([k]).throughput>0) rangeActiveDays++;
   });
 
   // v8.6: KPI khoảng ngày dùng cùng một quy tắc với KPI đầu trang.
@@ -1746,27 +1821,35 @@ function renderMonthly(){
     <div class="kpi k-accent"><div class="label">Tổng kế hoạch</div><div class="value">${rangePlan.toLocaleString()}</div></div>
     <div class="kpi k-success"><div class="label">Tổng hoàn thành</div><div class="value">${rangeDone.toLocaleString()}</div></div>
     <div class="kpi ${rangeRate>=95?'k-success':'k-warning'}"><div class="label">Tỷ lệ hoàn thành</div><div class="value" style="color:${rangeRate>=95?'var(--success)':rangeRate>=80?'var(--warning)':'var(--danger)'}">${rangeRate}%</div></div>
+    <div class="kpi k-accent"><div class="label">Đóng gói trong kỳ</div><div class="value">${rangeKpi.throughput.toLocaleString()}</div></div>
     <div class="kpi k-accent"><div class="label">Số ngày có sản xuất</div><div class="value">${rangeActiveDays}</div></div>
   `;
 
   const products = Object.entries(productMap).map(([name,total])=>({name,total})).sort((a,b)=>b.total-a.total);
   if(productChart) productChart.destroy();
   productChart = new Chart(document.getElementById('productChart'), {
-    type:'pie',
+    type:'bar',
     data:{
       labels:products.map(p=>p.name),
       datasets:[{
         data:products.map(p=>p.total),
         backgroundColor:products.map(p=>PRODUCT_COLOR_MAP[p.name] || '#94a3b8'),
-        borderWidth:2,
-        borderColor:'#ffffff'
+        borderWidth:0,
+        borderRadius:5
       }]
     },
     options:{
-      responsive:true, maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      onClick:(event,elements)=>{
+        if(!elements.length) return;
+        const product=products[elements[0].index];
+        if(product) openProductDetail(product.name,keysToUse);
+      },
+      onHover:(event,elements)=>{ if(event?.native?.target) event.native.target.style.cursor=elements.length?'pointer':'default'; },
+      scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}},
       plugins:{
         legend:{
-          display:true, position:'right',
+          display:false,
           labels:{
             boxWidth:11, font:{size:11.5},
             generateLabels(chart){
@@ -1795,7 +1878,7 @@ function renderMonthly(){
         tooltip:{
           callbacks:{
             label(ctx){
-              const val = ctx.parsed;
+              const val = Number(ctx.parsed && ctx.parsed.x!=null ? ctx.parsed.x : ctx.parsed)||0;
               const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
               const pct = total>0 ? Math.round((val/total)*1000)/10 : 0;
               return ` ${ctx.label}: ${val.toLocaleString()} (${pct}%)`;
@@ -1827,9 +1910,8 @@ function renderMonthly(){
   });
 
   const dailyPlan = dayKeys.map(k=>{
-    let plan=0, dg=0;
-    allDays[k].rows.forEach(r=>{plan+=r.ke_hoach||0; dg+=r.dong_goi||0;});
-    return {date:allDays[k].date, plan, dg};
+    const kpi=tongKpiTuRowsTheoKeys([k]);
+    return {date:allDays[k].date, plan:kpi.plan, dg:kpi.throughput};
   });
   if(dailyTrendChart) dailyTrendChart.destroy();
   dailyTrendChart = new Chart(document.getElementById('dailyTrendChart'), {
@@ -1844,6 +1926,21 @@ function renderMonthly(){
     options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:11}}}}, scales:{y:{beginAtZero:true}}}
   });
 }
+function openProductDetail(productName,keys){
+  const dates=new Set((keys||[]).map(k=>allDays[k]?.date).filter(Boolean));
+  const rows=getOrders().filter(o=>dates.has(o.date)&&isPlannedOrder(o)&&normalizeProductName(o.dong)===normalizeProductName(productName)).map(o=>({
+    date:o.date,code:o.ma||'—',size:`${o.ngang}x${o.dai}x${o.day}`,plan:Number(o.so_luong)||0,
+    dan:tongCongDoan(o,'dan'),may:tongCongDoan(o,'may'),done:tongCongDoan(o,'dong_goi'),
+    team:assignments[o.id]?.to||'—',status:getOrderStatus(o),note:o.ghi_chu||''
+  }));
+  const plan=rows.reduce((s,r)=>s+r.plan,0),done=rows.reduce((s,r)=>s+Math.min(r.done,r.plan),0);
+  document.getElementById('productDetailTitle').textContent=`${productName} · KH ${plan.toLocaleString()} · ĐG ${done.toLocaleString()}`;
+  document.getElementById('productDetailBody').innerHTML=rows.length?`<div class="table-scroll" style="max-height:60vh"><table><thead><tr><th>Ngày</th><th>Mã / kích thước</th><th>KH</th><th>Dán</th><th>May</th><th>ĐG</th><th>Tổ</th><th>Trạng thái / ghi chú</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${thoatHtml(r.date)}</td><td><strong>${thoatHtml(r.code)}</strong><br>${thoatHtml(r.size)}</td><td>${r.plan}</td><td>${r.dan}</td><td>${r.may}</td><td>${r.done}</td><td>${thoatHtml(r.team)}</td><td>${thoatHtml(r.status)}${r.note?`<br>${thoatHtml(r.note)}`:''}</td></tr>`).join('')}</tbody></table></div>`:'Không có dòng chi tiết trong khoảng đã chọn.';
+  document.getElementById('productDetailModal').style.display='block';
+}
+function closeProductDetail(){ document.getElementById('productDetailModal').style.display='none'; }
+document.getElementById('closeProductDetailBtn')?.addEventListener('click',closeProductDetail);
+document.getElementById('productDetailModal')?.addEventListener('click',e=>{if(e.target.id==='productDetailModal')closeProductDetail();});
 monthFromSelect.addEventListener('change', renderMonthly);
 monthToSelect.addEventListener('change', renderMonthly);
 
@@ -1957,10 +2054,10 @@ function tinhTienDoQuyHienTai(){
     quyKeys.push(k);
     if(p.m === thangHienTai) thangKeys.push(k);
   });
-  const daLam = tongKpiTuRowsTheoKeys(quyKeys).done;
-  const daLamThang = tongKpiTuRowsTheoKeys(thangKeys).done;
-  const ngaySanXuatQuy = quyKeys.filter(k=>tongKpiTuRowsTheoKeys([k]).done>0).length;
-  const ngaySanXuatThang = thangKeys.filter(k=>tongKpiTuRowsTheoKeys([k]).done>0).length;
+  const daLam = tongKpiTuRowsTheoKeys(quyKeys).throughput;
+  const daLamThang = tongKpiTuRowsTheoKeys(thangKeys).throughput;
+  const ngaySanXuatQuy = quyKeys.filter(k=>tongKpiTuRowsTheoKeys([k]).throughput>0).length;
+  const ngaySanXuatThang = thangKeys.filter(k=>tongKpiTuRowsTheoKeys([k]).throughput>0).length;
   const mucTieu = quarterTargets[key] || 0;
   const soNgayDuKien = tinhSoNgayLamViecQuy(nam,quy);
   const mucTieuNgay = mucTieu>0 && soNgayDuKien>0 ? mucTieu/soNgayDuKien : 0;
@@ -1980,6 +2077,7 @@ async function saveQuarterTarget(nam, quy, soLuong){
 }
 // Đơn vị của người đang đăng nhập: Tổ 1–5, Tổ may, Tổ đóng gói; hoặc null nếu không gắn.
 function toCuaToi(){
+  if(currentUser && currentUser.role !== 'nhan_vien') return null;
   if(currentUser && currentUser.unit) return currentUser.unit;
   if(!currentUser || !currentUser.code) return null;
   return toGanTheoMa(currentUser.code) || null;
@@ -2088,6 +2186,8 @@ let autoPlanLoaded = false;
 const orderEntityStore=window.KhsxDataCore?.createEntityStore('id');
 
 let deletedOrderIds = []; // id các đơn đã bị xoá tay — không hiện lại dù sheet vẫn còn dòng đó
+let supabaseActiveOrderIds = new Set(); // chặn snapshot/cache cũ làm sống lại đơn đã xóa
+let supabaseOrdersLoaded = false;
 
 function getOrders(){
   // Ngày đã chốt đầu vào -> lấy từ ảnh chụp đã lưu, bỏ qua dữ liệu sheet của ngày đó.
@@ -2103,9 +2203,18 @@ function getOrders(){
     if(chotCoAnh(d) || liveDates.has(d)) return;
     (backupRowsByDate[d] || []).forEach(r=>backup.push({...r, from_backup:true}));
   });
-  return live.concat(frozen, backup, dynamicOrders, donBaoHanh())
-             .filter(o=>!deletedOrderIds.includes(o.id))
-             .filter(o=>!laDonRotLichSuDaHoanThanh(o));
+  const source=live.concat(frozen,backup,dynamicOrders,donBaoHanh());
+  const byId=new Map();
+  source.forEach(o=>{
+    if(!o||!o.id||deletedOrderIds.includes(o.id)) return;
+    // Supabase là nguồn chính: snapshot/cache không được phép hồi sinh ID
+    // không còn trong tập đơn hoạt động trên máy chủ.
+    if(SUPABASE_VARIANT&&supabaseOrdersLoaded&&!supabaseActiveOrderIds.has(String(o.id))) return;
+    const old=byId.get(String(o.id));
+    // Bản Supabase có chi tiết bảo hành được ưu tiên hơn dòng tổng hợp từ Sheet.
+    if(!old||((o.bh_chi_tiet||[]).length>(old.bh_chi_tiet||[]).length)) byId.set(String(o.id),o);
+  });
+  return [...byId.values()].filter(o=>!laDonRotLichSuDaHoanThanh(o));
 }
 function rebuildOrderEntityStore(){ orderEntityStore?.replace(getOrders()); }
 function getOrderById(id){ return orderEntityStore?.get(id) || getOrders().find(o=>o.id===id); }
@@ -2520,7 +2629,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 115;
+const APP_VERSION = 116;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3117,29 +3226,30 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   const loadSeq=++supabaseOperationalLoadSeq;
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session && !allowPublic) return false;
-  const results=await Promise.all(allowPublic ? [
-    // Link khách chỉ đọc các bảng vận hành, không đọc hồ sơ/Telegram/người lao động.
-    supabaseSelectAll('khsx_orders','*',q=>q.is('deleted_at',null)),
-    supabaseSelectAll('khsx_order_assignments'),
-    supabaseSelectAll('khsx_daily_assignments'),
-    supabaseSelectAll('khsx_stage_progress'),
-    supabaseSelectAll('khsx_day_locks'),
-    supabaseSelectAll('khsx_plan_snapshots'),
-    supabaseSelectAll('khsx_quarter_targets'),
-    {data:[],error:null},{data:[],error:null},{data:[],error:null},{data:[],error:null}
-  ] : [
-    supabaseSelectAll('khsx_orders','*',q=>q.is('deleted_at',null)),
-    supabaseSelectAll('khsx_order_assignments'),
-    supabaseSelectAll('khsx_daily_assignments'),
-    supabaseSelectAll('khsx_stage_progress'),
-    supabaseSelectAll('khsx_day_locks'),
-    supabaseSelectAll('khsx_plan_snapshots'),
-    supabaseSelectAll('khsx_quarter_targets'),
-    supabaseSelectAll('khsx_profiles','user_id,display_name,role,unit_name,active,worker_id'),
-    supabaseSelectAll('khsx_workers','id,display_name,stage,active'),
-    supabaseSelectAll('khsx_stage_credits','order_id,work_date,stage,worker_id,quantity,source'),
-    supabaseSelectAll('khsx_worker_team_assignments','worker_id,team_name')
-  ]);
+  let results;
+  if(allowPublic){
+    // Một RPC SECURITY DEFINER chỉ được cấp EXECUTE cho anon. Hàm tự dựng JSON từ
+    // danh sách cột cho phép; khách không có SELECT vào bảng/view gốc.
+    const {data,error}=await supabaseDb.rpc('khsx_guest_dashboard_v116');
+    const guest=data||{};
+    results=['orders','assignments','daily_assignments','stage_progress','day_locks','plan_snapshots','quarter_targets']
+      .map(key=>({data:Array.isArray(guest[key])?guest[key]:[],error}));
+    results.push({data:[],error:null},{data:[],error:null},{data:[],error:null},{data:[],error:null});
+  }else{
+    results=await Promise.all([
+      supabaseSelectAll('khsx_orders','*',q=>q.is('deleted_at',null)),
+      supabaseSelectAll('khsx_order_assignments'),
+      supabaseSelectAll('khsx_daily_assignments'),
+      supabaseSelectAll('khsx_stage_progress'),
+      supabaseSelectAll('khsx_day_locks'),
+      supabaseSelectAll('khsx_plan_snapshots'),
+      supabaseSelectAll('khsx_quarter_targets'),
+      supabaseSelectAll('khsx_profiles','user_id,display_name,role,unit_name,active,worker_id'),
+      supabaseSelectAll('khsx_workers','id,display_name,stage,active'),
+      supabaseSelectAll('khsx_stage_credits','order_id,work_date,stage,worker_id,quantity,source'),
+      supabaseSelectAll('khsx_worker_team_assignments','worker_id,team_name')
+    ]);
+  }
   const failed=results.find(x=>x.error);
   if(failed){ console.warn('Supabase đọc song song thất bại',failed.error); return false; }
   // Một lượt đọc bắt đầu trước lượt mới hơn không được phép phục hồi dữ liệu
@@ -3149,6 +3259,8 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   // Gói phân công của đơn không còn tồn tại là dữ liệu cục bộ hỏng. Nếu giữ lại,
   // lỗi khóa ngoại sẽ lặp mỗi 5 giây và chặn toàn bộ thao tác hợp lệ phía sau.
   const activeOrderIds=new Set(ord.map(o=>String(o.id)));
+  supabaseActiveOrderIds=new Set(activeOrderIds);
+  supabaseOrdersLoaded=true;
   let managementQueueChanged=false;
   Object.entries(supabaseManagementOutbox||{}).forEach(([key,item])=>{
     if(item?.kind!=='delete'&&!activeOrderIds.has(String(item?.order_id||''))){
@@ -3209,15 +3321,19 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     day:o.thickness_mm==null?'':String(o.thickness_mm),so_luong:Number(o.plan_qty)||0,
     ghi_chu:o.note||'',nhom_don_hang:o.order_group||'',is_lot:!!o.is_lot,lot_label:o.lot_label||''
   }));
-  dynamicOrders=visibleOrd.filter(o=>o.is_manual||o.is_drop||o.is_ghost||o.is_warranty).map(o=>({
-    id:o.id,date:isoToDMY(o.production_date),ma:o.product_code||'',dong:o.product_name||'',
-    ngang:o.width_mm==null?'':String(o.width_mm),dai:o.length_mm==null?'':String(o.length_mm),
-    day:o.thickness_mm==null?'':String(o.thickness_mm),so_luong:Number(o.plan_qty)||0,ghi_chu:o.note||'',
-    is_manual:!!o.is_manual,is_drop:!!o.is_drop,is_ghost:!!o.is_ghost,is_warranty:!!o.is_warranty,
-    is_lot:!!o.is_lot,lot_label:o.lot_label||'',nhom_don_hang:o.order_group||'',
-    source_order_id:o.source_order_id||null,
-    is_support_split:laDongHoTroTach(o)
-  }));
+  dynamicOrders=visibleOrd.filter(o=>o.is_manual||o.is_drop||o.is_ghost||o.is_warranty).map(o=>{
+    const liveRow=o.source_payload&&o.source_payload.live_row||{};
+    return {
+      id:o.id,date:isoToDMY(o.production_date),ma:o.product_code||'',dong:o.product_name||'',
+      ngang:o.width_mm==null?'':String(o.width_mm),dai:o.length_mm==null?'':String(o.length_mm),
+      day:o.thickness_mm==null?'':String(o.thickness_mm),so_luong:Number(o.plan_qty)||0,ghi_chu:o.note||'',
+      is_manual:!!o.is_manual,is_drop:!!o.is_drop,is_ghost:!!o.is_ghost,is_warranty:!!o.is_warranty,
+      is_lot:!!o.is_lot,lot_label:o.lot_label||'',nhom_don_hang:o.order_group||'',
+      source_order_id:o.source_order_id||null,is_support_split:laDongHoTroTach(o),
+      bh_theo_to:o.is_warranty?(liveRow.bh_theo_to||o.bh_theo_to||{}):undefined,
+      bh_chi_tiet:o.is_warranty?(liveRow.bh_chi_tiet||o.bh_chi_tiet||[]):undefined
+    };
+  });
   assignments=applySupabaseOrderTeamGuards(
     applyVerifiedDataCorrections(overlayPendingAssignments(
       overlayPendingSupabaseManagement(nextAssignments),assignments))
@@ -6858,22 +6974,6 @@ function setAdminTelegramStatus(message,ok=false){
   el.textContent=message; el.style.display='block';
   el.style.color=ok?'var(--success)':'var(--danger)';
 }
-function supabaseAdminProfileOptions(selected=''){
-  // Tài khoản quản lý đang đăng nhập đã có toàn quyền và Telegram ID hiện tại,
-  // không đưa chính mình vào danh sách "liên kết cho người khác" gây nhầm vai.
-  const active=(supabaseAdminProfiles||[]).filter(p=>p.active!==false&&
-    String(p.user_id)!==String(currentUser?.auth_user_id||''));
-  const profileWorkerIds=new Set(active.map(p=>String(p.worker_id||'').toLowerCase()).filter(Boolean));
-  const missingWorkers=(supabaseWorkers||[]).filter(w=>w.active!==false&&!profileWorkerIds.has(String(w.id||'').toLowerCase()));
-  const profileOptions=active.map(p=>
-    `<option value="${thoatHtml(p.user_id)}" ${String(p.user_id)===String(selected)?'selected':''}>${thoatHtml(p.display_name||p.user_id)} · ${thoatHtml(ROLE_LABELS[p.role]||p.role||'')}</option>`
-  ).join('');
-  const workerOptions=missingWorkers.map(w=>{
-    const value=`worker:${w.id}`;
-    return `<option value="${thoatHtml(value)}" ${value===String(selected)?'selected':''}>${thoatHtml(w.display_name||w.id)} · Nhân viên · chưa liên kết</option>`;
-  }).join('');
-  return '<option value="">Chọn tài khoản...</option>'+profileOptions+workerOptions;
-}
 function renderSupabaseTelegramAdmin(){
   const box=document.getElementById('telegramAccessRequests');
   if(!box) return;
@@ -6881,7 +6981,7 @@ function renderSupabaseTelegramAdmin(){
   if(!requests.length){ box.innerHTML='<div style="font-size:11.5px;color:var(--text2);">Không có yêu cầu Telegram đang chờ duyệt.</div>'; return; }
   const roleOptions='<option value="">Chọn vai...</option>'+Object.entries(ROLE_LABELS).filter(([role])=>role!=='chi_xem').map(([role,label])=>`<option value="${role}">${label}</option>`).join('');
   const unitOptions='<option value="">Chọn tổ/công đoạn...</option>'+[...TEAM_OPTIONS,'Tổ may','Tổ đóng gói'].map(t=>`<option value="${t}">${t}</option>`).join('');
-  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:5px;">Yêu cầu đang chờ duyệt</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Worker ID</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>`<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span></td><td><input class="telegram-request-worker" placeholder="Nhập Worker ID" style="width:120px;padding:7px;border:1px solid #cbd8e8;border-radius:8px" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}" /></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit">${unitOptions}</select></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`).join('')}</tbody></table></div>`;
+  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:5px;">Yêu cầu đang chờ duyệt</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Worker ID</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>`<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span></td><td><input class="telegram-request-worker" placeholder="Nhập Worker ID" style="width:120px;padding:7px;border:1px solid #cbd8e8;border-radius:8px" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}" /></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit" disabled>${unitOptions}</select></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 async function loadSupabaseTelegramAdminData(){
   if(!SUPABASE_VARIANT || !supabaseDb || !canManage()) return false;
@@ -6897,6 +6997,7 @@ async function loadSupabaseTelegramAdminData(){
   supabaseAdminTelegramLinks=links.data||[];
   supabaseAdminTelegramRequests=requests.data||[];
   renderSupabaseTelegramAdmin();
+  renderStaffUsersList();
   return true;
 }
 async function provisionTelegramForWorker(telegramId,workerId,telegramUsername=''){
@@ -6952,7 +7053,8 @@ async function approveTelegramRequest(telegramId,profileTarget,role,unit,telegra
   if(!canManage() || !supabaseDb) return false;
   const id=String(telegramId||'').trim();
   const chosenRole=String(role||'').trim();
-  const chosenUnit=String(unit||'').trim();
+  const selectedUnit=String(unit||'').trim();
+  const chosenUnit=chosenRole==='nhan_vien'?selectedUnit:'';
   if(!/^\d{4,20}$/.test(id)){ setAdminTelegramStatus('Telegram ID không hợp lệ.'); return false; }
   if(!['quan_ly','quan_ly_2','nhan_vien'].includes(chosenRole)){ setAdminTelegramStatus('Chọn đúng vai trước khi duyệt.'); return false; }
   if(chosenRole==='nhan_vien' && !chosenUnit){ setAdminTelegramStatus('Nhân viên phải được gắn tổ/công đoạn.'); return false; }
@@ -6962,9 +7064,6 @@ async function approveTelegramRequest(telegramId,profileTarget,role,unit,telegra
   let profile=null;
   if(String(profileTarget).startsWith('worker:')){
     const workerId=String(profileTarget).slice(7).trim();
-    if(chosenRole!=='nhan_vien' || !['Tổ may','Tổ đóng gói'].includes(chosenUnit)){
-      setAdminTelegramStatus('Hồ sơ công đoạn chỉ được duyệt vai Nhân viên và Tổ may/Đóng gói.'); return false;
-    }
     const provisioned=await provisionTelegramForWorker(id,workerId,telegramUsername);
     if(provisioned.error){ setAdminTelegramStatus('Không tạo được hồ sơ/liên kết Telegram. Kiểm tra Edge Function hoặc ID đã liên kết.'); return false; }
     profile=provisioned.profile||null;
@@ -6985,6 +7084,10 @@ async function approveTelegramRequest(telegramId,profileTarget,role,unit,telegra
     const saved=await supabaseDb.from('khsx_worker_team_assignments').upsert({worker_id:update.data.worker_id,team_name:team,assigned_by:session.user.id,updated_at:new Date().toISOString()},{onConflict:'worker_id'});
     if(saved.error){ setAdminTelegramStatus('Đã duyệt tài khoản nhưng chưa lưu được phân tổ. Hãy gán lại trong danh sách.'); return false; }
     rememberSupabaseWorkerTeam(update.data.worker_id,chosenUnit);
+  }else if(update.data.worker_id && chosenRole!=='nhan_vien'){
+    const cleared=await supabaseDb.from('khsx_worker_team_assignments').delete().eq('worker_id',update.data.worker_id);
+    if(cleared.error){ setAdminTelegramStatus('Đã duyệt vai quản lý nhưng chưa xoá phân tổ cũ.'); return false; }
+    rememberSupabaseWorkerTeam(update.data.worker_id,'');
   }
   const removed=await supabaseDb.from('khsx_telegram_access_requests').delete().eq('telegram_user_id',Number(id));
   if(removed.error) console.warn('Đã duyệt nhưng chưa xoá yêu cầu chờ',removed.error);
@@ -7052,20 +7155,26 @@ async function luuGanToCoXacNhan(userCode, toGan){
 }
 function renderStaffUsersList(){
   const box = document.getElementById('staffUsersList');
-  const rows = staffUsers.length ? staffUsers.map(u=>{
+  const activeLinks=new Map((supabaseAdminTelegramLinks||[]).filter(x=>x.active!==false)
+    .map(x=>[String(x.auth_user_id),x]));
+  const approved=SUPABASE_VARIANT
+    ? staffUsers.filter(u=>activeLinks.has(String(u.auth_user_id))&&String(u.auth_user_id)!==String(currentUser?.auth_user_id||''))
+    : staffUsers;
+  const rows = approved.length ? approved.map(u=>{
+    const link=activeLinks.get(String(u.auth_user_id));
     const toHienTai = toGanTheoMa(u.code);
     const oGanTo = u.role === 'nhan_vien'
       ? `<select class="staff-team-select" data-code="${u.code}" style="width:130px;padding:6px 8px;">${tuyChonGanToHtml(toHienTai)}</select>`
       : '<span style="color:var(--text2);">—</span>';
     return `
-    <tr><td>${u.name}</td><td><code>${u.code}</code></td><td>${ROLE_LABELS[u.role] || u.role}</td><td>${oGanTo}</td>
+    <tr><td>${u.name}${link?`<br><span style="font-size:10.5px;color:var(--text2);">Telegram ${thoatHtml(link.telegram_user_id)}</span>`:''}</td><td>${SUPABASE_VARIANT?'Đang hoạt động':`<code>${u.code}</code>`}</td><td>${ROLE_LABELS[u.role] || u.role}</td><td>${oGanTo}</td>
         <td>${u.code === (currentUser && currentUser.code)
               ? '<span style="color:var(--text2);font-size:11.5px;">Đang đăng nhập</span>'
               : `<button class="del-staff-btn" data-code="${u.code}" style="font-size:11.5px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--danger);cursor:pointer;">Thu hồi</button>`}</td></tr>`;
   }).join('')
     : `<tr><td colspan="5" style="color:var(--text2);">Chưa tải được danh sách, hoặc chưa có mã nào.</td></tr>`;
   box.innerHTML = `<div class="table-scroll" style="max-height:280px;"><table>
-    <thead><tr><th>Tên</th><th>Mã đăng nhập</th><th>Vai</th><th>Gắn tổ</th><th></th></tr></thead>
+    <thead><tr><th>Tên</th><th>${SUPABASE_VARIANT?'Trạng thái':'Mã đăng nhập'}</th><th>Vai</th><th>Gắn tổ</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
 
@@ -7100,10 +7209,20 @@ document.getElementById('telegramAccessRequests')?.addEventListener('click', asy
   const worker=row?.querySelector('.telegram-request-worker');
   const role=row?.querySelector('.telegram-request-role');
   const unit=row?.querySelector('.telegram-request-unit');
-  if(!worker || !worker.value.trim() || !role || !unit){ setAdminTelegramStatus('Nhập Worker ID, chọn vai và tổ trước khi duyệt.'); return; }
+  if(!worker || !worker.value.trim() || !role || !role.value || !unit){ setAdminTelegramStatus('Nhập Worker ID và chọn vai trước khi duyệt.'); return; }
+  if(role.value==='nhan_vien'&&!unit.value){ setAdminTelegramStatus('Nhân viên phải chọn tổ/công đoạn.'); return; }
   btn.disabled=true;
   try{ await approveTelegramRequest(btn.dataset.telegramId,'worker:'+worker.value.trim(),role.value,unit.value,worker.dataset.telegramUsername||''); }
   finally{ btn.disabled=false; }
+});
+document.getElementById('telegramAccessRequests')?.addEventListener('change',e=>{
+  const role=e.target.closest('.telegram-request-role');
+  if(!role) return;
+  const unit=role.closest('tr')?.querySelector('.telegram-request-unit');
+  if(!unit) return;
+  const isStaff=role.value==='nhan_vien';
+  unit.disabled=!isStaff;
+  if(!isStaff) unit.value='';
 });
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeStaffModal();
@@ -7182,39 +7301,31 @@ document.getElementById('staffUsersList').addEventListener('click', async (e)=>{
   const statusEl = document.getElementById('staffStatus');
   statusEl.textContent = 'Đang thu hồi...';
   statusEl.style.color = 'var(--text2)';
-  await sendUserCommand({action:'deleteUser', targetCode:code});
-  if(userTeams[code]){
-    delete userTeams[code];
-    await storageSet(USER_TEAMS_KEY, userTeams);
+  let revoked=false;
+  if(SUPABASE_VARIANT){
+    const profileId=u.auth_user_id;
+    const [linkResult,profileResult]=await Promise.all([
+      supabaseDb.from('khsx_telegram_links').update({active:false,updated_at:new Date().toISOString()}).eq('auth_user_id',profileId).select('auth_user_id,active'),
+      supabaseDb.from('khsx_profiles').update({active:false,updated_at:new Date().toISOString()}).eq('user_id',profileId).select('user_id,active')
+    ]);
+    revoked=!linkResult.error&&!profileResult.error&&(linkResult.data||[]).length>0&&(profileResult.data||[]).length>0;
+    if(revoked){
+      staffUsers=staffUsers.filter(x=>String(x.auth_user_id)!==String(profileId));
+      supabaseAdminTelegramLinks=supabaseAdminTelegramLinks.map(x=>String(x.auth_user_id)===String(profileId)?{...x,active:false}:x);
+    }else console.warn('Thu hồi Telegram thất bại',linkResult.error||profileResult.error);
+  }else{
+    await sendUserCommand({action:'deleteUser', targetCode:code});
+    revoked=!staffUsers.some(x=>x.code===code);
+    if(userTeams[code]){ delete userTeams[code]; await storageSet(USER_TEAMS_KEY,userTeams); }
   }
   renderStaffUsersList();
-  if(!staffUsers.some(x => x.code === code)){
+  if(revoked){
     statusEl.textContent = `Đã thu hồi mã của ${u.name}.`;
     statusEl.style.color = 'var(--success)';
   }else{
-    statusEl.textContent = 'Máy chủ không thu hồi được mã này.';
+    statusEl.textContent = 'Máy chủ không thu hồi được quyền Telegram này.';
     statusEl.style.color = 'var(--danger)';
   }
-});
-
-function closeStaffModal(){ document.getElementById('staffUsersModal').style.display = 'none'; }
-document.getElementById('staffUsersBtn').addEventListener('click', async ()=>{
-  if(!canManage()) return;
-  const modal = document.getElementById('staffUsersModal');
-  modal.style.display = 'block';
-  if(!staffUsersLoaded) await loadStaffUsers();
-  renderStaffUsersList();
-});
-document.getElementById('closeStaffModalBtn').addEventListener('click', closeStaffModal);
-document.getElementById('staffUsersModal').addEventListener('click', (e)=>{
-  if(e.target.id === 'staffUsersModal') closeStaffModal();   // bấm ra ngoài để đóng
-});
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape') closeStaffModal();
-});
-
-document.getElementById('genStaffCodeBtn').addEventListener('click', ()=>{
-  document.getElementById('newStaffCode').value = randomStaffCode();
 });
 
 // ============================================================================
@@ -8174,6 +8285,47 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   // thực lại chính Telegram ID hiện tại, không để người dùng mắc ở màn hình khóa.
   if(SUPABASE_VARIANT && TELEGRAM_WEBAPP && TELEGRAM_WEBAPP.initData) await enterWithTelegram();
 });
+const DARK_MODE_KEY='khsx_dark_mode_v1';
+function applyDarkMode(enabled){
+  document.body.classList.toggle('dark-mode',!!enabled);
+  if(window.Chart&&Chart.defaults) Chart.defaults.color=enabled?'#dce7f7':'#182230';
+  const btn=document.getElementById('darkModeBtn');
+  if(btn) btn.textContent=enabled?'☀️ Giao diện sáng':'🌙 Chế độ tối';
+  try{localStorage.setItem(DARK_MODE_KEY,enabled?'1':'0');}catch(e){}
+}
+document.getElementById('darkModeBtn')?.addEventListener('click',()=>applyDarkMode(!document.body.classList.contains('dark-mode')));
+applyDarkMode((()=>{try{return localStorage.getItem(DARK_MODE_KEY)==='1';}catch(e){return false;}})());
+
+let managerStageOriginalUser=null;
+function closeManagerStageModal(){ document.getElementById('managerStageModal').style.display='none'; }
+document.getElementById('managerStageViewBtn')?.addEventListener('click',()=>{
+  if(!canManage()) return;
+  document.getElementById('managerStageModal').style.display='block';
+});
+document.getElementById('managerStageSelect')?.addEventListener('change',e=>{
+  document.getElementById('managerStageTeamWrap').style.display=e.target.value==='dan'?'block':'none';
+});
+document.getElementById('cancelManagerStageBtn')?.addEventListener('click',closeManagerStageModal);
+document.getElementById('managerStageModal')?.addEventListener('click',e=>{if(e.target.id==='managerStageModal')closeManagerStageModal();});
+document.getElementById('enterManagerStageBtn')?.addEventListener('click',()=>{
+  if(!canManage()) return;
+  const stage=document.getElementById('managerStageSelect').value;
+  const unit=stage==='dan'?document.getElementById('managerStageTeam').value:(stage==='may'?'Tổ may':'Tổ đóng gói');
+  managerStageOriginalUser={...currentUser};
+  currentUser={...currentUser,role:'nhan_vien',unit,_manager_preview:true,_manager_stage:stage};
+  closeManagerStageModal();
+  document.getElementById('exitManagerStageBtn').style.display='block';
+  applyRoleUI();
+  document.querySelector('.tab-btn[data-tab="progress"]')?.click();
+  renderAutoPlan(); renderProgress();
+});
+document.getElementById('exitManagerStageBtn')?.addEventListener('click',()=>{
+  if(!managerStageOriginalUser) return;
+  currentUser=managerStageOriginalUser;
+  managerStageOriginalUser=null;
+  document.getElementById('exitManagerStageBtn').style.display='none';
+  applyRoleUI(); renderAutoPlan(); renderProgress();
+});
 
 // Vào ngay bằng session local; xác thực máy chủ chạy ngầm, không chặn dashboard.
 function restoreLoginFast(){
@@ -8238,10 +8390,15 @@ async function bootstrap(){
   // điện thoại có thể tiếp tục lấy HTML và dữ liệu của bản cũ trong cùng lượt mở.
   await cleanupLegacyDashboardCache();
   if(PUBLIC_VIEW_MODE){
+    document.body.classList.add('public-view-mode');
     currentUser=VIEWER_USER;
     const guestOverlay=document.getElementById('loginOverlay');
     if(guestOverlay) guestOverlay.style.display='none';
     applyRoleUI();
+    const monthlyTab=document.querySelector('.tab-btn[data-tab="monthly"]');
+    const khsxTab=document.querySelector('.tab-btn[data-tab="autoplan"]');
+    if(monthlyTab) monthlyTab.textContent='📊 Thống kê';
+    if(khsxTab) khsxTab.textContent='📋 KHSX';
   }
   if(TELEGRAM_WEBAPP){
     try{ TELEGRAM_WEBAPP.ready(); TELEGRAM_WEBAPP.expand(); }catch(e){}

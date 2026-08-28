@@ -8,7 +8,7 @@ const {chromium}=require('playwright');
   const errors=[];
   page.on('pageerror',e=>errors.push(String(e)));
   await page.addInitScript(()=>{
-    class TestChart{constructor(){this.data={datasets:[]};this.options={};}destroy(){}resize(){}update(){}}
+    class TestChart{constructor(el,config={}){this.el=el;this.type=config.type;this.data=config.data||{datasets:[]};this.options=config.options||{};}destroy(){}resize(){}update(){}}
     TestChart.register=()=>{};
     window.Chart=TestChart;
   });
@@ -69,27 +69,33 @@ const {chromium}=require('playwright');
   console.log('PASS  manager mobile + Dán 0 support assignment');
 
   const approval=await page.evaluate(()=>{
-    supabaseAdminProfiles=[
-      {user_id:'manager-auth',display_name:'Quản lý hiện tại',role:'quan_ly',active:true},
-      {user_id:'employee-auth',display_name:'Nhân viên khác',role:'nhan_vien',active:true}
+    supabaseAdminProfiles=[];
+    supabaseAdminTelegramRequests=[{telegram_user_id:'12345',telegram_display_name:'Người chờ duyệt'}];
+    staffUsers=[
+      {auth_user_id:'manager-auth',code:'manager',name:'Quản lý hiện tại',role:'quan_ly'},
+      {auth_user_id:'employee-auth',code:'worker-1',name:'Nhân viên đã duyệt',role:'nhan_vien'}
     ];
-    supabaseWorkers=[];
-    supabaseAdminTelegramRequests=[{telegram_user_id:'123',telegram_display_name:'Người chờ duyệt'}];
-    renderSupabaseTelegramAdmin();
+    supabaseAdminTelegramLinks=[{auth_user_id:'employee-auth',telegram_user_id:'999',active:true}];
+    renderSupabaseTelegramAdmin();renderStaffUsersList();
     document.getElementById('staffUsersModal').style.display='block';
     const modal=document.querySelector('#staffUsersModal>div');
-    const options=supabaseAdminProfileOptions();
+    const role=document.querySelector('.telegram-request-role'),unit=document.querySelector('.telegram-request-unit');
+    const disabledInitially=unit.disabled;
+    role.value='quan_ly_2';role.dispatchEvent(new Event('change',{bubbles:true}));
+    const disabledManager2=unit.disabled;
+    role.value='nhan_vien';role.dispatchEvent(new Event('change',{bubbles:true}));
     return {
       modalWidth:modal.getBoundingClientRect().width,
       viewport:window.innerWidth,
       overflow:getComputedStyle(document.querySelector('#telegramAccessRequests .table-scroll')).overflowX,
-      currentManagerHidden:!options.includes('Quản lý hiện tại'),
-      employeeVisible:options.includes('Nhân viên khác')
+      disabledInitially,disabledManager2,enabledEmployee:!unit.disabled,
+      approvedText:document.getElementById('staffUsersList').innerText,
+      noUuid:!document.getElementById('staffUsersList').innerText.includes('employee-auth')
     };
   });
-  if(approval.modalWidth>approval.viewport||approval.overflow!=='auto'||!approval.currentManagerHidden||!approval.employeeVisible)
+  if(approval.modalWidth>approval.viewport||approval.overflow!=='auto'||!approval.disabledInitially||!approval.disabledManager2||!approval.enabledEmployee||!approval.approvedText.includes('Nhân viên đã duyệt')||!approval.noUuid)
     throw new Error(`Manager approval mobile failed: ${JSON.stringify(approval)}`);
-  console.log('PASS  mobile approval area and Telegram target filtering');
+  console.log('PASS  approval roles, approved-only list and hidden UUID');
   await page.evaluate(()=>document.getElementById('staffUsersModal').style.display='none');
 
   const ring=page.locator('#progressTeamRings .team-ring-clickable').first();
@@ -110,6 +116,32 @@ const {chromium}=require('playwright');
   if(desktop.workspace!=='none'||desktop.table==='none'||desktop.overflow>2)
     throw new Error(`Manager desktop failed: ${JSON.stringify(desktop)}`);
   console.log('PASS  manager desktop layout');
+
+  const regressions=await page.evaluate(()=>{
+    currentUser={code:'ui-manager',name:'Quản lý',role:'quan_ly',unit:'',auth_user_id:'manager-auth'};
+    supabaseActiveOrderIds=new Set(['bh_22']);
+    supabaseOrdersLoaded=true;
+    sheetRows=[{id:'deleted-order',date:'25/08/2026',ma:'CLS',dong:'Classic',ngang:'220',dai:'200',day:'15',so_luong:5}];
+    dynamicOrders=[{id:'bh_22',date:'22/08/2026',dong:'Bảo hành',so_luong:7,is_warranty:true,bh_theo_to:{'Tổ 2':7},bh_chi_tiet:[{to:'Tổ 2',so_luong:7}]}];
+    baoHanhTheoNgay={'22/08/2026':{tong:7,theo_to:{'Tổ 2':7},chi_tiet:[{to:'Tổ 2',so_luong:7}]}};
+    const orders=getOrders();
+    Object.keys(allDays).forEach(k=>delete allDays[k]);
+    Object.assign(allDays,{
+      a:{date:'01/08/2026',rows:[
+        {ten_hang:'Sora',ke_hoach:10,dong_goi:0,_from_foam:true,_order_id:'o1',_root_id:'o1',_root_qty:10},
+        {ten_hang:'Sora',ke_hoach:999,dong_goi:999},
+        {ten_hang:'Bảo hành',dong_goi:2,_from_foam:true}
+      ]},
+      b:{date:'02/08/2026',rows:[{ten_hang:'Sora',ke_hoach:0,dong_goi:12,_from_foam:true,_order_id:'o1',_root_id:'o1',_root_qty:10}]}
+    });
+    const k=tongKpiTuRowsTheoKeys(['a','b']);
+    applyDarkMode(true);
+    document.getElementById('managerStageModal').style.display='block';
+    return {deletedHidden:!orders.some(o=>o.id==='deleted-order'),warrantyRows:orders.filter(o=>o.id==='bh_22').length,k,dark:document.body.classList.contains('dark-mode'),stageModal:getComputedStyle(document.getElementById('managerStageModal')).display};
+  });
+  if(!regressions.deletedHidden||regressions.warrantyRows!==1||regressions.k.plan!==10||regressions.k.done!==10||regressions.k.throughput!==12||regressions.k.warranty!==2||!regressions.dark||regressions.stageModal==='none')
+    throw new Error(`Release regressions failed: ${JSON.stringify(regressions)}`);
+  console.log('PASS  tombstone, warranty dedupe, KPI cap, dark mode and manager stage modal');
 
   if(errors.length) throw new Error(`Page errors: ${errors.join(' | ')}`);
   await browser.close();
