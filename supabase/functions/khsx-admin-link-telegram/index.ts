@@ -56,6 +56,7 @@ async function findAuthUserByEmail(admin: ReturnType<typeof createClient>, email
 }
 
 const APPROVAL_ROLES = new Set(["quan_ly", "quan_ly_2", "nhan_vien"]);
+const APPROVAL_UNITS = new Set(["To 1", "To 2", "To 3", "To 4", "To 5", "To may", "To dong goi"]);
 function normalizeUnit(value: unknown) {
   const unit = String(value ?? "").trim();
   const map: Record<string, string> = {
@@ -80,7 +81,6 @@ Deno.serve(async (req: Request) => {
   }
 
   let body: {
-    worker_id?: string;
     telegram_user_id?: number | string;
     telegram_username?: string;
     role?: string;
@@ -92,7 +92,6 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json(req, { error: "INVALID_REQUEST" }, 400);
   }
-  const workerId = String(body.worker_id ?? "").trim().toLowerCase();
   const telegramId = String(body.telegram_user_id ?? "").trim();
   const requestedRole = String(body.role ?? "nhan_vien").trim();
   const requestedUnit = normalizeUnit(body.unit_name);
@@ -100,8 +99,8 @@ Deno.serve(async (req: Request) => {
   if (!/^\d{4,20}$/.test(telegramId) || !APPROVAL_ROLES.has(requestedRole)) {
     return json(req, { error: "INVALID_INPUT" }, 400);
   }
-  if (requestedRole === "nhan_vien" && !workerId) {
-    return json(req, { error: "WORKER_REQUIRED" }, 400);
+  if (requestedRole === "nhan_vien" && !APPROVAL_UNITS.has(requestedUnit)) {
+    return json(req, { error: requestedUnit ? "UNIT_INVALID" : "UNIT_REQUIRED" }, 400);
   }
 
   const client = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
@@ -123,19 +122,26 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: "MANAGER_REQUIRED" }, 403);
   }
 
-  let worker: { id: string; display_name: string; stage: string; active: boolean } | null = null;
-  if (workerId) {
-    const result = await admin.from("khsx_workers")
-      .select("id,display_name,stage,active")
-      .eq("id", workerId)
-      .maybeSingle();
-    if (result.error) return json(req, { error: "WORKER_LOOKUP_FAILED" }, 503);
-    worker = result.data;
-    if (!worker?.active) return json(req, { error: "WORKER_NOT_FOUND" }, 404);
+  // Không còn tra cứu Worker ID do quản lý nhập. Nếu người dùng thuộc May/
+  // Đóng gói, tạo một worker nội bộ theo Telegram ID để các lần nhập công
+  // đoạn sau vẫn có định danh hợp lệ; người dùng thuộc Tổ 1–5 không cần worker.
+  const requestedStage = requestedRole === "nhan_vien"
+    ? requestedUnit === "To may" ? "may" : requestedUnit === "To dong goi" ? "dong_goi" : ""
+    : "";
+  const generatedWorkerId = requestedStage ? `tg_${telegramId}` : "";
+  const unitName = requestedRole === "nhan_vien" ? requestedUnit : null;
+  let workerIdForProfile = generatedWorkerId || null;
+  if (generatedWorkerId) {
+    const workerResult = await admin.from("khsx_workers").upsert({
+      id: generatedWorkerId,
+      display_name: requestedName || `Telegram ${telegramId}`,
+      stage: requestedStage,
+      active: true,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "id" }).select("id,display_name,stage,active").single();
+    if (workerResult.error || !workerResult.data) return json(req, { error: "WORKER_AUTO_PROVISION_FAILED" }, 500);
+    workerIdForProfile = workerResult.data.id;
   }
-  const workerUnit = worker?.stage === "may" ? "To may" : worker?.stage === "dong_goi" ? "To dong goi" : null;
-  if (requestedRole === "nhan_vien" && !workerUnit) return json(req, { error: "WORKER_STAGE_UNSUPPORTED" }, 400);
-  const unitName = requestedRole === "nhan_vien" ? (requestedUnit || workerUnit) : null;
 
   // Nếu ID Telegram đã tồn tại thì dùng lại đúng hồ sơ đó (idempotent). Chỉ
   // từ chối khi nó đang trỏ sang hồ sơ khác, thay vì trả lỗi chung chung.
@@ -148,14 +154,12 @@ Deno.serve(async (req: Request) => {
   let existingLink = existingLinkResult.data?.[0] ?? null;
   let { data: profile, error: profileError } = existingLink
     ? await admin.from("khsx_profiles").select("user_id,display_name,role,unit_name,active,worker_id").eq("user_id", existingLink.auth_user_id).maybeSingle()
-    : worker
-      ? await admin.from("khsx_profiles").select("user_id,display_name,role,unit_name,active,worker_id").eq("worker_id", worker.id).maybeSingle()
-      : { data: null, error: null };
+    : { data: null, error: null };
   if (profileError) return json(req, { error: "PROFILE_LOOKUP_FAILED" }, 503);
   let createdAuthUserId: string | null = null;
 
   if (!profile) {
-    const email = worker ? "worker_" + worker.id + "@khsx.internal" : "telegram_" + telegramId + "@khsx.internal";
+    const email = "telegram_" + telegramId + "@khsx.internal";
     let authUserId = existingLink?.auth_user_id ? String(existingLink.auth_user_id) : "";
     if (authUserId) {
       const linkedAuth = await admin.auth.admin.getUserById(authUserId);
@@ -175,7 +179,7 @@ Deno.serve(async (req: Request) => {
         email,
         password: randomPassword(),
         email_confirm: true,
-        user_metadata: { display_name: requestedName || worker?.display_name || ("Telegram " + telegramId), worker_id: worker?.id || null },
+        user_metadata: { display_name: requestedName || ("Telegram " + telegramId), worker_id: workerIdForProfile },
       });
       if (created.error || !created.user) {
         return json(req, { error: "AUTH_USER_CREATE_FAILED", code: created.error?.code }, 500);
@@ -185,16 +189,15 @@ Deno.serve(async (req: Request) => {
     }
     const inserted = await admin.from("khsx_profiles").upsert({
       user_id: authUserId,
-      display_name: requestedName || worker?.display_name || ("Telegram " + telegramId),
+      display_name: requestedName || ("Telegram " + telegramId),
       role: requestedRole,
       unit_name: unitName,
-      worker_id: worker?.id || null,
+      worker_id: workerIdForProfile,
       active: true,
     }, { onConflict: "user_id" }).select("user_id,display_name,role,unit_name,active,worker_id").single();
     if (inserted.error || !inserted.data) {
       if (createdAuthUserId) await admin.auth.admin.deleteUser(createdAuthUserId);
-      const duplicateWorker = inserted.error?.code === "23505";
-      return json(req, { error: duplicateWorker ? "WORKER_PROFILE_ALREADY_EXISTS" : "PROFILE_UPSERT_FAILED", code: inserted.error?.code }, duplicateWorker ? 409 : 500);
+      return json(req, { error: "PROFILE_UPSERT_FAILED", code: inserted.error?.code }, 500);
     }
     profile = inserted.data;
   }
@@ -229,7 +232,7 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: duplicate ? "ACCOUNT_ALREADY_LINKED" : "TELEGRAM_LINK_FAILED" }, 409);
   }
   const updatedProfile = await admin.from("khsx_profiles")
-    .update({ role: requestedRole, unit_name: unitName })
+    .update({ role: requestedRole, unit_name: unitName, worker_id: workerIdForProfile })
     .eq("user_id", profile.user_id)
     .select("user_id,display_name,role,unit_name,active,worker_id")
     .single();

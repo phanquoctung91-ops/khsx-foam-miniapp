@@ -47,7 +47,7 @@ const checks=[
   ,['Manager 2 gets direct interactive stage-entry button',/id="managerStageViewBtn" class="only-manager2"/.test(html)&&/managementTools[\s\S]*?id="managerStageViewBtn" class="only-manager2"/.test(html)&&!/managementToolsMenu[\s\S]*?id="managerStageViewBtn"/.test(html)&&/managerStageModal" class="only-manager2/.test(html)&&/if\(!canManage2\(\)\) return;/.test(html)]
   ,['Snapshot warning is admin-only',/id="autoPlanIntegrityWarning"/.test(html)&&/getElementById\('autoPlanIntegrityWarning'\)/.test(html)&&/!canManage2\(\) \|\| !xau\.length/.test(html)]
   ,['Filtered daily chart and production speed KPI',/const dailyPlan = keysToUse\.map/.test(html)&&/function tinhTocDoQuy\(/.test(html)&&/danhGia/.test(html)]
-  ,['Telegram manager approval does not require Worker ID',/requestedRole === "nhan_vien" && !workerId/.test(edgeAdmin)&&/chosenRole!=='nhan_vien'/.test(html)&&/displayName/.test(html)]
+  ,['Telegram approval uses Telegram ID, role and unit',/APPROVAL_UNITS/.test(edgeAdmin)&&!/worker_id\?:/.test(edgeAdmin)&&/chosenRole==='nhan_vien'\?selectedUnit:''/.test(html)&&/displayName/.test(html)]
   ,['Warranty Sheet range is open-ended',/range=A7:ZZ/.test(html)&&!/range=A7:Z1000/.test(html)]
   ,['Dark mode exists and persists',/id="darkModeBtn"/.test(html)&&/body\.dark-mode/.test(html)&&/DARK_MODE_KEY/.test(html)&&/managementToolsBtn[\s\S]*?id="darkModeBtn"/.test(html)&&!/managementToolsMenu[\s\S]*?id="darkModeBtn"/.test(html)]
   ,['KPI uses actual packing date consistently',/function rowsNguonKpiNgay/.test(html)&&/totalDG = tongKpi\.throughput/.test(html)&&/rangeDone = rangeKpi\.throughput/.test(html)]

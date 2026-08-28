@@ -30,12 +30,46 @@
   body.dark-mode .panel,body.dark-mode .card,body.dark-mode .kpi,body.dark-mode [role="dialog"]>div{background:linear-gradient(145deg,#102238,#0b1827)!important;color:var(--text);}
   body.dark-mode [style*="background:#f8f9fb"],body.dark-mode [style*="background:#f7fbff"],body.dark-mode [style*="background:#f4f6fa"],body.dark-mode [style*="background:#fff"],body.dark-mode [style*="background: white"],body.dark-mode [style*="background:white"]{background:#10243a!important;color:var(--text)!important;}
   body.dark-mode [style*="color:#1a1d23"],body.dark-mode [style*="color:#111"],body.dark-mode [style*="color:black"]{color:var(--text)!important;}
+  body.dark-mode #loginOverlay{background:radial-gradient(circle at 20% 0,#102b43 0,#07111f 48%,#050b14 100%)!important;}
   body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#091827;border:1px solid var(--border);}
   body.dark-mode .tab-btn,body.dark-mode .management-tools-menu button{color:var(--text2);background:#0d2032;}
   body.dark-mode .tab-btn.active{color:var(--primary)!important;box-shadow:0 0 14px rgba(56,217,255,.24);}
   body.dark-mode .table-scroll,body.dark-mode table td{background:var(--card);color:var(--text);border-color:var(--border);}
   body.dark-mode tr:hover td{background:#10283c!important;}
   body.dark-mode .modal-overlay,body.dark-mode [id$="Modal"]{color:var(--text);}
+  body.dark-mode [id$="Modal"]>div,body.dark-mode #loginOverlay>div{background:linear-gradient(145deg,#102238,#0b1827)!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode [id$="Modal"] [style*="background:#f8f9fb"],
+  body.dark-mode [id$="Modal"] [style*="background:#f7fbff"],
+  body.dark-mode [id$="Modal"] [style*="background:#f4f6fa"],
+  body.dark-mode [id$="Modal"] [style*="background:#fff"],
+  body.dark-mode [id$="Modal"] [style*="background:white"]{background:#10243a!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode .tabs,body.dark-mode .team-card,body.dark-mode .stage-summary-item,
+  body.dark-mode .capacity-filters,body.dark-mode .capacity-section,
+  body.dark-mode .wf-step,body.dark-mode .management-tools-menu button,
+  body.dark-mode #supabaseTelegramAdmin,body.dark-mode #autoPlanTable tbody,
+  body.dark-mode #progressTable tbody{background:#0e1d2d!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode .wf-step span,body.dark-mode .wf-note,body.dark-mode .capacity-note,
+  body.dark-mode .team-card .to-label,body.dark-mode .stage-summary-item,
+  body.dark-mode #supabaseTelegramAdmin [style*="color:#1f4d78"]{color:var(--text2)!important;}
+  body.dark-mode .wf-note{background:#493710!important;border-color:var(--warning)!important;}
+  body.dark-mode .capacity-quick-btn,body.dark-mode .warranty-detail-btn,
+  body.dark-mode #supabaseTelegramAdmin button{background:#10243a!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode tr.row-new td,body.dark-mode tr.row-changed td,body.dark-mode tr.row-rot td,
+  body.dark-mode tr.row-ghost td,body.dark-mode tr.row-baohanh td,body.dark-mode tr.row-uutien td,
+  body.dark-mode tr.row-split-source td{background:#10243a!important;border-color:var(--border)!important;}
+  body.dark-mode #autoPlanTable tbody tr,body.dark-mode #progressTable tbody tr{background:#0e1d2d!important;border-color:var(--border)!important;}
+  body.dark-mode .ops-command-center{background:linear-gradient(145deg,#102238,#0b1827)!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
+  body.dark-mode .ops-stage-card{background:#0e1d2d!important;border-color:var(--border)!important;}
+  body.dark-mode .ops-stage-name,body.dark-mode .ops-stage-value,body.dark-mode .ops-stage-meta strong{color:var(--text)!important;}
+  body.dark-mode .ops-stage-status{background:#10243a!important;color:var(--text2)!important;}
+  body.dark-mode .ops-alert-strip{background:#493710!important;color:var(--text)!important;}
+  body.dark-mode .employee-stage-head{background:linear-gradient(135deg,#0b3157,#075d78)!important;}
+  body.dark-mode .employee-capacity-alert{background:#493710!important;color:var(--text)!important;}
+  body.dark-mode .employee-order-card{background:#0e1d2d!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
+  body.dark-mode .employee-order-title,body.dark-mode .employee-order-plan strong{color:var(--text)!important;}
+  body.dark-mode .employee-order-meta{border-color:var(--border)!important;color:var(--text2)!important;}
+  body.dark-mode .employee-empty{background:#0e1d2d!important;border-color:var(--border)!important;color:var(--text2)!important;}
+  body.dark-mode [style*="background:#fdf2f1"],body.dark-mode [style*="background:#fdecea"],body.dark-mode [style*="background:#fdf4e3"],body.dark-mode [style*="background:#eef3f9"]{background:#2a2430!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode .kpi{box-shadow:0 0 18px rgba(56,217,255,.08);}
   /* Link khách trên PC ưu tiên mật độ thông tin: đủ hai tab nhưng gọn hơn dashboard quản lý. */
   @media(min-width:901px){
@@ -350,11 +384,32 @@
   .capacity-table{width:100%;min-width:560px;font-size:12px;}
   .capacity-table th,.capacity-table td{padding:8px 9px;}
   .capacity-note{font-size:11.5px;color:var(--text2);line-height:1.45;margin-top:10px;}
+  .speed-kpi-card{cursor:pointer;position:relative;}
+  .speed-kpi-card:focus{outline:2px solid var(--primary);outline-offset:2px;}
+  .speed-kpi-card:hover{box-shadow:0 0 0 1px var(--primary),0 8px 24px rgba(16,24,40,.16);}
+  .speed-kpi-hint{display:block;margin-top:7px;font-size:10.5px;color:var(--accent);font-weight:700;}
+  .speed-detail-dialog{max-width:720px;}
+  .speed-detail-lead{padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:var(--primary-l);color:var(--text);font-size:12.5px;line-height:1.5;margin-bottom:12px;}
+  .speed-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+  .speed-detail-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0;padding:9px 10px;border:1px solid var(--border);border-radius:9px;background:var(--card);font-size:12px;line-height:1.35;}
+  .speed-detail-row span{color:var(--text2);min-width:0;}
+  .speed-detail-row strong{color:var(--text);text-align:right;overflow-wrap:anywhere;}
+  .speed-detail-formula,.speed-detail-source,.speed-detail-warning,.speed-detail-result{padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.55;margin-top:8px;overflow-wrap:anywhere;}
+  .speed-detail-formula{background:var(--accent-l);border:1px solid var(--border);color:var(--text);}
+  .speed-detail-source{color:var(--text2);border:1px dashed var(--border);}
+  .speed-detail-warning{background:var(--warning-l);border:1px solid var(--warning);color:var(--text);}
+  .speed-detail-result{background:var(--success-l);border:1px solid var(--success);color:var(--text);font-weight:700;}
+  body.dark-mode .speed-detail-lead{background:#103348!important;border-color:var(--border)!important;}
+  body.dark-mode .speed-detail-row{background:#0e1d2d!important;border-color:var(--border)!important;}
+  body.dark-mode .speed-detail-formula{background:#2c1f4d!important;border-color:var(--border)!important;}
+  body.dark-mode .speed-detail-warning{background:#493710!important;color:var(--text)!important;}
+  body.dark-mode .speed-detail-result{background:#0d3a32!important;color:var(--text)!important;}
   @media(max-width:700px){
     .capacity-dialog{margin:5px auto;padding:14px;border-radius:13px;}
     .capacity-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
     .capacity-grid{grid-template-columns:1fr;}
     .capacity-section.capacity-full{grid-column:auto;}
+    .speed-detail-grid{grid-template-columns:1fr;}
   }
   /* ---- Ẩn/hiện chức năng theo vai người dùng ----
      .only-manager  : chỉ Quản lý          (nút đỏ, 2 nút chốt, cột Xoá)
@@ -975,7 +1030,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       </div>
       <div id="supabaseTelegramAdmin" style="display:none;margin:4px 0 14px;padding:12px;border:1px solid #cfe0ef;border-radius:11px;background:#f7fbff;">
         <div style="font-size:12.5px;font-weight:800;color:#1f4d78;margin-bottom:5px;">🔗 Duyệt tài khoản Telegram</div>
-        <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:9px;">Nhân viên tự gửi Telegram ID. Chọn vai trước: Nhân viên mới cần Worker ID và tổ/công đoạn; Quản lý/Quản lý 2 không cần nhập tổ.</div>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:9px;">Nhân viên tự gửi Telegram ID. Quản lý duyệt theo luồng: chọn vai, chọn tổ/công đoạn (bắt buộc với Nhân viên), rồi bấm Duyệt.</div>
         <div id="adminTelegramStatus" aria-live="polite" style="display:none;margin-top:8px;font-size:11.5px;line-height:1.4;"></div>
         <div id="telegramAccessRequests" style="margin-top:10px;"></div>
       </div>
@@ -1327,6 +1382,16 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<div id="speedDetailModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="speedDetailTitle">
+  <div class="capacity-dialog speed-detail-dialog">
+    <div class="capacity-head">
+      <div><h3 id="speedDetailTitle" style="margin:0;font-size:18px;">Cách tính tốc độ</h3><div style="margin-top:4px;color:var(--text2);font-size:12px;">Bảng giải thích dùng đúng dữ liệu đang hiển thị trên thẻ.</div></div>
+      <button id="closeSpeedDetailBtn" class="capacity-quick-btn" type="button">Đóng</button>
+    </div>
+    <div id="speedDetailBody"></div>
+  </div>
+</div>
+
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
@@ -1632,8 +1697,9 @@ function computeAndRenderKpis(){
     ? `TB đóng gói: <b>${tbKhoangNgay.toLocaleString('vi-VN',{maximumFractionDigits:1})} tấm/ngày</b> · ${danhGiaTocDo(tbKhoangNgay)}`
     : 'Chưa có mục tiêu tính toán';
   const tocDoQuy = tinhTocDoQuy();
+  speedDetailStore.quarter = tocDoQuy;
   const tocDoQuyHtml = tocDoQuy.mucTieu>0
-    ? `<div class="kpi-phu">Cần <b>${tocDoQuy.mucTieuNgay.toLocaleString('vi-VN',{maximumFractionDigits:1})}</b> · thực tế <b>${tocDoQuy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}</b> tấm/ngày · dự báo <b>${Math.round(tocDoQuy.duBao).toLocaleString()}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;line-height:1.4;">${tocDoQuy.danhGia}</div>`
+    ? `<div class="kpi-phu">Mục tiêu/ngày <b>${tocDoQuy.mucTieuNgay.toLocaleString('vi-VN',{maximumFractionDigits:1})}</b> · thực tế <b>${tocDoQuy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}</b> tấm/ngày</div><div class="kpi-phu">Đã qua <b>${tocDoQuy.elapsedWorkdays}</b>/<b>${tocDoQuy.totalWorkdays}</b> ngày đăng ký · dự báo cuối quý <b>${Math.round(tocDoQuy.duBao).toLocaleString()}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;line-height:1.4;">${tocDoQuy.danhGia}</div><span class="speed-kpi-hint">Bấm để xem cách tính</span>`
     : '<div class="kpi-phu">Chưa nhập mục tiêu quý để tính tốc độ.</div>';
 
   kpiRow.innerHTML = `
@@ -1678,7 +1744,7 @@ function computeAndRenderKpis(){
       <div class="value" style="color:#8a5cd0;" data-dem="${totalBaoHanh}">${totalBaoHanh.toLocaleString()}</div>
       <div class="kpi-phu">${totalBaoHanh>0 ? 'Ngoài kế hoạch, không tính vào tỷ lệ' : 'Tháng này chưa có hàng bảo hành'}</div>
     </div>
-    <div class="kpi" style="border-top-color:${mauTocDo(tocDoQuy.trangThai)};">
+    <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="quarter" aria-label="Xem cách tính Tốc độ quý" style="border-top-color:${mauTocDo(tocDoQuy.trangThai)};">
       <div class="label">Tốc độ quý ${tocDoQuy.quy}/${tocDoQuy.nam}</div>
       <div class="value" style="color:${mauTocDo(tocDoQuy.trangThai)};">${tocDoQuy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:13px;color:var(--text2);"> tấm/ngày</span></div>
       ${tocDoQuyHtml}
@@ -1893,14 +1959,15 @@ function renderMonthly(){
   rangeDone = rangeKpi.throughput;
 
   const rangeRate = rangePlan>0 ? Math.round((rangeDone/rangePlan)*1000)/10 : null;
-  const tocDoKy = tinhTocDoQuy(keysToUse,rangeKpi,rangeActiveDays);
+  const tocDoKy = tinhTocDoBoLoc({keys:keysToUse,output:rangeKpi.throughput,fromIso:monthFromSelect.value,toIso:monthToSelect.value});
+  speedDetailStore.monthly = tocDoKy;
   document.getElementById('monthlyKpis').innerHTML = `
     <div class="kpi k-accent"><div class="label">Tổng kế hoạch</div><div class="value">${rangePlan.toLocaleString()}</div></div>
     <div class="kpi k-success"><div class="label">Tổng hoàn thành</div><div class="value">${rangeDone.toLocaleString()}</div></div>
     <div class="kpi ${rangeRate==null?'':rangeRate>=95?'k-success':'k-warning'}"><div class="label">Tỷ lệ hoàn thành</div><div class="value" style="color:${rangeRate==null?'var(--text2)':rangeRate>=95?'var(--success)':rangeRate>=80?'var(--warning)':'var(--danger)'}">${rangeRate==null?'—':rangeRate+'%'}</div></div>
     <div class="kpi k-accent"><div class="label">Đóng gói trong kỳ</div><div class="value">${rangeKpi.throughput.toLocaleString()}</div></div>
     <div class="kpi k-accent"><div class="label">Số ngày có sản xuất</div><div class="value">${rangeActiveDays}</div></div>
-    <div class="kpi" style="border-top-color:${mauTocDo(tocDoKy.trangThai)};"><div class="label">Tốc độ theo kỳ lọc</div><div class="value" style="color:${mauTocDo(tocDoKy.trangThai)};">${tocDoKy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">Dự báo quý: <b>${Math.round(tocDoKy.duBao).toLocaleString()}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoKy.trangThai)};font-weight:700;line-height:1.35;">${tocDoKy.danhGia}</div></div>
+    <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="monthly" aria-label="Xem cách tính Tốc độ theo bộ lọc" style="border-top-color:${mauTocDo(tocDoKy.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoKy.trangThai)};">${tocDoKy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoKy.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div><div class="kpi-phu" style="color:${mauTocDo(tocDoKy.trangThai)};font-weight:700;line-height:1.35;">${tocDoKy.danhGia}</div><span class="speed-kpi-hint">Bấm để xem cách tính</span></div>
   `;
 
   const products = Object.entries(productMap).map(([name,total])=>({name,total})).sort((a,b)=>b.total-a.total);
@@ -2170,42 +2237,189 @@ function tinhTienDoQuyHienTai(){
   const phanTram = mucTieu>0 ? Math.round((daLam/mucTieu)*1000)/10 : null;
   return {nam, quy, mucTieu, soNgayDuKien, mucTieuNgay, daLam, phanTram, tbQuy, tbThang, tyLeQuy, tyLeThang};
 }
-// Chỉ số tốc độ dùng chung cho Tổng hợp tháng và KHSX. Mẫu số sản xuất là số
-// ngày có đóng gói thực tế; tuyệt đối không lấy số ngày có kế hoạch thay thế.
-function tinhTocDoQuy(keysOverride=null, outputOverride=null, activeDaysOverride=null){
-  const quy=tinhTienDoQuyHienTai();
-  const keys=Array.isArray(keysOverride) ? keysOverride : Object.keys(allDays).filter(k=>{
-    const p=parseDMY(allDays[k]?.date||'');
-    return p && p.y===quy.nam && Math.floor((p.m-1)/3)+1===quy.quy;
-  });
-  const kpi=outputOverride || tongKpiTuRowsTheoKeys(keys);
-  const activeDays=activeDaysOverride==null
-    ? keys.filter(k=>tongKpiTuRowsTheoKeys([k]).throughput>0).length
-    : Number(activeDaysOverride)||0;
-  const ngayBatDau=new Date(quy.nam,(quy.quy-1)*3,1);
-  const ngayCuoi=new Date(quy.nam,quy.quy*3,0);
-  const homNay=new Date(); homNay.setHours(0,0,0,0);
-  const denNgay=homNay<ngayBatDau?ngayBatDau:new Date(Math.min(homNay.getTime(),ngayCuoi.getTime()));
-  const ngayDaQua=workDatesForQuarter(quy.nam,quy.quy).filter(iso=>new Date(`${iso}T00:00:00`)<=denNgay).length;
-  const ngayConLai=Math.max(0,quy.soNgayDuKien-Math.min(quy.soNgayDuKien,ngayDaQua));
-  const normalizedOutput=outputOverride?Number(kpi.throughput||0):keys.reduce((sum,k)=>{
-    const day=allDays[k]?.date,qty=tongKpiTuRowsTheoKeys([k]).throughput,records=overtimeFor(day,null,'dong_goi');
-    const avg=records.length?records.reduce((s,x)=>s+gioCaTheoOT(x.hours),0)/records.length:8;
-    return sum+(avg>0?qty*8/avg:qty);
-  },0);
-  const thucTe=activeDays>0 ? normalizedOutput/activeDays : 0;
-  const duBao=Number(kpi.throughput||0)+thucTe*ngayConLai;
-  const tyLe=quy.mucTieuNgay>0 ? thucTe/quy.mucTieuNgay : null;
-  const trangThai=tyLe==null?'none':tyLe>=1?'green':tyLe>=.9?'yellow':'red';
-  let danhGia='Chưa nhập mục tiêu quý.';
-  if(quy.mucTieu>0){
-    if(trangThai==='green') danhGia=`Tiến độ đang vượt kế hoạch. Với tốc độ hiện tại, dự kiến cuối quý đạt ~${Math.round(duBao).toLocaleString()} tấm, vượt ${Math.max(0,Math.round(duBao-quy.mucTieu)).toLocaleString()} tấm so với mục tiêu đề ra.`;
-    else if(trangThai==='yellow') danhGia=`Tiến độ đang chậm nhẹ so với kế hoạch. Cần tăng thêm ${Math.max(0,((quy.mucTieu-(kpi.throughput||0))/Math.max(1,ngayConLai)-thucTe)).toLocaleString('vi-VN',{maximumFractionDigits:1})} tấm/ngày để đảm bảo mục tiêu cuối quý.`;
-    else danhGia=`Tiến độ đang chậm đáng kể. Nếu duy trì tốc độ hiện tại, dự kiến thiếu ${Math.max(0,Math.round(quy.mucTieu-duBao)).toLocaleString()} tấm vào cuối quý — cần điều chỉnh kế hoạch sản xuất.`;
+// ---- Hai tốc độ hoàn toàn độc lập ----
+// Tốc độ quý dùng mục tiêu quý + lịch ngày làm việc mà Quản lý đã đăng ký.
+// Tốc độ thực tế phải tính cả ngày đã đăng ký nhưng không đóng gói được tấm nào;
+// OT/KPI/công đoạn Dán/May không được chen vào phép tính này.
+function isoSoNgay(value){
+  const raw=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return isoDayNumber(raw);
+  return isoDayNumber(dmyToIso(raw));
+}
+function ngayHienTaiIso(){ return isoDateLocal(new Date()); }
+function ngayLamViecTrongKhoang(fromIso,toIso){
+  let from=isoSoNgay(fromIso),to=isoSoNgay(toIso);
+  if(!Number.isFinite(from)||!Number.isFinite(to)) return [];
+  if(from>to) [from,to]=[to,from];
+  const start=new Date(from*86400000),end=new Date(to*86400000);
+  const result=new Set();
+  for(let year=start.getUTCFullYear();year<=end.getUTCFullYear();year++){
+    for(let quarter=1;quarter<=4;quarter++){
+      workDatesForQuarter(year,quarter).forEach(iso=>{
+        const n=isoDayNumber(iso);
+        if(Number.isFinite(n)&&n>=from&&n<=to) result.add(iso);
+      });
+    }
   }
-  return {...quy,ngaySanXuat:activeDays,ngayConLai,thucTe,duBao,trangThai,danhGia,normalizedOutput};
+  return [...result].sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
+}
+function ngayLamViecDaQuaCuaQuy(nam,quy){
+  const today=isoSoNgay(ngayHienTaiIso());
+  return workDatesForQuarter(nam,quy).filter(iso=>isoSoNgay(iso)<=today);
+}
+function keysTheoQuy(nam,quy){
+  return Object.keys(allDays).filter(k=>{
+    const p=parseDMY(allDays[k]?.date||'');
+    return p&&p.y===nam&&Math.floor((p.m-1)/3)+1===quy;
+  });
+}
+function keysTrongKhoang(fromIso,toIso){
+  let from=isoSoNgay(fromIso),to=isoSoNgay(toIso);
+  if(!Number.isFinite(from)||!Number.isFinite(to)) return [];
+  if(from>to) [from,to]=[to,from];
+  return Object.keys(allDays).filter(k=>{
+    const n=isoSoNgay(allDays[k]?.date||'');
+    return Number.isFinite(n)&&n>=from&&n<=to;
+  });
+}
+function mucTieuNgayTheoQuy(nam,quy){
+  const target=Number(quarterTargets[`${nam}_Q${quy}`]||0);
+  const days=workDatesForQuarter(nam,quy).length;
+  return target>0&&days>0?target/days:0;
+}
+function formatTocDo(value){
+  return Number(value||0).toLocaleString('vi-VN',{minimumFractionDigits:0,maximumFractionDigits:1});
+}
+function tinhTocDoQuy(){
+  const quy=tinhTienDoQuyHienTai();
+  const ngayDangKy=workDatesForQuarter(quy.nam,quy.quy).slice().sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
+  const ngayDaQua=ngayLamViecDaQuaCuaQuy(quy.nam,quy.quy);
+  const today=isoSoNgay(ngayHienTaiIso());
+  const keys=keysTheoQuy(quy.nam,quy.quy).filter(k=>isoSoNgay(allDays[k]?.date||'')<=today);
+  const kpi=tongKpiTuRowsTheoKeys(keys);
+  const tongNgay=ngayDangKy.length;
+  const ngayDaQuaCount=ngayDaQua.length;
+  const ngayConLai=Math.max(0,tongNgay-ngayDaQuaCount);
+  const mucTieuNgay=tongNgay>0&&quy.mucTieu>0?quy.mucTieu/tongNgay:0;
+  const thucTe=ngayDaQuaCount>0?Number(kpi.throughput||0)/ngayDaQuaCount:0;
+  const duBao=Number(kpi.throughput||0)+thucTe*ngayConLai;
+  const chenhlech=thucTe-mucTieuNgay;
+  const tyLe=mucTieuNgay>0?thucTe/mucTieuNgay:null;
+  const trangThai=tyLe==null?'none':tyLe>=1?'green':tyLe>=.9?'yellow':'red';
+  const thieuSoVoiMucTieu=Math.max(0,Number(quy.mucTieu||0)-Number(kpi.throughput||0));
+  const tocDoCanChoPhanConLai=ngayConLai>0?thieuSoVoiMucTieu/ngayConLai:0;
+  const canThemMoiNgay=ngayConLai>0?Math.max(0,tocDoCanChoPhanConLai-thucTe):thieuSoVoiMucTieu;
+  let danhGia='Chưa nhập mục tiêu quý hoặc chưa có ngày làm việc.';
+  if(mucTieuNgay>0){
+    if(Number(kpi.throughput||0)>=Number(quy.mucTieu||0)){
+      danhGia=`Đã đạt mục tiêu quý theo số đóng gói thực tế (${Number(kpi.throughput||0).toLocaleString('vi-VN')} tấm).`;
+    }else if(duBao>=quy.mucTieu){
+      danhGia=`Đang nhanh hơn mục tiêu ${formatTocDo(chenhlech)} tấm/ngày; giữ nhịp hiện tại sẽ đạt khoảng ${Math.round(duBao).toLocaleString('vi-VN')} tấm cuối quý.`;
+    }else if(ngayConLai>0){
+      danhGia=`Dự báo hiện tại đạt khoảng ${Math.round(duBao).toLocaleString('vi-VN')} tấm; cần thêm ${formatTocDo(canThemMoiNgay)} tấm/ngày trong ${ngayConLai} ngày còn lại để đạt mục tiêu.`;
+    }else{
+      danhGia=`Đã hết ngày làm việc đăng ký; còn thiếu ${formatTocDo(thieuSoVoiMucTieu)} tấm so với mục tiêu quý.`;
+    }
+  }
+  const sourceDates=keys.map(k=>dmyToIso(allDays[k]?.date||'')).filter(Boolean).sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
+  return {...quy,kind:'quarter',keys,sourceDates,output:Number(kpi.throughput||0),registeredDates:ngayDangKy,
+    elapsedDates:ngayDaQua,totalWorkdays:tongNgay,elapsedWorkdays:ngayDaQuaCount,
+    remainingWorkdays:ngayConLai,ngaySanXuat:ngayDaQuaCount,mucTieuNgay,thucTe,duBao,
+    tocDoCanChoPhanConLai,canThemMoiNgay,thieuSoVoiMucTieu,
+    chenhlech,trangThai,danhGia,normalizedOutput:Number(kpi.throughput||0)};
+}
+
+// Tốc độ bộ lọc chỉ mô tả đúng khoảng ngày người dùng đang xem. Nó không tạo
+// dự báo quý và không được ghi đè lên thẻ Tốc độ quý.
+function tinhTocDoBoLoc({keys=[],output=null,fromIso='',toIso='',scope='Toàn team'}={}){
+  const sourceKeys=Array.isArray(keys)?keys.filter(k=>allDays[k]):[];
+  const sourceDates=sourceKeys.map(k=>dmyToIso(allDays[k].date)).filter(Boolean).sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
+  const from=fromIso||sourceDates[0]||'';
+  const to=toIso||sourceDates[sourceDates.length-1]||from;
+  const ngayDangKy=ngayLamViecTrongKhoang(from,to);
+  const kpi=output&&typeof output==='object'?output:tongKpiTuRowsTheoKeys(sourceKeys);
+  const sanLuong=output!=null&&typeof output!=='object'?Number(output)||0:Number(kpi?.throughput)||0;
+  const thucTe=ngayDangKy.length>0?sanLuong/ngayDangKy.length:0;
+  const quarterDate=sourceDates[0]||from;
+  const p=String(quarterDate).match(/^(\d{4})-(\d{2})-/);
+  const q=p?Math.floor((Number(p[2])-1)/3)+1:null;
+  const nam=p?Number(p[1]):null;
+  const sourceQuarters=new Set(sourceDates.map(iso=>{
+    const m=String(iso).match(/^(\d{4})-(\d{2})-/);
+    return m?`${m[1]}_Q${Math.floor((Number(m[2])-1)/3)+1}`:'';
+  }).filter(Boolean));
+  const mucTieuQuy=nam&&q&&sourceQuarters.size<=1?mucTieuNgayTheoQuy(nam,q):0;
+  const chenhlech=mucTieuQuy>0?thucTe-mucTieuQuy:null;
+  const trangThai=chenhlech==null?'none':chenhlech>=0?'green':chenhlech>=-mucTieuQuy*.1?'yellow':'red';
+  let danhGia='Chưa có ngày làm việc trong khoảng lọc.';
+  if(scope!=='Toàn team'){
+    danhGia='Đang lọc riêng phạm vi tổ/công đoạn nên không đánh giá tốc độ team.';
+  }else if(ngayDangKy.length){
+    danhGia=mucTieuQuy>0
+      ? (chenhlech>=0
+        ? `Khoảng lọc nhanh hơn tốc độ mục tiêu quý ${formatTocDo(chenhlech)} tấm/ngày.`
+        : `Khoảng lọc chậm hơn tốc độ mục tiêu quý ${formatTocDo(Math.abs(chenhlech))} tấm/ngày.`)
+      : 'Chưa có mục tiêu quý để so sánh; đây chỉ là tốc độ của khoảng lọc.';
+  }
+  return {kind:'filter',keys:sourceKeys,sourceDates,fromIso:from,toIso:to,registeredDates:ngayDangKy,
+    elapsedDates:ngayDangKy,totalWorkdays:ngayDangKy.length,elapsedWorkdays:ngayDangKy.length,output:sanLuong,thucTe,
+    mucTieuNgay:mucTieuQuy,chenhlech,trangThai,danhGia,scope,duBao:null};
 }
 function mauTocDo(trangThai){ return trangThai==='green'?'var(--success)':trangThai==='yellow'?'var(--warning)':trangThai==='red'?'var(--danger)':'var(--text2)'; }
+
+const speedDetailStore={quarter:null,monthly:null,autoPlan:null};
+function speedDateLabel(iso){ return isoToDMY(iso)||iso||'—'; }
+function moPopupTocDo(kind){
+  const detail=speedDetailStore[kind];
+  const modal=document.getElementById('speedDetailModal');
+  const title=document.getElementById('speedDetailTitle');
+  const body=document.getElementById('speedDetailBody');
+  if(!detail||!modal||!body||!title) return;
+  const isQuarter=kind==='quarter';
+  title.textContent=isQuarter?`Cách tính Tốc độ quý ${detail.quy}/${detail.nam}`:'Cách tính Tốc độ theo bộ lọc';
+  const dates=(detail.registeredDates||[]).map(speedDateLabel);
+  const source=(detail.sourceDates||detail.keys?.map(k=>allDays[k]?.date).filter(Boolean)||[]).map(x=>x.includes('/')?x:speedDateLabel(x));
+  const knownSourceDates=new Set(detail.sourceDates||((detail.keys||[]).map(k=>dmyToIso(allDays[k]?.date||'')).filter(Boolean)));
+  const missing=(detail.elapsedDates||[]).filter(x=>!knownSourceDates.has(x)).map(speedDateLabel);
+  const benchmark=detail.mucTieuNgay>0?`<div class="speed-detail-row"><span>Tốc độ mục tiêu quý</span><strong>${formatTocDo(detail.mucTieuNgay)} tấm/ngày</strong></div>`:'';
+  body.innerHTML=`
+    <div class="speed-detail-lead">${isQuarter
+      ? 'Tốc độ quý chỉ dùng Đóng gói lũy kế cuối cùng của đơn và lịch làm việc đã đăng ký.'
+      : 'Tốc độ này chỉ phản ánh đúng phạm vi ngày đang xem; không thay thế Tốc độ quý.'}</div>
+    <div class="speed-detail-grid">
+      <div class="speed-detail-row"><span>Phạm vi</span><strong>${isQuarter?`Quý ${detail.quy}/${detail.nam}`:`${speedDateLabel(detail.fromIso)} → ${speedDateLabel(detail.toIso)}`}</strong></div>
+      <div class="speed-detail-row"><span>Đóng gói dùng để tính</span><strong>${Number(detail.output||0).toLocaleString('vi-VN')} tấm</strong></div>
+      <div class="speed-detail-row"><span>Ngày làm việc làm mẫu số</span><strong>${detail.totalWorkdays||0} ngày</strong></div>
+      ${isQuarter?`<div class="speed-detail-row"><span>Đã qua / còn lại</span><strong>${detail.elapsedWorkdays||0} / ${detail.remainingWorkdays||0} ngày</strong></div>`:''}
+      <div class="speed-detail-row"><span>Kết quả</span><strong>${formatTocDo(detail.thucTe)} tấm/ngày</strong></div>
+      ${benchmark}
+      ${isQuarter&&detail.remainingWorkdays>0?`<div class="speed-detail-row"><span>Tốc độ cần từ nay</span><strong>${formatTocDo(detail.tocDoCanChoPhanConLai)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Cần tăng thêm</span><strong>${formatTocDo(detail.canThemMoiNgay)} tấm/ngày</strong></div>`:''}
+      ${isQuarter?`<div class="speed-detail-row"><span>Dự báo cuối quý</span><strong>${Math.round(detail.duBao||0).toLocaleString('vi-VN')} tấm</strong></div>`:''}
+    </div>
+    <div class="speed-detail-formula"><strong>Công thức</strong><br>${isQuarter
+      ? `Mục tiêu/ngày = ${Number(detail.mucTieu||0).toLocaleString('vi-VN')} / ${detail.totalWorkdays||0} ngày. Tốc độ thực tế = ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.elapsedWorkdays||0} ngày đã qua. Dự báo = Đóng gói đã đạt + Tốc độ thực tế × ${detail.remainingWorkdays||0} ngày còn lại.`
+      : `Tốc độ bộ lọc = ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.totalWorkdays||0} ngày làm việc trong khoảng lọc.`}</div>
+    <div class="speed-detail-source"><strong>Ngày làm việc được tính:</strong> ${dates.length?dates.join(', '):'Không có'}.</div>
+    ${source.length?`<div class="speed-detail-source"><strong>Ngày có dữ liệu nguồn:</strong> ${source.join(', ')}.</div>`:''}
+    ${missing.length?`<div class="speed-detail-warning"><strong>Ngày đã đăng ký nhưng chưa có dòng dữ liệu:</strong> ${missing.join(', ')}. Các ngày này vẫn nằm trong mẫu số.</div>`:''}
+    <div class="speed-detail-result">${detail.danhGia}</div>`;
+  modal.style.display='block';
+}
+function dongPopupTocDo(){ const modal=document.getElementById('speedDetailModal'); if(modal) modal.style.display='none'; }
+document.addEventListener('click',e=>{
+  const card=e.target.closest?.('.speed-kpi-card');
+  if(card) moPopupTocDo(card.dataset.speedKind||'quarter');
+});
+document.addEventListener('keydown',e=>{
+  const card=e.target.closest?.('.speed-kpi-card');
+  if(card && (e.key==='Enter'||e.key===' ')){
+    e.preventDefault(); moPopupTocDo(card.dataset.speedKind||'quarter');
+  }
+});
+document.getElementById('closeSpeedDetailBtn')?.addEventListener('click',dongPopupTocDo);
+document.getElementById('speedDetailModal')?.addEventListener('click',e=>{
+  if(e.target.id==='speedDetailModal') dongPopupTocDo();
+});
 async function saveQuarterTarget(nam, quy, soLuong,workDates=null){
   const key = `${nam}_Q${quy}`;
   quarterTargets = {...quarterTargets, [key]: soLuong};
@@ -5448,16 +5662,21 @@ function renderAutoPlan(){
     : soCongDoan(giaTriCongDoanNgay(r,dayVal,'dong_goi'))),0);
   const rotCount = filtered.filter(r=>getOrderStatus(r)==='rot').length;
   const dangSXCount = filtered.filter(r=>getOrderStatus(r)==='dang_san_xuat').length;
-  const filteredActiveDays = dayVal==='all'
-    ? new Set(filtered.flatMap(r=>Object.entries(assignments[r.id]?.stage_by_date||{}).filter(([,e])=>soCongDoan(e?.dong_goi)>0).map(([d])=>d))).size
-    : (hoanThanh>0?1:0);
-  const tocDoLoc = tinhTocDoQuy(null,{throughput:hoanThanh},filteredActiveDays);
+  const speedDateValues=Array.from(new Set(dayVal==='all'
+    ? filtered.flatMap(r=>getCarryForwardDates(r))
+    : (dayVal?[dayVal]:[])));
+  const speedDateIsos=speedDateValues.map(dmyToIso).filter(Boolean).sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
+  const speedFromIso=speedDateIsos[0]||'';
+  const speedToIso=speedDateIsos[speedDateIsos.length-1]||speedFromIso;
+  const speedKeys=speedFromIso&&speedToIso?keysTrongKhoang(speedFromIso,speedToIso):[];
+  const tocDoLoc = tinhTocDoBoLoc({keys:speedKeys,output:hoanThanh,fromIso:speedFromIso,toIso:speedToIso});
+  speedDetailStore.autoPlan = tocDoLoc;
   document.getElementById('autoPlanKpis').innerHTML = `
     <div class="kpi k-accent"><div class="label">Kế hoạch sản xuất</div><div class="value">${kesHoachSanXuat.toLocaleString()}</div></div>
     <div class="kpi k-success"><div class="label">Hoàn thành</div><div class="value">${hoanThanh.toLocaleString()}</div></div>
     <div class="kpi k-warning"><div class="label">Đang sản xuất</div><div class="value">${dangSXCount}</div></div>
     <div class="kpi" style="border-top-color:var(--danger);"><div class="label">Đơn rớt chưa sản xuất</div><div class="value" style="color:var(--danger);">${rotCount}</div></div>
-    <div class="kpi" style="border-top-color:${mauTocDo(tocDoLoc.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoLoc.trangThai)};">${tocDoLoc.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">Dự báo quý: <b>${Math.round(tocDoLoc.duBao).toLocaleString()}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoLoc.trangThai)};font-weight:700;line-height:1.35;">${tocDoLoc.danhGia}</div></div>
+    <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="autoPlan" aria-label="Xem cách tính Tốc độ theo bộ lọc" style="border-top-color:${mauTocDo(tocDoLoc.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoLoc.trangThai)};">${tocDoLoc.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoLoc.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div><div class="kpi-phu" style="color:${mauTocDo(tocDoLoc.trangThai)};font-weight:700;line-height:1.35;">${tocDoLoc.danhGia}</div><span class="speed-kpi-hint">Bấm để xem cách tính</span></div>
   `;
   renderTeamRings('autoPlanTeamRings', filtered, dayVal !== 'all', false, dayVal);   // 'Tất cả ngày' -> chỉ hiện vòng tròn %
   canhBaoAnhChupRong();
@@ -7335,7 +7554,7 @@ function renderSupabaseTelegramAdmin(){
   if(!requests.length){ box.innerHTML='<div style="font-size:11.5px;color:var(--text2);">Không có yêu cầu Telegram đang chờ duyệt.</div>'; return; }
   const roleOptions='<option value="">Chọn vai...</option>'+Object.entries(ROLE_LABELS).filter(([role])=>role!=='chi_xem').map(([role,label])=>`<option value="${role}">${label}</option>`).join('');
   const unitOptions='<option value="">Chọn tổ/công đoạn...</option>'+[...TEAM_OPTIONS,'Tổ may','Tổ đóng gói'].map(t=>`<option value="${t}">${t}</option>`).join('');
-  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:5px;">Yêu cầu đang chờ duyệt</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Worker ID <span style="font-weight:400;color:var(--text2);">(chỉ nhân viên)</span></th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>`<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span></td><td><input class="telegram-request-worker" placeholder="Worker ID (nếu là NV)" style="width:145px;padding:7px;border:1px solid #cbd8e8;border-radius:8px" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}" data-display-name="${thoatHtml(r.telegram_display_name||'')}" /></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit" disabled style="display:none">${unitOptions}</select><span class="telegram-request-unit-note" style="color:var(--text2);font-size:11px;">Chỉ áp dụng cho Nhân viên</span></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`).join('')}</tbody></table></div>`;
+  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:5px;">Telegram ID → chọn vai → chọn tổ/công đoạn → Duyệt</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>`<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit" disabled>${unitOptions}</select><span class="telegram-request-unit-note" style="display:block;color:var(--text2);font-size:11px;margin-top:4px;">Chỉ cần chọn cho Nhân viên</span></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}" data-display-name="${thoatHtml(r.telegram_display_name||'')}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 async function loadSupabaseTelegramAdminData(){
   if(!SUPABASE_VARIANT || !supabaseDb || !canManage()) return false;
@@ -7354,56 +7573,21 @@ async function loadSupabaseTelegramAdminData(){
   renderStaffUsersList();
   return true;
 }
-async function provisionTelegramForWorker(telegramId,workerId='',telegramUsername='',role='',unit='',displayName=''){
+async function provisionTelegramForWorker(telegramId,telegramUsername='',role='',unit='',displayName=''){
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session) return {error:'SESSION_EXPIRED'};
-  const response=await fetch(SUPABASE_ADMIN_LINK_TELEGRAM_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({telegram_user_id:telegramId,worker_id:workerId||'',telegram_username:telegramUsername||'',role:role||'nhan_vien',unit_name:unit||'',display_name:displayName||''})});
+  const response=await fetch(SUPABASE_ADMIN_LINK_TELEGRAM_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({telegram_user_id:telegramId,telegram_username:telegramUsername||'',role:role||'nhan_vien',unit_name:unit||'',display_name:displayName||''})});
   const data=await response.json().catch(()=>null);
   if(!response.ok) return {error:data?.error||'LINK_FAILED'};
   return data||{ok:true};
 }
-async function linkTelegramToProfile(telegramId,authUserId,telegramUsername='',requestId=null){
-  if(!canManage() || !supabaseDb) return false;
-  const id=String(telegramId||'').trim();
-  if(!/^\d{4,20}$/.test(id)){ setAdminTelegramStatus('Telegram ID phải là dãy số hợp lệ.'); return false; }
-  const target=String(authUserId||'').trim();
-  if(target.startsWith('worker:')){
-    const workerId=target.slice(7).trim();
-    const provisioned=await provisionTelegramForWorker(id,workerId,telegramUsername);
-    if(provisioned.error){
-      console.warn('Không tạo được hồ sơ/liên kết Telegram',provisioned.error);
-      setAdminTelegramStatus(provisioned.error==='TELEGRAM_LINK_FAILED'?'Telegram ID hoặc nhân viên đã liên kết với tài khoản khác.':'Không tạo được hồ sơ nhân viên. Kiểm tra Edge Function và quyền quản lý.');
-      return false;
-    }
-    if(requestId!=null) await supabaseDb.from('khsx_telegram_access_requests').delete().eq('telegram_user_id',Number(id));
-    if(provisioned.profile && !supabaseAdminProfiles.some(p=>String(p.user_id)===String(provisioned.profile.user_id))) supabaseAdminProfiles.push(provisioned.profile);
-    setAdminTelegramStatus(`Đã tạo hồ sơ và liên kết Telegram ID ${id} với ${provisioned.profile?.display_name||workerId}.`,true);
-    await loadSupabaseTelegramAdminData();
-    renderStaffUsersList();
-    return true;
-  }
-  const profile=(supabaseAdminProfiles||[]).find(p=>String(p.user_id)===target);
-  if(!profile || profile.active===false){ setAdminTelegramStatus('Hãy chọn một tài khoản đang hoạt động.'); return false; }
-  const {data:{session}}=await supabaseDb.auth.getSession();
-  if(!session){ setAdminTelegramStatus('Phiên quản lý đã hết hạn, hãy đăng nhập lại.'); return false; }
-  const result=await supabaseDb.from('khsx_telegram_links').upsert({
-    telegram_user_id:Number(id),auth_user_id:profile.user_id,telegram_username:telegramUsername||null,
-    active:true,linked_by:session.user.id,linked_at:new Date().toISOString(),updated_at:new Date().toISOString()
-  },{onConflict:'telegram_user_id'});
-  if(result.error){
-    console.warn('Không lưu được liên kết Telegram',result.error);
-    setAdminTelegramStatus('Không lưu được. Có thể ID hoặc tài khoản đã liên kết với người khác.');
-    return false;
-  }
-  if(requestId!=null){
-    const removed=await supabaseDb.from('khsx_telegram_access_requests').delete().eq('telegram_user_id',Number(id));
-    if(removed.error) console.warn('Đã liên kết nhưng chưa xoá yêu cầu chờ',removed.error);
-  }
-  setAdminTelegramStatus(`Đã liên kết Telegram ID ${id} với ${profile.display_name}.`,true);
-  await loadSupabaseTelegramAdminData();
-  return true;
+// Tương thích tên hàm cũ cho các bản nhúng trước đây; luồng giao diện hiện tại
+// không còn chọn hồ sơ/Worker ID mà luôn đi qua approveTelegramRequest.
+async function linkTelegramToProfile(){
+  setAdminTelegramStatus('Luồng liên kết hồ sơ cũ đã được thay bằng Telegram ID → chọn vai → chọn tổ/công đoạn → Duyệt.');
+  return false;
 }
-async function approveTelegramRequest(telegramId,profileTarget,role,unit,telegramUsername='',displayName=''){
+async function approveTelegramRequest(telegramId,role,unit,telegramUsername='',displayName=''){
   if(!canManage() || !supabaseDb) return false;
   const id=String(telegramId||'').trim();
   const chosenRole=String(role||'').trim();
@@ -7412,45 +7596,16 @@ async function approveTelegramRequest(telegramId,profileTarget,role,unit,telegra
   if(!/^\d{4,20}$/.test(id)){ setAdminTelegramStatus('Telegram ID không hợp lệ.'); return false; }
   if(!['quan_ly','quan_ly_2','nhan_vien'].includes(chosenRole)){ setAdminTelegramStatus('Chọn đúng vai trước khi duyệt.'); return false; }
   if(chosenRole==='nhan_vien' && !chosenUnit){ setAdminTelegramStatus('Nhân viên phải được gắn tổ/công đoạn.'); return false; }
-  const target=String(profileTarget||'').trim();
-  if(chosenRole==='nhan_vien' && !target){ setAdminTelegramStatus('Nhân viên phải nhập Worker ID trước khi duyệt.'); return false; }
-  const {data:{session}}=await supabaseDb.auth.getSession();
-  if(!session){ setAdminTelegramStatus('Phiên quản lý đã hết hạn.'); return false; }
-  let profile=null;
-  if(target.startsWith('worker:') || chosenRole!=='nhan_vien'){
-    const workerId=target.startsWith('worker:') ? target.slice(7).trim() : '';
-    const provisioned=await provisionTelegramForWorker(id,workerId,telegramUsername,chosenRole,chosenUnit,displayName);
-    if(provisioned.error){
-      const msg={TELEGRAM_ID_ALREADY_LINKED:'Telegram ID đã liên kết với tài khoản khác.',ACCOUNT_ALREADY_LINKED:'Tài khoản đã liên kết Telegram ID khác.',WORKER_NOT_FOUND:'Không tìm thấy Worker ID trong danh mục.',WORKER_STAGE_UNSUPPORTED:'Worker này chưa thuộc công đoạn May/Đóng gói.',WORKER_PROFILE_ALREADY_EXISTS:'Worker ID này đang thuộc hồ sơ khác. Hãy thu hồi hồ sơ cũ trước.',AUTH_USER_LOOKUP_FAILED:'Không đọc được tài khoản Auth hiện có. Thử lại sau.',AUTH_USER_CREATE_FAILED:'Không tạo được tài khoản Auth mới.',PROFILE_UPSERT_FAILED:'Không tạo/cập nhật được hồ sơ người dùng.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền duyệt.'}[provisioned.error];
-      setAdminTelegramStatus(msg||`Không duyệt được (${provisioned.error}). Kiểm tra Edge Function/log.`);
-      return false;
-    }
-    profile=provisioned.profile||null;
-  }else{
-    profile=(supabaseAdminProfiles||[]).find(p=>String(p.user_id)===String(profileTarget));
-    if(!profile || profile.active===false){ setAdminTelegramStatus('Hồ sơ không còn hoạt động.'); return false; }
-    const linked=await linkTelegramToProfile(id,profile.user_id,telegramUsername,null);
-    if(!linked) return false;
+  // Chỉ truyền Telegram ID, vai và tổ/công đoạn. Không còn Worker ID/lookup.
+  const provisioned=await provisionTelegramForWorker(id,telegramUsername,chosenRole,chosenUnit,displayName);
+  if(provisioned.error){
+    const msg={TELEGRAM_ID_ALREADY_LINKED:'Telegram ID đã liên kết với tài khoản khác.',ACCOUNT_ALREADY_LINKED:'Tài khoản đã liên kết Telegram ID khác.',UNIT_REQUIRED:'Nhân viên phải được gắn tổ/công đoạn.',UNIT_INVALID:'Tổ/công đoạn không hợp lệ.',WORKER_AUTO_PROVISION_FAILED:'Không tạo được định danh công đoạn tự động.',AUTH_USER_LOOKUP_FAILED:'Không đọc được tài khoản Auth hiện có. Thử lại sau.',AUTH_USER_CREATE_FAILED:'Không tạo được tài khoản Auth mới.',PROFILE_UPSERT_FAILED:'Không tạo/cập nhật được hồ sơ người dùng.',PROFILE_UPDATE_FAILED:'Không lưu được vai/tổ.',TELEGRAM_LINK_LOOKUP_FAILED:'Không đọc được liên kết Telegram.',TELEGRAM_LINK_FAILED:'Không lưu được liên kết Telegram.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền duyệt.'}[provisioned.error];
+    setAdminTelegramStatus(msg||`Không duyệt được (${provisioned.error}). Kiểm tra Edge Function/log.`);
+    return false;
   }
-  if(!profile && String(profileTarget).startsWith('worker:')){
-    profile=(supabaseAdminProfiles||[]).find(p=>String(p.worker_id)===String(profileTarget).slice(7));
-  }
-  if(!profile?.user_id){ setAdminTelegramStatus('Đã liên kết nhưng chưa nhận được hồ sơ để cập nhật vai/tổ.'); return false; }
-  const update=await supabaseDb.from('khsx_profiles').update({role:chosenRole,unit_name:uiUnitToSupabase(chosenUnit)}).eq('user_id',profile.user_id).select('user_id,display_name,role,unit_name,active,worker_id').maybeSingle();
-  if(update.error || !update.data){ console.warn('Không cập nhật được vai/tổ sau duyệt Telegram',update.error); setAdminTelegramStatus('Đã liên kết nhưng chưa lưu được vai/tổ. Dữ liệu liên kết vẫn giữ nguyên.'); return false; }
-  if(update.data.worker_id && TEAM_OPTIONS.includes(chosenUnit)){
-    const team=uiUnitToSupabase(chosenUnit);
-    const saved=await supabaseDb.from('khsx_worker_team_assignments').upsert({worker_id:update.data.worker_id,team_name:team,assigned_by:session.user.id,updated_at:new Date().toISOString()},{onConflict:'worker_id'});
-    if(saved.error){ setAdminTelegramStatus('Đã duyệt tài khoản nhưng chưa lưu được phân tổ. Hãy gán lại trong danh sách.'); return false; }
-    rememberSupabaseWorkerTeam(update.data.worker_id,chosenUnit);
-  }else if(update.data.worker_id && chosenRole!=='nhan_vien'){
-    const cleared=await supabaseDb.from('khsx_worker_team_assignments').delete().eq('worker_id',update.data.worker_id);
-    if(cleared.error){ setAdminTelegramStatus('Đã duyệt vai quản lý nhưng chưa xoá phân tổ cũ.'); return false; }
-    rememberSupabaseWorkerTeam(update.data.worker_id,'');
-  }
-  const removed=await supabaseDb.from('khsx_telegram_access_requests').delete().eq('telegram_user_id',Number(id));
-  if(removed.error) console.warn('Đã duyệt nhưng chưa xoá yêu cầu chờ',removed.error);
-  setAdminTelegramStatus(`Đã duyệt ${update.data.display_name||id} · ${ROLE_LABELS[chosenRole]}${chosenUnit?' · '+chosenUnit:''}.`,true);
+  const profile=provisioned.profile||null;
+  if(!profile?.user_id){ setAdminTelegramStatus('Đã duyệt nhưng máy chủ chưa trả về hồ sơ tài khoản.'); return false; }
+  setAdminTelegramStatus(`Đã duyệt ${profile.display_name||id} · ${ROLE_LABELS[chosenRole]}${chosenUnit?' · '+chosenUnit:''}.`,true);
   await loadSupabaseOperationalData();
   await loadSupabaseTelegramAdminData();
   renderStaffUsersList();
@@ -7565,14 +7720,12 @@ document.getElementById('telegramAccessRequests')?.addEventListener('click', asy
   const btn=e.target.closest('.approve-telegram-btn');
   if(!btn) return;
   const row=btn.closest('tr');
-  const worker=row?.querySelector('.telegram-request-worker');
   const role=row?.querySelector('.telegram-request-role');
   const unit=row?.querySelector('.telegram-request-unit');
-  if(!worker || !role || !role.value || !unit){ setAdminTelegramStatus('Chọn vai trước khi duyệt.'); return; }
-  if(role.value==='nhan_vien' && !worker.value.trim()){ setAdminTelegramStatus('Nhân viên phải nhập Worker ID trước khi duyệt.'); return; }
+  if(!role || !role.value || !unit){ setAdminTelegramStatus('Chọn vai trước khi duyệt.'); return; }
   if(role.value==='nhan_vien'&&!unit.value){ setAdminTelegramStatus('Nhân viên phải chọn tổ/công đoạn.'); return; }
   btn.disabled=true;
-  try{ await approveTelegramRequest(btn.dataset.telegramId,role.value==='nhan_vien'?'worker:'+worker.value.trim():'',role.value,unit.value,worker.dataset.telegramUsername||'',worker.dataset.displayName||''); }
+  try{ await approveTelegramRequest(btn.dataset.telegramId,role.value,unit.value,btn.dataset.telegramUsername||'',btn.dataset.displayName||''); }
   finally{ btn.disabled=false; }
 });
 document.getElementById('telegramAccessRequests')?.addEventListener('change',e=>{
@@ -7582,9 +7735,8 @@ document.getElementById('telegramAccessRequests')?.addEventListener('change',e=>
   if(!unit) return;
   const isStaff=role.value==='nhan_vien';
   unit.disabled=!isStaff;
-  unit.style.display=isStaff?'':'none';
   const note=role.closest('tr')?.querySelector('.telegram-request-unit-note');
-  if(note) note.style.display=isStaff?'none':'';
+  if(note) note.textContent=isStaff?'Bắt buộc với Nhân viên.':'Quản lý không cần gắn tổ/công đoạn.';
   if(!isStaff) unit.value='';
 });
 document.addEventListener('keydown', (e)=>{
