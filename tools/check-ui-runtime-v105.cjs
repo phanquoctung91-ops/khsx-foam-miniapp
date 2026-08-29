@@ -69,17 +69,15 @@ const {chromium}=require('playwright');
   console.log('PASS  manager mobile + Dán 0 support assignment');
 
   const approval=await page.evaluate(()=>{
-    supabaseAdminProfiles=[];
-    supabaseAdminTelegramRequests=[{telegram_user_id:'12345',telegram_display_name:'Người chờ duyệt'}];
-    staffUsers=[
-      {auth_user_id:'manager-auth',code:'manager',name:'Quản lý hiện tại',role:'quan_ly'},
-      {auth_user_id:'employee-auth',code:'worker-1',name:'Nhân viên đã duyệt',role:'nhan_vien'}
+    supabaseAdminProfiles=[
+      {user_id:'manager-auth',telegram_user_id:'111',display_name:'Quản lý hiện tại',role:'quan_ly',active:true},
+      {user_id:'employee-auth',telegram_user_id:'999',display_name:'Nhân viên đã duyệt',role:'nhan_vien',unit_name:'To 1',active:true}
     ];
-    supabaseAdminTelegramLinks=[{auth_user_id:'employee-auth',telegram_user_id:'999',active:true}];
+    supabaseAdminTelegramRequests=[{telegram_user_id:'12345',registered_at:new Date().toISOString(),last_seen_at:new Date().toISOString()}];
     renderSupabaseTelegramAdmin();renderStaffUsersList();
     document.getElementById('staffUsersModal').style.display='block';
     const modal=document.querySelector('#staffUsersModal>div');
-    const role=document.querySelector('.telegram-request-role'),unit=document.querySelector('.telegram-request-unit');
+    const name=document.querySelector('.telegram-request-name'),role=document.querySelector('.telegram-request-role'),unit=document.querySelector('.telegram-request-unit');
     const disabledInitially=unit.disabled;
     role.value='quan_ly_2';role.dispatchEvent(new Event('change',{bubbles:true}));
     const disabledManager2=unit.disabled;
@@ -88,12 +86,13 @@ const {chromium}=require('playwright');
       modalWidth:modal.getBoundingClientRect().width,
       viewport:window.innerWidth,
       overflow:getComputedStyle(document.querySelector('#telegramAccessRequests .table-scroll')).overflowX,
-      disabledInitially,disabledManager2,enabledEmployee:!unit.disabled,
+      hasManagerNameInput:!!name,disabledInitially,disabledManager2,enabledEmployee:!unit.disabled,
+      approvedName:document.querySelector('.telegram-account-name')?.value||'',
       approvedText:document.getElementById('staffUsersList').innerText,
       noUuid:!document.getElementById('staffUsersList').innerText.includes('employee-auth')
     };
   });
-  if(approval.modalWidth>approval.viewport||approval.overflow!=='auto'||!approval.disabledInitially||!approval.disabledManager2||!approval.enabledEmployee||!approval.approvedText.includes('Nhân viên đã duyệt')||!approval.noUuid)
+  if(approval.modalWidth>approval.viewport||approval.overflow!=='auto'||!approval.hasManagerNameInput||!approval.disabledInitially||!approval.disabledManager2||!approval.enabledEmployee||approval.approvedName!=='Nhân viên đã duyệt'||!approval.noUuid)
     throw new Error(`Manager approval mobile failed: ${JSON.stringify(approval)}`);
   console.log('PASS  approval roles, approved-only list and hidden UUID');
   await page.evaluate(()=>document.getElementById('staffUsersModal').style.display='none');

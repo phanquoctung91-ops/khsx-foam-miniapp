@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="js/khsx-data-core.js?v=120"></script>
+<script src="js/khsx-data-core.js?v=121"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   :root{
@@ -2990,6 +2990,9 @@ function clearLoginSession(){
   }catch(e){}
 }
 function saveLoginSession(user){
+  // Supabase Auth là nguồn session duy nhất của MiniApp. Không giữ thêm một
+  // bản vai/tổ trong localStorage vì có thể lệch với profile trên máy chủ.
+  if(SUPABASE_VARIANT){ clearLoginSession(); return; }
   const ttl = SESSION_TIMEOUTS[user && user.role];
   if(!ttl || !user || !user.code) return;
   const now=Date.now();
@@ -3023,7 +3026,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 120;
+const APP_VERSION = 121;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3147,7 +3150,6 @@ let supabaseWorkers = [];
 let supabaseStageCredits = [];
 let supabaseWorkerTeamById = {};
 let supabaseAdminProfiles = [];
-let supabaseAdminTelegramLinks = [];
 let supabaseAdminTelegramRequests = [];
 // Giữ phân tổ vừa được máy chủ xác nhận trong một cửa sổ ngắn để Realtime/polling
 // không thể kéo bản đọc cũ về đè lên giao diện ngay sau khi quản lý lưu.
@@ -3331,6 +3333,7 @@ function enterAsViewer(){
 // Buộc đăng xuất (dùng khi mã bị thu hồi)
 function forceLogout(msg){
   if(typeof stopSupabaseRealtime==='function') stopSupabaseRealtime();
+  if(SUPABASE_VARIANT&&supabaseDb) supabaseDb.auth.signOut({scope:'local'}).catch(()=>{});
   clearLoginSession();
   currentUser = null;
   applyRoleUI();
@@ -3386,10 +3389,8 @@ async function revalidateSupabaseSession(){
 
 async function doLogin(code){
   let u = null;
-  if(SUPABASE_VARIANT){
-    try{ u = await loginWithSupabase(code); }
-    catch(e){ console.warn('Đăng nhập Supabase chưa sẵn sàng',e); }
-  }else u = await verifyCodeOnServer(code);
+  if(SUPABASE_VARIANT) return false;
+  u = await verifyCodeOnServer(code);
   if(!u) return false;
   currentUser = u;
   saveLoginSession(u);
@@ -3439,9 +3440,9 @@ const LOCAL_PREVIEW_MODE = location.protocol === 'file:' || location.hostname ==
 // ============ Supabase nguồn chính (thử nghiệm có đường lùi Apps Script) ============
 const SUPABASE_URL = 'https://tydevlvcyvqwghinboif.supabase.co';
 const SUPABASE_PUBLIC_KEY = 'sb_publishable_Vy74jABl_0L-VGIKWAP1zw_YN1OZ4C2';
-const SUPABASE_CODE_LOGIN_URL = `${SUPABASE_URL}/functions/v1/khsx-login`;
-const SUPABASE_TELEGRAM_LOGIN_URL = `${SUPABASE_URL}/functions/v1/khsx-telegram-auth`;
-const SUPABASE_ADMIN_LINK_TELEGRAM_URL = `${SUPABASE_URL}/functions/v1/khsx-admin-link-telegram`;
+const SUPABASE_TELEGRAM_REGISTER_URL = `${SUPABASE_URL}/functions/v1/khsx-telegram-register`;
+const SUPABASE_TELEGRAM_LOGIN_URL = `${SUPABASE_URL}/functions/v1/khsx-telegram-login`;
+const SUPABASE_TELEGRAM_ACCOUNT_URL = `${SUPABASE_URL}/functions/v1/khsx-telegram-account`;
 // Chỉ kích hoạt sau khi phiên đăng nhập và lượt đọc Supabase đầu tiên đều thành công.
 // Nếu chưa kích hoạt được, bootstrap tiếp tục dùng Apps Script như bản cũ.
 // Bản vận hành chỉ dùng Apps Script làm nguồn chính. Supabase hiện chưa có đơn
@@ -3505,22 +3506,6 @@ function supabaseStatus(message, ok=true){
   el.textContent=message;
   el.style.color=ok?'var(--success)':'var(--warning)';
 }
-async function loginWithSupabase(code){
-  if(!supabaseDb) return null;
-  const res=await fetch(SUPABASE_CODE_LOGIN_URL,{
-    method:'POST', cache:'no-store',
-    headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY},
-    body:JSON.stringify({code:String(code||'').trim()})
-  });
-  if(!res.ok) return null;
-  const data=await res.json();
-  if(!data || !data.session || !data.profile) return null;
-  const set=await supabaseDb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
-  if(set.error) throw set.error;
-  return {code:String(code||'').trim(),name:data.profile.display_name,role:data.profile.role,
-    unit:supabaseUnitToUi(data.profile.unit_name),worker_id:data.profile.worker_id||null,
-    auth_user_id:set.data?.user?.id||null};
-}
 async function loginWithTelegram(){
   if(!supabaseDb || !TELEGRAM_WEBAPP || !TELEGRAM_WEBAPP.initData) return null;
   const res=await fetch(SUPABASE_TELEGRAM_LOGIN_URL,{
@@ -3530,13 +3515,12 @@ async function loginWithTelegram(){
   });
   const data=await res.json().catch(()=>null);
   if(!res.ok){
-    if(data && data.error==='ACCESS_NOT_PROVISIONED'){
-      const err=new Error(`Tài khoản Telegram chưa được cấp quyền (ID ${data.telegram_user_id}).`);
-      err.code=data.error;
-      err.telegramUserId=data.telegram_user_id;
-      throw err;
-    }
-    throw new Error('Không xác thực được Telegram Mini App.');
+    const messages={REGISTRATION_PENDING:'Telegram ID đang chờ quản lý duyệt.',NOT_REGISTERED:'Telegram ID chưa đăng ký.',ACCOUNT_REVOKED:'Telegram ID đã bị thu hồi quyền.',INVALID_TELEGRAM_DATA:'Phiên Telegram không hợp lệ. Hãy đóng và mở lại MiniApp.',ORIGIN_NOT_ALLOWED:'Địa chỉ MiniApp chưa được máy chủ cho phép.',AUTH_SIGN_IN_FAILED:'Tài khoản đã duyệt nhưng Supabase Auth chưa cấp được phiên đăng nhập.',ACCOUNT_LOOKUP_FAILED:'Không đọc được tài khoản đã duyệt.'};
+    const code=data?.error||'TELEGRAM_LOGIN_FAILED';
+    const detail=data?.auth_code||data?.db_code||'';
+    const err=new Error(`${messages[code]||'Không đăng nhập được Telegram MiniApp.'}${detail?` (${code}/${detail})`:''}`);
+    err.code=code; err.telegramUserId=data?.telegram_user_id||null;
+    throw err;
   }
   if(!data || !data.session || !data.profile) throw new Error('Phiên Telegram không hợp lệ.');
   const set=await supabaseDb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
@@ -3564,32 +3548,24 @@ async function registerTelegramId(){
   if(errEl) errEl.style.display='none';
   setStatus('Đang gửi yêu cầu đăng ký...');
   try{
-    const telegramUser=await loginWithTelegram();
-    if(!telegramUser) throw new Error('Chưa nhận được thông tin Telegram.');
-    // ID đã được duyệt thì đăng nhập luôn, tránh bắt người dùng đăng ký lại.
-    currentUser=telegramUser;
-    saveLoginSession(telegramUser);
-    try{localStorage.removeItem('khsx_manual_logout');}catch(e){}
-    const overlay=document.getElementById('loginOverlay');
-    if(overlay) overlay.style.display='none';
-    applyRoleUI();
-    setStatus('Telegram ID đã được duyệt, đang mở dashboard...',true);
-    if(await loadSupabaseOperationalData()){
-      supabasePrimaryActive=true;
-      document.documentElement.setAttribute('data-primary-source','supabase');
-      await startSupabaseRealtime();
-      await flushSupabaseStageOutbox();
-      renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
-      saveLocalCache(); startPolling();
+    const res=await fetch(SUPABASE_TELEGRAM_REGISTER_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY},body:JSON.stringify({init_data:TELEGRAM_WEBAPP.initData})});
+    const data=await res.json().catch(()=>null);
+    if(!res.ok){
+      const detail=data?.db_code||data?.error||'';
+      throw new Error(`Không gửi được Telegram ID${detail?` (${detail})`:''}.`);
     }
+    if(data?.status==='active'){
+      setStatus(`ID ${data.telegram_user_id} đã được duyệt. Bấm Đăng nhập bằng Telegram.`,true);
+      return true;
+    }
+    if(data?.status==='revoked'){
+      setStatus(`ID ${data.telegram_user_id} đã bị thu hồi. Liên hệ Quản lý để phục hồi.`);
+      return false;
+    }
+    setStatus(`Đã gửi ID ${data?.telegram_user_id||''}. Chờ Quản lý nhập tên, chọn vai/tổ và duyệt.`,true);
     return true;
   }catch(e){
-    if(e && e.code==='ACCESS_NOT_PROVISIONED'){
-      const id=e.telegramUserId ? ` ID Telegram: ${e.telegramUserId}.` : '';
-      setStatus(`Đã gửi yêu cầu.${id} Chờ quản lý duyệt rồi mở lại Mini App.`,true);
-    }else{
-      setStatus(e?.message||'Không gửi được yêu cầu đăng ký.');
-    }
+    setStatus(e?.message||'Không gửi được yêu cầu đăng ký.');
     return false;
   }finally{
     if(btn) btn.disabled=false;
@@ -3623,10 +3599,10 @@ async function enterWithTelegram(){
     return true;
   }catch(e){
     if(err){err.textContent=e.message||'Không đăng nhập được Telegram.';err.style.display='block';}
-    if(e && e.code==='ACCESS_NOT_PROVISIONED'){
+    if(e && ['REGISTRATION_PENDING','NOT_REGISTERED'].includes(e.code)){
       const status=document.getElementById('telegramRegisterStatus');
       if(status){
-        status.textContent='ID chưa được duyệt. Bấm “Đăng ký Telegram ID” để gửi yêu cầu cho quản lý.';
+        status.textContent=e.code==='REGISTRATION_PENDING'?'ID đang chờ Quản lý duyệt.':'ID chưa đăng ký. Bấm “Đăng ký Telegram ID”.';
         status.style.display='block';
       }
       const registerBtn=document.getElementById('telegramRegisterBtn');
@@ -3684,7 +3660,7 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
       supabaseSelectAll('khsx_day_locks'),
       supabaseSelectAll('khsx_plan_snapshots'),
       supabaseSelectAll('khsx_quarter_targets'),
-      supabaseSelectAll('khsx_profiles','user_id,display_name,role,unit_name,active,worker_id'),
+      supabaseSelectAll('khsx_profiles','user_id,telegram_user_id,display_name,role,unit_name,active,worker_id,approved_by,approved_at,revoked_by,revoked_at'),
       supabaseSelectAll('khsx_workers','id,display_name,stage,active'),
       supabaseSelectAll('khsx_stage_credits','order_id,work_date,stage,worker_id,quantity,source'),
       supabaseSelectAll('khsx_worker_team_assignments','worker_id,team_name')
@@ -7661,41 +7637,33 @@ function renderSupabaseTelegramAdmin(){
   const unitValues=[...TEAM_OPTIONS,'Tổ may','Tổ đóng gói'];
   const unitOptions='<option value="">Chọn tổ/công đoạn...</option>'+unitValues.map(t=>`<option value="${t}">${telegramUnitLabel(t)}</option>`).join('');
   const roleNote=canManage()?'Quản lý được duyệt mọi vai. Quản lý 2 chỉ được duyệt Nhân viên mới.':'Quản lý 2 chỉ được duyệt Nhân viên mới; sau khi duyệt không sửa hoặc thu hồi.';
-  const profileById=new Map((supabaseAdminProfiles||[]).map(p=>[String(p.user_id),p]));
-  const linkByTelegram=new Map((supabaseAdminTelegramLinks||[]).map(l=>[String(l.telegram_user_id),l]));
-  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:3px;">Telegram ID → chọn vai → chọn tổ/công đoạn → Duyệt</div><div style="font-size:11px;color:var(--text2);margin-bottom:7px;">${roleNote}</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>{
-    const oldLink=linkByTelegram.get(String(r.telegram_user_id));
-    const oldProfile=oldLink?profileById.get(String(oldLink.auth_user_id)):null;
-    const previous=oldLink&&oldLink.active===false&&oldProfile
-      ? `<span style="display:block;color:var(--warning);font-size:10.5px;margin-top:4px;">Đã thu hồi: ${thoatHtml(ROLE_LABELS[oldProfile.role]||oldProfile.role)}${oldProfile.unit_name?' · '+thoatHtml(telegramUnitLabel(supabaseUnitToUi(oldProfile.unit_name)||oldProfile.unit_name)):''} · ${thoatHtml(new Date(oldLink.updated_at).toLocaleString('vi-VN'))}</span>`:'';
-    return `<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span>${previous}</td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit" disabled>${unitOptions}</select><span class="telegram-request-unit-note" style="display:block;color:var(--text2);font-size:11px;margin-top:4px;">Chỉ cần chọn cho Nhân viên</span></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}" data-display-name="${thoatHtml(r.telegram_display_name||'')}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`;
+  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:3px;">Telegram ID → nhập tên → chọn vai → chọn tổ/công đoạn → Duyệt</div><div style="font-size:11px;color:var(--text2);margin-bottom:7px;">${roleNote}</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram ID</th><th>Tên hiển thị</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>{
+    return `<tr><td><strong>${thoatHtml(r.telegram_user_id)}</strong><br><span style="font-size:10.5px;color:var(--text2);">Đăng ký ${thoatHtml(new Date(r.registered_at).toLocaleString('vi-VN'))}</span></td><td><input class="telegram-request-name" type="text" maxlength="80" placeholder="Tên do Quản lý nhập" style="min-width:170px;padding:7px 9px;"></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit" disabled>${unitOptions}</select><span class="telegram-request-unit-note" style="display:block;color:var(--text2);font-size:11px;margin-top:4px;">Chỉ cần chọn cho Nhân viên</span></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`;
   }).join('')}</tbody></table></div>`;
 }
 async function loadSupabaseTelegramAdminData(){
   if(!SUPABASE_VARIANT || !supabaseDb || !canApproveTelegram()) return false;
-  const [links,requests,profiles]=await Promise.all([
-    supabaseSelectAll('khsx_telegram_links','telegram_user_id,auth_user_id,telegram_username,active,linked_at,updated_at'),
-    supabaseSelectAll('khsx_telegram_access_requests','telegram_user_id,telegram_username,telegram_display_name,first_seen_at,last_seen_at'),
-    supabaseSelectAll('khsx_profiles','user_id,display_name,role,unit_name,active,worker_id')
+  const [requests,profiles]=await Promise.all([
+    supabaseSelectAll('khsx_telegram_registrations','telegram_user_id,registered_at,last_seen_at'),
+    supabaseSelectAll('khsx_profiles','user_id,telegram_user_id,display_name,role,unit_name,active,worker_id,approved_by,approved_at,revoked_by,revoked_at')
   ]);
-  if(links.error || requests.error || profiles.error){
-    console.warn('Không tải được danh sách Telegram chờ duyệt',links.error||requests.error||profiles.error);
+  if(requests.error || profiles.error){
+    console.warn('Không tải được danh sách Telegram chờ duyệt',requests.error||profiles.error);
     setAdminTelegramStatus('Không tải được yêu cầu Telegram. Kiểm tra quyền quản lý hoặc kết nối.');
     return false;
   }
-  supabaseAdminTelegramLinks=links.data||[];
   supabaseAdminTelegramRequests=requests.data||[];
   supabaseAdminProfiles=profiles.data||[];
   renderSupabaseTelegramAdmin();
   renderStaffUsersList();
   return true;
 }
-async function provisionTelegramForWorker(telegramId,telegramUsername='',role='',unit='',displayName='',action='approve'){
+async function manageTelegramAccount(telegramId,role='',unit='',displayName='',action='approve'){
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session) return {error:'SESSION_EXPIRED'};
-  const response=await fetch(SUPABASE_ADMIN_LINK_TELEGRAM_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({action,telegram_user_id:telegramId,telegram_username:telegramUsername||'',role:role||'',unit_name:unit||'',display_name:displayName||''})});
+  const response=await fetch(SUPABASE_TELEGRAM_ACCOUNT_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({action,telegram_user_id:telegramId,role:role||'',unit_name:unit||'',display_name:displayName||''})});
   const data=await response.json().catch(()=>null);
-  if(!response.ok) return {error:data?.error||'LINK_FAILED'};
+  if(!response.ok) return {error:data?.error||'ACCOUNT_ACTION_FAILED'};
   return data||{ok:true};
 }
 // Tương thích tên hàm cũ cho các bản nhúng trước đây; luồng giao diện hiện tại
@@ -7704,28 +7672,29 @@ async function linkTelegramToProfile(){
   setAdminTelegramStatus('Luồng liên kết hồ sơ cũ đã được thay bằng Telegram ID → chọn vai → chọn tổ/công đoạn → Duyệt.');
   return false;
 }
-async function approveTelegramRequest(telegramId,role,unit,telegramUsername='',displayName=''){
+async function approveTelegramRequest(telegramId,role,unit,displayName=''){
   if(!canApproveTelegram() || !supabaseDb) return false;
   const id=String(telegramId||'').trim();
   const chosenRole=String(role||'').trim();
   const selectedUnit=String(unit||'').trim();
   const chosenUnit=chosenRole==='nhan_vien'?selectedUnit:'';
+  const chosenName=String(displayName||'').trim();
   if(!/^\d{4,20}$/.test(id)){ setAdminTelegramStatus('Telegram ID không hợp lệ.'); return false; }
+  if(!chosenName){ setAdminTelegramStatus('Nhập tên hiển thị trước khi duyệt.'); return false; }
   if(!['quan_ly','quan_ly_2','nhan_vien'].includes(chosenRole) || !canApproveTelegramRole(chosenRole)){
     setAdminTelegramStatus(currentUser?.role==='quan_ly_2' ? 'Quản lý 2 chỉ được duyệt Nhân viên mới.' : 'Chọn đúng vai trước khi duyệt.');
     return false;
   }
   if(chosenRole==='nhan_vien' && !chosenUnit){ setAdminTelegramStatus('Nhân viên phải được gắn tổ/công đoạn.'); return false; }
-  // Chỉ truyền Telegram ID, vai và tổ/công đoạn. Không còn Worker ID/lookup.
-  const provisioned=await provisionTelegramForWorker(id,telegramUsername,chosenRole,chosenUnit,displayName);
+  const provisioned=await manageTelegramAccount(id,chosenRole,chosenUnit,chosenName,'approve');
   if(provisioned.error){
-    const msg={TELEGRAM_ID_ALREADY_LINKED:'Telegram ID đang liên kết với một hồ sơ khác.',ACCOUNT_ALREADY_LINKED:'Tài khoản đã liên kết Telegram ID khác.',UNIT_REQUIRED:'Nhân viên phải được gắn tổ/công đoạn.',UNIT_INVALID:'Tổ/công đoạn không hợp lệ.',MANAGER2_EMPLOYEE_ONLY:'Quản lý 2 chỉ được duyệt Nhân viên mới.',MANAGER2_NEW_EMPLOYEE_ONLY:'Quản lý 2 không được sửa hoặc duyệt lại tài khoản đã từng tồn tại.',AUTH_USER_LOOKUP_FAILED:'Không đọc được tài khoản Auth hiện có. Thử lại sau.',AUTH_USER_CREATE_FAILED:'Không tạo được tài khoản Auth mới.',AUTH_USER_UPDATE_FAILED:'Không đồng bộ được tài khoản Auth.',PROFILE_UPSERT_FAILED:'Không tạo/cập nhật được hồ sơ người dùng.',PROFILE_UPDATE_FAILED:'Không lưu được vai/tổ.',TELEGRAM_LINK_LOOKUP_FAILED:'Không đọc được liên kết Telegram.',TELEGRAM_LINK_FAILED:'Không lưu được liên kết Telegram.',APPROVAL_VERIFY_FAILED:'Máy chủ chưa xác nhận đủ hồ sơ và Telegram link.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền duyệt.'}[provisioned.error];
+    const msg={DISPLAY_NAME_REQUIRED:'Nhập tên hiển thị trước khi duyệt.',UNIT_REQUIRED:'Nhân viên phải được gắn tổ/công đoạn.',UNIT_INVALID:'Tổ/công đoạn không hợp lệ.',ROLE_INVALID:'Vai không hợp lệ.',MANAGER2_EMPLOYEE_ONLY:'Quản lý 2 chỉ được duyệt Nhân viên mới.',MANAGER2_NEW_EMPLOYEE_ONLY:'Quản lý 2 không được sửa hoặc duyệt lại tài khoản đã từng tồn tại.',AUTH_USER_LOOKUP_FAILED:'Không đọc được tài khoản Auth hiện có. Thử lại sau.',AUTH_USER_CREATE_FAILED:'Không tạo được tài khoản Auth mới.',AUTH_USER_UPDATE_FAILED:'Không đồng bộ được tài khoản Auth.',ACCOUNT_WRITE_FAILED:'Không tạo/cập nhật được hồ sơ người dùng.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền duyệt.'}[provisioned.error];
     setAdminTelegramStatus(msg||`Không duyệt được (${provisioned.error}). Kiểm tra Edge Function/log.`);
     return false;
   }
   const profile=provisioned.profile||null;
   if(!profile?.user_id){ setAdminTelegramStatus('Đã duyệt nhưng máy chủ chưa trả về hồ sơ tài khoản.'); return false; }
-  setAdminTelegramStatus(`Đã duyệt ${profile.display_name||id} · ${ROLE_LABELS[chosenRole]}${chosenUnit?' · '+chosenUnit:''}.`,true);
+  setAdminTelegramStatus(`Đã duyệt ${profile.display_name||chosenName} · ${ROLE_LABELS[chosenRole]}${chosenUnit?' · '+telegramUnitLabel(chosenUnit):''}.`,true);
   await loadSupabaseOperationalData();
   await loadSupabaseTelegramAdminData();
   renderStaffUsersList();
@@ -7790,11 +7759,10 @@ async function luuGanToCoXacNhan(userCode, toGan){
 function renderStaffUsersList(){
   const box = document.getElementById('staffUsersList');
   if(SUPABASE_VARIANT){
-    const profiles=new Map((supabaseAdminProfiles||[]).map(p=>[String(p.user_id),p]));
-    const accounts=(supabaseAdminTelegramLinks||[]).map(link=>({link,profile:profiles.get(String(link.auth_user_id))}))
-      .filter(x=>x.profile&&String(x.profile.user_id)!==String(currentUser?.auth_user_id||''));
-    const active=accounts.filter(x=>x.link.active!==false&&x.profile.active!==false);
-    const revoked=accounts.filter(x=>x.link.active===false||x.profile.active===false);
+    const accounts=(supabaseAdminProfiles||[])
+      .filter(profile=>profile.telegram_user_id!=null&&String(profile.user_id)!==String(currentUser?.auth_user_id||''));
+    const active=accounts.filter(profile=>profile.active!==false);
+    const revoked=accounts.filter(profile=>profile.active===false);
     const roleSelect=(profile,telegramId)=>`<select class="telegram-account-role" data-telegram-id="${thoatHtml(telegramId)}" style="min-width:120px;padding:6px 8px;">
       ${['quan_ly','quan_ly_2','nhan_vien'].map(role=>`<option value="${role}" ${profile.role===role?'selected':''}>${ROLE_LABELS[role]}</option>`).join('')}</select>`;
     const unitSelect=(profile,telegramId)=>{
@@ -7802,19 +7770,22 @@ function renderStaffUsersList(){
       return `<select class="telegram-account-unit" data-telegram-id="${thoatHtml(telegramId)}" ${profile.role==='nhan_vien'?'':'disabled'} style="min-width:135px;padding:6px 8px;">
         <option value="">Không gắn</option>${[...TEAM_OPTIONS,'Tổ may','Tổ đóng gói'].map(unit=>`<option value="${unit}" ${current===unit?'selected':''}>${telegramUnitLabel(unit)}</option>`).join('')}</select>`;
     };
-    const accountRows=(items,isRevoked)=>items.length?items.map(({link,profile})=>{
-      const telegramId=String(link.telegram_user_id);
+    const accountRows=(items,isRevoked)=>items.length?items.map(profile=>{
+      const telegramId=String(profile.telegram_user_id);
       const editable=canManage();
+      const nameCell=editable
+        ? `<input class="telegram-account-name" type="text" maxlength="80" value="${thoatHtml(profile.display_name||'')}" style="min-width:170px;padding:7px 9px;"><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(telegramId)}</span>`
+        : `<strong>${thoatHtml(profile.display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(telegramId)}</span>`;
       const roleCell=editable?roleSelect(profile,telegramId):thoatHtml(ROLE_LABELS[profile.role]||profile.role);
       const unitCell=editable?unitSelect(profile,telegramId):thoatHtml(profile.unit_name?telegramUnitLabel(supabaseUnitToUi(profile.unit_name)||profile.unit_name):'—');
-      const time=isRevoked&&link.updated_at?`<br><span style="font-size:10.5px;color:var(--text2);">Thu hồi ${thoatHtml(new Date(link.updated_at).toLocaleString('vi-VN'))}</span>`:'';
+      const time=isRevoked&&profile.revoked_at?`<br><span style="font-size:10.5px;color:var(--text2);">Thu hồi ${thoatHtml(new Date(profile.revoked_at).toLocaleString('vi-VN'))}</span>`:'';
       const actions=!editable
         ? '<span style="font-size:11px;color:var(--text2);">Chỉ xem</span>'
         : `<button class="save-telegram-account-btn" data-telegram-id="${thoatHtml(telegramId)}" style="font-size:11px;padding:5px 8px;">Lưu</button>
            ${isRevoked
              ? `<button class="restore-telegram-account-btn" data-telegram-id="${thoatHtml(telegramId)}" style="font-size:11px;padding:5px 8px;background:var(--success);color:#fff;">Khôi phục</button>`
              : `<button class="revoke-telegram-account-btn" data-telegram-id="${thoatHtml(telegramId)}" style="font-size:11px;padding:5px 8px;color:var(--danger);">Thu hồi</button>`}`;
-      return `<tr><td><strong>${thoatHtml(profile.display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(telegramId)}</span>${time}</td><td>${roleCell}</td><td>${unitCell}</td><td style="display:flex;gap:5px;flex-wrap:wrap;">${actions}</td></tr>`;
+      return `<tr><td>${nameCell}${time}</td><td>${roleCell}</td><td>${unitCell}</td><td style="display:flex;gap:5px;flex-wrap:wrap;">${actions}</td></tr>`;
     }).join(''):'<tr><td colspan="4" style="color:var(--text2);">Không có tài khoản.</td></tr>';
     box.innerHTML=`<div style="font-size:12.5px;font-weight:800;margin:12px 0 6px;">Đang hoạt động (${active.length})</div>
       <div class="table-scroll" style="max-height:280px;"><table><thead><tr><th>Telegram</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${accountRows(active,false)}</tbody></table></div>
@@ -7867,12 +7838,14 @@ document.getElementById('telegramAccessRequests')?.addEventListener('click', asy
   const btn=e.target.closest('.approve-telegram-btn');
   if(!btn) return;
   const row=btn.closest('tr');
+  const name=row?.querySelector('.telegram-request-name');
   const role=row?.querySelector('.telegram-request-role');
   const unit=row?.querySelector('.telegram-request-unit');
+  if(!name?.value.trim()){ setAdminTelegramStatus('Nhập tên hiển thị trước khi duyệt.'); return; }
   if(!role || !role.value || !unit){ setAdminTelegramStatus('Chọn vai trước khi duyệt.'); return; }
   if(role.value==='nhan_vien'&&!unit.value){ setAdminTelegramStatus('Nhân viên phải chọn tổ/công đoạn.'); return; }
   btn.disabled=true;
-  try{ await approveTelegramRequest(btn.dataset.telegramId,role.value,unit.value,btn.dataset.telegramUsername||'',btn.dataset.displayName||''); }
+  try{ await approveTelegramRequest(btn.dataset.telegramId,role.value,unit.value,name.value); }
   finally{ btn.disabled=false; }
 });
 document.getElementById('telegramAccessRequests')?.addEventListener('change',e=>{
@@ -7966,18 +7939,20 @@ document.getElementById('staffUsersList').addEventListener('click', async (e)=>{
     if(!SUPABASE_VARIANT||!canManage()) return;
     const row=accountBtn.closest('tr');
     const telegramId=String(accountBtn.dataset.telegramId||'');
+    const displayName=row?.querySelector('.telegram-account-name')?.value.trim()||'';
     const role=row?.querySelector('.telegram-account-role')?.value||'';
     const unit=row?.querySelector('.telegram-account-unit')?.value||'';
     const action=accountBtn.classList.contains('revoke-telegram-account-btn')?'revoke'
       :accountBtn.classList.contains('restore-telegram-account-btn')?'restore':'update';
+    if(action==='update'&&!displayName){ setAdminTelegramStatus('Tên hiển thị không được để trống.'); return; }
     if(action==='update'&&role==='nhan_vien'&&!unit){ setAdminTelegramStatus('Nhân viên phải chọn tổ/công đoạn.'); return; }
     if(action==='revoke'&&!confirm(`Thu hồi quyền Telegram ID ${telegramId}?\n\nTài khoản sẽ khóa ngay và bị đẩy khỏi dashboard trong vòng 30 giây.`)) return;
     accountBtn.disabled=true;
     setAdminTelegramStatus(action==='restore'?'Đang khôi phục...':action==='revoke'?'Đang thu hồi...':'Đang lưu vai/tổ...');
     try{
-      const result=await provisionTelegramForWorker(telegramId,'',role,unit,'',action);
+      const result=await manageTelegramAccount(telegramId,role,unit,displayName,action);
       if(result.error){
-        const msg={ACCOUNT_NOT_FOUND:'Không tìm thấy hồ sơ Telegram.',ACCOUNT_REVOKE_FAILED:'Không thu hồi được tài khoản.',ACCOUNT_RESTORE_FAILED:'Không khôi phục được tài khoản.',PROFILE_UPSERT_FAILED:'Không lưu được vai/tổ.',UNIT_REQUIRED:'Nhân viên phải chọn tổ/công đoạn.',UNIT_INVALID:'Tổ/công đoạn không hợp lệ.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền quản lý.'}[result.error];
+        const msg={ACCOUNT_NOT_FOUND:'Không tìm thấy hồ sơ Telegram.',ACCOUNT_REVOKE_FAILED:'Không thu hồi được tài khoản.',ACCOUNT_REVOKED_AUTH_LOCK_FAILED:'Đã khóa quyền nhưng chưa khóa được phiên Auth; tải lại để kiểm tra.',ACCOUNT_RESTORE_FAILED:'Không khôi phục được tài khoản.',ACCOUNT_WRITE_FAILED:'Không lưu được tên/vai/tổ.',DISPLAY_NAME_REQUIRED:'Tên hiển thị không được để trống.',UNIT_REQUIRED:'Nhân viên phải chọn tổ/công đoạn.',UNIT_INVALID:'Tổ/công đoạn không hợp lệ.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền quản lý.'}[result.error];
         setAdminTelegramStatus(msg||`Không thực hiện được (${result.error}).`);
         return;
       }
@@ -7998,18 +7973,9 @@ document.getElementById('staffUsersList').addEventListener('click', async (e)=>{
   statusEl.style.color = 'var(--text2)';
   let revoked=false;
   if(SUPABASE_VARIANT){
-    const profileId=u.auth_user_id;
-    const [linkResult,profileResult]=await Promise.all([
-      supabaseDb.from('khsx_telegram_links').update({active:false,updated_at:new Date().toISOString()}).eq('auth_user_id',profileId).select('auth_user_id,active'),
-      supabaseDb.from('khsx_profiles').update({active:false,updated_at:new Date().toISOString()}).eq('user_id',profileId).select('user_id,active')
-    ]);
-    // Hồ sơ là nguồn quyền chính. Một hồ sơ có thể chưa có dòng Telegram,
-    // nên không được coi đó là lỗi thu hồi chỉ vì UPDATE link trả về 0 dòng.
-    revoked=!linkResult.error&&!profileResult.error&&(profileResult.data||[]).length>0;
-    if(revoked){
-      staffUsers=staffUsers.filter(x=>String(x.auth_user_id)!==String(profileId));
-      supabaseAdminTelegramLinks=supabaseAdminTelegramLinks.map(x=>String(x.auth_user_id)===String(profileId)?{...x,active:false}:x);
-    }else console.warn('Thu hồi Telegram thất bại',linkResult.error||profileResult.error);
+    // Bản Supabase chỉ thu hồi qua nút tài khoản Telegram ở trên để mọi thay đổi
+    // đều đi qua Edge Function và được ghi audit. Nhánh mã đăng nhập cũ không dùng nữa.
+    return;
   }else{
     await sendUserCommand({action:'deleteUser', targetCode:code});
     revoked=!staffUsers.some(x=>x.code===code);
@@ -9054,9 +9020,6 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   if(ov) ov.style.display='flex';
   const input=document.getElementById('loginCodeInput');
   if(input) input.focus();
-  // Trong Telegram không có "đổi tài khoản" bằng mã. Đăng xuất xong phải xác
-  // thực lại chính Telegram ID hiện tại, không để người dùng mắc ở màn hình khóa.
-  if(SUPABASE_VARIANT && TELEGRAM_WEBAPP && TELEGRAM_WEBAPP.initData) await enterWithTelegram();
 });
 // Bump key so clients stuck with a previous dark-mode preference get the new
 // light default; the dark-mode button remains available for users who want it.
@@ -9267,7 +9230,9 @@ async function bootstrap(){
       }
       return;
     }
-    if(!coSession && TELEGRAM_WEBAPP && TELEGRAM_WEBAPP.initData){
+    let manualLogout=false;
+    try{ manualLogout=localStorage.getItem('khsx_manual_logout')==='1'; }catch(e){}
+    if(!coSession && !manualLogout && TELEGRAM_WEBAPP && TELEGRAM_WEBAPP.initData){
       try{
         const telegramUser=await loginWithTelegram();
         if(telegramUser){

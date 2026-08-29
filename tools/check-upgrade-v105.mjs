@@ -4,13 +4,15 @@ const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const core=fs.readFileSync(new URL('../js/khsx-data-core.js',import.meta.url),'utf8');
 const schema=fs.readFileSync(new URL('../supabase/schema/miniapp_upgrade_v1.sql',import.meta.url),'utf8');
 const clone=fs.readFileSync(new URL('./build-live-clone.mjs',import.meta.url),'utf8');
-const edgeAdmin=fs.readFileSync(new URL('../supabase/functions/khsx-admin-link-telegram/index.ts',import.meta.url),'utf8');
-const edgeTelegram=fs.readFileSync(new URL('../supabase/functions/khsx-telegram-auth/index.ts',import.meta.url),'utf8');
+const edgeAccount=fs.readFileSync(new URL('../supabase/functions/khsx-telegram-account/index.ts',import.meta.url),'utf8');
+const edgeRegister=fs.readFileSync(new URL('../supabase/functions/khsx-telegram-register/index.ts',import.meta.url),'utf8');
+const edgeLogin=fs.readFileSync(new URL('../supabase/functions/khsx-telegram-login/index.ts',import.meta.url),'utf8');
+const telegramMigration=fs.readFileSync(new URL('../supabase/migrations/20260829064350_telegram_accounts_v121.sql',import.meta.url),'utf8');
 const guestSchema=fs.readFileSync(new URL('../supabase/schema/guest_readonly_v116.sql',import.meta.url),'utf8');
 const release118=fs.readFileSync(new URL('../supabase/schema/release_v118_business_rules.sql',import.meta.url),'utf8');
 
 const checks=[
-  ['version 120 + cache-busted core',/const APP_VERSION = 120;/.test(html)&&/khsx-data-core\.js\?v=120/.test(html)],
+  ['version 121 + cache-busted core',/const APP_VERSION = 121;/.test(html)&&/khsx-data-core\.js\?v=121/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -25,10 +27,10 @@ const checks=[
   ,['manager gets explicit chain review list',/id="dataIntegrityAlert"/.test(html)&&/function saiChuoiCongDoan\(/.test(html)]
   ,['Supabase day-lock save path',/saveSupabaseDayLocks/.test(html)&&/khsx_set_day_locks/.test(html)&&/p_lock_changes/.test(schema)]
   ,['Realtime reconnect fallback',/scheduleSupabaseRealtimeReconnect/.test(html)&&/CHANNEL_ERROR/.test(html)&&/TIMED_OUT/.test(html)&&/supabaseRealtimeHealthy/.test(html)]
-  ,['Telegram ID registration',/id="telegramRegisterBtn"/.test(html)&&/async function registerTelegramId\(\)/.test(html)&&/ACCESS_NOT_PROVISIONED/.test(html)]
-  ,['Telegram admin linking',/id="supabaseTelegramAdmin"/.test(html)&&/khsx_telegram_links/.test(html)&&/linkTelegramToProfile/.test(html)]
+  ,['Telegram ID-only registration',/id="telegramRegisterBtn"/.test(html)&&/async function registerTelegramId\(\)/.test(html)&&/khsx_telegram_registrations/.test(edgeRegister)&&!/telegram_display_name|telegram_username/.test(edgeRegister)]
+  ,['Telegram admin uses one direct profile source',/id="supabaseTelegramAdmin"/.test(html)&&/khsx_telegram_registrations/.test(html)&&/telegram_user_id/.test(telegramMigration)&&!/khsx_telegram_links|khsx_telegram_access_requests|khsx-admin-link-telegram|khsx-telegram-auth/.test(html)]
   ,['Supabase worker team persistence',/khsx_worker_team_assignments/.test(html)&&/khsx_worker_team_assignments/.test(schema)&&/luuGanToCoXacNhan/.test(html)]
-  ,['Telegram worker provisioning',/khsx-admin-link-telegram/.test(html)&&/worker:/.test(html)&&/provisionTelegramForWorker/.test(html)&&/Deno\.serve/.test(edgeAdmin)&&/khsx_profiles/.test(edgeAdmin)&&/createUser/.test(edgeAdmin)]
+  ,['Telegram account provisioning',/khsx-telegram-account/.test(html)&&/manageTelegramAccount/.test(html)&&/Deno\.serve/.test(edgeAccount)&&/khsx_profiles/.test(edgeAccount)&&/createUser/.test(edgeAccount)]
   ,['Team assignment read-after-write guard',/supabaseOperationalLoadSeq/.test(html)&&/maybeSingle\(\)/.test(html)&&/response cũ/.test(html)]
   ,['Management poison item cannot block later writes',/code==='23503'\|\|code==='22P02'/.test(html)&&/if\(ok==='terminal'\) continue/.test(html)]
   ,['Pending management patches survive reload',/overlayPendingSupabaseManagement/.test(html)&&/Object\.keys\(supabaseManagementOutbox\)\.length/.test(html)]
@@ -37,7 +39,7 @@ const checks=[
   ,['Support assignment honors explicit Dán=0 but blocks completed output',/function coTheGanHoTroTrongNgay/.test(html)&&/daNhap=daNhapDanTrongNgay/.test(html)&&/daDan>=keHoach/.test(html)&&/source_order_id/.test(html)]
   ,['Capacity defaults to today',/id="capacityQuickToday"/.test(html)&&/datCapacityRange\(d,d\)/.test(html)]
   ,['Mobile manager approval remains scrollable',/#staffUsersModal[\s\S]*?#telegramAccessRequests \.table-scroll[\s\S]*?overflow-x:auto/.test(html)&&/approve-telegram-btn/.test(html)]
-  ,['Approved Telegram list hides current manager and UUID',/String\(x\.profile\.user_id\)!==String\(currentUser\?\.auth_user_id/.test(html)&&/Đang hoạt động/.test(html)]
+  ,['Approved Telegram list hides current manager and UUID',/String\(profile\.user_id\)!==String\(currentUser\?\.auth_user_id/.test(html)&&/Đang hoạt động/.test(html)]
   ,['Manager 2 cannot receive a team',/chosenRole==='nhan_vien'\?selectedUnit:''/.test(html)&&/currentUser\.role !== 'nhan_vien'/.test(html)]
   ,['Deleted orders cannot return from cache',/supabaseOrdersLoaded/.test(html)&&/!supabaseActiveOrderIds\.has/.test(html)]
   ,['Warranty source is preserved and de-duplicated',/bh_chi_tiet:o\.is_warranty/.test(html)&&/const byId=new Map\(\)/.test(html)&&/warranty\|\$\{o\.date\}/.test(html)&&/canonicalKey=`bh_/.test(clone)]
@@ -48,8 +50,8 @@ const checks=[
   ,['Manager 2 gets direct interactive stage-entry button',/id="managerStageViewBtn" class="only-manager2"/.test(html)&&/managementTools[\s\S]*?id="managerStageViewBtn" class="only-manager2"/.test(html)&&!/managementToolsMenu[\s\S]*?id="managerStageViewBtn"/.test(html)&&/managerStageModal" class="only-manager2/.test(html)&&/if\(!canManage2\(\)\) return;/.test(html)]
   ,['Snapshot warning is admin-only',/id="autoPlanIntegrityWarning"/.test(html)&&/getElementById\('autoPlanIntegrityWarning'\)/.test(html)&&/!canManage2\(\) \|\| !xau\.length/.test(html)]
   ,['Filtered daily chart and production speed KPI',/const dailyPlan = keysToUse\.map/.test(html)&&/function tinhTocDoQuy\(/.test(html)&&/danhGia/.test(html)]
-  ,['Telegram approval uses Telegram ID, role and unit',/APPROVAL_UNITS/.test(edgeAdmin)&&!/worker_id\?:/.test(edgeAdmin)&&/chosenRole==='nhan_vien'\?selectedUnit:''/.test(html)&&/displayName/.test(html)]
-  ,['Telegram profile has required deterministic login key',/const loginCodeKey = `telegram:\$\{telegramId\}`/.test(edgeAdmin)&&/login_code_key: loginCodeKey/.test(edgeAdmin)&&/const authEmail = `tg_\$\{telegramId\}@khsx\.internal`/.test(edgeAdmin)]
+  ,['Telegram approval uses manager-entered name, role and unit',/APPROVAL_UNITS/.test(edgeAccount)&&/DISPLAY_NAME_REQUIRED/.test(edgeAccount)&&/chosenRole==='nhan_vien'\?selectedUnit:''/.test(html)&&/telegram-request-name/.test(html)]
+  ,['Telegram profile has deterministic internal credential',/login_code_key: `telegram:\$\{telegramId\}`/.test(edgeAccount)&&/accountEmail\(telegramNumber\)/.test(edgeAccount)&&/accountPassword\(telegramNumber\)/.test(edgeAccount)]
   ,['Warranty Sheet range is open-ended',/range=A7:ZZ/.test(html)&&!/range=A7:Z1000/.test(html)]
   ,['Dark mode exists and persists',/id="darkModeBtn"/.test(html)&&/body\.dark-mode/.test(html)&&/DARK_MODE_KEY/.test(html)&&/managementToolsBtn[\s\S]*?id="darkModeBtn"/.test(html)&&!/managementToolsMenu[\s\S]*?id="darkModeBtn"/.test(html)]
   ,['KPI uses actual packing date consistently',/function rowsNguonKpiNgay/.test(html)&&/totalDG = tongKpi\.throughput/.test(html)&&/rangeDone = rangeKpi\.throughput/.test(html)]
@@ -66,11 +68,10 @@ const checks=[
   ,['Structured overtime records and normalized speed',/OVERTIME_RECORDS_KEY/.test(html)&&/normalizedOutput/.test(html)&&/khsx_overtime_records/.test(release118)]
   ,['Fixed Apps Script source only',/Apps Script cố định/.test(html)&&!/SHEET_CSV_URL/.test(html)]
   ,['No-plan ratio is dash',/dayRate==null\?'—'/.test(html)&&/rangeRate==null\?'—'/.test(html)]
-  ,['Telegram approval repairs partial auth/profile',/findAuthUserByEmails/.test(edgeAdmin)&&/getUserById/.test(edgeAdmin)&&/PROFILE_UPSERT_FAILED/.test(edgeAdmin)]
-  ,['Telegram approval verifies profile and matching link state',/APPROVAL_VERIFY_FAILED/.test(edgeAdmin)&&/eq\("active", targetActive\)/.test(edgeAdmin)]
-  ,['Telegram approval no longer blocks active partial profile',!/ALREADY_APPROVED/.test(edgeAdmin)]
-  ,['Telegram account lifecycle is explicit',/["']approve["']/.test(edgeAdmin)&&/["']update["']/.test(edgeAdmin)&&/["']revoke["']/.test(edgeAdmin)&&/["']restore["']/.test(edgeAdmin)]
-  ,['Telegram login syncs current Telegram name',/currentDisplayName/.test(edgeTelegram)&&/IDENTITY_SYNC_FAILED/.test(edgeTelegram)]
+  ,['Telegram approval can reuse historical Auth by email',/findAuthUserByEmail/.test(edgeAccount)&&/updateUserById/.test(edgeAccount)&&/ACCOUNT_WRITE_FAILED/.test(edgeAccount)]
+  ,['Telegram approval requires a real pending registration',/REGISTRATION_REQUIRED/.test(edgeAccount)&&/khsx_telegram_registrations/.test(edgeAccount)]
+  ,['Telegram account lifecycle is explicit',/["']approve["']/.test(edgeAccount)&&/["']update["']/.test(edgeAccount)&&/["']revoke["']/.test(edgeAccount)&&/["']restore["']/.test(edgeAccount)]
+  ,['Telegram login reads approved profile directly',/eq\("telegram_user_id", telegramUser\.id\)/.test(edgeLogin)&&/signInWithPassword/.test(edgeLogin)&&!/khsx_telegram_links/.test(edgeLogin)]
   ,['Quarter speed stops when elapsed source dates are missing',/missingElapsedDates/.test(html)&&/dataComplete/.test(html)&&/Hệ thống dừng tính tốc độ và dự báo quý/.test(html)&&/capacity11h=180/.test(html)]
   ,['Test mode removed from production UI',!/stageTestMenuBtn|stageTestBtn|stageTestModal|managerStageTestMode/.test(html)]
   ,['Local Supabase requires real session',!/LOCAL_SUPABASE_UI_TEST|LOCAL_DROP_DEMO_MODE|TEST-RỚT-8/.test(html)]
@@ -82,5 +83,5 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v120 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v121 checks passed (${checks.length}/${checks.length}).`);
 
