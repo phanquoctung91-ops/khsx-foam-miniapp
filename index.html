@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="js/khsx-data-core.js?v=118"></script>
+<script src="js/khsx-data-core.js?v=120"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   :root{
@@ -3023,7 +3023,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 118;
+const APP_VERSION = 120;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7661,29 +7661,39 @@ function renderSupabaseTelegramAdmin(){
   const unitValues=[...TEAM_OPTIONS,'Tổ may','Tổ đóng gói'];
   const unitOptions='<option value="">Chọn tổ/công đoạn...</option>'+unitValues.map(t=>`<option value="${t}">${telegramUnitLabel(t)}</option>`).join('');
   const roleNote=canManage()?'Quản lý được duyệt mọi vai. Quản lý 2 chỉ được duyệt Nhân viên mới.':'Quản lý 2 chỉ được duyệt Nhân viên mới; sau khi duyệt không sửa hoặc thu hồi.';
-  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:3px;">Telegram ID → chọn vai → chọn tổ/công đoạn → Duyệt</div><div style="font-size:11px;color:var(--text2);margin-bottom:7px;">${roleNote}</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>`<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit" disabled>${unitOptions}</select><span class="telegram-request-unit-note" style="display:block;color:var(--text2);font-size:11px;margin-top:4px;">Chỉ cần chọn cho Nhân viên</span></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}" data-display-name="${thoatHtml(r.telegram_display_name||'')}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`).join('')}</tbody></table></div>`;
+  const profileById=new Map((supabaseAdminProfiles||[]).map(p=>[String(p.user_id),p]));
+  const linkByTelegram=new Map((supabaseAdminTelegramLinks||[]).map(l=>[String(l.telegram_user_id),l]));
+  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:3px;">Telegram ID → chọn vai → chọn tổ/công đoạn → Duyệt</div><div style="font-size:11px;color:var(--text2);margin-bottom:7px;">${roleNote}</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>{
+    const oldLink=linkByTelegram.get(String(r.telegram_user_id));
+    const oldProfile=oldLink?profileById.get(String(oldLink.auth_user_id)):null;
+    const previous=oldLink&&oldLink.active===false&&oldProfile
+      ? `<span style="display:block;color:var(--warning);font-size:10.5px;margin-top:4px;">Đã thu hồi: ${thoatHtml(ROLE_LABELS[oldProfile.role]||oldProfile.role)}${oldProfile.unit_name?' · '+thoatHtml(telegramUnitLabel(supabaseUnitToUi(oldProfile.unit_name)||oldProfile.unit_name)):''} · ${thoatHtml(new Date(oldLink.updated_at).toLocaleString('vi-VN'))}</span>`:'';
+    return `<tr><td><strong>${thoatHtml(r.telegram_display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(r.telegram_user_id)}${r.telegram_username?` · @${thoatHtml(r.telegram_username)}`:''}</span>${previous}</td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit" disabled>${unitOptions}</select><span class="telegram-request-unit-note" style="display:block;color:var(--text2);font-size:11px;margin-top:4px;">Chỉ cần chọn cho Nhân viên</span></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" data-telegram-username="${thoatHtml(r.telegram_username||'')}" data-display-name="${thoatHtml(r.telegram_display_name||'')}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`;
+  }).join('')}</tbody></table></div>`;
 }
 async function loadSupabaseTelegramAdminData(){
   if(!SUPABASE_VARIANT || !supabaseDb || !canApproveTelegram()) return false;
-  const [links,requests]=await Promise.all([
-    supabaseSelectAll('khsx_telegram_links','telegram_user_id,auth_user_id,telegram_username,active'),
-    supabaseSelectAll('khsx_telegram_access_requests','telegram_user_id,telegram_username,telegram_display_name,first_seen_at,last_seen_at')
+  const [links,requests,profiles]=await Promise.all([
+    supabaseSelectAll('khsx_telegram_links','telegram_user_id,auth_user_id,telegram_username,active,linked_at,updated_at'),
+    supabaseSelectAll('khsx_telegram_access_requests','telegram_user_id,telegram_username,telegram_display_name,first_seen_at,last_seen_at'),
+    supabaseSelectAll('khsx_profiles','user_id,display_name,role,unit_name,active,worker_id')
   ]);
-  if(links.error || requests.error){
-    console.warn('Không tải được danh sách Telegram chờ duyệt',links.error||requests.error);
+  if(links.error || requests.error || profiles.error){
+    console.warn('Không tải được danh sách Telegram chờ duyệt',links.error||requests.error||profiles.error);
     setAdminTelegramStatus('Không tải được yêu cầu Telegram. Kiểm tra quyền quản lý hoặc kết nối.');
     return false;
   }
   supabaseAdminTelegramLinks=links.data||[];
   supabaseAdminTelegramRequests=requests.data||[];
+  supabaseAdminProfiles=profiles.data||[];
   renderSupabaseTelegramAdmin();
   renderStaffUsersList();
   return true;
 }
-async function provisionTelegramForWorker(telegramId,telegramUsername='',role='',unit='',displayName=''){
+async function provisionTelegramForWorker(telegramId,telegramUsername='',role='',unit='',displayName='',action='approve'){
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session) return {error:'SESSION_EXPIRED'};
-  const response=await fetch(SUPABASE_ADMIN_LINK_TELEGRAM_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({telegram_user_id:telegramId,telegram_username:telegramUsername||'',role:role||'nhan_vien',unit_name:unit||'',display_name:displayName||''})});
+  const response=await fetch(SUPABASE_ADMIN_LINK_TELEGRAM_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({action,telegram_user_id:telegramId,telegram_username:telegramUsername||'',role:role||'',unit_name:unit||'',display_name:displayName||''})});
   const data=await response.json().catch(()=>null);
   if(!response.ok) return {error:data?.error||'LINK_FAILED'};
   return data||{ok:true};
@@ -7709,7 +7719,7 @@ async function approveTelegramRequest(telegramId,role,unit,telegramUsername='',d
   // Chỉ truyền Telegram ID, vai và tổ/công đoạn. Không còn Worker ID/lookup.
   const provisioned=await provisionTelegramForWorker(id,telegramUsername,chosenRole,chosenUnit,displayName);
   if(provisioned.error){
-    const msg={TELEGRAM_ID_ALREADY_LINKED:'Telegram ID đã liên kết với tài khoản khác.',ALREADY_APPROVED:'Telegram ID này đã được duyệt; không duyệt lại từ màn hình đăng ký.',ACCOUNT_ALREADY_LINKED:'Tài khoản đã liên kết Telegram ID khác.',UNIT_REQUIRED:'Nhân viên phải được gắn tổ/công đoạn.',UNIT_INVALID:'Tổ/công đoạn không hợp lệ.',MANAGER2_EMPLOYEE_ONLY:'Quản lý 2 chỉ được duyệt Nhân viên mới.',AUTH_USER_LOOKUP_FAILED:'Không đọc được tài khoản Auth hiện có. Thử lại sau.',AUTH_USER_CREATE_FAILED:'Không tạo được tài khoản Auth mới.',PROFILE_UPSERT_FAILED:'Không tạo/cập nhật được hồ sơ người dùng.',PROFILE_UPDATE_FAILED:'Không lưu được vai/tổ.',TELEGRAM_LINK_LOOKUP_FAILED:'Không đọc được liên kết Telegram.',TELEGRAM_LINK_FAILED:'Không lưu được liên kết Telegram.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền duyệt.'}[provisioned.error];
+    const msg={TELEGRAM_ID_ALREADY_LINKED:'Telegram ID đang liên kết với một hồ sơ khác.',ACCOUNT_ALREADY_LINKED:'Tài khoản đã liên kết Telegram ID khác.',UNIT_REQUIRED:'Nhân viên phải được gắn tổ/công đoạn.',UNIT_INVALID:'Tổ/công đoạn không hợp lệ.',MANAGER2_EMPLOYEE_ONLY:'Quản lý 2 chỉ được duyệt Nhân viên mới.',MANAGER2_NEW_EMPLOYEE_ONLY:'Quản lý 2 không được sửa hoặc duyệt lại tài khoản đã từng tồn tại.',AUTH_USER_LOOKUP_FAILED:'Không đọc được tài khoản Auth hiện có. Thử lại sau.',AUTH_USER_CREATE_FAILED:'Không tạo được tài khoản Auth mới.',AUTH_USER_UPDATE_FAILED:'Không đồng bộ được tài khoản Auth.',PROFILE_UPSERT_FAILED:'Không tạo/cập nhật được hồ sơ người dùng.',PROFILE_UPDATE_FAILED:'Không lưu được vai/tổ.',TELEGRAM_LINK_LOOKUP_FAILED:'Không đọc được liên kết Telegram.',TELEGRAM_LINK_FAILED:'Không lưu được liên kết Telegram.',APPROVAL_VERIFY_FAILED:'Máy chủ chưa xác nhận đủ hồ sơ và Telegram link.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền duyệt.'}[provisioned.error];
     setAdminTelegramStatus(msg||`Không duyệt được (${provisioned.error}). Kiểm tra Edge Function/log.`);
     return false;
   }
@@ -7779,32 +7789,53 @@ async function luuGanToCoXacNhan(userCode, toGan){
 }
 function renderStaffUsersList(){
   const box = document.getElementById('staffUsersList');
-  if(SUPABASE_VARIANT && currentUser?.role==='quan_ly_2'){
-    box.innerHTML='<div style="font-size:11.5px;color:var(--text2);padding:9px 0;border-top:1px solid var(--border);">Quản lý 2 chỉ duyệt yêu cầu Nhân viên mới ở phần trên. Hồ sơ đã duyệt không được sửa hoặc thu hồi từ vai này.</div>';
+  if(SUPABASE_VARIANT){
+    const profiles=new Map((supabaseAdminProfiles||[]).map(p=>[String(p.user_id),p]));
+    const accounts=(supabaseAdminTelegramLinks||[]).map(link=>({link,profile:profiles.get(String(link.auth_user_id))}))
+      .filter(x=>x.profile&&String(x.profile.user_id)!==String(currentUser?.auth_user_id||''));
+    const active=accounts.filter(x=>x.link.active!==false&&x.profile.active!==false);
+    const revoked=accounts.filter(x=>x.link.active===false||x.profile.active===false);
+    const roleSelect=(profile,telegramId)=>`<select class="telegram-account-role" data-telegram-id="${thoatHtml(telegramId)}" style="min-width:120px;padding:6px 8px;">
+      ${['quan_ly','quan_ly_2','nhan_vien'].map(role=>`<option value="${role}" ${profile.role===role?'selected':''}>${ROLE_LABELS[role]}</option>`).join('')}</select>`;
+    const unitSelect=(profile,telegramId)=>{
+      const current=supabaseUnitToUi(profile.unit_name)||'';
+      return `<select class="telegram-account-unit" data-telegram-id="${thoatHtml(telegramId)}" ${profile.role==='nhan_vien'?'':'disabled'} style="min-width:135px;padding:6px 8px;">
+        <option value="">Không gắn</option>${[...TEAM_OPTIONS,'Tổ may','Tổ đóng gói'].map(unit=>`<option value="${unit}" ${current===unit?'selected':''}>${telegramUnitLabel(unit)}</option>`).join('')}</select>`;
+    };
+    const accountRows=(items,isRevoked)=>items.length?items.map(({link,profile})=>{
+      const telegramId=String(link.telegram_user_id);
+      const editable=canManage();
+      const roleCell=editable?roleSelect(profile,telegramId):thoatHtml(ROLE_LABELS[profile.role]||profile.role);
+      const unitCell=editable?unitSelect(profile,telegramId):thoatHtml(profile.unit_name?telegramUnitLabel(supabaseUnitToUi(profile.unit_name)||profile.unit_name):'—');
+      const time=isRevoked&&link.updated_at?`<br><span style="font-size:10.5px;color:var(--text2);">Thu hồi ${thoatHtml(new Date(link.updated_at).toLocaleString('vi-VN'))}</span>`:'';
+      const actions=!editable
+        ? '<span style="font-size:11px;color:var(--text2);">Chỉ xem</span>'
+        : `<button class="save-telegram-account-btn" data-telegram-id="${thoatHtml(telegramId)}" style="font-size:11px;padding:5px 8px;">Lưu</button>
+           ${isRevoked
+             ? `<button class="restore-telegram-account-btn" data-telegram-id="${thoatHtml(telegramId)}" style="font-size:11px;padding:5px 8px;background:var(--success);color:#fff;">Khôi phục</button>`
+             : `<button class="revoke-telegram-account-btn" data-telegram-id="${thoatHtml(telegramId)}" style="font-size:11px;padding:5px 8px;color:var(--danger);">Thu hồi</button>`}`;
+      return `<tr><td><strong>${thoatHtml(profile.display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(telegramId)}</span>${time}</td><td>${roleCell}</td><td>${unitCell}</td><td style="display:flex;gap:5px;flex-wrap:wrap;">${actions}</td></tr>`;
+    }).join(''):'<tr><td colspan="4" style="color:var(--text2);">Không có tài khoản.</td></tr>';
+    box.innerHTML=`<div style="font-size:12.5px;font-weight:800;margin:12px 0 6px;">Đang hoạt động (${active.length})</div>
+      <div class="table-scroll" style="max-height:280px;"><table><thead><tr><th>Telegram</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${accountRows(active,false)}</tbody></table></div>
+      <div style="font-size:12.5px;font-weight:800;margin:16px 0 6px;">ID đã thu hồi (${revoked.length})</div>
+      <div class="table-scroll" style="max-height:220px;"><table><thead><tr><th>Telegram</th><th>Vai cuối</th><th>Tổ/công đoạn cuối</th><th></th></tr></thead><tbody>${accountRows(revoked,true)}</tbody></table></div>`;
     return;
   }
-  const activeLinks=new Map((supabaseAdminTelegramLinks||[]).filter(x=>x.active!==false)
-    .map(x=>[String(x.auth_user_id),x]));
-  const approved=SUPABASE_VARIANT
-    ? staffUsers.filter(u=>activeLinks.has(String(u.auth_user_id))&&String(u.auth_user_id)!==String(currentUser?.auth_user_id||''))
-    : staffUsers;
-  const rows = approved.length ? approved.map(u=>{
-    const link=activeLinks.get(String(u.auth_user_id));
+  const rows = staffUsers.length ? staffUsers.map(u=>{
     const toHienTai = toGanTheoMa(u.code);
     const oGanTo = u.role === 'nhan_vien'
-      ? (SUPABASE_VARIANT && !u.worker_id
-        ? `<span style="font-weight:600;">${telegramUnitLabel(u.unit||'—')}</span>`
-        : `<select class="staff-team-select" data-code="${u.code}" style="width:130px;padding:6px 8px;">${tuyChonGanToHtml(toHienTai)}</select>`)
+      ? `<select class="staff-team-select" data-code="${u.code}" style="width:130px;padding:6px 8px;">${tuyChonGanToHtml(toHienTai)}</select>`
       : '<span style="color:var(--text2);">—</span>';
     return `
-    <tr><td>${u.name}${link?`<br><span style="font-size:10.5px;color:var(--text2);">Telegram ${thoatHtml(link.telegram_user_id)}</span>`:''}</td><td>${SUPABASE_VARIANT?'Đang hoạt động':`<code>${u.code}</code>`}</td><td>${ROLE_LABELS[u.role] || u.role}</td><td>${oGanTo}</td>
+    <tr><td>${u.name}</td><td><code>${u.code}</code></td><td>${ROLE_LABELS[u.role] || u.role}</td><td>${oGanTo}</td>
         <td>${u.code === (currentUser && currentUser.code)
               ? '<span style="color:var(--text2);font-size:11.5px;">Đang đăng nhập</span>'
               : `<button class="del-staff-btn" data-code="${u.code}" style="font-size:11.5px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--danger);cursor:pointer;">Thu hồi</button>`}</td></tr>`;
   }).join('')
     : `<tr><td colspan="5" style="color:var(--text2);">Chưa tải được danh sách, hoặc chưa có mã nào.</td></tr>`;
   box.innerHTML = `<div class="table-scroll" style="max-height:280px;"><table>
-    <thead><tr><th>Tên</th><th>${SUPABASE_VARIANT?'Trạng thái':'Mã đăng nhập'}</th><th>Vai</th><th>Gắn tổ</th><th></th></tr></thead>
+    <thead><tr><th>Tên</th><th>Mã đăng nhập</th><th>Vai</th><th>Gắn tổ</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
 
@@ -7900,6 +7931,13 @@ document.getElementById('addStaffBtn').addEventListener('click', async ()=>{
 });
 
 document.getElementById('staffUsersList').addEventListener('change', async (e)=>{
+  const accountRole=e.target.closest('.telegram-account-role');
+  if(accountRole){
+    const row=accountRole.closest('tr');
+    const unit=row?.querySelector('.telegram-account-unit');
+    if(unit){ unit.disabled=accountRole.value!=='nhan_vien'; if(unit.disabled) unit.value=''; }
+    return;
+  }
   const sel = e.target.closest('.staff-team-select');
   if(!sel || !canManage()) return;
   const ma = sel.dataset.code;
@@ -7923,6 +7961,32 @@ document.getElementById('staffUsersList').addEventListener('change', async (e)=>
 });
 
 document.getElementById('staffUsersList').addEventListener('click', async (e)=>{
+  const accountBtn=e.target.closest('.save-telegram-account-btn,.revoke-telegram-account-btn,.restore-telegram-account-btn');
+  if(accountBtn){
+    if(!SUPABASE_VARIANT||!canManage()) return;
+    const row=accountBtn.closest('tr');
+    const telegramId=String(accountBtn.dataset.telegramId||'');
+    const role=row?.querySelector('.telegram-account-role')?.value||'';
+    const unit=row?.querySelector('.telegram-account-unit')?.value||'';
+    const action=accountBtn.classList.contains('revoke-telegram-account-btn')?'revoke'
+      :accountBtn.classList.contains('restore-telegram-account-btn')?'restore':'update';
+    if(action==='update'&&role==='nhan_vien'&&!unit){ setAdminTelegramStatus('Nhân viên phải chọn tổ/công đoạn.'); return; }
+    if(action==='revoke'&&!confirm(`Thu hồi quyền Telegram ID ${telegramId}?\n\nTài khoản sẽ khóa ngay và bị đẩy khỏi dashboard trong vòng 30 giây.`)) return;
+    accountBtn.disabled=true;
+    setAdminTelegramStatus(action==='restore'?'Đang khôi phục...':action==='revoke'?'Đang thu hồi...':'Đang lưu vai/tổ...');
+    try{
+      const result=await provisionTelegramForWorker(telegramId,'',role,unit,'',action);
+      if(result.error){
+        const msg={ACCOUNT_NOT_FOUND:'Không tìm thấy hồ sơ Telegram.',ACCOUNT_REVOKE_FAILED:'Không thu hồi được tài khoản.',ACCOUNT_RESTORE_FAILED:'Không khôi phục được tài khoản.',PROFILE_UPSERT_FAILED:'Không lưu được vai/tổ.',UNIT_REQUIRED:'Nhân viên phải chọn tổ/công đoạn.',UNIT_INVALID:'Tổ/công đoạn không hợp lệ.',MANAGER_REQUIRED:'Phiên hiện tại không có quyền quản lý.'}[result.error];
+        setAdminTelegramStatus(msg||`Không thực hiện được (${result.error}).`);
+        return;
+      }
+      setAdminTelegramStatus(action==='restore'?'Đã khôi phục nguyên vai và tổ trước khi thu hồi.':action==='revoke'?'Đã thu hồi tài khoản.':'Đã cập nhật vai và tổ.',true);
+      await loadSupabaseOperationalData();
+      await loadSupabaseTelegramAdminData();
+    }finally{ accountBtn.disabled=false; }
+    return;
+  }
   const btn = e.target.closest('.del-staff-btn');
   if(!btn || !canManage()) return;
   const code = btn.dataset.code;

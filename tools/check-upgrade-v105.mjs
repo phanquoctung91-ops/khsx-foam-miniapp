@@ -5,11 +5,12 @@ const core=fs.readFileSync(new URL('../js/khsx-data-core.js',import.meta.url),'u
 const schema=fs.readFileSync(new URL('../supabase/schema/miniapp_upgrade_v1.sql',import.meta.url),'utf8');
 const clone=fs.readFileSync(new URL('./build-live-clone.mjs',import.meta.url),'utf8');
 const edgeAdmin=fs.readFileSync(new URL('../supabase/functions/khsx-admin-link-telegram/index.ts',import.meta.url),'utf8');
+const edgeTelegram=fs.readFileSync(new URL('../supabase/functions/khsx-telegram-auth/index.ts',import.meta.url),'utf8');
 const guestSchema=fs.readFileSync(new URL('../supabase/schema/guest_readonly_v116.sql',import.meta.url),'utf8');
 const release118=fs.readFileSync(new URL('../supabase/schema/release_v118_business_rules.sql',import.meta.url),'utf8');
 
 const checks=[
-  ['version 118 + cache-busted core',/const APP_VERSION = 118;/.test(html)&&/khsx-data-core\.js\?v=118/.test(html)],
+  ['version 120 + cache-busted core',/const APP_VERSION = 120;/.test(html)&&/khsx-data-core\.js\?v=120/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -36,7 +37,7 @@ const checks=[
   ,['Support assignment honors explicit Dán=0 but blocks completed output',/function coTheGanHoTroTrongNgay/.test(html)&&/daNhap=daNhapDanTrongNgay/.test(html)&&/daDan>=keHoach/.test(html)&&/source_order_id/.test(html)]
   ,['Capacity defaults to today',/id="capacityQuickToday"/.test(html)&&/datCapacityRange\(d,d\)/.test(html)]
   ,['Mobile manager approval remains scrollable',/#staffUsersModal[\s\S]*?#telegramAccessRequests \.table-scroll[\s\S]*?overflow-x:auto/.test(html)&&/approve-telegram-btn/.test(html)]
-  ,['Approved Telegram list hides current manager and UUID',/activeLinks\.has\(String\(u\.auth_user_id\)\)/.test(html)&&/Đang hoạt động/.test(html)]
+  ,['Approved Telegram list hides current manager and UUID',/String\(x\.profile\.user_id\)!==String\(currentUser\?\.auth_user_id/.test(html)&&/Đang hoạt động/.test(html)]
   ,['Manager 2 cannot receive a team',/chosenRole==='nhan_vien'\?selectedUnit:''/.test(html)&&/currentUser\.role !== 'nhan_vien'/.test(html)]
   ,['Deleted orders cannot return from cache',/supabaseOrdersLoaded/.test(html)&&/!supabaseActiveOrderIds\.has/.test(html)]
   ,['Warranty source is preserved and de-duplicated',/bh_chi_tiet:o\.is_warranty/.test(html)&&/const byId=new Map\(\)/.test(html)&&/warranty\|\$\{o\.date\}/.test(html)&&/canonicalKey=`bh_/.test(clone)]
@@ -66,6 +67,10 @@ const checks=[
   ,['Fixed Apps Script source only',/Apps Script cố định/.test(html)&&!/SHEET_CSV_URL/.test(html)]
   ,['No-plan ratio is dash',/dayRate==null\?'—'/.test(html)&&/rangeRate==null\?'—'/.test(html)]
   ,['Telegram approval repairs partial auth/profile',/findAuthUserByEmails/.test(edgeAdmin)&&/getUserById/.test(edgeAdmin)&&/PROFILE_UPSERT_FAILED/.test(edgeAdmin)]
+  ,['Telegram approval verifies profile and matching link state',/APPROVAL_VERIFY_FAILED/.test(edgeAdmin)&&/eq\("active", targetActive\)/.test(edgeAdmin)]
+  ,['Telegram approval no longer blocks active partial profile',!/ALREADY_APPROVED/.test(edgeAdmin)]
+  ,['Telegram account lifecycle is explicit',/["']approve["']/.test(edgeAdmin)&&/["']update["']/.test(edgeAdmin)&&/["']revoke["']/.test(edgeAdmin)&&/["']restore["']/.test(edgeAdmin)]
+  ,['Telegram login syncs current Telegram name',/currentDisplayName/.test(edgeTelegram)&&/IDENTITY_SYNC_FAILED/.test(edgeTelegram)]
   ,['Quarter speed stops when elapsed source dates are missing',/missingElapsedDates/.test(html)&&/dataComplete/.test(html)&&/Hệ thống dừng tính tốc độ và dự báo quý/.test(html)&&/capacity11h=180/.test(html)]
   ,['Test mode removed from production UI',!/stageTestMenuBtn|stageTestBtn|stageTestModal|managerStageTestMode/.test(html)]
   ,['Local Supabase requires real session',!/LOCAL_SUPABASE_UI_TEST|LOCAL_DROP_DEMO_MODE|TEST-RỚT-8/.test(html)]
@@ -77,5 +82,5 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v118 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v120 checks passed (${checks.length}/${checks.length}).`);
 

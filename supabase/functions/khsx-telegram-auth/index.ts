@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
   const displayName = [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" ");
 
   const { data: link, error: linkError } = await admin.from("khsx_telegram_links")
-    .select("auth_user_id,active")
+    .select("auth_user_id,telegram_username,active")
     .eq("telegram_user_id", telegramUser.id)
     .maybeSingle();
   if (linkError) return json(req, { error: "AUTH_LOOKUP_FAILED" }, 503);
@@ -146,11 +146,28 @@ Deno.serve(async (req) => {
   if (profileError) return json(req, { error: "PROFILE_LOOKUP_FAILED" }, 503);
   if (!profile?.active) return json(req, { error: "ACCOUNT_DISABLED" }, 403);
 
+  // Tên hiển thị lấy trực tiếp từ Telegram. Đồng bộ khi đăng nhập để người dùng
+  // luôn thấy đúng tên Telegram hiện tại, không cần Quản lý nhập lại.
+  const currentDisplayName = displayName || profile.display_name || `Telegram ${telegramUser.id}`;
+  if (currentDisplayName !== profile.display_name || (telegramUser.username ?? null) !== (link.telegram_username ?? null)) {
+    const [profileSync, linkSync] = await Promise.all([
+      admin.from("khsx_profiles").update({
+        display_name: currentDisplayName,
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", link.auth_user_id),
+      admin.from("khsx_telegram_links").update({
+        telegram_username: telegramUser.username ?? null,
+        updated_at: new Date().toISOString(),
+      }).eq("telegram_user_id", telegramUser.id).eq("auth_user_id", link.auth_user_id),
+    ]);
+    if (profileSync.error || linkSync.error) return json(req, { error: "IDENTITY_SYNC_FAILED" }, 500);
+  }
+
   const email = `tg_${telegramUser.id}@khsx.internal`;
   const password = await derivePassword(telegramUser.id);
   const { error: updateError } = await admin.auth.admin.updateUserById(link.auth_user_id, {
     email, password, email_confirm: true,
-    user_metadata: { display_name: profile.display_name },
+    user_metadata: { display_name: currentDisplayName },
     app_metadata: { provider: "telegram-miniapp", telegram_user_id: telegramUser.id },
   });
   if (updateError) return json(req, { error: "AUTH_SETUP_FAILED" }, 500);
@@ -164,7 +181,7 @@ Deno.serve(async (req) => {
   return json(req, {
     session: data.session,
     profile: {
-      display_name: profile.display_name,
+      display_name: currentDisplayName,
       role: profile.role,
       unit_name: profile.unit_name,
       worker_id: profile.worker_id,

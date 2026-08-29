@@ -28,6 +28,7 @@ const APPROVAL_UNITS = new Set(["To 1", "To 2", "To 3", "To 4", "To 5", "To may"
 
 type AdminClient = ReturnType<typeof createClient>;
 type AuthUser = { id: string; email?: string | null };
+type AccountAction = "approve" | "update" | "revoke" | "restore";
 
 function cors(req: Request) {
   const origin = req.headers.get("origin") ?? "";
@@ -74,6 +75,28 @@ async function findAuthUserByEmails(admin: AdminClient, emails: string[]) {
   return { user: null as AuthUser | null, error: null };
 }
 
+async function writeAccountAudit(
+  admin: AdminClient,
+  values: {
+    telegram_user_id: number;
+    auth_user_id: string;
+    action: AccountAction;
+    actor_user_id: string;
+    before_state?: unknown;
+    after_state?: unknown;
+  },
+) {
+  const result = await admin.from("khsx_account_audit").insert({
+    telegram_user_id: values.telegram_user_id,
+    auth_user_id: values.auth_user_id,
+    action: values.action,
+    actor_user_id: values.actor_user_id,
+    before_state: values.before_state ?? {},
+    after_state: values.after_state ?? {},
+  });
+  if (result.error) console.error("ACCOUNT_AUDIT_FAILED", result.error.code);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(req) });
   if (req.method !== "POST") return json(req, { error: "METHOD_NOT_ALLOWED" }, 405);
@@ -89,6 +112,7 @@ Deno.serve(async (req: Request) => {
   }
 
   let body: {
+    action?: AccountAction;
     telegram_user_id?: number | string;
     telegram_username?: string;
     role?: string;
@@ -101,14 +125,20 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: "INVALID_REQUEST" }, 400);
   }
 
+  const action = String(body.action ?? "approve").trim() as AccountAction;
   const telegramId = String(body.telegram_user_id ?? "").trim();
   const role = String(body.role ?? "").trim();
   const unit = role === "nhan_vien" ? normalizeUnit(body.unit_name) : "";
-  const displayName = String(body.display_name ?? "").trim() || `Telegram ${telegramId}`;
-  if (!/^\d{4,20}$/.test(telegramId) || !APPROVAL_ROLES.has(role)) {
+  const requestedDisplayName = String(body.display_name ?? "").trim();
+  let displayName = requestedDisplayName || `Telegram ${telegramId}`;
+  if (!new Set<AccountAction>(["approve", "update", "revoke", "restore"]).has(action) ||
+      !/^\d{4,20}$/.test(telegramId)) {
     return json(req, { error: "INVALID_INPUT" }, 400);
   }
-  if (role === "nhan_vien" && !APPROVAL_UNITS.has(unit)) {
+  if (["approve", "update"].includes(action) && !APPROVAL_ROLES.has(role)) {
+    return json(req, { error: "INVALID_INPUT" }, 400);
+  }
+  if (["approve", "update"].includes(action) && role === "nhan_vien" && !APPROVAL_UNITS.has(unit)) {
     return json(req, { error: unit ? "UNIT_INVALID" : "UNIT_REQUIRED" }, 400);
   }
 
@@ -132,8 +162,8 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: "MANAGER_REQUIRED" }, 403);
   }
   // Quản lý 2 chỉ duyệt lần đầu cho Nhân viên và gán tổ/công đoạn đầu vào.
-  // Không cho dùng endpoint này để tạo/sửa tài khoản Quản lý.
-  if (callerRole === "quan_ly_2" && role !== "nhan_vien") {
+  // Sửa, thu hồi, khôi phục và mọi vai quản lý chỉ dành cho Quản lý full.
+  if (callerRole === "quan_ly_2" && (action !== "approve" || role !== "nhan_vien")) {
     return json(req, { error: "MANAGER2_EMPLOYEE_ONLY" }, 403);
   }
 
@@ -145,11 +175,11 @@ Deno.serve(async (req: Request) => {
 
   const [linkResult, keyedProfileResult] = await Promise.all([
     admin.from("khsx_telegram_links")
-      .select("auth_user_id,active")
+      .select("auth_user_id,telegram_username,active,updated_at")
       .eq("telegram_user_id", telegramNumber)
       .maybeSingle(),
     admin.from("khsx_profiles")
-      .select("user_id")
+      .select("user_id,display_name,role,unit_name,active")
       .eq("login_code_key", loginCodeKey)
       .maybeSingle(),
   ]);
@@ -171,19 +201,79 @@ Deno.serve(async (req: Request) => {
     authUserId = found.user?.id ?? "";
   }
 
-  // Một hồ sơ đang hoạt động đã được duyệt thì không được dùng màn hình đăng
-  // ký để đổi vai/tổ. Hồ sơ đã thu hồi (active=false) mới được đăng ký lại.
+  let existingProfile = keyedProfileResult.data;
   if (authUserId) {
-    const existingProfile = await admin.from("khsx_profiles")
-      .select("user_id,active")
+    const result = await admin.from("khsx_profiles")
+      .select("user_id,display_name,role,unit_name,active")
       .eq("user_id", authUserId)
       .maybeSingle();
-    if (existingProfile.error) {
-      return json(req, { error: "PROFILE_LOOKUP_FAILED", ...publicDbError(existingProfile.error) }, 503);
+    if (result.error) return json(req, { error: "PROFILE_LOOKUP_FAILED", ...publicDbError(result.error) }, 503);
+    existingProfile = result.data;
+  }
+  displayName = requestedDisplayName || existingProfile?.display_name || `Telegram ${telegramId}`;
+
+  // Auth user rời có thể còn lại để giữ khóa ngoại của số liệu sản xuất cũ.
+  // Chỉ profile/link mới chứng minh đây là tài khoản đã từng được duyệt.
+  const existedBefore = Boolean(linkResult.data || existingProfile);
+  if (callerRole === "quan_ly_2" && existedBefore) {
+    return json(req, { error: "MANAGER2_NEW_EMPLOYEE_ONLY" }, 403);
+  }
+
+  if (["update", "revoke", "restore"].includes(action) && (!authUserId || !existingProfile)) {
+    return json(req, { error: "ACCOUNT_NOT_FOUND" }, 404);
+  }
+
+  const beforeState = {
+    profile: existingProfile ?? null,
+    link: linkResult.data ?? null,
+  };
+
+  if (action === "revoke") {
+    const now = new Date().toISOString();
+    const [profileWrite, linkWrite] = await Promise.all([
+      admin.from("khsx_profiles").update({ active: false, updated_at: now })
+        .eq("user_id", authUserId).select("user_id,display_name,role,unit_name,active").single(),
+      admin.from("khsx_telegram_links").update({ active: false, updated_at: now })
+        .eq("telegram_user_id", telegramNumber).select("telegram_user_id,auth_user_id,active,updated_at").single(),
+    ]);
+    if (profileWrite.error || linkWrite.error) {
+      return json(req, { error: "ACCOUNT_REVOKE_FAILED", ...publicDbError(profileWrite.error ?? linkWrite.error) }, 500);
     }
-    if (existingProfile.data?.active) {
-      return json(req, { error: "ALREADY_APPROVED" }, 409);
+    await writeAccountAudit(admin, {
+      telegram_user_id: telegramNumber, auth_user_id: authUserId, action,
+      actor_user_id: callerAuth.user.id, before_state: beforeState,
+      after_state: { profile: profileWrite.data, link: linkWrite.data },
+    });
+    return json(req, { ok: true, profile: profileWrite.data, link: linkWrite.data });
+  }
+
+  if (action === "restore") {
+    const now = new Date().toISOString();
+    const profileWrite = await admin.from("khsx_profiles").update({ active: true, updated_at: now })
+      .eq("user_id", authUserId).select("user_id,display_name,role,unit_name,active,worker_id").single();
+    if (profileWrite.error || !profileWrite.data) {
+      return json(req, { error: "ACCOUNT_RESTORE_FAILED", ...publicDbError(profileWrite.error) }, 500);
     }
+    const linkWrite = await admin.from("khsx_telegram_links").upsert({
+      telegram_user_id: telegramNumber,
+      auth_user_id: authUserId,
+      telegram_username: String(body.telegram_username ?? linkResult.data?.telegram_username ?? "").trim() || null,
+      active: true,
+      linked_by: callerAuth.user.id,
+      linked_at: new Date().toISOString(),
+      updated_at: now,
+    }, { onConflict: "telegram_user_id" }).select("telegram_user_id,auth_user_id,active,updated_at").single();
+    if (linkWrite.error || !linkWrite.data) {
+      await admin.from("khsx_profiles").update({ active: false, updated_at: new Date().toISOString() }).eq("user_id", authUserId);
+      return json(req, { error: "ACCOUNT_RESTORE_FAILED", ...publicDbError(linkWrite.error) }, 500);
+    }
+    await admin.from("khsx_telegram_access_requests").delete().eq("telegram_user_id", telegramNumber);
+    await writeAccountAudit(admin, {
+      telegram_user_id: telegramNumber, auth_user_id: authUserId, action,
+      actor_user_id: callerAuth.user.id, before_state: beforeState,
+      after_state: { profile: profileWrite.data, link: linkWrite.data },
+    });
+    return json(req, { ok: true, profile: profileWrite.data, link: linkWrite.data });
   }
 
   let createdAuthUserId = "";
@@ -200,7 +290,21 @@ Deno.serve(async (req: Request) => {
     }
     authUserId = created.data.user.id;
     createdAuthUserId = authUserId;
+  } else {
+    const updated = await admin.auth.admin.updateUserById(authUserId, {
+      email: authEmail,
+      email_confirm: true,
+      user_metadata: { display_name: displayName },
+      app_metadata: { provider: "telegram-miniapp", telegram_user_id: telegramNumber },
+    });
+    if (updated.error) return json(req, { error: "AUTH_USER_UPDATE_FAILED", code: updated.error.code }, 500);
   }
+
+  // Duyệt mới luôn kích hoạt. Nút Lưu chỉ đổi vai/tổ và phải giữ nguyên trạng
+  // thái thu hồi; chỉ nút Khôi phục mới được kích hoạt lại tài khoản.
+  const targetActive = action === "approve"
+    ? true
+    : existingProfile?.active !== false && linkResult.data?.active !== false;
 
   const profileResult = await admin.from("khsx_profiles").upsert({
     user_id: authUserId,
@@ -211,7 +315,7 @@ Deno.serve(async (req: Request) => {
     // Telegram ID + vai + tổ là đủ để đăng nhập. Worker catalogue là dữ liệu
     // KPI riêng, không còn là điều kiện chặn đăng ký tài khoản.
     worker_id: null,
-    active: true,
+    active: targetActive,
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" })
     .select("user_id,display_name,role,unit_name,active,worker_id")
@@ -225,7 +329,7 @@ Deno.serve(async (req: Request) => {
     telegram_user_id: telegramNumber,
     auth_user_id: authUserId,
     telegram_username: String(body.telegram_username ?? "").trim() || null,
-    active: true,
+    active: targetActive,
     linked_by: callerAuth.user.id,
     linked_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -238,9 +342,27 @@ Deno.serve(async (req: Request) => {
     }, duplicate ? 409 : 500);
   }
 
-  await admin.from("khsx_telegram_access_requests")
-    .delete()
-    .eq("telegram_user_id", telegramNumber);
+  if (action === "approve") {
+    await admin.from("khsx_telegram_access_requests")
+      .delete()
+      .eq("telegram_user_id", telegramNumber);
+  }
 
-  return json(req, { ok: true, profile: profileResult.data });
+  const [verifiedProfile, verifiedLink] = await Promise.all([
+    admin.from("khsx_profiles").select("user_id,display_name,role,unit_name,active,worker_id")
+      .eq("user_id", authUserId).eq("active", targetActive).maybeSingle(),
+    admin.from("khsx_telegram_links").select("telegram_user_id,auth_user_id,active,updated_at")
+      .eq("telegram_user_id", telegramNumber).eq("auth_user_id", authUserId).eq("active", targetActive).maybeSingle(),
+  ]);
+  if (verifiedProfile.error || verifiedLink.error || !verifiedProfile.data || !verifiedLink.data) {
+    return json(req, { error: "APPROVAL_VERIFY_FAILED" }, 500);
+  }
+
+  await writeAccountAudit(admin, {
+    telegram_user_id: telegramNumber, auth_user_id: authUserId, action,
+    actor_user_id: callerAuth.user.id, before_state: beforeState,
+    after_state: { profile: verifiedProfile.data, link: verifiedLink.data },
+  });
+
+  return json(req, { ok: true, profile: verifiedProfile.data, link: verifiedLink.data });
 });
