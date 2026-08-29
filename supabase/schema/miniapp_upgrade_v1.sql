@@ -1,5 +1,21 @@
 -- MiniApp upgrade v1: workforce credits + transactional stage writes.
 
+-- Quản lý 2 vẫn là quản lý vận hành, nhưng không có quyền mở khoá/sửa sau
+-- khi chốt. Các hàm ghi dùng helper riêng này thay vì suy diễn từ UI.
+create or replace function private.khsx_is_full_manager()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_catalog
+as $$
+  select exists(
+    select 1 from public.khsx_profiles p
+    where p.user_id = auth.uid() and p.active and p.role = 'quan_ly'
+  );
+$$;
+revoke all on function private.khsx_is_full_manager() from public,anon,authenticated,service_role;
+
 create table if not exists public.khsx_workers (
   id text primary key,
   display_name text not null,
@@ -73,6 +89,7 @@ declare
   v_actor_unit public.khsx_unit;
   v_profile_worker text;
   v_is_manager boolean := false;
+  v_is_full_manager boolean := false;
   v_order_team public.khsx_unit;
   v_credit_team public.khsx_unit;
   v_progress_locked boolean := false;
@@ -90,8 +107,8 @@ begin
     raise exception using errcode='22023',message='INVALID_INPUT';
   end if;
 
-  select p.unit_name,p.role in ('quan_ly','quan_ly_2'),p.worker_id
-    into v_actor_unit,v_is_manager,v_profile_worker
+  select p.unit_name,p.role in ('quan_ly','quan_ly_2'),p.role='quan_ly',p.worker_id
+    into v_actor_unit,v_is_manager,v_is_full_manager,v_profile_worker
   from public.khsx_profiles p where p.user_id=v_actor and p.active;
   if not found then raise exception using errcode='42501',message='PROFILE_INACTIVE'; end if;
 
@@ -121,7 +138,9 @@ begin
   left join public.khsx_day_locks l on l.work_date=p_work_date
   where o.id=p_order_id and o.deleted_at is null;
   if not found then raise exception using errcode='22023',message='ORDER_NOT_FOUND'; end if;
-  if v_progress_locked and not v_is_manager then raise exception using errcode='42501',message='PROGRESS_LOCKED'; end if;
+  -- Quản lý 2 không được sửa số liệu sau khi ngày đã chốt; chỉ Quản lý
+  -- toàn quyền mở khoá/sửa theo quy trình quản trị.
+  if v_progress_locked and not v_is_full_manager then raise exception using errcode='42501',message='PROGRESS_LOCKED'; end if;
   if p_quantity<0 or p_quantity>v_plan then raise exception using errcode='22023',message='PLAN_LIMIT_EXCEEDED'; end if;
 
   v_credit_team := case when v_is_manager and p_kpi_team in ('To 1','To 2','To 3','To 4','To 5') then p_kpi_team else v_order_team end;
@@ -130,7 +149,7 @@ begin
 
   if p_stage in ('may','dong_goi') then
     v_worker := case when v_is_manager then nullif(pg_catalog.btrim(p_worker_id),'') else v_profile_worker end;
-    if v_worker is null or not exists(select 1 from public.khsx_workers w where w.id=v_worker and w.stage=p_stage and w.active) then
+    if v_worker is not null and not exists(select 1 from public.khsx_workers w where w.id=v_worker and w.stage=p_stage and w.active) then
       raise exception using errcode='22023',message='WORKER_REQUIRED';
     end if;
   end if;
@@ -190,11 +209,16 @@ declare
   v_count integer := 0;
   v_date date;
   v_locked boolean;
+  v_existing_progress_locked boolean := false;
   v_entry record;
+  v_actor_role public.khsx_role;
 begin
   if not private.khsx_is_manager() then
     raise exception using errcode='42501', message='MANAGER_REQUIRED';
   end if;
+  select p.role into v_actor_role
+  from public.khsx_profiles p
+  where p.user_id=auth.uid() and p.active;
   if p_lock_kind not in ('plan','progress') then
     raise exception using errcode='22023', message='INVALID_LOCK_KIND';
   end if;
@@ -203,6 +227,13 @@ begin
     v_date := v_entry.key::date;
     v_locked := v_entry.value::boolean;
     v_count := v_count + 1;
+    select coalesce(l.progress_locked,false) into v_existing_progress_locked
+    from public.khsx_day_locks l where l.work_date=v_date;
+    if v_actor_role='quan_ly_2' and (
+      p_lock_kind='plan' or (not v_locked and v_existing_progress_locked)
+    ) then
+      raise exception using errcode='42501', message='LOCKED_NO_UNLOCK';
+    end if;
     if p_lock_kind='plan' then
       if v_locked then
         insert into public.khsx_day_locks(work_date,plan_locked,locked_by)
@@ -263,12 +294,12 @@ drop policy if exists khsx_worker_team_assignments_delete on public.khsx_worker_
 create policy khsx_worker_team_assignments_select on public.khsx_worker_team_assignments
   for select to authenticated using (true);
 create policy khsx_worker_team_assignments_insert on public.khsx_worker_team_assignments
-  for insert to authenticated with check ((select private.khsx_is_manager()));
+  for insert to authenticated with check ((select private.khsx_is_full_manager()));
 create policy khsx_worker_team_assignments_update on public.khsx_worker_team_assignments
-  for update to authenticated using ((select private.khsx_is_manager()))
-  with check ((select private.khsx_is_manager()));
+  for update to authenticated using ((select private.khsx_is_full_manager()))
+  with check ((select private.khsx_is_full_manager()));
 create policy khsx_worker_team_assignments_delete on public.khsx_worker_team_assignments
-  for delete to authenticated using ((select private.khsx_is_manager()));
+  for delete to authenticated using ((select private.khsx_is_full_manager()));
 
 -- Khi quản lý đổi phân tổ, các thiết bị đang mở nhận ngay thay đổi thay vì
 -- phải chờ lần polling kế tiếp.
@@ -311,11 +342,15 @@ set statement_timeout = '8s'
 as $$
 declare
   v_actor uuid := (select auth.uid());
+  v_actor_role public.khsx_role;
   v_existing public.khsx_order_assignments%rowtype;
   v_updated timestamptz := clock_timestamp();
 begin
   if v_actor is null then raise exception using errcode='42501',message='AUTH_REQUIRED'; end if;
   if not private.khsx_is_manager() then raise exception using errcode='42501',message='MANAGER_REQUIRED'; end if;
+  select p.role into v_actor_role
+  from public.khsx_profiles p
+  where p.user_id=v_actor and p.active;
   if p_operation_id is null or nullif(pg_catalog.btrim(p_order_id),'') is null then
     raise exception using errcode='22023',message='INVALID_ASSIGNMENT_INPUT';
   end if;
@@ -327,6 +362,14 @@ begin
   end if;
   perform 1 from public.khsx_orders where id=p_order_id and deleted_at is null for update;
   if not found then raise exception using errcode='22023',message='ORDER_NOT_FOUND'; end if;
+  if v_actor_role='quan_ly_2' and exists(
+    select 1
+    from public.khsx_day_locks l
+    join public.khsx_orders o on o.id=p_order_id
+    where l.progress_locked and l.work_date >= o.production_date
+  ) then
+    raise exception using errcode='42501',message='PROGRESS_LOCKED';
+  end if;
   select * into v_existing from public.khsx_order_assignments where order_id=p_order_id for update;
   if found and v_existing.updated_at is not null and p_client_updated_at is not null and v_existing.updated_at>p_client_updated_at then
     raise exception using errcode='40001',message='ASSIGNMENT_CONFLICT';
@@ -368,6 +411,7 @@ set statement_timeout = '8s'
 as $$
 declare
   v_actor uuid := (select auth.uid());
+  v_actor_role public.khsx_role;
   v_order public.khsx_orders%rowtype;
   v_assignment public.khsx_order_assignments%rowtype;
   v_existing_team public.khsx_unit;
@@ -380,6 +424,9 @@ declare
 begin
   if v_actor is null then raise exception using errcode='42501',message='AUTH_REQUIRED'; end if;
   if not private.khsx_is_manager() then raise exception using errcode='42501',message='MANAGER_REQUIRED'; end if;
+  select p.role into v_actor_role
+  from public.khsx_profiles p
+  where p.user_id=v_actor and p.active;
   if p_operation_id is null or nullif(pg_catalog.btrim(p_order_id),'') is null or p_work_date is null then
     raise exception using errcode='22023',message='INVALID_SUPPORT_INPUT';
   end if;
@@ -390,6 +437,13 @@ begin
 
   select * into v_order from public.khsx_orders where id=p_order_id and deleted_at is null for update;
   if not found then raise exception using errcode='22023',message='ORDER_NOT_FOUND'; end if;
+  if v_actor_role='quan_ly_2' and exists(
+    select 1
+    from public.khsx_day_locks l
+    where l.progress_locked and l.work_date >= v_order.production_date
+  ) then
+    raise exception using errcode='42501',message='PROGRESS_LOCKED';
+  end if;
   select * into v_assignment from public.khsx_order_assignments where order_id=p_order_id for update;
   if v_assignment.current_team is null and v_assignment.plan_team is null then
     raise exception using errcode='22023',message='ORDER_TEAM_REQUIRED';

@@ -127,8 +127,14 @@ Deno.serve(async (req: Request) => {
     .eq("user_id", callerAuth.user.id)
     .maybeSingle();
   if (managerResult.error) return json(req, { error: "MANAGER_LOOKUP_FAILED", ...publicDbError(managerResult.error) }, 503);
-  if (!managerResult.data?.active || !["quan_ly", "quan_ly_2"].includes(managerResult.data.role)) {
+  const callerRole = managerResult.data?.role ?? "";
+  if (!managerResult.data?.active || !["quan_ly", "quan_ly_2"].includes(callerRole)) {
     return json(req, { error: "MANAGER_REQUIRED" }, 403);
+  }
+  // Quản lý 2 chỉ duyệt lần đầu cho Nhân viên và gán tổ/công đoạn đầu vào.
+  // Không cho dùng endpoint này để tạo/sửa tài khoản Quản lý.
+  if (callerRole === "quan_ly_2" && role !== "nhan_vien") {
+    return json(req, { error: "MANAGER2_EMPLOYEE_ONLY" }, 403);
   }
 
   // Một Telegram ID dùng đúng một định danh trong Auth, profile và link.
@@ -139,7 +145,7 @@ Deno.serve(async (req: Request) => {
 
   const [linkResult, keyedProfileResult] = await Promise.all([
     admin.from("khsx_telegram_links")
-      .select("auth_user_id")
+      .select("auth_user_id,active")
       .eq("telegram_user_id", telegramNumber)
       .maybeSingle(),
     admin.from("khsx_profiles")
@@ -165,6 +171,21 @@ Deno.serve(async (req: Request) => {
     authUserId = found.user?.id ?? "";
   }
 
+  // Một hồ sơ đang hoạt động đã được duyệt thì không được dùng màn hình đăng
+  // ký để đổi vai/tổ. Hồ sơ đã thu hồi (active=false) mới được đăng ký lại.
+  if (authUserId) {
+    const existingProfile = await admin.from("khsx_profiles")
+      .select("user_id,active")
+      .eq("user_id", authUserId)
+      .maybeSingle();
+    if (existingProfile.error) {
+      return json(req, { error: "PROFILE_LOOKUP_FAILED", ...publicDbError(existingProfile.error) }, 503);
+    }
+    if (existingProfile.data?.active) {
+      return json(req, { error: "ALREADY_APPROVED" }, 409);
+    }
+  }
+
   let createdAuthUserId = "";
   if (!authUserId) {
     const created = await admin.auth.admin.createUser({
@@ -181,31 +202,15 @@ Deno.serve(async (req: Request) => {
     createdAuthUserId = authUserId;
   }
 
-  const stage = role === "nhan_vien"
-    ? unit === "To may" ? "may" : unit === "To dong goi" ? "dong_goi" : ""
-    : "";
-  const workerId = stage ? `tg_${telegramId}` : null;
-  if (workerId) {
-    const workerResult = await admin.from("khsx_workers").upsert({
-      id: workerId,
-      display_name: displayName,
-      stage,
-      active: true,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "id" }).select("id").single();
-    if (workerResult.error || !workerResult.data) {
-      if (createdAuthUserId) await admin.auth.admin.deleteUser(createdAuthUserId);
-      return json(req, { error: "WORKER_AUTO_PROVISION_FAILED", ...publicDbError(workerResult.error) }, 500);
-    }
-  }
-
   const profileResult = await admin.from("khsx_profiles").upsert({
     user_id: authUserId,
     login_code_key: loginCodeKey,
     display_name: displayName,
     role,
     unit_name: role === "nhan_vien" ? unit : null,
-    worker_id: workerId,
+    // Telegram ID + vai + tổ là đủ để đăng nhập. Worker catalogue là dữ liệu
+    // KPI riêng, không còn là điều kiện chặn đăng ký tài khoản.
+    worker_id: null,
     active: true,
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" })
