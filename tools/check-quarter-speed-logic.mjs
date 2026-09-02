@@ -11,6 +11,7 @@ const context={
   allDays:{},
   quarterTargets:{'2026_Q3':100},
   target:100,
+  otHours:0,
   workDates:['2026-07-01','2026-07-02','2026-08-03','2026-08-04'],
   isoDayNumber(iso){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||''))) return NaN;
@@ -32,6 +33,9 @@ const context={
   tongKpiTuRowsTheoKeys(keys){
     return {throughput:keys.reduce((sum,key)=>sum+Number(context.allDays[key]?.output||0),0)};
   },
+  maxOvertimeHoursForDay(){ return context.otHours; },
+  gioCaTheoOT(hours){ return 8+Number(hours||0); },
+  capacityForOtHours(hours){ return Number(hours)>=3?180:Number(hours)>=2?170:150; },
 };
 vm.createContext(context);
 vm.runInContext(html.slice(start,end),context);
@@ -41,11 +45,11 @@ function assert(ok,message){ if(!ok) throw new Error(message); }
 
 context.allDays={aug03:{date:'03/08/2026',output:30}};
 let result=context.tinhTocDoQuy();
-assert(result.dataComplete===false,'Thiếu tháng 7 phải khóa tốc độ quý');
+assert(result.dataComplete===true,'Ngày đăng ký không có dòng nguồn vẫn phải tính là 0');
 assert(result.output===30&&result.partialWorkdays===1&&result.elapsedWorkdays===3,'Độ phủ dữ liệu thiếu không đúng');
-assert(result.thucTe===null&&result.duBao===null&&result.tocDoCanChoPhanConLai===null,'Không được dự báo khi nguồn quý chưa đủ');
+assert(result.thucTe===10&&result.duBao===40&&result.tocDoCanChoPhanConLai===70,'Ngày không có dòng nguồn phải nằm trong mẫu số với sản lượng 0');
 assert(result.missingElapsedDates.join(',')==='2026-07-01,2026-07-02','Danh sách ngày thiếu không đúng');
-console.log('PASS  incomplete quarter data blocks official speed and forecast');
+console.log('PASS  registered elapsed dates without rows count as zero output');
 
 context.allDays={
   jul01:{date:'01/07/2026',output:10},
@@ -62,6 +66,14 @@ console.log('PASS  complete quarter uses the same registered dates for numerator
 
 context.target=1000;
 result=context.tinhTocDoQuy();
-assert(result.vuotNangLuc11h===true&&result.capacity11h===180,'Phải cảnh báo khi tốc độ cần vượt trần 11 giờ');
-assert(/Không khả thi/.test(result.danhGia),'Đánh giá phải nói rõ không khả thi');
-console.log('PASS  required speed above 180 sheets/day is flagged as infeasible');
+assert(result.vuotNangLuc===true&&result.availableCapacity===150,'Phải cảnh báo khi tốc độ cần vượt năng lực lịch OT hiện có');
+assert(/vượt năng lực/.test(result.danhGia),'Đánh giá phải nói rõ vượt năng lực');
+console.log('PASS  required speed above available capacity is flagged');
+
+context.target=100;
+context.otHours=2;
+result=context.tinhTocDoQuy();
+assert(result.thucTe===20,'OT không được đổi tốc độ quý vật lý');
+assert(result.normalizedSpeed===16,'OT 2 giờ phải quy đổi sản lượng về ca 8 giờ');
+assert(result.availableCapacity===170,'OT 2 giờ phải cho năng lực 170 tấm/ngày');
+console.log('PASS  OT changes normalized productivity and capacity, not physical quarter speed');

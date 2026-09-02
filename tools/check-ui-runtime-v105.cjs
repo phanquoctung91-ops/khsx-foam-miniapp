@@ -110,11 +110,27 @@ const {chromium}=require('playwright');
   const desktop=await page.evaluate(()=>({
     workspace:getComputedStyle(document.getElementById('employeeStageWorkspace')).display,
     table:getComputedStyle(document.getElementById('progressTable')).display,
-    overflow:document.documentElement.scrollWidth-window.innerWidth
+    overflow:document.documentElement.scrollWidth-window.innerWidth,
+    tableWidth:document.getElementById('progressTable').getBoundingClientRect().width,
+    scrollClient:document.getElementById('progressTable').closest('.table-scroll').clientWidth,
+    scrollWidth:document.getElementById('progressTable').closest('.table-scroll').scrollWidth,
+    statusLeft:document.querySelector('#progressTable tbody .col-status')?.getBoundingClientRect().left||0,
+    actionRight:document.querySelector('#progressTable tbody .col-action')?.getBoundingClientRect().right||0
   }));
-  if(desktop.workspace!=='none'||desktop.table==='none'||desktop.overflow>2)
+  if(desktop.workspace!=='none'||desktop.table==='none'||desktop.overflow>2||desktop.tableWidth<1279||desktop.scrollWidth<desktop.scrollClient||desktop.statusLeft<desktop.actionRight-1)
     throw new Error(`Manager desktop failed: ${JSON.stringify(desktop)}`);
-  console.log('PASS  manager desktop layout');
+  console.log('PASS  manager desktop layout with non-overlapping scroll table');
+
+  const overtime=await page.evaluate(()=>{
+    progressDaySelect.value='27/08/2026';
+    document.getElementById('overtimeBtn').click();
+    const select=document.getElementById('overtimeWorker');
+    select.value='employee-auth';select.dispatchEvent(new Event('change',{bubbles:true}));
+    return {open:document.getElementById('overtimePanel').classList.contains('is-open'),derived:document.getElementById('overtimeDerived').textContent,stageSelect:!!document.getElementById('overtimeStage')};
+  });
+  if(!overtime.open||!overtime.derived.includes('Tổ 1')||!overtime.derived.includes('Dán')||overtime.stageSelect)
+    throw new Error(`Overtime simple flow failed: ${JSON.stringify(overtime)}`);
+  console.log('PASS  OT derives team/stage from active employee account');
 
   const regressions=await page.evaluate(()=>{
     currentUser={code:'ui-manager',name:'Quản lý',role:'quan_ly',unit:'',auth_user_id:'manager-auth'};
@@ -131,14 +147,19 @@ const {chromium}=require('playwright');
         {ten_hang:'Sora',ke_hoach:999,dong_goi:999},
         {ten_hang:'Bảo hành',dong_goi:2,_from_foam:true}
       ]},
-      b:{date:'02/08/2026',rows:[{ten_hang:'Sora',ke_hoach:0,dong_goi:12,_from_foam:true,_order_id:'o1',_root_id:'o1',_root_qty:10}]}
+      b:{date:'02/08/2026',rows:[{ten_hang:'Sora',ke_hoach:0,dong_goi:12,_from_foam:true,_order_id:'o1',_root_id:'o1',_root_qty:10}]},
+      c:{date:'03/08/2026',rows:[
+        {ten_hang:'Classic',ke_hoach:72,dong_goi:0,_from_foam:true,_order_id:'legacy-missing',_root_id:'legacy-missing',_root_qty:72},
+        {ten_hang:'Classic',ke_hoach:72,dong_goi:72}
+      ]}
     });
     const k=tongKpiTuRowsTheoKeys(['a','b']);
+    const legacyFallback=tongKpiTuRowsTheoKeys(['c']);
     applyDarkMode(true);
     document.getElementById('managerStageModal').style.display='block';
-    return {deletedHidden:!orders.some(o=>o.id==='deleted-order'),warrantyRows:orders.filter(o=>o.id==='bh_22').length,k,dark:document.body.classList.contains('dark-mode'),stageModal:getComputedStyle(document.getElementById('managerStageModal')).display};
+    return {deletedHidden:!orders.some(o=>o.id==='deleted-order'),warrantyRows:orders.filter(o=>o.id==='bh_22').length,k,legacyFallback,dark:document.body.classList.contains('dark-mode'),stageModal:getComputedStyle(document.getElementById('managerStageModal')).display};
   });
-  if(!regressions.deletedHidden||regressions.warrantyRows!==1||regressions.k.plan!==10||regressions.k.done!==10||regressions.k.throughput!==12||regressions.k.warranty!==2||!regressions.dark||regressions.stageModal==='none')
+  if(!regressions.deletedHidden||regressions.warrantyRows!==1||regressions.k.plan!==10||regressions.k.done!==10||regressions.k.throughput!==12||regressions.k.warranty!==2||regressions.legacyFallback.throughput!==72||!regressions.dark||regressions.stageModal==='none')
     throw new Error(`Release regressions failed: ${JSON.stringify(regressions)}`);
   console.log('PASS  tombstone, warranty dedupe, KPI cap, dark mode and manager stage modal');
 

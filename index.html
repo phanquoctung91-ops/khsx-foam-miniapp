@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="js/khsx-data-core.js?v=121"></script>
+<script src="js/khsx-data-core.js?v=122"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   :root{
@@ -160,7 +160,8 @@
   /* ---- Bố cục bảng đơn hàng ----
      Mỗi cột có bề rộng tối thiểu cố định nên không "nhảy" mỗi lần vẽ lại.
      Cột dài (trạng thái, ghi chú) được xuống dòng trong giới hạn, không kéo bảng rộng ra. */
-  #autoPlanTable,#progressTable{min-width:0;table-layout:fixed;}
+  #autoPlanTable{min-width:1320px;table-layout:fixed;}
+  #progressTable{min-width:1280px;table-layout:fixed;}
   #autoPlanTable tbody td, #progressTable tbody td{vertical-align:top;}
   #autoPlanTable .col-date, #progressTable .col-date{width:96px;white-space:normal;vertical-align:top;}
   #autoPlanTable .col-code, #progressTable .col-code{width:80px;text-align:center;white-space:normal;overflow-wrap:break-word;}
@@ -172,8 +173,11 @@
   #autoPlanTable .col-team, #progressTable .col-team{width:92px;min-width:0;max-width:none;text-align:center;white-space:normal;}
   #autoPlanTable .col-support, #progressTable .col-support{width:88px;min-width:0;max-width:none;text-align:center;white-space:normal;}
   #autoPlanTable .col-progress{width:168px;text-align:center;white-space:normal;}
-  #autoPlanTable .col-status, #progressTable .col-status{width:142px;white-space:normal;overflow-wrap:break-word;}
-  #autoPlanTable .col-action, #progressTable .col-action{width:40px;min-width:0;text-align:center;}
+  #autoPlanTable .col-status{width:180px;white-space:normal;overflow-wrap:break-word;}
+  #progressTable .col-status{width:210px;white-space:normal;overflow-wrap:break-word;}
+  #autoPlanTable .col-action{width:78px;min-width:0;text-align:center;white-space:normal;}
+  #progressTable .col-action{width:116px;min-width:0;text-align:center;white-space:normal;}
+  #progressTable .col-action button,#progressTable .col-status button{max-width:100%;white-space:normal;line-height:1.2;}
   #autoPlanTable th:last-child,#autoPlanTable td:last-child{width:78px;white-space:normal;overflow-wrap:anywhere;}
   #autoPlanTable .col-date, #progressTable .col-date{padding-left:5px;padding-right:5px;text-align:center;}
   .date-main{display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap;font-size:12.5px;line-height:1.2;letter-spacing:-0.1px;}
@@ -188,6 +192,15 @@
   tbody tr:hover td{background:#f8f9fb;}
   .table-scroll{overflow-x:auto;max-height:520px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);}
   .table-scroll table{border:none;}
+  .overtime-panel{display:none;background:var(--warning-l);border:1px solid var(--warning);border-radius:10px;padding:14px;margin:0 0 16px;}
+  .overtime-panel.is-open{display:block;}
+  .overtime-form{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(170px,1fr) minmax(130px,.7fr) auto;gap:10px;align-items:end;}
+  .overtime-field{display:flex;flex-direction:column;gap:5px;min-width:0;}
+  .overtime-field label{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;}
+  .overtime-derived{min-height:36px;padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--card);font-size:12px;line-height:1.35;}
+  .overtime-list{margin-top:12px;display:grid;gap:7px;}
+  .overtime-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) 82px auto;gap:10px;align-items:center;padding:9px 10px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:12px;}
+  .overtime-empty{padding:10px;color:var(--text2);font-size:12px;text-align:center;}
 
   .note{color:var(--danger);font-style:italic;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
@@ -212,6 +225,7 @@
     #autoPlanTable th, #autoPlanTable td,
     #progressTable th, #progressTable td{padding:6px 5px;}
     #autoPlanTable, #progressTable{min-width:0;}
+    .overtime-form,.overtime-row{grid-template-columns:1fr;}
   }
   /* Điện thoại nằm dọc (chiều hẹp nhất) */
   @media(max-width:480px){
@@ -1275,6 +1289,18 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <span class="save-status" id="syncStatus"></span>
     </div>
     <details id="dataIntegrityAlert" class="data-integrity-alert only-manager2"><summary></summary><div class="data-integrity-list"></div></details>
+    <div id="overtimePanel" class="overtime-panel only-manager2" aria-hidden="true">
+      <div style="font-weight:800;margin-bottom:4px;">Tăng ca của ngày đang chọn</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Chọn nhân viên đang hoạt động. Hệ thống tự lấy tổ và công đoạn từ tài khoản; OT chỉ chuẩn hóa năng suất và năng lực, không đổi Tốc độ quý thực tế.</div>
+      <div class="overtime-form">
+        <div class="overtime-field"><label>Nhân viên</label><select id="overtimeWorker"><option value="">Chọn nhân viên...</option></select></div>
+        <div class="overtime-field"><label>Tổ / công đoạn</label><div id="overtimeDerived" class="overtime-derived">Chọn nhân viên để xem.</div></div>
+        <div class="overtime-field"><label>Thời gian</label><select id="overtimeHours"><option value="2">OT 2 giờ · năng lực 170</option><option value="3">OT 3 giờ · năng lực 180</option></select></div>
+        <button id="saveOvertimeBtn" type="button" class="primary-btn">Lưu OT</button>
+      </div>
+      <div id="overtimeStatus" class="save-status" style="display:block;margin-top:8px;"></div>
+      <div id="overtimeSavedList" class="overtime-list"></div>
+    </div>
     <div id="lockProgressPanel" style="display:none;background:#f8f9fb;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="font-size:12.5px;color:var(--text2);margin-bottom:9px;">
         Tick chọn ngày muốn <strong>chốt tiến độ</strong>. Ngày đã chốt thì số liệu và phân công không sửa được nữa. Chỉ Quản lý mới có quyền mở khóa tạm ở tab Kế hoạch sản xuất; Quản lý 2 không có quyền mở khóa.
@@ -1611,13 +1637,26 @@ function laBaoHanh(r){
   return t.indexOf('BAOHANH') !== -1;
 }
 
-// Mỗi ngày chỉ dùng MỘT lớp dữ liệu. Bản Supabase (_from_foam) là nguồn chuẩn;
-// dữ liệu lịch sử nhúng trong HTML chỉ là phương án lùi khi ngày đó chưa được clone.
-// Không trộn hai lớp vì sẽ nhân đôi KH, HT và bảo hành.
+// Chọn nguồn riêng cho sản xuất và bảo hành. Một dòng bảo hành live không được
+// làm mất sản lượng sản xuất lịch sử cùng ngày (lỗi này từng làm rơi cả tháng 7).
+// Trong từng nhóm vẫn chỉ dùng một nguồn để không nhân đôi số.
 function rowsNguonKpiNgay(k){
   const rows=(allDays[k]&&allDays[k].rows)||[];
-  const foam=rows.filter(r=>r._from_foam);
-  return foam.length ? foam : rows.filter(r=>!r._from_foam);
+  const foamProduction=rows.filter(r=>r._from_foam&&!laBaoHanh(r));
+  const rawProduction=rows.filter(r=>!r._from_foam&&!laBaoHanh(r));
+  const foamWarranty=rows.filter(r=>r._from_foam&&laBaoHanh(r));
+  const rawWarranty=rows.filter(r=>!r._from_foam&&laBaoHanh(r));
+  const foamRoots=new Set(foamProduction.map(r=>String(r._root_id||r._order_id||'')).filter(Boolean));
+  const foamCohortHasProgress=foamProduction.some(r=>(Number(r.dong_goi)||0)>0)
+    ||(foamRoots.size>0&&Object.values(allDays).some(day=>((day&&day.rows)||[]).some(r=>
+      r._from_foam&&foamRoots.has(String(r._root_id||r._order_id||''))&&(Number(r.dong_goi)||0)>0)));
+  const rawHasHistoricalOutput=rawProduction.some(r=>(Number(r.dong_goi)||0)>0);
+  // Đơn đã clone nhưng chưa mang lịch sử tiến độ (ví dụ 01/08) không được che
+  // mất số đóng gói lịch sử nhúng. Nếu cohort Supabase đã có tiến độ ở bất kỳ
+  // ngày nào thì giữ Supabase để không tính trùng ngày hoàn thành thực tế.
+  const production=foamProduction.length&&(foamCohortHasProgress||!rawHasHistoricalOutput)?foamProduction:rawProduction;
+  return production
+    .concat(foamWarranty.length?foamWarranty:rawWarranty);
 }
 
 // ---- KPI row ----
@@ -1631,13 +1670,16 @@ function rowsNguonKpiNgay(k){
 function tongKpiTuRowsTheoKeys(keys){
   let plan=0,done=0,warranty=0,throughput=0,carryover=0;
   const selected=new Set(keys||[]),cohortCaps=new Map(),cohortDone=new Map();
-  let hasFoam=false;
   selected.forEach(k=>{
     const rows=rowsNguonKpiNgay(k);
-    if(rows.some(r=>r._from_foam)) hasFoam=true;
     rows.forEach(r=>{
       if(laBaoHanh(r)){warranty+=Number(r.dong_goi)||0;return;}
-      if(!r._from_foam||r._is_ghost||r._is_drop) return;
+      if(!r._from_foam){
+        const p=Number(r.ke_hoach)||0,d=Number(r.dong_goi)||0;
+        plan+=p; done+=p>0?Math.min(d,p):0; throughput+=d;
+        return;
+      }
+      if(r._is_ghost||r._is_drop) return;
       const qty=Number(r.ke_hoach)||0;
       const rid=String(r._root_id||r._order_id||'');
       if(qty>0&&rid){
@@ -1645,14 +1687,6 @@ function tongKpiTuRowsTheoKeys(keys){
       }
     });
   });
-  if(!hasFoam){
-    selected.forEach(k=>rowsNguonKpiNgay(k).forEach(r=>{
-      if(laBaoHanh(r)){warranty+=Number(r.dong_goi)||0;return;}
-      const p=Number(r.ke_hoach)||0,d=Number(r.dong_goi)||0;
-      plan+=p;done+=p>0?Math.min(d,p):0;throughput+=d;
-    }));
-    return {plan,done,warranty,throughput,carryover};
-  }
   cohortCaps.forEach(v=>{plan+=v;});
   Object.entries(allDays).forEach(([k,day])=>((day&&day.rows)||[]).forEach(r=>{
     if(!r._from_foam||laBaoHanh(r)||r._is_ghost) return;
@@ -1699,7 +1733,7 @@ function computeAndRenderKpis(){
   const tocDoQuy = tinhTocDoQuy();
   speedDetailStore.quarter = tocDoQuy;
   const tocDoQuyHtml = tocDoQuy.mucTieu>0
-    ? `<div class="kpi-phu">Mục tiêu/ngày <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b> · thực tế quý <b>${formatTocDo(tocDoQuy.thucTe)}</b> tấm/ngày</div><div class="kpi-phu">Độ phủ dữ liệu <b>${tocDoQuy.partialWorkdays}/${tocDoQuy.elapsedWorkdays}</b> ngày đã qua${tocDoQuy.dataComplete?` · dự báo <b>${Math.round(tocDoQuy.duBao).toLocaleString('vi-VN')}</b>`:' · chưa dự báo'}</div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;line-height:1.4;">${tocDoQuy.danhGia}</div><span class="speed-kpi-hint">Bấm để kiểm chứng nguồn và công thức</span>`
+    ? `<div class="kpi-phu">Mục tiêu/ngày <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b> · thực tế quý <b>${formatTocDo(tocDoQuy.thucTe)}</b> tấm/ngày</div><div class="kpi-phu">Đã tính đủ <b>${tocDoQuy.elapsedWorkdays}</b> ngày đã qua, kể cả ngày 0 · dự báo <b>${Math.round(tocDoQuy.duBao||0).toLocaleString('vi-VN')}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;line-height:1.4;">${tocDoQuy.danhGia}</div><span class="speed-kpi-hint">Bấm để kiểm chứng nguồn và công thức</span>`
     : '<div class="kpi-phu">Chưa nhập mục tiêu quý để tính tốc độ.</div>';
 
   kpiRow.innerHTML = `
@@ -1718,15 +1752,6 @@ function computeAndRenderKpis(){
       <div class="label">Tỷ lệ hoàn thành đóng gói</div>
       <div class="value" style="color:${mauTyLe}">${rate==null?'—':rate+'%'}</div>
       <div class="kpi-thanh"><i style="width:${rate==null?0:Math.min(100,rate)}%;background:${mauTyLe};"></i></div>
-    </div>
-    <div id="overtimePanel" class="only-manager2" style="display:none;background:var(--warning-l);border:1px solid var(--warning);border-radius:10px;padding:12px;margin-bottom:14px;">
-      <div style="font-weight:700;margin-bottom:8px;">Tăng ca theo ngày · tổ · công đoạn · nhân viên</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <select id="overtimeStage"><option value="dan">Dán</option><option value="may">May</option><option value="dong_goi">Đóng gói</option></select>
-        <select id="overtimeWorker"><option value="">Chọn nhân viên</option></select>
-        <select id="overtimeHours"><option value="0">Không OT</option><option value="2">OT 2H</option><option value="3">OT 3H</option></select>
-        <button id="saveOvertimeBtn" class="primary-btn">Lưu OT</button><span id="overtimeStatus" class="save-status"></span>
-      </div>
     </div>
     <div class="kpi k-accent">
       <div class="label">Sản lượng đóng gói trong kỳ</div>
@@ -2189,6 +2214,11 @@ function persistOvertime(){try{localStorage.setItem(OVERTIME_RECORDS_KEY,JSON.st
 function overtimeKey(day,team,stage,worker){return [day,team,stage,worker].join('|');}
 function overtimeFor(day,team,stage){return Object.values(overtimeRecords).filter(x=>x.day===day&&(!team||x.team===team)&&(!stage||x.stage===stage));}
 function gioCaTheoOT(hours){return 8+Math.max(0,Number(hours)||0);}
+function maxOvertimeHoursForDay(day,stage='dong_goi'){
+  const d=String(day||'').includes('-')?isoToDMY(day):String(day||'');
+  return Math.max(0,...overtimeFor(d,null,stage).map(x=>Number(x.hours)||0));
+}
+function capacityForOtHours(hours){ return Number(hours)>=3?180:Number(hours)>=2?170:150; }
 function quyCuaNgay(dateObj){
   const y = dateObj.getFullYear();
   const q = Math.floor(dateObj.getMonth()/3) + 1;
@@ -2296,41 +2326,47 @@ function tinhTocDoQuy(){
   const ngayDangKy=workDatesForQuarter(quy.nam,quy.quy).slice().sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
   const ngayDaQua=ngayLamViecDaQuaCuaQuy(quy.nam,quy.quy);
   const ngayDaQuaSet=new Set(ngayDaQua);
-  // Tử số và mẫu số phải dùng đúng cùng tập ngày làm việc đã đăng ký.
-  // Ngày chưa tồn tại trong nguồn là "chưa có dữ liệu", không tự suy diễn là 0.
+  // Tử số và mẫu số dùng cùng lịch đã đăng ký. Ngày đã qua không có dòng đóng
+  // gói vẫn là một ngày làm việc với sản lượng 0, đúng quy tắc vận hành đã chốt.
   const keys=keysTheoQuy(quy.nam,quy.quy).filter(k=>ngayDaQuaSet.has(dmyToIso(allDays[k]?.date||'')));
   const sourceDates=Array.from(new Set(keys.map(k=>dmyToIso(allDays[k]?.date||'')).filter(Boolean)))
     .sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
   const sourceDateSet=new Set(sourceDates);
   const missingElapsedDates=ngayDaQua.filter(iso=>!sourceDateSet.has(iso));
-  const dataComplete=missingElapsedDates.length===0;
   const kpi=tongKpiTuRowsTheoKeys(keys);
   const tongNgay=ngayDangKy.length;
   const ngayDaQuaCount=ngayDaQua.length;
-  const ngayConLai=Math.max(0,tongNgay-ngayDaQuaCount);
+  const ngayConLaiDates=ngayDangKy.filter(iso=>!ngayDaQuaSet.has(iso));
+  const ngayConLai=ngayConLaiDates.length;
   const mucTieuNgay=tongNgay>0&&quy.mucTieu>0?quy.mucTieu/tongNgay:0;
   const partialWorkdays=sourceDates.length;
   const partialSpeed=partialWorkdays>0?Number(kpi.throughput||0)/partialWorkdays:null;
-  const thucTe=dataComplete&&ngayDaQuaCount>0?Number(kpi.throughput||0)/ngayDaQuaCount:null;
+  const thucTe=ngayDaQuaCount>0?Number(kpi.throughput||0)/ngayDaQuaCount:null;
   const duBao=thucTe==null?null:Number(kpi.throughput||0)+thucTe*ngayConLai;
   const chenhlech=thucTe==null?null:thucTe-mucTieuNgay;
   const tyLe=mucTieuNgay>0&&thucTe!=null?thucTe/mucTieuNgay:null;
   const trangThai=tyLe==null?'none':tyLe>=1?'green':tyLe>=.9?'yellow':'red';
   const thieuSoVoiMucTieu=Math.max(0,Number(quy.mucTieu||0)-Number(kpi.throughput||0));
-  const tocDoCanChoPhanConLai=dataComplete&&ngayConLai>0?thieuSoVoiMucTieu/ngayConLai:null;
+  const tocDoCanChoPhanConLai=ngayConLai>0?thieuSoVoiMucTieu/ngayConLai:null;
   const canThemMoiNgay=tocDoCanChoPhanConLai==null||thucTe==null?null:Math.max(0,tocDoCanChoPhanConLai-thucTe);
-  const capacity11h=180;
-  const vuotNangLuc11h=tocDoCanChoPhanConLai!=null&&tocDoCanChoPhanConLai>capacity11h;
+  const normalizedOutput=ngayDaQua.reduce((sum,iso)=>{
+    const dayKeys=keys.filter(k=>dmyToIso(allDays[k]?.date||'')===iso);
+    const output=tongKpiTuRowsTheoKeys(dayKeys).throughput;
+    return sum+output*8/gioCaTheoOT(maxOvertimeHoursForDay(iso,'dong_goi'));
+  },0);
+  const normalizedSpeed=ngayDaQuaCount>0?normalizedOutput/ngayDaQuaCount:null;
+  const availableCapacity=ngayConLai>0
+    ? ngayConLaiDates.reduce((sum,iso)=>sum+capacityForOtHours(maxOvertimeHoursForDay(iso,'dong_goi')),0)/ngayConLai
+    : capacityForOtHours(maxOvertimeHoursForDay(ngayHienTaiIso(),'dong_goi'));
+  const vuotNangLuc=tocDoCanChoPhanConLai!=null&&tocDoCanChoPhanConLai>availableCapacity;
   let danhGia='Chưa nhập mục tiêu quý hoặc chưa có ngày làm việc.';
-  if(!dataComplete){
-    danhGia=`Chưa đủ dữ liệu để tính tốc độ quý: mới có ${partialWorkdays}/${ngayDaQuaCount} ngày làm việc đã qua. Tốc độ tạm ${formatTocDo(partialSpeed)} tấm/ngày chỉ phản ánh phần dữ liệu đã nạp.`;
-  }else if(mucTieuNgay>0){
+  if(mucTieuNgay>0){
     if(Number(kpi.throughput||0)>=Number(quy.mucTieu||0)){
       danhGia=`Đã đạt mục tiêu quý theo số đóng gói thực tế (${Number(kpi.throughput||0).toLocaleString('vi-VN')} tấm).`;
     }else if(duBao>=quy.mucTieu){
       danhGia=`Đang nhanh hơn mục tiêu ${formatTocDo(chenhlech)} tấm/ngày; giữ nhịp hiện tại sẽ đạt khoảng ${Math.round(duBao).toLocaleString('vi-VN')} tấm cuối quý.`;
-    }else if(vuotNangLuc11h){
-      danhGia=`Không khả thi với trần năng lực 11 giờ ${capacity11h} tấm/ngày: phần còn lại đang cần ${formatTocDo(tocDoCanChoPhanConLai)} tấm/ngày.`;
+    }else if(vuotNangLuc){
+      danhGia=`Phần còn lại cần ${formatTocDo(tocDoCanChoPhanConLai)} tấm/ngày, vượt năng lực hiện có ${formatTocDo(availableCapacity)} tấm/ngày theo lịch OT đã ghi.`;
     }else if(ngayConLai>0){
       danhGia=`Dự báo hiện tại đạt khoảng ${Math.round(duBao).toLocaleString('vi-VN')} tấm; cần thêm ${formatTocDo(canThemMoiNgay)} tấm/ngày trong ${ngayConLai} ngày còn lại để đạt mục tiêu.`;
     }else{
@@ -2341,8 +2377,8 @@ function tinhTocDoQuy(){
     elapsedDates:ngayDaQua,totalWorkdays:tongNgay,elapsedWorkdays:ngayDaQuaCount,
     remainingWorkdays:ngayConLai,ngaySanXuat:ngayDaQuaCount,mucTieuNgay,thucTe,duBao,
     tocDoCanChoPhanConLai,canThemMoiNgay,thieuSoVoiMucTieu,
-    chenhlech,trangThai,danhGia,normalizedOutput:Number(kpi.throughput||0),dataComplete,
-    missingElapsedDates,partialWorkdays,partialSpeed,capacity11h,vuotNangLuc11h};
+    chenhlech,trangThai,danhGia,normalizedOutput,normalizedSpeed,dataComplete:true,
+    missingElapsedDates,partialWorkdays,partialSpeed,availableCapacity,vuotNangLuc};
 }
 
 // Tốc độ bộ lọc chỉ mô tả đúng khoảng ngày người dùng đang xem. Nó không tạo
@@ -2407,22 +2443,20 @@ function moPopupTocDo(kind){
       <div class="speed-detail-row"><span>Phạm vi</span><strong>${isQuarter?`Quý ${detail.quy}/${detail.nam}`:`${speedDateLabel(detail.fromIso)} → ${speedDateLabel(detail.toIso)}`}</strong></div>
       <div class="speed-detail-row"><span>Đóng gói dùng để tính</span><strong>${Number(detail.output||0).toLocaleString('vi-VN')} tấm</strong></div>
       <div class="speed-detail-row"><span>${isQuarter?'Lịch làm việc cả quý':'Ngày làm việc làm mẫu số'}</span><strong>${detail.totalWorkdays||0} ngày</strong></div>
-      ${isQuarter?`<div class="speed-detail-row"><span>Đã qua / còn lại</span><strong>${detail.elapsedWorkdays||0} / ${detail.remainingWorkdays||0} ngày</strong></div><div class="speed-detail-row"><span>Độ phủ dữ liệu đã qua</span><strong>${detail.partialWorkdays||0} / ${detail.elapsedWorkdays||0} ngày</strong></div><div class="speed-detail-row"><span>Phạm vi nguồn hiện có</span><strong>${sourceRange}</strong></div>`:''}
+      ${isQuarter?`<div class="speed-detail-row"><span>Đã qua / còn lại</span><strong>${detail.elapsedWorkdays||0} / ${detail.remainingWorkdays||0} ngày</strong></div><div class="speed-detail-row"><span>Ngày đã qua có dòng nguồn</span><strong>${detail.partialWorkdays||0} / ${detail.elapsedWorkdays||0} ngày</strong></div><div class="speed-detail-row"><span>Phạm vi nguồn hiện có</span><strong>${sourceRange}</strong></div>`:''}
       <div class="speed-detail-row"><span>${isQuarter?'Tốc độ quý':'Kết quả'}</span><strong>${formatTocDo(detail.thucTe)} tấm/ngày</strong></div>
-      ${isQuarter&&!detail.dataComplete?`<div class="speed-detail-row"><span>Tốc độ tạm của phần đã nạp</span><strong>${formatTocDo(detail.partialSpeed)} tấm/ngày</strong></div>`:''}
+      ${isQuarter?`<div class="speed-detail-row"><span>Năng suất quy đổi về ca 8 giờ</span><strong>${formatTocDo(detail.normalizedSpeed)} tấm/ngày</strong></div>`:''}
       ${benchmark}
-      ${isQuarter&&detail.dataComplete&&detail.remainingWorkdays>0?`<div class="speed-detail-row"><span>Tốc độ cần từ nay</span><strong>${formatTocDo(detail.tocDoCanChoPhanConLai)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Cần tăng thêm so với thực tế</span><strong>${formatTocDo(detail.canThemMoiNgay)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Trần năng lực 11 giờ</span><strong>${formatTocDo(detail.capacity11h)} tấm/ngày</strong></div>`:''}
-      ${isQuarter&&detail.dataComplete?`<div class="speed-detail-row"><span>Dự báo cuối quý</span><strong>${Math.round(detail.duBao||0).toLocaleString('vi-VN')} tấm</strong></div>`:''}
+      ${isQuarter&&detail.remainingWorkdays>0?`<div class="speed-detail-row"><span>Tốc độ cần từ nay</span><strong>${formatTocDo(detail.tocDoCanChoPhanConLai)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Cần tăng thêm so với thực tế</span><strong>${formatTocDo(detail.canThemMoiNgay)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Năng lực bình quân còn lại</span><strong>${formatTocDo(detail.availableCapacity)} tấm/ngày</strong></div>`:''}
+      ${isQuarter?`<div class="speed-detail-row"><span>Dự báo cuối quý</span><strong>${Math.round(detail.duBao||0).toLocaleString('vi-VN')} tấm</strong></div>`:''}
     </div>
     <div class="speed-detail-formula"><strong>Công thức</strong><br>${isQuarter
-      ? (detail.dataComplete
-        ? `Mục tiêu/ngày = ${Number(detail.mucTieu||0).toLocaleString('vi-VN')} / ${detail.totalWorkdays||0} ngày. Tốc độ quý = ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.elapsedWorkdays||0} ngày đã qua. Dự báo = Đóng gói đã đạt + Tốc độ quý × ${detail.remainingWorkdays||0} ngày còn lại.`
-        : `Chưa tính tốc độ quý vì nguồn mới phủ ${detail.partialWorkdays||0}/${detail.elapsedWorkdays||0} ngày đã qua. Số ${formatTocDo(detail.partialSpeed)} chỉ là ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.partialWorkdays||0} ngày có dữ liệu, không phải tốc độ quý.`)
+      ? `Mục tiêu/ngày = ${Number(detail.mucTieu||0).toLocaleString('vi-VN')} / ${detail.totalWorkdays||0} ngày. Tốc độ quý = ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.elapsedWorkdays||0} ngày đã qua; ngày đăng ký không có đóng gói được tính 0. Năng suất 8 giờ = tổng từng ngày (Đóng gói × 8 / giờ ca thực tế) / ${detail.elapsedWorkdays||0}. Dự báo = Đóng gói đã đạt + Tốc độ quý × ${detail.remainingWorkdays||0} ngày còn lại.`
       : `Tốc độ bộ lọc = ${Number(detail.output||0).toLocaleString('vi-VN')} / ${detail.totalWorkdays||0} ngày làm việc trong khoảng lọc.`}</div>
     <div class="speed-detail-source"><strong>${isQuarter?'Lịch làm việc đã đăng ký':'Ngày làm việc được tính'}:</strong> ${dates.length?dates.join(', '):'Không có'}.</div>
     ${source.length?`<div class="speed-detail-source"><strong>Ngày có dữ liệu nguồn:</strong> ${source.join(', ')}.</div>`:''}
-    ${missing.length?`<div class="speed-detail-warning"><strong>Ngày làm việc đã qua nhưng chưa có dữ liệu nguồn:</strong> ${missing.join(', ')}. Hệ thống dừng tính tốc độ và dự báo quý cho đến khi đủ dữ liệu.</div>`:''}
-    ${isQuarter&&detail.vuotNangLuc11h?`<div class="speed-detail-warning"><strong>Cảnh báo năng lực:</strong> tốc độ cần thiết vượt trần 11 giờ ${formatTocDo(detail.capacity11h)} tấm/ngày.</div>`:''}
+    ${missing.length?`<div class="speed-detail-source"><strong>Ngày đã đăng ký không có dòng nguồn, được tính đóng gói = 0:</strong> ${missing.join(', ')}.</div>`:''}
+    ${isQuarter&&detail.vuotNangLuc?`<div class="speed-detail-warning"><strong>Cảnh báo năng lực:</strong> tốc độ cần thiết ${formatTocDo(detail.tocDoCanChoPhanConLai)} vượt năng lực bình quân còn lại ${formatTocDo(detail.availableCapacity)} tấm/ngày theo lịch OT đã ghi.</div>`:''}
     <div class="speed-detail-result">${detail.danhGia}</div>`;
   modal.style.display='block';
 }
@@ -2591,7 +2625,7 @@ function getOrders(){
     if(!o||!o.id||deletedOrderIds.includes(o.id)) return;
     // Supabase là nguồn chính: snapshot/cache không được phép hồi sinh ID
     // không còn trong tập đơn hoạt động trên máy chủ.
-    if(SUPABASE_VARIANT&&supabaseOrdersLoaded&&!supabaseActiveOrderIds.has(String(o.id))) return;
+    if(SUPABASE_VARIANT&&supabaseOrdersLoaded&&!o.is_warranty&&!supabaseActiveOrderIds.has(String(o.id))) return;
     // Bảo hành là một dòng tổng hợp theo ngày. Dữ liệu Supabase, Sheet và
     // cache cũ có thể cùng trả nhiều ID cho một ngày; gom theo ngày để không
     // hiện lại "bảo hành mồ côi"/dòng trùng. Giữ bản có chi tiết và phân tổ
@@ -3026,7 +3060,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 121;
+const APP_VERSION = 122;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3591,6 +3625,9 @@ async function enterWithTelegram(){
     if(await loadSupabaseOperationalData()){
       supabasePrimaryActive=true;
       document.documentElement.setAttribute('data-primary-source','supabase');
+      const planSync=await syncMissingSheetOrdersToSupabase({silent:true});
+      if(planSync.inserted)await loadSupabaseOperationalData();
+      await fetchBaoHanh({silent:true,force:true});
       await startSupabaseRealtime();
       await flushSupabaseStageOutbox();
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
@@ -5388,28 +5425,62 @@ function baoHanhCuaTo(team, cacNgay){
   return t;
 }
 
+async function readSheetPlanSource(){
+  if(!SHEET_READER_URL || SHEET_READER_URL.startsWith('PASTE_')) throw new Error('Chưa cấu hình link đọc KHSX cố định.');
+  const data=await jsonpRequest(`${SHEET_READER_URL}?_cb=${Date.now()}`);
+  if(!data||!data.ok||!Array.isArray(data.rows))throw new Error(data&&data.error?data.error:'Apps Script không trả về dữ liệu');
+  const parsed=parseSheetTable(data.rows);
+  if(!parsed.rows.length)throw new Error(`Đọc được ${data.rows.length} dòng nhưng không có dòng Foam với ngày hợp lệ.`);
+  return {table:data.rows,parsed,rows:applyLotSplitRule(assignStableIds(parsed.rows))};
+}
+function sheetOrderToSupabase(o){
+  const numberOrNull=v=>{const n=Number(v);return String(v??'').trim()!==''&&Number.isFinite(n)?n:null;};
+  return {
+    id:String(o.id),production_date:dmyToIso(o.date),product_code:String(o.ma||''),product_name:String(o.dong||''),
+    width_mm:numberOrNull(o.ngang),length_mm:numberOrNull(o.dai),thickness_mm:numberOrNull(o.day),plan_qty:Math.max(0,Number(o.so_luong)||0),
+    note:String(o.ghi_chu||''),order_group:String(o.nhom_don_hang||o.nhom_khsx||''),is_manual:false,is_drop:false,is_ghost:false,is_warranty:false,
+    is_lot:!!o.is_lot,lot_label:String(o.lot_label||''),source_payload:{source:'sheet_live_sync_v122',live_row:o}
+  };
+}
+let sheetPlanSyncInFlight=false;
+async function syncMissingSheetOrdersToSupabase({silent=false}={}){
+  // QL2 chỉ được xem KHSX theo phân quyền v119. Việc nạp đơn gốc từ Sheet chỉ
+  // chạy dưới vai Quản lý; nhân viên/QL2 chỉ đọc kết quả đã đồng bộ.
+  if(!SUPABASE_VARIANT||!supabaseDb||!canManage()||sheetPlanSyncInFlight)return {ok:false,skipped:true,inserted:0};
+  sheetPlanSyncInFlight=true;
+  try{
+    const source=await readSheetPlanSource();
+    const known=await supabaseSelectAll('khsx_orders','id,deleted_at');
+    if(known.error)throw known.error;
+    const knownIds=new Set((known.data||[]).map(x=>String(x.id)));
+    const missing=source.rows.filter(o=>!knownIds.has(String(o.id)));
+    if(!missing.length){
+      if(!silent)supabaseStatus(`Sheet đã khớp Supabase · ${source.rows.length} đơn nguồn`,true);
+      return {ok:true,inserted:0,total:source.rows.length,source};
+    }
+    const payload=missing.map(sheetOrderToSupabase).filter(x=>x.production_date);
+    const {error}=await supabaseDb.from('khsx_orders').upsert(payload,{onConflict:'id',ignoreDuplicates:true});
+    if(error)throw error;
+    supabaseStatus(`Đã bổ sung ${payload.length} đơn mới từ Sheet; không ghi đè đơn cũ`,true);
+    return {ok:true,inserted:payload.length,total:source.rows.length,source};
+  }catch(error){
+    console.warn('Không đồng bộ được đơn mới từ Sheet sang Supabase',error);
+    if(!silent)supabaseStatus(`Chưa đồng bộ được KHSX từ Sheet: ${error.message||error.code||'lỗi không xác định'}`,false);
+    return {ok:false,error,inserted:0};
+  }finally{sheetPlanSyncInFlight=false;}
+}
+
 async function fetchAutoPlan(){
   const statusEl = document.getElementById('autoPlanStatus');
   statusEl.textContent = 'Đang tải dữ liệu từ Google Sheet...';
   statusEl.style.color = 'var(--text2)';
   try{
-    if(!SHEET_READER_URL || SHEET_READER_URL.startsWith('PASTE_')) throw new Error('Chưa cấu hình link đọc KHSX cố định.');
-    // Chỉ dùng link Apps Script cố định. Không còn đường CSV phụ vì CSV công khai
-    // có thể bị cache, lọc thiếu dòng hoặc thay đổi quyền mà không báo rõ.
-    const data = await jsonpRequest(`${SHEET_READER_URL}?_cb=${Date.now()}`);
-    if(!data || !data.ok || !Array.isArray(data.rows)) throw new Error(data && data.error ? data.error : 'Apps Script không trả về dữ liệu');
-    const table = data.rows;
+    const sourcePayload=await readSheetPlanSource();
+    const table = sourcePayload.table;
     const source = 'Apps Script cố định';
-    const parsed = parseSheetTable(table);
+    const parsed = sourcePayload.parsed;
     const rows = parsed.rows;
-    if(!rows.length){
-      // Nêu rõ lý do để không phải mò: thường là sai cột Tổ, hoặc cột Ngày sai định dạng
-      const soDong = table.length;
-      throw new Error(`Đọc được ${soDong} dòng từ nguồn nhưng KHÔNG có dòng nào có Tổ = "Foam" `
-        + `và ngày hợp lệ. Kiểm tra: cột Tổ có ghi đúng "Foam" chưa · cột Ngày có đúng dạng `
-        + `dd/mm/yyyy chưa (đặt cột Ngày thành "Văn bản thuần" trước khi dán).`);
-    }
-    sheetRows = applyLotSplitRule(assignStableIds(rows));
+    sheetRows = sourcePayload.rows;
     autoPlanLoaded = true;
     // Bây giờ mới có đủ đơn Sheet để áp quy ước hoàn thành lịch sử.
     assignments = applyVerifiedDataCorrections(assignments);
@@ -7018,10 +7089,10 @@ function renderProgress(){
   const partialCount = filtered.filter(r=>getOrderStatus(r)==='partial').length;
   const inProgressCount = filtered.length - doneCount - partialCount;
   const rate = totalPlan>0 ? Math.round((totalDone/totalPlan)*1000)/10 : null;
-  const otDay=dayVal==='all'?null:dayVal,otTeam=TEAM_OPTIONS.includes(progressTeamSelect.value)?progressTeamSelect.value:null;
-  const otPack=otDay?overtimeFor(otDay,otTeam,'dong_goi'):[];
-  const avgShiftHours=otPack.length?otPack.reduce((s,x)=>s+gioCaTheoOT(x.hours),0)/otPack.length:8;
-  const normalizedDone=avgShiftHours>0?totalDone*8/avgShiftHours:totalDone;
+  const otDay=dayVal==='all'?null:dayVal;
+  const otPack=otDay?overtimeFor(otDay,null,'dong_goi'):[];
+  const shiftHours=gioCaTheoOT(otDay?maxOvertimeHoursForDay(otDay,'dong_goi'):0);
+  const normalizedDone=shiftHours>0?totalDone*8/shiftHours:totalDone;
   renderOpsCommandCenter(filtered,dayVal,totalPlan);
 
   // Phần thiếu đã tách ra nhưng CHƯA được giao tổ hỗ trợ — đếm trên toàn bộ dữ liệu,
@@ -7045,7 +7116,7 @@ function renderProgress(){
       <div class="kpi k-warning"><div class="label">Đang sản xuất</div><div class="value">${inProgressCount}</div></div>
       <div class="kpi" style="border-top-color:var(--accent);"><div class="label">Đã chia tổ (dở dang)</div><div class="value" style="color:var(--accent);">${partialCount}</div></div>
        <div class="kpi ${rate==null?'':rate>=95?'k-success':'k-warning'}"><div class="label">Tỷ lệ hoàn thành</div><div class="value" style="color:${rate==null?'var(--text2)':rate>=95?'var(--success)':rate>=80?'var(--warning)':'var(--danger)'}">${rate==null?'—':rate+'%'}</div></div>
-       ${otDay?`<div class="kpi" style="border-top-color:var(--warning);"><div class="label">Tốc độ ĐG chuẩn hóa 8H</div><div class="value">${normalizedDone.toLocaleString('vi-VN',{maximumFractionDigits:1})}</div><div class="kpi-phu">Thực tế ${totalDone.toLocaleString('vi-VN')} · ca TB ${avgShiftHours.toLocaleString('vi-VN',{maximumFractionDigits:1})}h${otPack.length?` · ${otPack.length} người OT`:''}</div></div>`:''}
+       ${otDay?`<div class="kpi" style="border-top-color:var(--warning);"><div class="label">Năng suất ĐG quy đổi 8H</div><div class="value">${normalizedDone.toLocaleString('vi-VN',{maximumFractionDigits:1})}</div><div class="kpi-phu">Thực tế ${totalDone.toLocaleString('vi-VN')} · ca ${shiftHours}h${otPack.length?` · ${otPack.length} người OT`:''}</div></div>`:''}
       ${canManage2() ? `<div class="kpi" style="border-top-color:${thieuChuaGiao>0?'var(--danger)':'var(--border)'};">
         <div class="label">Phần thiếu chưa giao tổ</div>
         <div class="value" style="color:${thieuChuaGiao>0?'var(--danger)':'var(--text2)'}">${thieuChuaGiao}</div>
@@ -7107,32 +7178,72 @@ function renderProgress(){
   }).join('');
 }
 
-progressDaySelect.addEventListener('change', renderProgress);
+progressDaySelect.addEventListener('change', ()=>{renderProgress();renderOvertimePanel();});
 progressTeamSelect.addEventListener('change', renderProgress);
 progressSearchBox.addEventListener('input',window.KhsxDataCore.debounce(renderProgress,160));
-function renderOvertimeWorkers(){
-  const sel=document.getElementById('overtimeWorker');if(!sel)return;
-  const rows=(supabaseWorkers?.length?supabaseWorkers:staffUsers.filter(x=>x.role==='nhan_vien').map(x=>({id:x.worker_id||x.code,display_name:x.name||x.code})));
-  sel.innerHTML='<option value="">Chọn nhân viên</option>'+rows.map(x=>`<option value="${thoatHtml(x.id)}">${thoatHtml(x.display_name||x.id)}</option>`).join('');
+function overtimeStageFromUnit(unit){
+  if(TEAM_OPTIONS.includes(unit))return 'dan';
+  const n=chuanMaNguoiDung(unit||'');
+  if(n.includes('may'))return 'may';
+  if(n.includes('donggoi'))return 'dong_goi';
+  return null;
 }
+function overtimeStageLabel(stage){return stage==='dan'?'Dán':stage==='may'?'May':stage==='dong_goi'?'Đóng gói':'Chưa xác định';}
+function overtimeEmployees(){
+  const source=(supabaseAdminProfiles||[]).filter(p=>p.active!==false&&p.role==='nhan_vien').map(p=>({
+    id:String(p.worker_id||p.user_id||''),name:p.display_name||p.worker_id||p.user_id,
+    team:supabaseUnitToUi(p.unit_name),stage:overtimeStageFromUnit(supabaseUnitToUi(p.unit_name))
+  })).filter(x=>x.id&&x.team&&x.stage);
+  const seen=new Set();return source.filter(x=>!seen.has(x.id)&&seen.add(x.id));
+}
+function overtimeEmployee(workerId){return overtimeEmployees().find(x=>x.id===String(workerId||''))||null;}
+function renderOvertimePanel(){
+  const panel=document.getElementById('overtimePanel'),sel=document.getElementById('overtimeWorker'),derived=document.getElementById('overtimeDerived'),list=document.getElementById('overtimeSavedList');
+  if(!panel||!sel||!derived||!list)return;
+  const current=sel.value,employees=overtimeEmployees();
+  sel.innerHTML='<option value="">Chọn nhân viên...</option>'+employees.map(x=>`<option value="${thoatHtml(x.id)}">${thoatHtml(x.name)}</option>`).join('');
+  if(employees.some(x=>x.id===current))sel.value=current;
+  const picked=overtimeEmployee(sel.value);
+  derived.textContent=picked?`${picked.team} · công đoạn ${overtimeStageLabel(picked.stage)}`:'Chọn nhân viên để xem.';
+  const day=progressDaySelect.value;
+  if(day==='all'){
+    list.innerHTML='<div class="overtime-empty">Chọn một ngày cụ thể để ghi và xem OT.</div>';
+    return;
+  }
+  const rows=Object.values(overtimeRecords).filter(x=>x.day===day).sort((a,b)=>String(a.team).localeCompare(String(b.team),'vi')||String(a.worker).localeCompare(String(b.worker),'vi'));
+  list.innerHTML=rows.length?rows.map(x=>{
+    const employee=overtimeEmployee(x.worker),name=employee?.name||x.worker;
+    return `<div class="overtime-row"><strong>${thoatHtml(name)}</strong><span>${thoatHtml(x.team)} · ${overtimeStageLabel(x.stage)}</span><b>OT ${Number(x.hours)}H</b><span><button type="button" class="capacity-quick-btn edit-overtime-btn" data-worker="${thoatHtml(x.worker)}" data-hours="${Number(x.hours)}">Sửa</button> <button type="button" class="capacity-quick-btn remove-overtime-btn" data-key="${thoatHtml(overtimeKey(x.day,x.team,x.stage,x.worker))}">Xóa</button></span></div>`;
+  }).join(''):'<div class="overtime-empty">Ngày này chưa ghi OT.</div>';
+}
+document.getElementById('overtimeWorker')?.addEventListener('change',renderOvertimePanel);
 document.getElementById('overtimeBtn')?.addEventListener('click',()=>{
-  const p=document.getElementById('overtimePanel');p.style.display=p.style.display==='none'?'block':'none';renderOvertimeWorkers();
+  const panel=document.getElementById('overtimePanel'),opening=!panel.classList.contains('is-open');
+  panel.classList.toggle('is-open',opening);panel.setAttribute('aria-hidden',String(!opening));
+  if(opening){renderOvertimePanel();panel.scrollIntoView({behavior:'smooth',block:'nearest'});}
 });
 document.getElementById('saveOvertimeBtn')?.addEventListener('click',async()=>{
   if(!canManage2())return;
-  const day=progressDaySelect.value,team=progressTeamSelect.value,stage=document.getElementById('overtimeStage').value,worker=document.getElementById('overtimeWorker').value,hours=Number(document.getElementById('overtimeHours').value),st=document.getElementById('overtimeStatus');
-  if(day==='all'||!TEAM_OPTIONS.includes(team)||!worker){st.textContent='Chọn đúng 1 ngày, 1 tổ và 1 nhân viên.';st.style.color='var(--danger)';return;}
-  const key=overtimeKey(day,team,stage,worker);
-  if(hours===0)delete overtimeRecords[key];else overtimeRecords[key]={day,team,stage,worker,hours,updatedAt:new Date().toISOString()};
-  persistOvertime();
+  const day=progressDaySelect.value,worker=document.getElementById('overtimeWorker').value,hours=Number(document.getElementById('overtimeHours').value),st=document.getElementById('overtimeStatus'),employee=overtimeEmployee(worker);
+  if(day==='all'||!employee){st.textContent='Chọn đúng 1 ngày và 1 nhân viên đang hoạt động.';st.style.color='var(--danger)';return;}
+  const key=overtimeKey(day,employee.team,employee.stage,worker),record={day,team:employee.team,stage:employee.stage,worker,hours,updatedAt:new Date().toISOString()};
   if(SUPABASE_VARIANT&&supabaseDb){
     const {data:{session}}=await supabaseDb.auth.getSession();
-    const result=hours===0
-      ? await supabaseDb.from('khsx_overtime_records').delete().eq('work_date',dmyToIso(day)).eq('team_name',uiUnitToSupabase(team)).eq('stage',stage).eq('worker_id',worker)
-      : await supabaseDb.from('khsx_overtime_records').upsert({work_date:dmyToIso(day),team_name:uiUnitToSupabase(team),stage,worker_id:worker,overtime_hours:hours,confirmed_by:session?.user?.id,updated_at:new Date().toISOString()},{onConflict:'work_date,team_name,stage,worker_id'});
-    if(result.error){st.textContent='Đã giữ OT trên máy; Supabase chưa nhận (cần chạy SQL v118).';st.style.color='var(--warning)';renderProgress();return;}
+    const {error}=await supabaseDb.from('khsx_overtime_records').upsert({work_date:dmyToIso(day),team_name:uiUnitToSupabase(employee.team),stage:employee.stage,worker_id:worker,overtime_hours:hours,confirmed_by:session?.user?.id,updated_at:record.updatedAt},{onConflict:'work_date,team_name,stage,worker_id'});
+    if(error){st.textContent=`Không lưu được OT: ${error.message||error.code}`;st.style.color='var(--danger)';return;}
   }
-  st.textContent=hours?`Đã ghi ${hours===2?'OT 2H':'OT 3H'}.`:'Đã bỏ OT.';st.style.color='var(--success)';renderProgress();
+  overtimeRecords[key]=record;persistOvertime();st.textContent=`Đã lưu ${employee.name} · OT ${hours} giờ.`;st.style.color='var(--success)';renderOvertimePanel();renderProgress();computeAndRenderKpis();
+});
+document.getElementById('overtimeSavedList')?.addEventListener('click',async e=>{
+  const edit=e.target.closest('.edit-overtime-btn');
+  if(edit){document.getElementById('overtimeWorker').value=edit.dataset.worker;document.getElementById('overtimeHours').value=edit.dataset.hours;renderOvertimePanel();return;}
+  const remove=e.target.closest('.remove-overtime-btn');if(!remove||!canManage2())return;
+  const record=overtimeRecords[remove.dataset.key];if(!record||!confirm(`Xóa OT của ${overtimeEmployee(record.worker)?.name||record.worker} ngày ${record.day}?`))return;
+  if(SUPABASE_VARIANT&&supabaseDb){
+    const {error}=await supabaseDb.from('khsx_overtime_records').delete().eq('work_date',dmyToIso(record.day)).eq('team_name',uiUnitToSupabase(record.team)).eq('stage',record.stage).eq('worker_id',record.worker);
+    if(error){const st=document.getElementById('overtimeStatus');st.textContent=`Không xóa được OT: ${error.message||error.code}`;st.style.color='var(--danger)';return;}
+  }
+  delete overtimeRecords[remove.dataset.key];persistOvertime();renderOvertimePanel();renderProgress();computeAndRenderKpis();
 });
 document.querySelector('#progressTable tbody').addEventListener('keydown', (e)=>{
   if(e.target.classList.contains('stage-qty-input') && e.key === 'Enter'){
@@ -7316,8 +7427,10 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
     const refreshSource = forceSourceRefresh || pollCount % SOURCE_REFRESH_EVERY === 1;
     if(refreshSource){
       const jobs=[fetchBaoHanh({silent:true})];
-      // Khi Supabase là nguồn chính, đơn được đọc từ Supabase; bảo hành vẫn đọc riêng từ Sheet.
-      if(!supabasePrimaryActive) jobs.push(fetchAutoPlan(),fetchOrderGroups());
+      // Supabase giữ tiến độ; Quản lý vẫn đối chiếu định kỳ với Sheet và chỉ
+      // chèn ID đơn gốc còn thiếu. QL2/nhân viên không có quyền ghi KHSX.
+      if(supabasePrimaryActive){if(canManage())jobs.push(syncMissingSheetOrdersToSupabase({silent:true}));}
+      else jobs.push(fetchAutoPlan(),fetchOrderGroups());
       await Promise.allSettled(jobs);
     }
     // Chỉ giữ lại đúng ô SỐ LƯỢNG đang gõ dở (nếu có), không dừng đồng bộ nữa.
@@ -9247,6 +9360,9 @@ async function bootstrap(){
     if(coSession && await loadSupabaseOperationalData()){
       supabasePrimaryActive=true;
       document.documentElement.setAttribute('data-primary-source','supabase');
+      const planSync=await syncMissingSheetOrdersToSupabase({silent:true});
+      if(planSync.inserted)await loadSupabaseOperationalData();
+      await fetchBaoHanh({silent:true,force:true});
       await startSupabaseRealtime();
       await flushSupabaseStageOutbox();
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();

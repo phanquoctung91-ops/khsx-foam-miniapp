@@ -12,7 +12,7 @@ const guestSchema=fs.readFileSync(new URL('../supabase/schema/guest_readonly_v11
 const release118=fs.readFileSync(new URL('../supabase/schema/release_v118_business_rules.sql',import.meta.url),'utf8');
 
 const checks=[
-  ['version 121 + cache-busted core',/const APP_VERSION = 121;/.test(html)&&/khsx-data-core\.js\?v=121/.test(html)],
+  ['version 122 + cache-busted core',/const APP_VERSION = 122;/.test(html)&&/khsx-data-core\.js\?v=122/.test(html)],
   ['employee stage workspace',/id="employeeStageWorkspace"/.test(html)&&/function renderEmployeeStageWorkspace\(/.test(html)],
   ['differential progress realtime',/khsx_stage_progress'\},applySupabaseProgressEvent/.test(html)],
   ['credits realtime refresh',/khsx_stage_credits/.test(html)&&/scheduleSupabaseReload/.test(html)],
@@ -72,7 +72,7 @@ const checks=[
   ,['Telegram approval requires a real pending registration',/REGISTRATION_REQUIRED/.test(edgeAccount)&&/khsx_telegram_registrations/.test(edgeAccount)]
   ,['Telegram account lifecycle is explicit',/["']approve["']/.test(edgeAccount)&&/["']update["']/.test(edgeAccount)&&/["']revoke["']/.test(edgeAccount)&&/["']restore["']/.test(edgeAccount)]
   ,['Telegram login reads approved profile directly',/eq\("telegram_user_id", telegramUser\.id\)/.test(edgeLogin)&&/signInWithPassword/.test(edgeLogin)&&!/khsx_telegram_links/.test(edgeLogin)]
-  ,['Quarter speed stops when elapsed source dates are missing',/missingElapsedDates/.test(html)&&/dataComplete/.test(html)&&/Hệ thống dừng tính tốc độ và dự báo quý/.test(html)&&/capacity11h=180/.test(html)]
+  ,['Quarter speed counts registered zero-output days and compares available capacity',/missingElapsedDates/.test(html)&&/được tính đóng gói = 0/.test(html)&&/availableCapacity/.test(html)&&/capacityForOtHours/.test(html)]
   ,['Test mode removed from production UI',!/stageTestMenuBtn|stageTestBtn|stageTestModal|managerStageTestMode/.test(html)]
   ,['Local Supabase requires real session',!/LOCAL_SUPABASE_UI_TEST|LOCAL_DROP_DEMO_MODE|TEST-RỚT-8/.test(html)]
 ];
@@ -83,5 +83,5 @@ for(const [name,ok] of checks){
   if(!ok) failed++;
 }
 if(failed) process.exit(1);
-console.log(`\nUpgrade v121 checks passed (${checks.length}/${checks.length}).`);
+console.log(`\nUpgrade v122 checks passed (${checks.length}/${checks.length}).`);
 
