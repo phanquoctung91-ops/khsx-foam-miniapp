@@ -1560,6 +1560,7 @@ const mainContent = document.getElementById('mainContent');
 
 // ---- module-level state, rebuilt every time month/year changes ----
 let dayKeys = [];
+let elapsedDayKeys = [];
 let dayStageChart, productChart, teamMonthChart, dailyTrendChart;
 let PRODUCT_COLOR_MAP = {};
 
@@ -1701,11 +1702,14 @@ function tongKpiTuRowsTheoKeys(keys){
 }
 
 function computeAndRenderKpis(){
+  // KHSX cần thấy cả kế hoạch tương lai trong tháng, nhưng KPI thực tế chỉ được
+  // tính đến hôm nay. Không dùng dayKeys trực tiếp vì dayKeys còn phục vụ hiển thị.
+  const metricDayKeys = elapsedDayKeys;
   // Ngày thực tế có sản xuất: phải có sản lượng hoàn thành và không tính hàng bảo hành.
   // Không dùng số dòng kế hoạch vì ngày có kế hoạch nhưng chưa làm không phải ngày sản xuất.
   let activeDays=0;
-  dayKeys.forEach(k=>{ if(tongKpiTuRowsTheoKeys([k]).throughput>0) activeDays++; });
-  const tongKpi = tongKpiTuRowsTheoKeys(dayKeys);
+  metricDayKeys.forEach(k=>{ if(tongKpiTuRowsTheoKeys([k]).throughput>0) activeDays++; });
+  const tongKpi = tongKpiTuRowsTheoKeys(metricDayKeys);
   let totalPlan = tongKpi.plan;
   // "Hoàn thành" của mọi tab là Đóng gói thực tế phát sinh trong đúng khoảng
   // ngày đang xem, gồm đơn rớt và đơn phát sinh. Không kéo sản lượng về ngày KH gốc.
@@ -1714,7 +1718,7 @@ function computeAndRenderKpis(){
   const rate = totalPlan>0 ? Math.round((totalDG/totalPlan)*1000)/10 : null;
   const kpiRow = document.getElementById('kpiRow');
   const mauTyLe = rate==null ? 'var(--text2)' : rate>=95 ? 'var(--success)' : rate>=85 ? 'var(--warning)' : rate>=60 ? 'var(--danger)' : '#8a90a0';
-  const tienDoNgay = dayKeys.length ? Math.round(activeDays/dayKeys.length*100) : 0;
+  const tienDoNgay = metricDayKeys.length ? Math.round(activeDays/metricDayKeys.length*100) : 0;
   const quy = tinhTienDoQuyHienTai();
   const mucTieuHtml = quy.mucTieu>0
     ? `Mục tiêu Quý ${quy.quy}/${quy.nam}: <b>${quy.mucTieu.toLocaleString()}</b> · đã đạt <b>${quy.phanTram}%</b>`
@@ -1760,7 +1764,7 @@ function computeAndRenderKpis(){
     </div>
     <div class="kpi k-accent">
       <div class="label">Số ngày có sản xuất</div>
-      <div class="value"><span data-dem="${activeDays}">${activeDays}</span><span style="font-size:15px;color:var(--text2);"> / ${dayKeys.length}</span></div>
+      <div class="value"><span data-dem="${activeDays}">${activeDays}</span><span style="font-size:15px;color:var(--text2);"> / ${metricDayKeys.length}</span></div>
       <div class="kpi-phu">${trungBinhNgayHtml}</div>
       <div class="kpi-thanh"><i style="width:${tienDoNgay}%;background:var(--primary);"></i></div>
     </div>
@@ -1912,8 +1916,13 @@ function populateMonthRangeSelects(){
   const m = parseInt(monthFilterSelect.value,10), y = parseInt(yearFilterSelect.value,10);
   const now = new Date();
   const currentMonth = m===now.getMonth()+1 && y===now.getFullYear();
-  const first = dataDates[0];
   const todayIso = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const elapsedDataDates = currentMonth
+    ? dataDates.filter(iso=>isoDayNumber(iso)<=isoDayNumber(todayIso))
+    : dataDates;
+  // Nếu tháng hiện tại mới chỉ có kế hoạch tương lai, dải KPI vẫn neo tại hôm nay
+  // thay vì tạo khoảng ngày đảo ngược (ví dụ 03/09 -> 02/09).
+  const first = elapsedDataDates[0] || todayIso;
   const last = currentMonth ? todayIso : dataDates[dataDates.length-1];
 
   const startN = isoDayNumber(first), endN = isoDayNumber(last);
@@ -6596,15 +6605,19 @@ function refreshForMonthYear(){
   const m = parseInt(monthFilterSelect.value, 10);
   const y = parseInt(yearFilterSelect.value, 10);
 
-  // Tháng hiện tại: chỉ tính từ ngày 1 tới HÔM NAY (ngày mai chưa làm thì không tính vào tỷ lệ).
-  // Tháng đã qua: lấy trọn tháng.
+  // dayKeys phục vụ điều hướng/hiển thị nên phải chứa cả kế hoạch tương lai.
+  // elapsedDayKeys phục vụ KPI thực tế và dừng tại hôm nay.
   const homNay = new Date();
   const laThangNay = (m === homNay.getMonth()+1 && y === homNay.getFullYear());
   const ngayCuoi = laThangNay ? homNay.getDate() : 31;
 
   dayKeys = allDayKeys.filter(k=>{
     const p = parseDMY(allDays[k].date);
-    return p.m === m && p.y === y && p.d <= ngayCuoi;
+    return p.m === m && p.y === y;
+  });
+  elapsedDayKeys = dayKeys.filter(k=>{
+    const p = parseDMY(allDays[k].date);
+    return !laThangNay || p.d <= ngayCuoi;
   });
 
   if(dayKeys.length === 0){
@@ -6621,7 +6634,7 @@ function refreshForMonthYear(){
     const firstDate = allDays[dayKeys[0]].date;
     const lastDate = allDays[dayKeys[dayKeys.length-1]].date;
     nhan.textContent = laThangNay
-      ? `Dữ liệu từ ${firstDate} · đến ${p(homNay.getDate())}/${p(m)}/${y}`
+      ? `Kế hoạch ${firstDate} → ${lastDate} · KPI thực tế đến ${p(homNay.getDate())}/${p(m)}/${y}`
       : `Dữ liệu từ ${firstDate} đến ${lastDate}`;
   }
 

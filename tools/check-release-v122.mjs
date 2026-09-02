@@ -11,6 +11,9 @@ const checks=[
   ['OT là panel tĩnh và tự suy ra công đoạn từ tổ',(html.match(/id="overtimePanel"/g)||[]).length===1&&/function overtimeStageFromUnit/.test(html)],
   ['OT không còn bắt chọn công đoạn thủ công',!html.includes('id="overtimeStage"')],
   ['Bảng desktop có bề rộng cuộn, không ép chồng cột',/#autoPlanTable\{min-width:1320px[\s\S]{0,100}#progressTable\{min-width:1280px/],
+  ['Tháng hiện tại vẫn hiển thị kế hoạch tương lai',/dayKeys = allDayKeys\.filter\(k=>\{[\s\S]*?return p\.m === m && p\.y === y;[\s\S]*?elapsedDayKeys = dayKeys\.filter/],
+  ['KPI thực tế tách khỏi ngày kế hoạch tương lai',/const metricDayKeys = elapsedDayKeys;[\s\S]*?tongKpiTuRowsTheoKeys\(metricDayKeys\)/],
+  ['Dải KPI không đảo ngày khi chỉ có kế hoạch tương lai',/const elapsedDataDates = currentMonth[\s\S]*?const first = elapsedDataDates\[0\] \|\| todayIso;/],
 ];
 
 let failed=0;
