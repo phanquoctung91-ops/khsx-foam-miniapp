@@ -5904,7 +5904,7 @@ function renderAutoPlan(){
     return true;
   });
   const kesHoachSanXuat = filtered.filter(isPlannedOrder).reduce((a,r)=>a+keHoachTrongNgay(r,dayVal),0);
-  const hoanThanh = filtered.reduce((a,r)=>a+(dayVal==='all'
+  const hoanThanh = filtered.filter(r=>!r.is_warranty).reduce((a,r)=>a+(dayVal==='all'
     ? tongCongDoan(r,'dong_goi')
     : soCongDoan(giaTriCongDoanNgay(r,dayVal,'dong_goi'))),0);
   const rotCount = filtered.filter(r=>getOrderStatus(r)==='rot').length;
@@ -7241,7 +7241,7 @@ function renderProgress(){
   const totalPlan = filtered.filter(isPlannedOrder).reduce((a,r)=>a+keHoachTrongNgay(r,dayVal),0);
   // Chọn một ngày: chỉ cộng Đóng gói phát sinh đúng ngày đó. "Tất cả ngày"
   // mới dùng tổng tích luỹ; nhờ vậy đơn rớt không bị cộng lại sản lượng ngày cũ.
-  const totalDone = filtered.reduce((a,r)=>a+(dayVal === 'all'
+  const totalDone = filtered.filter(r=>!r.is_warranty).reduce((a,r)=>a+(dayVal === 'all'
     ? tongCongDoan(r,'dong_goi')
     : soCongDoan(giaTriCongDoanNgay(r,dayVal,'dong_goi'))),0);
   const doneCount = filtered.filter(r=>getOrderStatus(r)==='hoan_thanh').length;
