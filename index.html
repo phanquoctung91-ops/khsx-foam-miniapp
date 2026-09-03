@@ -3154,7 +3154,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 122;
+const APP_VERSION = 123;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -5533,7 +5533,7 @@ function sheetOrderToSupabase(o){
     id:String(o.id),production_date:dmyToIso(o.date),product_code:String(o.ma||''),product_name:String(o.dong||''),
     width_mm:numberOrNull(o.ngang),length_mm:numberOrNull(o.dai),thickness_mm:numberOrNull(o.day),plan_qty:Math.max(0,Number(o.so_luong)||0),
     note:String(o.ghi_chu||''),order_group:String(o.nhom_don_hang||o.nhom_khsx||''),is_manual:false,is_drop:false,is_ghost:false,is_warranty:false,
-    is_lot:!!o.is_lot,lot_label:String(o.lot_label||''),source_payload:{source:'sheet_live_sync_v122',live_row:o}
+    is_lot:!!o.is_lot,lot_label:String(o.lot_label||''),source_payload:{source:'sheet_live_sync_v123',live_row:o}
   };
 }
 let sheetPlanSyncInFlight=false;
@@ -5547,16 +5547,20 @@ async function syncMissingSheetOrdersToSupabase({silent=false}={}){
     const known=await supabaseSelectAll('khsx_orders','id,deleted_at');
     if(known.error)throw known.error;
     const knownIds=new Set((known.data||[]).map(x=>String(x.id)));
-    const missing=source.rows.filter(o=>!knownIds.has(String(o.id)));
+    // Ngày đã chốt là dữ liệu lịch sử bất biến. Sheet có đổi ID, tách lô hoặc
+    // xuất hiện lại một dòng đã xóa thì cũng không được tự chèn vào Supabase.
+    // Muốn nhận thay đổi, Quản lý phải mở khóa ngày, tải lại và chốt lại.
+    const unlockedSourceRows=source.rows.filter(o=>!isPlanLocked(o.date));
+    const missing=unlockedSourceRows.filter(o=>!knownIds.has(String(o.id)));
     if(!missing.length){
-      if(!silent)supabaseStatus(`Sheet đã khớp Supabase · ${source.rows.length} đơn nguồn`,true);
-      return {ok:true,inserted:0,total:source.rows.length,source};
+      if(!silent)supabaseStatus(`Sheet đã khớp Supabase · ${unlockedSourceRows.length} đơn ngày chưa chốt`,true);
+      return {ok:true,inserted:0,total:unlockedSourceRows.length,source};
     }
     const payload=missing.map(sheetOrderToSupabase).filter(x=>x.production_date);
     const {error}=await supabaseDb.from('khsx_orders').upsert(payload,{onConflict:'id',ignoreDuplicates:true});
     if(error)throw error;
     supabaseStatus(`Đã bổ sung ${payload.length} đơn mới từ Sheet; không ghi đè đơn cũ`,true);
-    return {ok:true,inserted:payload.length,total:source.rows.length,source};
+    return {ok:true,inserted:payload.length,total:unlockedSourceRows.length,source};
   }catch(error){
     console.warn('Không đồng bộ được đơn mới từ Sheet sang Supabase',error);
     if(!silent)supabaseStatus(`Chưa đồng bộ được KHSX từ Sheet: ${error.message||error.code||'lỗi không xác định'}`,false);
