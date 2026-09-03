@@ -46,9 +46,10 @@ const {chromium}=require('playwright');
     cards:document.querySelectorAll('#employeeOrderList .employee-order-card').length,
     inputs:document.querySelectorAll('#employeeOrderList .stage-qty-input').length,
     table:getComputedStyle(document.getElementById('progressTable')).display,
-    overflow:document.documentElement.scrollWidth-window.innerWidth
+    overflow:document.documentElement.scrollWidth-window.innerWidth,
+    progressPanel:document.getElementById('panel-progress').classList.contains('active')
   }));
-  if(employee.workspace==='none'||employee.cards!==1||employee.inputs!==1||employee.table!=='none'||employee.overflow>2)
+  if(employee.workspace==='none'||employee.cards!==1||employee.inputs!==1||employee.table!=='none'||employee.overflow>2||!employee.progressPanel)
     throw new Error(`Employee mobile failed: ${JSON.stringify(employee)}`);
   console.log('PASS  employee mobile one-screen workspace');
   if(process.env.KHSX_EMPLOYEE_SCREENSHOT) await page.screenshot({path:process.env.KHSX_EMPLOYEE_SCREENSHOT,fullPage:true});
@@ -67,6 +68,27 @@ const {chromium}=require('playwright');
   if(manager.workspace!=='none'||manager.table==='none'||manager.hasTestButton||manager.supportAfterZero!==1)
     throw new Error(`Manager mobile failed: ${JSON.stringify(manager)}`);
   console.log('PASS  manager mobile + Dán 0 support assignment');
+
+  const managerPreview=await page.evaluate(()=>{
+    managerStagePreview={stage:'dan',unit:'Tổ 1'};
+    applyRoleUI();renderProgress();
+    // Mô phỏng lượt đồng bộ phiên gọi lại applyRoleUI.
+    applyRoleUI();renderProgress();
+    const state={
+      role:currentUser.role,
+      preview:managerStagePreview?.stage,
+      workspace:getComputedStyle(document.getElementById('employeeStageWorkspace')).display,
+      progressPanel:document.getElementById('panel-progress').classList.contains('active'),
+      exit:getComputedStyle(document.getElementById('exitManagerStageBtn')).display,
+      input:document.querySelectorAll('#employeeOrderList .stage-qty-input').length
+    };
+    managerStagePreview=null;applyRoleUI();renderProgress();
+    state.closed=getComputedStyle(document.getElementById('employeeStageWorkspace')).display==='none'&&getComputedStyle(document.getElementById('exitManagerStageBtn')).display==='none';
+    return state;
+  });
+  if(managerPreview.role!=='quan_ly'||managerPreview.preview!=='dan'||managerPreview.workspace==='none'||!managerPreview.progressPanel||managerPreview.exit==='none'||managerPreview.input!==1||!managerPreview.closed)
+    throw new Error(`Manager stage preview stability failed: ${JSON.stringify(managerPreview)}`);
+  console.log('PASS  manager stage preview survives session refresh and exits cleanly');
 
   const approval=await page.evaluate(()=>{
     supabaseAdminProfiles=[
@@ -124,13 +146,25 @@ const {chromium}=require('playwright');
   const overtime=await page.evaluate(()=>{
     progressDaySelect.value='27/08/2026';
     document.getElementById('overtimeBtn').click();
-    const select=document.getElementById('overtimeWorker');
-    select.value='employee-auth';select.dispatchEvent(new Event('change',{bubbles:true}));
-    return {open:document.getElementById('overtimePanel').classList.contains('is-open'),derived:document.getElementById('overtimeDerived').textContent,stageSelect:!!document.getElementById('overtimeStage')};
+    const check=[...document.querySelectorAll('#overtimeWorkers input[type="checkbox"]')].find(x=>x.value==='employee-auth');
+    if(check)check.checked=true;
+    return {open:document.getElementById('overtimePanel').classList.contains('is-open'),label:check?.closest('label')?.textContent||'',checked:!!check?.checked,stageSelect:!!document.getElementById('overtimeStage')};
   });
-  if(!overtime.open||!overtime.derived.includes('Tổ 1')||!overtime.derived.includes('Dán')||overtime.stageSelect)
+  if(!overtime.open||!overtime.checked||!overtime.label.includes('Tổ 1')||!overtime.label.includes('Dán')||overtime.stageSelect)
     throw new Error(`Overtime simple flow failed: ${JSON.stringify(overtime)}`);
-  console.log('PASS  OT derives team/stage from active employee account');
+  console.log('PASS  OT uses employee ticks and derives team/stage from account');
+
+  const liveWarranty=await page.evaluate(async()=>{
+    await fetchBaoHanh({force:true,silent:true});
+    return {
+      d27:Number(baoHanhTheoNgay['27/08/2026']?.tong)||0,
+      d28:Number(baoHanhTheoNgay['28/08/2026']?.tong)||0,
+      aug:Object.entries(baoHanhTheoNgay).filter(([day])=>day.endsWith('/08/2026')).reduce((sum,[,value])=>sum+(Number(value?.tong)||0),0)
+    };
+  });
+  if(liveWarranty.d27!==29||liveWarranty.d28!==23||liveWarranty.aug!==122)
+    throw new Error(`Live warranty refresh failed: ${JSON.stringify(liveWarranty)}`);
+  console.log('PASS  warranty loads 27-28/08 and August total 122');
 
   const monthScope=await page.evaluate(()=>{
     supabaseOrdersLoaded=false;
@@ -152,14 +186,45 @@ const {chromium}=require('playwright');
       khsxRows:[...document.querySelectorAll('#autoPlanTable tbody tr')].map(x=>x.textContent),
       tdsxRows:[...document.querySelectorAll('#progressTable tbody tr')].map(x=>x.textContent)
     });
-    monthFilterSelect.value='8';renderAutoPlanDaySelect();renderAutoPlan();renderProgress();const aug=read();
-    monthFilterSelect.value='9';renderAutoPlanDaySelect();renderAutoPlan();renderProgress();const sep=read();
+    monthFilterSelect.value='8';onHeaderMonthYearChanged();const aug=read();aug.khsxSelected=autoPlanDaySelect.value;aug.tdsxSelected=progressDaySelect.value;
+    monthFilterSelect.value='9';onHeaderMonthYearChanged();const sep=read();sep.khsxSelected=autoPlanDaySelect.value;sep.tdsxSelected=progressDaySelect.value;
     return {aug,sep};
   });
   const onlyMonth=(values,month)=>values.length>0&&values.every(x=>x.includes(`/${month}/2026`));
-  if(!onlyMonth(monthScope.aug.khsxDays,'08')||!onlyMonth(monthScope.aug.tdsxDays,'08')||monthScope.aug.khsxRows.some(x=>x.includes('SEP'))||monthScope.aug.tdsxRows.some(x=>x.includes('SEP'))||!onlyMonth(monthScope.sep.khsxDays,'09')||!onlyMonth(monthScope.sep.tdsxDays,'09')||monthScope.sep.khsxRows.some(x=>x.includes('AUG'))||monthScope.sep.tdsxRows.some(x=>x.includes('AUG')))
+  if(!onlyMonth(monthScope.aug.khsxDays,'08')||!onlyMonth(monthScope.aug.tdsxDays,'08')||monthScope.aug.khsxRows.some(x=>x.includes('SEP'))||monthScope.aug.tdsxRows.some(x=>x.includes('SEP'))||monthScope.aug.khsxSelected!=='31/08/2026'||monthScope.aug.tdsxSelected!=='31/08/2026'||!onlyMonth(monthScope.sep.khsxDays,'09')||!onlyMonth(monthScope.sep.tdsxDays,'09')||monthScope.sep.khsxRows.some(x=>x.includes('AUG'))||monthScope.sep.tdsxRows.some(x=>x.includes('AUG'))||monthScope.sep.khsxSelected!=='03/09/2026'||monthScope.sep.tdsxSelected!=='03/09/2026')
     throw new Error(`Header month scope failed: ${JSON.stringify(monthScope)}`);
   console.log('PASS  header month keeps KHSX and TDSX dates isolated');
+
+  const operationalUi=await page.evaluate(()=>{
+    currentUser={code:'ui-manager',name:'Quản lý',role:'quan_ly',unit:'',auth_user_id:'manager-auth'};
+    sheetRows=[
+      {id:'normal-order',date:'03/09/2026',ma:'NORMAL',dong:'Sora',ngang:'160',dai:'200',day:'10',so_luong:15},
+      {id:'priority-order',date:'03/09/2026',ma:'PRIORITY',dong:'Premium',ngang:'160',dai:'200',day:'10',so_luong:15}
+    ];
+    dynamicOrders=[];
+    assignments={
+      'normal-order':{to:'Tổ 1',stage_by_date:{},support_by_date:{},priority:false},
+      'priority-order':{to:'Tổ 1',stage_by_date:{},support_by_date:{},priority:true}
+    };
+    supabaseOrdersLoaded=false;rebuildOrderEntityStore();
+    monthFilterSelect.value='9';renderAutoPlanDaySelect();autoPlanDaySelect.value='03/09/2026';renderAutoPlan();
+    progressDaySelect.value='03/09/2026';renderProgress();
+    managerStagePreview={stage:'dan',unit:'Tổ 1'};applyRoleUI();renderProgress();
+    const first=document.querySelector('#employeeOrderList .employee-order-card');
+    const result={
+      first:first?.dataset.orderId,
+      priority:first?.classList.contains('is-priority'),
+      flag:first?.querySelector('.employee-priority-flag')?.textContent,
+      deleteText:document.querySelector('#autoPlanTable .trash-btn')?.textContent,
+      quickText:document.querySelector('#progressTable .complete-row-btn')?.textContent,
+      status:tenTrangThaiDon('dang_san_xuat')
+    };
+    managerStagePreview=null;applyRoleUI();
+    return result;
+  });
+  if(operationalUi.first!=='priority-order'||!operationalUi.priority||operationalUi.flag!=='ƯU TIÊN GẤP'||operationalUi.deleteText!=='Xóa'||operationalUi.quickText!=='Xong'||operationalUi.status!=='Đang sản xuất')
+    throw new Error(`Operational UI regression failed: ${JSON.stringify(operationalUi)}`);
+  console.log('PASS  priority, delete, quick-complete and Vietnamese status UI');
 
   const regressions=await page.evaluate(()=>{
     currentUser={code:'ui-manager',name:'Quản lý',role:'quan_ly',unit:'',auth_user_id:'manager-auth'};

@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="js/khsx-data-core.js?v=122"></script>
+<script src="js/khsx-data-core.js?v=124"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   :root{
@@ -170,18 +170,14 @@
   #autoPlanTable .col-code, #progressTable .col-code{width:80px;text-align:center;white-space:normal;overflow-wrap:break-word;}
   #autoPlanTable .col-product, #progressTable .col-product{width:74px;text-align:center;white-space:normal;}
   #autoPlanTable .col-size, #progressTable .col-size{width:76px;text-align:center;white-space:normal;}
-  #autoPlanTable .col-number, #progressTable .col-number{width:64px;min-width:0;max-width:none;text-align:center;}
+  #autoPlanTable .col-number, #progressTable .col-number{width:80px;min-width:0;max-width:none;text-align:center;}
   #progressTable .col-number[data-stage-col]{width:104px;}
   #autoPlanTable .col-group{width:104px;text-align:center;white-space:normal;}
-  #autoPlanTable .col-team, #progressTable .col-team{width:92px;min-width:0;max-width:none;text-align:center;white-space:normal;}
-  #progressTable .col-team{width:112px;}
-  #autoPlanTable .col-support, #progressTable .col-support{width:88px;min-width:0;max-width:none;text-align:center;white-space:normal;}
-  #progressTable .col-support{width:104px;}
+  #autoPlanTable .col-team, #progressTable .col-team{width:104px;min-width:0;max-width:none;text-align:center;white-space:normal;}
+  #autoPlanTable .col-support, #progressTable .col-support{width:104px;min-width:0;max-width:none;text-align:center;white-space:normal;}
   #autoPlanTable .col-progress{width:168px;text-align:center;white-space:normal;}
-  #autoPlanTable .col-status{width:180px;white-space:normal;overflow-wrap:break-word;}
-  #progressTable .col-status{width:250px;white-space:normal;overflow-wrap:break-word;}
-  #autoPlanTable .col-action{width:78px;min-width:0;text-align:center;white-space:normal;}
-  #progressTable .col-action{width:128px;min-width:0;text-align:center;white-space:normal;}
+  #autoPlanTable .col-status, #progressTable .col-status{width:210px;white-space:normal;overflow-wrap:break-word;}
+  #autoPlanTable .col-action, #progressTable .col-action{width:88px;min-width:0;text-align:center;white-space:normal;}
   #progressTable .col-action button,#progressTable .col-status button{max-width:100%;white-space:normal;line-height:1.2;}
   #autoPlanTable th:last-child,#autoPlanTable td:last-child{width:78px;white-space:normal;overflow-wrap:anywhere;}
   #autoPlanTable .col-date, #progressTable .col-date{padding-left:5px;padding-right:5px;text-align:center;}
@@ -206,6 +202,10 @@
   .overtime-list{margin-top:12px;display:grid;gap:7px;}
   .overtime-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) 82px auto;gap:10px;align-items:center;padding:9px 10px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:12px;}
   .overtime-empty{padding:10px;color:var(--text2);font-size:12px;text-align:center;}
+  .overtime-worker-checks{max-height:210px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:7px;padding:8px;border:1px solid var(--border);border-radius:9px;background:var(--card);}
+  .overtime-worker-check{display:flex;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;font-size:12px;}
+  .overtime-worker-check input{width:17px;height:17px;accent-color:var(--warning);}
+  .overtime-worker-check small{display:block;color:var(--text2);margin-top:2px;}
 
   .note{color:var(--danger);font-style:italic;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
@@ -313,6 +313,9 @@
   tr.row-uutien td:first-child{box-shadow:inset 5px 0 0 #d9a300;}
   .badge-uutien{background:#d9a300;color:#fff;border:1px solid #b98a00;}
   input.uutien-tick{width:17px;height:17px;cursor:pointer;accent-color:#d9a300;}
+  @keyframes prioritySlowPulse{0%,100%{box-shadow:0 0 0 1px rgba(217,163,0,.35),0 3px 10px rgba(25,55,90,.07)}50%{box-shadow:0 0 0 4px rgba(217,163,0,.7),0 0 22px rgba(255,193,7,.45)}}
+  .employee-order-card.is-priority{border:2px solid #d9a300;background:#fff8dc;animation:prioritySlowPulse 2.4s ease-in-out infinite;}
+  .employee-priority-flag{display:inline-block;margin-bottom:4px;padding:3px 8px;border-radius:999px;background:#d9a300;color:#fff;font-size:10px;font-weight:900;letter-spacing:.03em;}
 
   /* Dòng vừa bị sheet công ty sửa lại */
   tr.row-changed td{background:#fdf4e3;border-bottom:1px solid #f0dcae;}
@@ -1087,7 +1090,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     </div>
   </div>
 </div>
-<button id="exitManagerStageBtn" type="button" style="display:none;position:fixed;right:14px;bottom:14px;z-index:9400;padding:10px 14px;border:0;border-radius:10px;background:#b42318;color:#fff;font-weight:800;box-shadow:0 5px 18px rgba(0,0,0,.3);">Thoát giao diện công đoạn</button>
+<button id="exitManagerStageBtn" type="button" style="display:none;position:fixed;right:12px;top:72px;z-index:9400;padding:8px 11px;border:0;border-radius:9px;background:#b42318;color:#fff;font-weight:800;box-shadow:0 5px 18px rgba(0,0,0,.3);">Thoát công đoạn</button>
 
 <div class="wrap">
 
@@ -1227,7 +1230,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div class="table-scroll">
       <table id="autoPlanTable">
         <thead>
-          <tr><th class="col-date">Ngày</th><th class="col-code">Mã</th><th class="col-product">Dòng</th><th class="col-size">Kích thước</th><th class="col-number">Kế hoạch</th><th class="col-group">Nhóm đơn hàng</th><th class="col-team">Tổ phụ trách</th><th class="col-support">Tổ hỗ trợ</th><th class="col-progress">Tiến độ</th><th class="col-status">Trạng thái</th><th class="col-action only-manager" title="Ưu tiên kế hoạch tuần">Ưu tiên</th><th class="col-action only-manager">Hủy/Tách</th></tr>
+          <tr><th class="col-date">Ngày</th><th class="col-code">Mã</th><th class="col-product">Dòng</th><th class="col-size">Kích thước</th><th class="col-number">Kế hoạch</th><th class="col-group">Nhóm đơn hàng</th><th class="col-team">Tổ phụ trách</th><th class="col-support">Tổ hỗ trợ</th><th class="col-progress">Tiến độ</th><th class="col-status">Trạng thái</th><th class="col-action only-manager" title="Ưu tiên kế hoạch tuần">Ưu tiên</th><th class="col-action only-manager">Xóa</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -1296,11 +1299,10 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <details id="dataIntegrityAlert" class="data-integrity-alert only-manager2"><summary></summary><div class="data-integrity-list"></div></details>
     <div id="overtimePanel" class="overtime-panel only-manager2" aria-hidden="true">
       <div style="font-weight:800;margin-bottom:4px;">Tăng ca của ngày đang chọn</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Chọn nhân viên đang hoạt động. Hệ thống tự lấy tổ và công đoạn từ tài khoản; OT chỉ chuẩn hóa năng suất và năng lực, không đổi Tốc độ quý thực tế.</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Tick nhân viên tăng ca. Tổ và công đoạn lấy đúng từ tài khoản; mỗi người được lưu riêng để tính chi phí sau này.</div>
       <div class="overtime-form">
-        <div class="overtime-field"><label>Nhân viên</label><select id="overtimeWorker"><option value="">Chọn nhân viên...</option></select></div>
-        <div class="overtime-field"><label>Tổ / công đoạn</label><div id="overtimeDerived" class="overtime-derived">Chọn nhân viên để xem.</div></div>
-        <div class="overtime-field"><label>Thời gian</label><select id="overtimeHours"><option value="2">OT 2 giờ · năng lực 170</option><option value="3">OT 3 giờ · năng lực 180</option></select></div>
+        <div class="overtime-field" style="grid-column:span 2"><label>Nhân viên</label><div id="overtimeWorkers" class="overtime-worker-checks"></div></div>
+        <div class="overtime-field"><label>Thời gian</label><select id="overtimeHours"><option value="4">OT 4 giờ</option><option value="8">OT 8 giờ</option></select></div>
         <button id="saveOvertimeBtn" type="button" class="primary-btn">Lưu OT</button>
       </div>
       <div id="overtimeStatus" class="save-status" style="display:block;margin-top:8px;"></div>
@@ -1816,7 +1818,7 @@ function computeAndRenderKpis(){
   const baoCaoKr=taoCauBaoCaoKrTuan(namHeader,thangHeader);
   speedDetailStore.quarter = tocDoQuy;
   const tocDoQuyHtml = tocDoQuy.mucTieu>0
-    ? `<div class="kpi-phu">Mục tiêu/ngày <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b> · thực tế quý <b>${formatTocDo(tocDoQuy.thucTe)}</b> tấm/ngày</div><div class="kpi-phu">Đã tính đủ <b>${tocDoQuy.elapsedWorkdays}</b> ngày đã qua, kể cả ngày 0 · dự báo <b>${Math.round(tocDoQuy.duBao||0).toLocaleString('vi-VN')}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;line-height:1.4;">${tocDoQuy.danhGia}</div><span class="speed-kpi-hint">Bấm để kiểm chứng nguồn và công thức</span>`
+    ? `<div class="kpi-phu">Mục tiêu <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b>/ngày · ${tocDoQuy.chenhlech>=0?'nhanh hơn':'chậm hơn'} <b>${formatTocDo(Math.abs(tocDoQuy.chenhlech||0))}</b>/ngày</div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;">Dự báo cuối quý: ${Math.round(tocDoQuy.duBao||0).toLocaleString('vi-VN')} tấm</div><span class="speed-kpi-hint">Bấm xem cách tính</span>`
     : '<div class="kpi-phu">Chưa nhập mục tiêu quý để tính tốc độ.</div>';
 
   kpiRow.innerHTML = `
@@ -2199,7 +2201,7 @@ function openProductDetail(productName,keys){
   const rows=getOrders().filter(o=>dates.has(o.date)&&isPlannedOrder(o)&&normalizeProductName(o.dong)===normalizeProductName(productName)).map(o=>({
     date:o.date,code:o.ma||'—',size:`${o.ngang}x${o.dai}x${o.day}`,plan:Number(o.so_luong)||0,
     dan:tongCongDoan(o,'dan'),may:tongCongDoan(o,'may'),done:tongCongDoan(o,'dong_goi'),
-    team:assignments[o.id]?.to||'—',status:getOrderStatus(o),note:o.ghi_chu||''
+    team:assignments[o.id]?.to||'—',status:tenTrangThaiDon(getOrderStatus(o)),note:o.ghi_chu||''
   }));
   const plan=rows.reduce((s,r)=>s+r.plan,0),done=rows.reduce((s,r)=>s+Math.min(r.done,r.plan),0);
   document.getElementById('productDetailTitle').textContent=`${productName} · KH ${plan.toLocaleString()} · ĐG ${done.toLocaleString()}`;
@@ -2251,6 +2253,7 @@ function sortOrdersForDisplay(rows, prioritizeDate=false){
   };
   return rows.slice().sort((a,b)=>
     (pendingSheetChanges[b.id]?1:0)-(pendingSheetChanges[a.id]?1:0)
+    || Number(laUuTien(b.id))-Number(laUuTien(a.id))
     || (prioritizeDate ? dateKey(a) - dateKey(b) : 0)    // nhiều ngày: ngày cũ -> ngày mới
     || (b.is_ghost ? 1 : 0) - (a.is_ghost ? 1 : 0)   // trong từng ngày vẫn giữ rule cũ
     || teamKey(a) - teamKey(b)
@@ -2587,6 +2590,7 @@ async function saveQuarterTarget(nam, quy, soLuong,workDates=null){
 }
 // Đơn vị của người đang đăng nhập: Tổ 1–5, Tổ may, Tổ đóng gói; hoặc null nếu không gắn.
 function toCuaToi(){
+  if(managerStagePreview?.unit) return managerStagePreview.unit;
   if(currentUser && currentUser.role !== 'nhan_vien') return null;
   if(currentUser && currentUser.unit) return currentUser.unit;
   if(!currentUser || !currentUser.code) return null;
@@ -2616,6 +2620,7 @@ function laToSanXuatCuaToi(){
 // Nhân viên Tổ 1–5 chỉ nhập Dán; hai bộ phận sau chỉ nhập đúng công đoạn của mình.
 // Quản lý và Quản lý 2 vẫn giữ quyền nhập đủ ba công đoạn như trước.
 function congDoanNhanVienDuocNhap(){
+  if(managerStagePreview?.stage) return managerStagePreview.stage;
   if(!currentUser || currentUser.role !== 'nhan_vien') return null;
   if(laToSanXuatCuaToi()) return 'dan';
   return congDoanBoPhanCuaToi();
@@ -2653,7 +2658,7 @@ function toDuocHoTro(o){
   return goc ? (assignments[goc.id]?.to || null) : null;
 }
 let priorityOrderIds = [];
-function laUuTien(id){ return priorityOrderIds.indexOf(id) !== -1; }
+function laUuTien(id){ return priorityOrderIds.indexOf(id) !== -1 || !!assignments[id]?.priority; }
 const LOCKED_PLAN_KEY = 'khsx_locked_plan_dates';
 const LOCKED_PROGRESS_KEY = 'khsx_locked_progress_dates';
 const SNAPSHOT_KEY_PREFIX = 'khsx_snap_'; // + dd-mm-yyyy — ảnh chụp danh sách đơn của ngày đã chốt
@@ -2929,6 +2934,9 @@ function getOrderStatus(o){
   if(!daBatDau) return late ? 'rot' : 'dang_san_xuat';
   return late ? 'rot' : 'dang_san_xuat';
 }
+function tenTrangThaiDon(status){
+  return ({moi:'Mới',dang_san_xuat:'Đang sản xuất',partial:'Hoàn thành một phần',rot:'Đơn hàng rớt',hoan_thanh:'Hoàn thành'})[status] || 'Chưa xác định';
+}
 
 // Human-readable note on which team is now handling the spun-off remainder of a split order
 function describeSpinoff(o){
@@ -3154,7 +3162,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 123;
+const APP_VERSION = 124;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3279,6 +3287,9 @@ let supabaseStageCredits = [];
 let supabaseWorkerTeamById = {};
 let supabaseAdminProfiles = [];
 let supabaseAdminTelegramRequests = [];
+// Chế độ công đoạn tạm của Quản lý chỉ là trạng thái giao diện. Không sửa
+// currentUser, vì lượt kiểm tra phiên sẽ nạp lại hồ sơ thật và làm văng màn hình.
+let managerStagePreview = null;
 // Giữ phân tổ vừa được máy chủ xác nhận trong một cửa sổ ngắn để Realtime/polling
 // không thể kéo bản đọc cũ về đè lên giao diện ngay sau khi quản lý lưu.
 const SUPABASE_TEAM_GUARD_KEY='khsx_supabase_worker_team_guard_v1';
@@ -3404,6 +3415,8 @@ function applyRoleUI(){
   document.body.classList.remove('stage-view-dan','stage-view-may','stage-view-dong-goi');
   const congDoanNhanVien = congDoanNhanVienDuocNhap();
   if(congDoanNhanVien) document.body.classList.add('stage-view-' + congDoanNhanVien.replace(/_/g,'-'));
+  const exitStageBtn=document.getElementById('exitManagerStageBtn');
+  if(exitStageBtn) exitStageBtn.style.display=managerStagePreview?'block':'none';
   // Tài khoản gắn tổ: khoá cứng bộ lọc Tổ và ẩn đi, vì chỉ xem được một tổ
   const toMinh = toCuaToi();
   const oLocTo = document.getElementById('progressTeamSelect');
@@ -3440,6 +3453,12 @@ function applyRoleUI(){
     const panel = document.getElementById('panel-' + visible[0].dataset.tab);
     if(panel) panel.classList.add('active');
   }
+  // Tài khoản công đoạn phải vào thẳng TDSX. Nếu giữ tab cũ active trong khi
+  // thanh tab bị ẩn trên điện thoại, đăng nhập đúng nhưng màn hình việc không hiện.
+  if(congDoanNhanVien){
+    tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab==='progress'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-progress'));
+  }
   // Người chỉ xem không được bật chế độ sửa đổi
   if(!canManage() && editUnlocked){
     editUnlocked = false;
@@ -3463,6 +3482,7 @@ function forceLogout(msg){
   if(typeof stopSupabaseRealtime==='function') stopSupabaseRealtime();
   if(SUPABASE_VARIANT&&supabaseDb) supabaseDb.auth.signOut({scope:'local'}).catch(()=>{});
   clearLoginSession();
+  managerStagePreview = null;
   currentUser = null;
   applyRoleUI();
   const ov = document.getElementById('loginOverlay');
@@ -5418,11 +5438,11 @@ function dongNhanSuTuGviz(data){
   if(col.ten<0||col.kich_thuoc<0||col.so_luong<0) return [];
   return table.rows.map(r=>{ const c=(r&&r.c)||[],lay=i=>i>=0?giaTriOgviz(c[i]):''; return {to:chuanToBaoHanh(lay(col.to)),ten:String(lay(col.ten)||'').trim(),kich_thuoc:String(lay(col.kich_thuoc)||'').trim(),so_luong:soCongDoan(lay(col.so_luong)),bh_may_ten:String(lay(col.may)||'').trim(),bh_dong_goi_ten:String(lay(col.dong_goi)||'').trim()}; }).filter(x=>x.so_luong>0&&normHeaderText(x.ten)!=='tong');
 }
-async function taiNhanSuBaoHanhTuSheet(ngay){
+async function taiNhanSuBaoHanhTuSheet(ngay,timeoutMs=15000){
   const p=String(ngay||'').split('/'); if(p.length!==3)return [];
   const tab=`BC BẢO HÀNH MÚT ${p[0]}${p[1]}${p[2].slice(-2)}`;
   // Không khóa cứng số dòng: các tab bảo hành có thể vượt 1.000 dòng.
-  return dongNhanSuTuGviz(await gvizJsonpRequest(`https://docs.google.com/spreadsheets/d/${WARRANTY_SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tab)}&range=A7:ZZ&_cb=${Date.now()}`));
+  return dongNhanSuTuGviz(await gvizJsonpRequest(`https://docs.google.com/spreadsheets/d/${WARRANTY_SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tab)}&range=A7:ZZ&_cb=${Date.now()}`,timeoutMs));
 }
 function tenNhanSuBaoHanh(x,congDoan){
   const fields=congDoan==='may'?['bh_may_ten','may_tay','may','nguoi_may','may_by_name']:['bh_dong_goi_ten','dong_goi','donggoi','nguoi_dong_goi','dong_goi_by_name'];
@@ -5451,8 +5471,12 @@ async function fetchBaoHanh({silent=false,force=false}={}){
   const homNay=formatDMY(new Date()),canQuet=warrantyDaQuetNgay!==homNay;
   if(canQuet) warrantyDaQuetNgay=homNay;
   try{
-    const d = await jsonpRequest(`${SHEET_READER_URL}?action=baohanh&_cb=${Date.now()}`);
+    let d;
+    try{d=await jsonpRequest(`${SHEET_READER_URL}?action=baohanh&_cb=${Date.now()}`);}
+    catch(e){d={ok:true,ngay:{...baoHanhTheoNgay}};}
     if(d && d.ok && d.ngay && typeof d.ngay === 'object'){
+      // Apps Script là nguồn danh sách tab chuẩn. Không tự quét ngày không tồn tại:
+      // Google GViz sẽ âm thầm trả tab đầu tiên và làm cộng trùng số bảo hành.
       const offlinePayload=offlineWarrantyActive?JSON.stringify(baoHanhTheoNgay):null;
       warrantyPayloadCoverage={
         today:Object.prototype.hasOwnProperty.call(d.ngay,homNay),
@@ -5832,8 +5856,8 @@ function renderAutoPlanDaySelect(){
   sel.innerHTML = '<option value="all">Tất cả ngày</option>' + dates.map(d=>`<option value="${d}">Ngày ${d}</option>`).join('');
   // Lần đầu vào: mặc định chọn NGÀY HÔM NAY nếu có dữ liệu; sau đó tôn trọng lựa chọn của người dùng.
   const today = formatDMY(new Date());
-  if(!sel.dataset.dayInitialized && dates.includes(today)){
-    sel.value = today;
+  if(!sel.dataset.dayInitialized && dates.length){
+    sel.value = dates.includes(today) ? today : dates[dates.length-1];
     sel.dataset.dayInitialized = '1';
   } else {
     sel.value = dates.includes(prev) ? prev : 'all';
@@ -5865,6 +5889,9 @@ function renderAutoPlan(){
   const q = document.getElementById('autoPlanSearchBox').value.trim().toLowerCase();
   const assignFilter = document.getElementById('autoPlanAssignFilter').value;
   const filtered = getOrders().filter(r=>{
+    // Header tháng/năm là ranh giới cứng theo ngày gốc của đơn. Đơn rớt có thể
+    // chuyển ngày trong cùng tháng, nhưng không được làm lẫn dữ liệu hai tháng.
+    if(!ngayThuocThangHeader(r.date)) return false;
     if(dayVal === 'all' && !ngayThuocThangHeader(r.date)) return false;
     if(dayVal !== 'all' && !getCarryForwardDates(r).includes(dayVal)) return false;
     if(q && !r.dong.toLowerCase().includes(q) && !r.ma.toLowerCase().includes(q) && !formatKichThuoc(r).toLowerCase().includes(q)) return false;
@@ -5946,8 +5973,8 @@ function renderAutoPlan(){
         : `${statusBadgeHtml(r)}${daysLate>0?` <span class="badge badge-rot">Trễ ${daysLate} ngày</span>`:''}${nhanUuTien(r)}${r.ghi_chu?`<br><span class="note" style="font-size:11px;">${r.ghi_chu}</span>`:''}${changeNoteHtml(r)}`}</td>
       <td class="col-action only-manager">${r.is_warranty ? '' : `<input type="checkbox" class="uutien-tick" data-order-id="${r.id}" ${laUuTien(r.id)?'checked':''} title="Ưu tiên kế hoạch tuần">`}</td>
       <td class="col-action only-manager">${pendingSheetChanges[r.id]
-        ? `<button class="source-action-btn" data-source-change-id="${r.id}">${coTienDoDon(pendingSheetChanges[r.id].old)?'Tách/Xác nhận':'Xác nhận'}</button>`
-        : `<button class="trash-btn" data-order-id="${r.id}" title="${coTienDoDon(r)?'Tách tiến độ rồi hủy đơn':'Hủy đơn'}">${coTienDoDon(r)?'Tách':'Hủy'}</button>`}</td>
+        ? `<button class="source-action-btn" data-source-change-id="${r.id}">${coTienDoDon(pendingSheetChanges[r.id].old)?'Tách rồi xác nhận':'Xác nhận'}</button>`
+        : `<button class="trash-btn" data-order-id="${r.id}" title="${coTienDoDon(r)?'Tách tiến độ rồi xóa đơn':'Xóa đơn'}">Xóa</button>`}</td>
     </tr>`;
   }).join('');
 }
@@ -5958,7 +5985,7 @@ function parseDMYForDate(dmy){
 }
 
 document.getElementById('autoPlanRefreshBtn').addEventListener('click', async ()=>{
-  await Promise.all([fetchAutoPlan(), fetchOrderGroups(), fetchBaoHanh()]);
+  await Promise.all([fetchAutoPlan(), fetchOrderGroups(), fetchBaoHanh({force:true})]);
   renderAutoPlan();
 });
 document.getElementById('autoPlanTable').addEventListener('click',e=>{
@@ -6464,9 +6491,12 @@ document.querySelector('#autoPlanTable tbody').addEventListener('change', async 
   }else{
     priorityOrderIds = priorityOrderIds.filter(x=>x !== id);
   }
+  const a=assignments[id]||(assignments[id]={stage_by_date:{},support_by_date:{}});
+  a.priority=box.checked;
   renderAutoPlan();
   renderProgress();
-  queueSave('priority');
+  if(SUPABASE_VARIANT) queueSupabaseManagementPatch('owner',getOrderById(id));
+  else queueSave('priority','assignments');
 });
 
 // ---- Xác nhận thay đổi nguồn / hủy mềm đơn ----
@@ -6752,6 +6782,12 @@ function refreshOperationalTabsForHeader(){
 }
 function onHeaderMonthYearChanged(){
   userChoseMonth=true;
+  const autoDay=document.getElementById('autoPlanDaySelect');
+  if(autoDay){delete autoDay.dataset.dayInitialized;autoDay.value='';}
+  delete progressDaySelect.dataset.dayInitialized;
+  progressDaySelect.value='';
+  monthFromSelect.value='';
+  monthToSelect.value='';
   refreshForMonthYear();
   refreshOperationalTabsForHeader();
 }
@@ -6852,8 +6888,8 @@ function populateProgressSelects(){
   progressDaySelect.innerHTML = '<option value="all">Tất cả ngày</option>' + assignedDates.map(d=>`<option value="${d}">Ngày ${d}</option>`).join('');
   // Lần đầu vào: mặc định chọn NGÀY HÔM NAY nếu có đơn; sau đó tôn trọng lựa chọn của người dùng.
   const todayStr = formatDMY(new Date());
-  if(!progressDaySelect.dataset.dayInitialized && assignedDates.includes(todayStr)){
-    progressDaySelect.value = todayStr;
+  if(!progressDaySelect.dataset.dayInitialized && assignedDates.length){
+    progressDaySelect.value = assignedDates.includes(todayStr) ? todayStr : assignedDates[assignedDates.length-1];
     progressDaySelect.dataset.dayInitialized = '1';
   } else {
     progressDaySelect.value = assignedDates.includes(prevDay) ? prevDay : 'all';
@@ -6881,6 +6917,8 @@ function getProgressRowsForCurrentFilters(chiConChoCongDoan=true,chiDungNgayGoc=
   // chỉ thấy đơn đã có tổ, tránh hai tổ cùng nhận một đơn.
   const sourceRows = canManage2() ? getOrders() : getOrders().filter(r=>assignments[r.id]?.to);
   return sourceRows.filter(r=>{
+    // Không đưa đơn có ngày gốc thuộc tháng khác vào bảng đang xem.
+    if(!ngayThuocThangHeader(r.date)) return false;
     if(dayVal === 'all' && !ngayThuocThangHeader(r.date)) return false;
     // Tổ 1–5: chỉ thấy đơn của tổ mình (kể cả phần thiếu được giao hỗ trợ).
     // Đơn chưa phân công tổ chỉ được hiện cho quản lý để gán.
@@ -7027,7 +7065,7 @@ function suaCongDoanCellHtml(o, ngay){
   const cacCongDoanDuocSua = congDoanNhanVien ? [congDoanNhanVien] : CONG_DOAN;
   const coSo = e && cacCongDoanDuocSua.some(k=>e[k] != null && e[k] !== '');
   const completeBtn=canManage2()&&!khoaNhapCongDoan(o,ngay)&&tongCongDoan(o,'dong_goi')<soCongDoan(o.so_luong)
-    ? `<button class="complete-row-btn" data-order-id="${o.id}" data-day="${ngay}" style="font-size:11px;padding:4px 7px;border-radius:6px;border:1px solid var(--success);background:var(--success-l);color:var(--success);cursor:pointer;font-weight:700;">Hoàn thành 3 CĐ</button>`:'';
+    ? `<button class="complete-row-btn" data-order-id="${o.id}" data-day="${ngay}" title="Hoàn thành nhanh cả Dán, May và Đóng gói" style="font-size:12px;padding:6px 11px;border-radius:7px;border:1px solid var(--success);background:var(--success);color:#fff;cursor:pointer;font-weight:800;">Xong</button>`:'';
   if(!coSo) return completeBtn||'<span style="color:var(--text2);">—</span>';
   if((lockedProgressDates.includes(ngay) || assignments[o.id]?.spinoff_id) && !editUnlocked){
     return '<span title="Ngày đã chốt tiến độ" style="color:var(--text2);">🔒</span>';
@@ -7168,7 +7206,8 @@ function renderEmployeeStageWorkspace(rows,stage,dayVal){
   list.innerHTML=sortOrdersForDisplay(rows,dayVal==='all').map(o=>{
     const reference=inputFor(o), note=[o.ghi_chu,changeNoteHtml(o)].filter(Boolean).join(' · ');
     const team=assignments[o.id]?.to||'Chưa gán tổ';
-    return `<article class="employee-order-card" data-order-id="${o.id}"><div class="employee-order-main"><div><div class="employee-order-title">${thoatHtml(o.dong||'-')} · ${kichThuocHtml(o)}</div>${note?`<div class="employee-order-note">${thoatHtml(String(o.ghi_chu||''))}</div>`:''}</div><div class="employee-order-plan">${stage==='dan'?'Kế hoạch':stage==='may'?'Đã dán':'Đã may'}<strong>${reference.toLocaleString('vi-VN')}</strong></div><div class="employee-order-entry">${oNhapCongDoanHtml(o,dayVal,stage)}</div></div><div class="employee-order-meta"><span>${thoatHtml(team)}</span><span>${nhomDonHangHtml(o)}</span><span>${o.date!==dayVal?`Gốc ${o.date}`:'Trong ngày'}</span></div></article>`;
+    const priority=laUuTien(o.id);
+    return `<article class="employee-order-card${priority?' is-priority':''}" data-order-id="${o.id}"><div class="employee-order-main"><div>${priority?'<span class="employee-priority-flag">ƯU TIÊN GẤP</span>':''}<div class="employee-order-title">${thoatHtml(o.dong||'-')} · ${kichThuocHtml(o)}</div>${note?`<div class="employee-order-note">${thoatHtml(String(o.ghi_chu||''))}</div>`:''}</div><div class="employee-order-plan">${stage==='dan'?'Kế hoạch':stage==='may'?'Đã dán':'Đã may'}<strong>${reference.toLocaleString('vi-VN')}</strong></div><div class="employee-order-entry">${oNhapCongDoanHtml(o,dayVal,stage)}</div></div><div class="employee-order-meta"><span>${thoatHtml(team)}</span><span>${nhomDonHangHtml(o)}</span><span>${o.date!==dayVal?`Gốc ${o.date}`:'Trong ngày'}</span></div></article>`;
   }).join('');
 }
 
@@ -7317,14 +7356,14 @@ function overtimeEmployees(){
   const seen=new Set();return source.filter(x=>!seen.has(x.id)&&seen.add(x.id));
 }
 function overtimeEmployee(workerId){return overtimeEmployees().find(x=>x.id===String(workerId||''))||null;}
+function selectedOvertimeWorkerIds(){
+  return Array.from(document.querySelectorAll('#overtimeWorkers input[type="checkbox"]:checked')).map(x=>x.value);
+}
 function renderOvertimePanel(){
-  const panel=document.getElementById('overtimePanel'),sel=document.getElementById('overtimeWorker'),derived=document.getElementById('overtimeDerived'),list=document.getElementById('overtimeSavedList');
-  if(!panel||!sel||!derived||!list)return;
-  const current=sel.value,employees=overtimeEmployees();
-  sel.innerHTML='<option value="">Chọn nhân viên...</option>'+employees.map(x=>`<option value="${thoatHtml(x.id)}">${thoatHtml(x.name)}</option>`).join('');
-  if(employees.some(x=>x.id===current))sel.value=current;
-  const picked=overtimeEmployee(sel.value);
-  derived.textContent=picked?`${picked.team} · công đoạn ${overtimeStageLabel(picked.stage)}`:'Chọn nhân viên để xem.';
+  const panel=document.getElementById('overtimePanel'),checks=document.getElementById('overtimeWorkers'),list=document.getElementById('overtimeSavedList');
+  if(!panel||!checks||!list)return;
+  const selected=new Set(selectedOvertimeWorkerIds()),employees=overtimeEmployees();
+  checks.innerHTML=employees.length?employees.map(x=>`<label class="overtime-worker-check"><input type="checkbox" value="${thoatHtml(x.id)}" ${selected.has(x.id)?'checked':''}><span><strong>${thoatHtml(x.name)}</strong><small>${thoatHtml(x.team)} · ${overtimeStageLabel(x.stage)}</small></span></label>`).join(''):'<div class="overtime-empty">Chưa có tài khoản nhân viên đang hoạt động.</div>';
   const day=progressDaySelect.value;
   if(day==='all'){
     list.innerHTML='<div class="overtime-empty">Chọn một ngày cụ thể để ghi và xem OT.</div>';
@@ -7336,7 +7375,6 @@ function renderOvertimePanel(){
     return `<div class="overtime-row"><strong>${thoatHtml(name)}</strong><span>${thoatHtml(x.team)} · ${overtimeStageLabel(x.stage)}</span><b>OT ${Number(x.hours)}H</b><span><button type="button" class="capacity-quick-btn edit-overtime-btn" data-worker="${thoatHtml(x.worker)}" data-hours="${Number(x.hours)}">Sửa</button> <button type="button" class="capacity-quick-btn remove-overtime-btn" data-key="${thoatHtml(overtimeKey(x.day,x.team,x.stage,x.worker))}">Xóa</button></span></div>`;
   }).join(''):'<div class="overtime-empty">Ngày này chưa ghi OT.</div>';
 }
-document.getElementById('overtimeWorker')?.addEventListener('change',renderOvertimePanel);
 document.getElementById('overtimeBtn')?.addEventListener('click',()=>{
   const panel=document.getElementById('overtimePanel'),opening=!panel.classList.contains('is-open');
   panel.classList.toggle('is-open',opening);panel.setAttribute('aria-hidden',String(!opening));
@@ -7344,19 +7382,21 @@ document.getElementById('overtimeBtn')?.addEventListener('click',()=>{
 });
 document.getElementById('saveOvertimeBtn')?.addEventListener('click',async()=>{
   if(!canManage2())return;
-  const day=progressDaySelect.value,worker=document.getElementById('overtimeWorker').value,hours=Number(document.getElementById('overtimeHours').value),st=document.getElementById('overtimeStatus'),employee=overtimeEmployee(worker);
-  if(day==='all'||!employee){st.textContent='Chọn đúng 1 ngày và 1 nhân viên đang hoạt động.';st.style.color='var(--danger)';return;}
-  const key=overtimeKey(day,employee.team,employee.stage,worker),record={day,team:employee.team,stage:employee.stage,worker,hours,updatedAt:new Date().toISOString()};
+  const day=progressDaySelect.value,workerIds=selectedOvertimeWorkerIds(),hours=Number(document.getElementById('overtimeHours').value),st=document.getElementById('overtimeStatus');
+  const employees=workerIds.map(overtimeEmployee).filter(Boolean),updatedAt=new Date().toISOString();
+  if(day==='all'||!employees.length){st.textContent='Chọn đúng 1 ngày và tick ít nhất 1 nhân viên.';st.style.color='var(--danger)';return;}
   if(SUPABASE_VARIANT&&supabaseDb){
     const {data:{session}}=await supabaseDb.auth.getSession();
-    const {error}=await supabaseDb.from('khsx_overtime_records').upsert({work_date:dmyToIso(day),team_name:uiUnitToSupabase(employee.team),stage:employee.stage,worker_id:worker,overtime_hours:hours,confirmed_by:session?.user?.id,updated_at:record.updatedAt},{onConflict:'work_date,team_name,stage,worker_id'});
+    const payload=employees.map(employee=>({work_date:dmyToIso(day),team_name:uiUnitToSupabase(employee.team),stage:employee.stage,worker_id:employee.id,overtime_hours:hours,confirmed_by:session?.user?.id,updated_at:updatedAt}));
+    const {error}=await supabaseDb.from('khsx_overtime_records').upsert(payload,{onConflict:'work_date,team_name,stage,worker_id'});
     if(error){st.textContent=`Không lưu được OT: ${error.message||error.code}`;st.style.color='var(--danger)';return;}
   }
-  overtimeRecords[key]=record;persistOvertime();st.textContent=`Đã lưu ${employee.name} · OT ${hours} giờ.`;st.style.color='var(--success)';renderOvertimePanel();renderProgress();computeAndRenderKpis();
+  employees.forEach(employee=>{const key=overtimeKey(day,employee.team,employee.stage,employee.id);overtimeRecords[key]={day,team:employee.team,stage:employee.stage,worker:employee.id,hours,updatedAt};});
+  persistOvertime();st.textContent=`Đã lưu OT ${hours} giờ cho ${employees.length} nhân viên.`;st.style.color='var(--success)';renderOvertimePanel();renderProgress();computeAndRenderKpis();
 });
 document.getElementById('overtimeSavedList')?.addEventListener('click',async e=>{
   const edit=e.target.closest('.edit-overtime-btn');
-  if(edit){document.getElementById('overtimeWorker').value=edit.dataset.worker;document.getElementById('overtimeHours').value=edit.dataset.hours;renderOvertimePanel();return;}
+  if(edit){document.querySelectorAll('#overtimeWorkers input[type="checkbox"]').forEach(x=>{x.checked=x.value===edit.dataset.worker;});document.getElementById('overtimeHours').value=edit.dataset.hours;return;}
   const remove=e.target.closest('.remove-overtime-btn');if(!remove||!canManage2())return;
   const record=overtimeRecords[remove.dataset.key];if(!record||!confirm(`Xóa OT của ${overtimeEmployee(record.worker)?.name||record.worker} ngày ${record.day}?`))return;
   if(SUPABASE_VARIANT&&supabaseDb){
@@ -9247,6 +9287,7 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   clearLoginSession();
   try{ localStorage.setItem('khsx_manual_logout','1'); }catch(e){}
   document.documentElement.classList.remove('khsx-fast-session');
+  managerStagePreview=null;
   currentUser=null;
   applyRoleUI();
   const ov=document.getElementById('loginOverlay');
@@ -9267,7 +9308,6 @@ function applyDarkMode(enabled){
 document.getElementById('darkModeBtn')?.addEventListener('click',()=>applyDarkMode(!document.body.classList.contains('dark-mode')));
 applyDarkMode((()=>{try{return localStorage.getItem(DARK_MODE_KEY)==='1';}catch(e){return false;}})());
 
-let managerStageOriginalUser=null;
 function closeManagerStageModal(){ document.getElementById('managerStageModal').style.display='none'; }
 document.getElementById('managerStageViewBtn')?.addEventListener('click',()=>{
   if(!canManage2()) return;
@@ -9285,19 +9325,14 @@ document.getElementById('enterManagerStageBtn')?.addEventListener('click',()=>{
   if(!canManage2()) return;
   const stage=document.getElementById('managerStageSelect').value;
   const unit=stage==='dan'?document.getElementById('managerStageTeam').value:(stage==='may'?'Tổ may':'Tổ đóng gói');
-  managerStageOriginalUser={...currentUser};
-  currentUser={...currentUser,role:'nhan_vien',unit,_manager_preview:true,_manager_stage:stage};
+  managerStagePreview={stage,unit};
   closeManagerStageModal();
-  document.getElementById('exitManagerStageBtn').style.display='block';
   applyRoleUI();
-  document.querySelector('.tab-btn[data-tab="progress"]')?.click();
   renderAutoPlan(); renderProgress();
 });
 document.getElementById('exitManagerStageBtn')?.addEventListener('click',()=>{
-  if(!managerStageOriginalUser) return;
-  currentUser=managerStageOriginalUser;
-  managerStageOriginalUser=null;
-  document.getElementById('exitManagerStageBtn').style.display='none';
+  if(!managerStagePreview) return;
+  managerStagePreview=null;
   applyRoleUI(); renderAutoPlan(); renderProgress();
 });
 
