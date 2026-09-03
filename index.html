@@ -116,6 +116,9 @@
   .kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(16,24,40,.10);}
   .kpi-phu{font-size:11.5px;color:var(--text2);margin-top:5px;}
   .kpi-phu b{color:var(--text);}
+  .weekly-kr-report{margin-top:10px;padding:9px 10px;border-radius:9px;background:var(--primary-l);color:var(--text);font-size:11.5px;line-height:1.45;user-select:text;}
+  .weekly-kr-copy{margin-top:7px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--primary-dark);padding:5px 9px;font-size:10.5px;font-weight:700;cursor:pointer;}
+  .weekly-kr-copy:hover{border-color:var(--primary);}
   .kpi-thanh{height:5px;border-radius:99px;background:#e8ecf2;margin-top:8px;overflow:hidden;}
   .kpi-thanh i{display:block;height:100%;border-radius:99px;transition:width .6s ease;}
   .kpi .value{font-size:25px;font-weight:700;letter-spacing:-0.3px;}
@@ -161,22 +164,24 @@
      Mỗi cột có bề rộng tối thiểu cố định nên không "nhảy" mỗi lần vẽ lại.
      Cột dài (trạng thái, ghi chú) được xuống dòng trong giới hạn, không kéo bảng rộng ra. */
   #autoPlanTable{min-width:1320px;table-layout:fixed;}
-  #progressTable{min-width:1280px;table-layout:fixed;}
+  #progressTable{min-width:1480px;table-layout:fixed;}
   #autoPlanTable tbody td, #progressTable tbody td{vertical-align:top;}
   #autoPlanTable .col-date, #progressTable .col-date{width:96px;white-space:normal;vertical-align:top;}
   #autoPlanTable .col-code, #progressTable .col-code{width:80px;text-align:center;white-space:normal;overflow-wrap:break-word;}
   #autoPlanTable .col-product, #progressTable .col-product{width:74px;text-align:center;white-space:normal;}
   #autoPlanTable .col-size, #progressTable .col-size{width:76px;text-align:center;white-space:normal;}
   #autoPlanTable .col-number, #progressTable .col-number{width:64px;min-width:0;max-width:none;text-align:center;}
-  #progressTable .col-number[data-stage-col]{width:82px;}
+  #progressTable .col-number[data-stage-col]{width:104px;}
   #autoPlanTable .col-group{width:104px;text-align:center;white-space:normal;}
   #autoPlanTable .col-team, #progressTable .col-team{width:92px;min-width:0;max-width:none;text-align:center;white-space:normal;}
+  #progressTable .col-team{width:112px;}
   #autoPlanTable .col-support, #progressTable .col-support{width:88px;min-width:0;max-width:none;text-align:center;white-space:normal;}
+  #progressTable .col-support{width:104px;}
   #autoPlanTable .col-progress{width:168px;text-align:center;white-space:normal;}
   #autoPlanTable .col-status{width:180px;white-space:normal;overflow-wrap:break-word;}
-  #progressTable .col-status{width:210px;white-space:normal;overflow-wrap:break-word;}
+  #progressTable .col-status{width:250px;white-space:normal;overflow-wrap:break-word;}
   #autoPlanTable .col-action{width:78px;min-width:0;text-align:center;white-space:normal;}
-  #progressTable .col-action{width:116px;min-width:0;text-align:center;white-space:normal;}
+  #progressTable .col-action{width:128px;min-width:0;text-align:center;white-space:normal;}
   #progressTable .col-action button,#progressTable .col-status button{max-width:100%;white-space:normal;line-height:1.2;}
   #autoPlanTable th:last-child,#autoPlanTable td:last-child{width:78px;white-space:normal;overflow-wrap:anywhere;}
   #autoPlanTable .col-date, #progressTable .col-date{padding-left:5px;padding-right:5px;text-align:center;}
@@ -1701,6 +1706,78 @@ function tongKpiTuRowsTheoKeys(keys){
   return {plan,done,warranty,throughput,carryover};
 }
 
+function isoCuaNgay(dateObj){
+  return `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+}
+function ngayTuIsoLocal(iso){
+  const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3])):null;
+}
+function mocKetThucTuan(limitDate,registeredSet){
+  const d=new Date(limitDate);d.setHours(0,0,0,0);
+  while(true){
+    const iso=isoCuaNgay(d);
+    if(d.getDay()===6||(d.getDay()===0&&registeredSet.has(iso))) return iso;
+    d.setDate(d.getDate()-1);
+  }
+}
+function dinhDangPhanTramBaoCao(value){
+  return Math.abs(Number(value)||0).toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1});
+}
+function taoCauBaoCaoKrTuan(nam,thang,hienTai=new Date()){
+  const quy=Math.floor((thang-1)/3)+1,quarterStartMonth=(quy-1)*3+1;
+  const registered=workDatesForQuarter(nam,quy).slice().sort();
+  const registeredSet=new Set(registered);
+  const monthEnd=new Date(nam,thang,0),today=new Date(hienTai);today.setHours(0,0,0,0);
+  const limit=today<monthEnd?today:monthEnd;
+  const cutoffIso=mocKetThucTuan(limit,registeredSet),cutoffDate=ngayTuIsoLocal(cutoffIso);
+  if(!cutoffDate||cutoffDate.getFullYear()!==nam||cutoffDate.getMonth()+1!==thang)return {text:'',cutoffIso};
+  const monthPrefix=`${nam}-${String(thang).padStart(2,'0')}`;
+  const quarterFrom=`${nam}-${String(quarterStartMonth).padStart(2,'0')}-01`;
+  const quarterTo=`${nam}-${String(quarterStartMonth+2).padStart(2,'0')}-31`;
+  const keysBetween=(from,to)=>Object.keys(allDays).filter(k=>{
+    const iso=dmyToIso(allDays[k]?.date);return iso&&iso>=from&&iso<=to;
+  });
+  const monthAllKeys=keysBetween(`${monthPrefix}-01`,`${monthPrefix}-31`);
+  const monthElapsedKeys=keysBetween(`${monthPrefix}-01`,cutoffIso);
+  const monthPlan=tongKpiTuRowsTheoKeys(monthAllKeys).plan;
+  const monthOutput=tongKpiTuRowsTheoKeys(monthElapsedKeys).throughput;
+  const monthDates=registered.filter(iso=>iso.startsWith(monthPrefix));
+  const monthElapsedDates=monthDates.filter(iso=>iso<=cutoffIso);
+  const target=Number(quarterTargets[`${nam}_Q${quy}`])||0;
+  if(monthPlan<=0||!monthDates.length||target<=0||!registered.length)return {text:'',cutoffIso};
+  const monthActual=monthOutput/monthPlan*100;
+  const monthSchedule=monthElapsedDates.length/monthDates.length*100;
+  const monthGap=monthActual-monthSchedule;
+  const quarterOutput=tongKpiTuRowsTheoKeys(keysBetween(quarterFrom,cutoffIso)).throughput;
+  const quarterElapsed=registered.filter(iso=>iso<=cutoffIso).length;
+  const quarterGap=quarterOutput/target*100-quarterElapsed/registered.length*100;
+  const previousLimit=new Date(cutoffDate);previousLimit.setDate(previousLimit.getDate()-7);
+  const previousIso=mocKetThucTuan(previousLimit,registeredSet);
+  const previousOutput=tongKpiTuRowsTheoKeys(keysBetween(quarterFrom,previousIso)).throughput;
+  const previousElapsed=registered.filter(iso=>iso<=previousIso).length;
+  const previousGap=previousOutput/target*100-previousElapsed/registered.length*100;
+  const monthState=monthGap>=0
+    ? `đang vượt ${dinhDangPhanTramBaoCao(monthGap)}% so với tiến độ tháng`
+    : `đang chậm ${dinhDangPhanTramBaoCao(monthGap)}% so với tiến độ tháng`;
+  let quarterState='';
+  if(quarterGap<0&&previousGap<0){
+    const currentLate=Math.abs(quarterGap),previousLate=Math.abs(previousGap);
+    if(currentLate>previousLate+.04)quarterState=`mức chậm ${currentLate-previousLate<=2?'tăng nhẹ':'tăng'} từ ${dinhDangPhanTramBaoCao(previousLate)}% lên ${dinhDangPhanTramBaoCao(currentLate)}%`;
+    else if(currentLate<previousLate-.04)quarterState=`mức chậm giảm từ ${dinhDangPhanTramBaoCao(previousLate)}% còn ${dinhDangPhanTramBaoCao(currentLate)}%`;
+    else quarterState=`mức chậm giữ ở ${dinhDangPhanTramBaoCao(currentLate)}%`;
+  }else if(quarterGap>=0&&previousGap<0){
+    quarterState=`đã bù phần chậm của tuần trước và hiện vượt ${dinhDangPhanTramBaoCao(quarterGap)}%`;
+  }else if(quarterGap>=0&&previousGap>=0){
+    quarterState=`đang vượt ${dinhDangPhanTramBaoCao(quarterGap)}%`;
+  }else{
+    quarterState=`hiện đang chậm ${dinhDangPhanTramBaoCao(quarterGap)}%`;
+  }
+  const isPastMonth=nam<today.getFullYear()||(nam===today.getFullYear()&&thang<today.getMonth()+1);
+  const period=isPastMonth?`Đến hết tuần cuối tháng ${thang}/${nam}`:`Đến hết tuần kết thúc ngày ${isoToDMY(cutoffIso)}`;
+  return {text:`${period}, tiến độ hoàn thành KR đạt ${dinhDangPhanTramBaoCao(monthActual)}%, ${monthState}. So với tiến độ chung của quý, ${quarterState}.`,cutoffIso,monthActual,monthSchedule,monthGap,quarterGap,previousGap};
+}
+
 function computeAndRenderKpis(){
   // KHSX cần thấy cả kế hoạch tương lai trong tháng, nhưng KPI thực tế chỉ được
   // tính đến hôm nay. Không dùng dayKeys trực tiếp vì dayKeys còn phục vụ hiển thị.
@@ -1735,6 +1812,8 @@ function computeAndRenderKpis(){
     ? `TB đóng gói: <b>${tbKhoangNgay.toLocaleString('vi-VN',{maximumFractionDigits:1})} tấm/ngày</b> · ${danhGiaTocDo(tbKhoangNgay)}`
     : 'Chưa có mục tiêu tính toán';
   const tocDoQuy = tinhTocDoQuy();
+  const namHeader=Number(yearFilterSelect.value),thangHeader=Number(monthFilterSelect.value);
+  const baoCaoKr=taoCauBaoCaoKrTuan(namHeader,thangHeader);
   speedDetailStore.quarter = tocDoQuy;
   const tocDoQuyHtml = tocDoQuy.mucTieu>0
     ? `<div class="kpi-phu">Mục tiêu/ngày <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b> · thực tế quý <b>${formatTocDo(tocDoQuy.thucTe)}</b> tấm/ngày</div><div class="kpi-phu">Đã tính đủ <b>${tocDoQuy.elapsedWorkdays}</b> ngày đã qua, kể cả ngày 0 · dự báo <b>${Math.round(tocDoQuy.duBao||0).toLocaleString('vi-VN')}</b></div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;line-height:1.4;">${tocDoQuy.danhGia}</div><span class="speed-kpi-hint">Bấm để kiểm chứng nguồn và công thức</span>`
@@ -1750,6 +1829,7 @@ function computeAndRenderKpis(){
       <div class="label">Tổng hoàn thành</div>
       <div class="value" data-dem="${totalDG}">${totalDG.toLocaleString()}</div>
       <div class="kpi-phu">${trungBinhThangQuyHtml}</div>
+      ${baoCaoKr.text&&canManage2()?`<div id="weeklyKrReport" class="weekly-kr-report">${thoatHtml(baoCaoKr.text)}<br><button id="copyWeeklyKrBtn" type="button" class="weekly-kr-copy">Sao chép câu báo cáo</button></div>`:''}
       <div class="kpi-thanh"><i style="width:${rate==null?0:Math.min(100,rate)}%;background:var(--accent);"></i></div>
     </div>
     <div class="kpi ${rate==null?'':rate>=95?'k-success':'k-warning'}">
@@ -1779,6 +1859,11 @@ function computeAndRenderKpis(){
       ${tocDoQuyHtml}
     </div>
   `;
+  document.getElementById('copyWeeklyKrBtn')?.addEventListener('click',async e=>{
+    const btn=e.currentTarget;
+    try{await navigator.clipboard.writeText(baoCaoKr.text);btn.textContent='Đã sao chép';setTimeout(()=>{btn.textContent='Sao chép câu báo cáo';},1600);}
+    catch(err){btn.textContent='Không sao chép được';}
+  });
   document.getElementById('refreshWarrantyKpiBtn')?.addEventListener('click',async e=>{
     const btn=e.currentTarget; btn.classList.add('is-loading');
     await fetchBaoHanh({force:true}); btn.classList.remove('is-loading');
@@ -5735,7 +5820,8 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
 function renderAutoPlanDaySelect(){
   const sel = document.getElementById('autoPlanDaySelect');
   const prev = sel.value || 'all';
-  const dates = Array.from(new Set(getOrders().flatMap(r=>getCarryForwardDates(r)))).sort((a,b)=>{
+  const dates = Array.from(new Set(getOrders().flatMap(r=>getCarryForwardDates(r))))
+    .filter(ngayThuocThangHeader).sort((a,b)=>{
     const da = a.split('/').reverse().join(''), db = b.split('/').reverse().join('');
     return da.localeCompare(db);
   });
@@ -5775,6 +5861,7 @@ function renderAutoPlan(){
   const q = document.getElementById('autoPlanSearchBox').value.trim().toLowerCase();
   const assignFilter = document.getElementById('autoPlanAssignFilter').value;
   const filtered = getOrders().filter(r=>{
+    if(dayVal === 'all' && !ngayThuocThangHeader(r.date)) return false;
     if(dayVal !== 'all' && !getCarryForwardDates(r).includes(dayVal)) return false;
     if(q && !r.dong.toLowerCase().includes(q) && !r.ma.toLowerCase().includes(q) && !formatKichThuoc(r).toLowerCase().includes(q)) return false;
     const hasTeam = !!(assignments[r.id]?.to);
@@ -5792,7 +5879,7 @@ function renderAutoPlan(){
   const rotCount = filtered.filter(r=>getOrderStatus(r)==='rot').length;
   const dangSXCount = filtered.filter(r=>getOrderStatus(r)==='dang_san_xuat').length;
   const speedDateValues=Array.from(new Set(dayVal==='all'
-    ? filtered.flatMap(r=>getCarryForwardDates(r))
+    ? filtered.flatMap(r=>getCarryForwardDates(r)).filter(ngayThuocThangHeader)
     : (dayVal?[dayVal]:[])));
   const speedDateIsos=speedDateValues.map(dmyToIso).filter(Boolean).sort((a,b)=>isoDayNumber(a)-isoDayNumber(b));
   const speedFromIso=speedDateIsos[0]||'';
@@ -6649,8 +6736,23 @@ function refreshForMonthYear(){
   renderMonthly();
 }
 
-monthFilterSelect.addEventListener('change', ()=>{ userChoseMonth = true; refreshForMonthYear(); });
-yearFilterSelect.addEventListener('change', ()=>{ userChoseMonth = true; refreshForMonthYear(); });
+function ngayThuocThangHeader(dateStr){
+  const p=parseDMY(dateStr);
+  const m=Number(monthFilterSelect.value), y=Number(yearFilterSelect.value);
+  return !!p && p.m===m && p.y===y;
+}
+function refreshOperationalTabsForHeader(){
+  renderAutoPlanDaySelect();
+  renderAutoPlan();
+  renderProgress();
+}
+function onHeaderMonthYearChanged(){
+  userChoseMonth=true;
+  refreshForMonthYear();
+  refreshOperationalTabsForHeader();
+}
+monthFilterSelect.addEventListener('change', onHeaderMonthYearChanged);
+yearFilterSelect.addEventListener('change', onHeaderMonthYearChanged);
 
 // ---- tabs ----
 const UI_STATE_KEY=SUPABASE_VARIANT?'khsx_supabase_ui_state_v1':'khsx_ui_state_v1';
@@ -6739,7 +6841,7 @@ function populateProgressSelects(){
   // Nếu cache phân công cũ/rỗng, bộ lọc vẫn còn ngày hôm nay thay vì biến mất.
   const assignedDates = Array.from(new Set(
     getOrders().flatMap(r=>getCarryForwardDates(r))
-  )).filter(d=>!(chan && laNgayTuongLai(d)) && nhanVienDuocXemNgay(d)).sort((a,b)=>{
+  )).filter(d=>ngayThuocThangHeader(d) && !(chan && laNgayTuongLai(d)) && nhanVienDuocXemNgay(d)).sort((a,b)=>{
     const da = a.split('/').reverse().join(''), db = b.split('/').reverse().join('');
     return da.localeCompare(db);
   });
@@ -6775,6 +6877,7 @@ function getProgressRowsForCurrentFilters(chiConChoCongDoan=true,chiDungNgayGoc=
   // chỉ thấy đơn đã có tổ, tránh hai tổ cùng nhận một đơn.
   const sourceRows = canManage2() ? getOrders() : getOrders().filter(r=>assignments[r.id]?.to);
   return sourceRows.filter(r=>{
+    if(dayVal === 'all' && !ngayThuocThangHeader(r.date)) return false;
     // Tổ 1–5: chỉ thấy đơn của tổ mình (kể cả phần thiếu được giao hỗ trợ).
     // Đơn chưa phân công tổ chỉ được hiện cho quản lý để gán.
     if(toSanXuat){

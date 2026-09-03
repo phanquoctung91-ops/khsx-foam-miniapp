@@ -117,7 +117,7 @@ const {chromium}=require('playwright');
     statusLeft:document.querySelector('#progressTable tbody .col-status')?.getBoundingClientRect().left||0,
     actionRight:document.querySelector('#progressTable tbody .col-action')?.getBoundingClientRect().right||0
   }));
-  if(desktop.workspace!=='none'||desktop.table==='none'||desktop.overflow>2||desktop.tableWidth<1279||desktop.scrollWidth<desktop.scrollClient||desktop.statusLeft<desktop.actionRight-1)
+  if(desktop.workspace!=='none'||desktop.table==='none'||desktop.overflow>2||desktop.tableWidth<1479||desktop.scrollWidth<desktop.scrollClient||desktop.statusLeft<desktop.actionRight-1)
     throw new Error(`Manager desktop failed: ${JSON.stringify(desktop)}`);
   console.log('PASS  manager desktop layout with non-overlapping scroll table');
 
@@ -131,6 +131,35 @@ const {chromium}=require('playwright');
   if(!overtime.open||!overtime.derived.includes('Tổ 1')||!overtime.derived.includes('Dán')||overtime.stageSelect)
     throw new Error(`Overtime simple flow failed: ${JSON.stringify(overtime)}`);
   console.log('PASS  OT derives team/stage from active employee account');
+
+  const monthScope=await page.evaluate(()=>{
+    supabaseOrdersLoaded=false;
+    sheetRows=[
+      {id:'aug-order',date:'29/08/2026',ma:'AUG',dong:'Sora',ngang:'160',dai:'200',day:'10',so_luong:15},
+      {id:'sep-order',date:'03/09/2026',ma:'SEP',dong:'Premium',ngang:'160',dai:'200',day:'10',so_luong:15}
+    ];
+    dynamicOrders=[];
+    assignments={
+      'aug-order':{to:'Tổ 1',stage_by_date:{},support_by_date:{}},
+      'sep-order':{to:'Tổ 2',stage_by_date:{},support_by_date:{}}
+    };
+    rebuildOrderEntityStore();
+    monthFilterSelect.innerHTML='<option value="8">8</option><option value="9">9</option>';
+    yearFilterSelect.innerHTML='<option value="2026">2026</option>';
+    const read=()=>({
+      khsxDays:[...document.querySelectorAll('#autoPlanDaySelect option')].map(x=>x.value).filter(x=>x!=='all'),
+      tdsxDays:[...document.querySelectorAll('#progressDaySelect option')].map(x=>x.value).filter(x=>x!=='all'),
+      khsxRows:[...document.querySelectorAll('#autoPlanTable tbody tr')].map(x=>x.textContent),
+      tdsxRows:[...document.querySelectorAll('#progressTable tbody tr')].map(x=>x.textContent)
+    });
+    monthFilterSelect.value='8';renderAutoPlanDaySelect();renderAutoPlan();renderProgress();const aug=read();
+    monthFilterSelect.value='9';renderAutoPlanDaySelect();renderAutoPlan();renderProgress();const sep=read();
+    return {aug,sep};
+  });
+  const onlyMonth=(values,month)=>values.length>0&&values.every(x=>x.includes(`/${month}/2026`));
+  if(!onlyMonth(monthScope.aug.khsxDays,'08')||!onlyMonth(monthScope.aug.tdsxDays,'08')||monthScope.aug.khsxRows.some(x=>x.includes('SEP'))||monthScope.aug.tdsxRows.some(x=>x.includes('SEP'))||!onlyMonth(monthScope.sep.khsxDays,'09')||!onlyMonth(monthScope.sep.tdsxDays,'09')||monthScope.sep.khsxRows.some(x=>x.includes('AUG'))||monthScope.sep.tdsxRows.some(x=>x.includes('AUG')))
+    throw new Error(`Header month scope failed: ${JSON.stringify(monthScope)}`);
+  console.log('PASS  header month keeps KHSX and TDSX dates isolated');
 
   const regressions=await page.evaluate(()=>{
     currentUser={code:'ui-manager',name:'Quản lý',role:'quan_ly',unit:'',auth_user_id:'manager-auth'};
