@@ -29,6 +29,9 @@
   body.dark-mode table th{background:#10243a!important;color:#dffaff!important;}
   body.dark-mode .panel,body.dark-mode .card,body.dark-mode .kpi,body.dark-mode [role="dialog"]>div{background:linear-gradient(145deg,#102238,#0b1827)!important;color:var(--text);}
   body.dark-mode [style*="background:#f8f9fb"],body.dark-mode [style*="background:#f7fbff"],body.dark-mode [style*="background:#f4f6fa"],body.dark-mode [style*="background:#fff"],body.dark-mode [style*="background: white"],body.dark-mode [style*="background:white"]{background:#10243a!important;color:var(--text)!important;}
+  /* #fdf2f1 (khối "Nạp lại từ gói sao lưu") và #fdecea trước giờ thiếu trong danh sách dò
+     nên không bao giờ đổi màu ở chế độ tối — nền hồng nhạt + chữ đỏ nhạt, rất khó đọc. */
+  body.dark-mode [style*="background:#fdf2f1"],body.dark-mode [style*="background:#fdecea"]{background:var(--danger-l)!important;color:var(--danger)!important;}
   body.dark-mode [style*="color:#1a1d23"],body.dark-mode [style*="color:#111"],body.dark-mode [style*="color:black"]{color:var(--text)!important;}
   body.dark-mode #loginOverlay{background:radial-gradient(circle at 20% 0,#102b43 0,#07111f 48%,#050b14 100%)!important;}
   body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#091827;border:1px solid var(--border);}
@@ -43,6 +46,8 @@
   body.dark-mode [id$="Modal"] [style*="background:#f4f6fa"],
   body.dark-mode [id$="Modal"] [style*="background:#fff"],
   body.dark-mode [id$="Modal"] [style*="background:white"]{background:#10243a!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode [id$="Modal"] [style*="background:#fdf2f1"],
+  body.dark-mode [id$="Modal"] [style*="background:#fdecea"]{background:var(--danger-l)!important;color:var(--danger)!important;border-color:var(--danger)!important;}
   body.dark-mode .tabs,body.dark-mode .team-card,body.dark-mode .stage-summary-item,
   body.dark-mode .capacity-filters,body.dark-mode .capacity-section,
   body.dark-mode .wf-step,body.dark-mode .management-tools-menu button,
@@ -52,6 +57,17 @@
   body.dark-mode .team-card .to-label,body.dark-mode .stage-summary-item,
   body.dark-mode #supabaseTelegramAdmin [style*="color:#1f4d78"]{color:var(--text2)!important;}
   body.dark-mode .wf-note{background:#493710!important;border-color:var(--warning)!important;}
+  /* Các bảng này bật/tắt bằng panel.style.display=... trong JS, thao tác đó khiến trình
+     duyệt viết lại toàn bộ thuộc tính style (đổi #f8f9fb thành rgb(248,249,251)), làm luật
+     [style*="background:#f8f9fb"] phía trên không còn khớp được nữa -> nền vẫn sáng trong khi
+     chữ đã đổi màu sáng theo dark mode, gần như vô hình. Chốt luật riêng theo ID, không phụ
+     thuộc chuỗi mã màu trong style nữa. */
+  body.dark-mode #lockPlanPanel,body.dark-mode #lockProgressPanel,
+  body.dark-mode #manualOrderForm,body.dark-mode #manualOrderFormProgress{background:#10243a!important;color:var(--text)!important;}
+  body.dark-mode #unlockEditNotice{background:var(--danger-l)!important;color:var(--danger)!important;}
+  /* Nút "Đăng ký Telegram ID" ở màn đăng nhập dùng màu #eef8fc/#1e6f96 — không nằm trong
+     danh sách hex được dò bên dưới nên trước giờ luôn sáng bất kể chế độ tối. */
+  body.dark-mode #telegramRegisterBtn{background:#10243a!important;color:var(--primary)!important;border-color:var(--primary)!important;}
   body.dark-mode .capacity-quick-btn,body.dark-mode .warranty-detail-btn,
   body.dark-mode #supabaseTelegramAdmin button{background:#10243a!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode tr.row-new td,body.dark-mode tr.row-changed td,body.dark-mode tr.row-rot td,
@@ -100,6 +116,16 @@
   *{box-sizing:border-box;}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
   .wrap{max-width:1220px;margin:0 auto;padding:28px 22px 60px;}
+  /* Màn PC (>=1280px): trước đây trang bị chặn cứng 1220px nên màn rộng bao nhiêu cũng
+     không dùng tới, khiến 2 bảng đơn (cần 1160-1300px) luôn phải cuộn ngang. Nới bề rộng
+     theo màn thật + giảm lề trong thẻ để bảng vừa đủ chỗ, không cuộn ngang nữa. */
+  @media (min-width:1280px){
+    .wrap{max-width:1600px;padding-left:18px;padding-right:18px;}
+    .card{padding-left:14px;padding-right:14px;}
+  }
+  @media (min-width:1700px){
+    .wrap{max-width:1800px;}
+  }
 
   header{margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
   header .htext h1{font-size:21px;font-weight:700;margin:0 0 4px;letter-spacing:-0.2px;}
@@ -163,23 +189,27 @@
   /* ---- Bố cục bảng đơn hàng ----
      Mỗi cột có bề rộng tối thiểu cố định nên không "nhảy" mỗi lần vẽ lại.
      Cột dài (trạng thái, ghi chú) được xuống dòng trong giới hạn, không kéo bảng rộng ra. */
-  #autoPlanTable{min-width:1320px;table-layout:fixed;}
-  #progressTable{min-width:1480px;table-layout:fixed;}
+  /* Bề rộng cột đã siết lại (2026-09-04) để bảng vừa màn laptop 1366px mà không phải
+     cuộn ngang: tổng min-width 1320->1160 (Kế hoạch) và 1480->1300 (Tiến độ). Chỉ giảm
+     các cột trước đây rộng hơn nội dung thật (trạng thái, tiến độ, tổ, nhóm đơn, thao tác);
+     giữ nguyên ngày/mã/dòng/kích thước/số lượng vì đã sát nội dung. */
+  #autoPlanTable{min-width:1160px;table-layout:fixed;}
+  #progressTable{min-width:1270px;table-layout:fixed;}
   #autoPlanTable tbody td, #progressTable tbody td{vertical-align:top;}
   #autoPlanTable .col-date, #progressTable .col-date{width:96px;white-space:normal;vertical-align:top;}
   #autoPlanTable .col-code, #progressTable .col-code{width:80px;text-align:center;white-space:normal;overflow-wrap:break-word;}
   #autoPlanTable .col-product, #progressTable .col-product{width:74px;text-align:center;white-space:normal;}
   #autoPlanTable .col-size, #progressTable .col-size{width:76px;text-align:center;white-space:normal;}
   #autoPlanTable .col-number, #progressTable .col-number{width:80px;min-width:0;max-width:none;text-align:center;}
-  #progressTable .col-number[data-stage-col]{width:104px;}
-  #autoPlanTable .col-group{width:104px;text-align:center;white-space:normal;}
-  #autoPlanTable .col-team, #progressTable .col-team{width:104px;min-width:0;max-width:none;text-align:center;white-space:normal;}
-  #autoPlanTable .col-support, #progressTable .col-support{width:104px;min-width:0;max-width:none;text-align:center;white-space:normal;}
-  #autoPlanTable .col-progress{width:168px;text-align:center;white-space:normal;}
-  #autoPlanTable .col-status, #progressTable .col-status{width:210px;white-space:normal;overflow-wrap:break-word;}
-  #autoPlanTable .col-action, #progressTable .col-action{width:88px;min-width:0;text-align:center;white-space:normal;}
+  #progressTable .col-number[data-stage-col]{width:88px;}
+  #autoPlanTable .col-group{width:92px;text-align:center;white-space:normal;}
+  #autoPlanTable .col-team, #progressTable .col-team{width:92px;min-width:0;max-width:none;text-align:center;white-space:normal;}
+  #autoPlanTable .col-support, #progressTable .col-support{width:92px;min-width:0;max-width:none;text-align:center;white-space:normal;}
+  #autoPlanTable .col-progress{width:140px;text-align:center;white-space:normal;}
+  #autoPlanTable .col-status, #progressTable .col-status{width:180px;white-space:normal;overflow-wrap:break-word;}
+  #autoPlanTable .col-action, #progressTable .col-action{width:76px;min-width:0;text-align:center;white-space:normal;}
   #progressTable .col-action button,#progressTable .col-status button{max-width:100%;white-space:normal;line-height:1.2;}
-  #autoPlanTable th:last-child,#autoPlanTable td:last-child{width:78px;white-space:normal;overflow-wrap:anywhere;}
+  #autoPlanTable th:last-child,#autoPlanTable td:last-child{width:70px;white-space:normal;overflow-wrap:anywhere;}
   #autoPlanTable .col-date, #progressTable .col-date{padding-left:5px;padding-right:5px;text-align:center;}
   .date-main{display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap;font-size:12.5px;line-height:1.2;letter-spacing:-0.1px;}
   .date-main .date-lock{font-size:10px;line-height:1;}
@@ -450,7 +480,7 @@
   body.stage-view-dong-goi #progressTable [data-stage-col]:not([data-stage-col="dong_goi"]){display:none !important;}
   body.stage-view-dan #progressTable,
   body.stage-view-may #progressTable,
-  body.stage-view-dong-goi #progressTable{min-width:1160px !important;}
+  body.stage-view-dong-goi #progressTable{min-width:1020px !important;}
 
   /* Cụm người dùng / công cụ: một nút gọn, menu xổ xuống canh phải */
   #userBar{margin-left:auto;min-width:0;}
@@ -3203,7 +3233,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 129;
+const APP_VERSION = 130;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
