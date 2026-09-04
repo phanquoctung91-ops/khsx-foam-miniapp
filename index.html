@@ -1560,10 +1560,24 @@ let monthYearInitialized = false;
 let userChoseMonth = false; // true khi người dùng tự đổi tháng/năm -> tôn trọng lựa chọn đó
 function populateMonthYearFilters(){
   const prevM = monthFilterSelect.value, prevY = yearFilterSelect.value;
-  const availableMonthYears = Array.from(new Set(allDayKeys.map(k=>{
+  // Lấy mốc tháng từ allDays (lịch sử tĩnh trong raw-data.js + phần đã gộp) CỘNG THÊM
+  // ngày của đơn SỐNG. Nếu chỉ dựa vào allDays, lúc mới mở app (allDays chỉ có tháng cũ)
+  // header sẽ mắc ở tháng cũ -> ngayThuocThangHeader() lọc mất hết đơn tháng hiện tại ->
+  // bộ lọc ngày rỗng -> progressDaySelect rơi về 'all' -> mất luôn nút "Xong" (nút chỉ
+  // hiện khi đang chọn đúng 1 ngày cụ thể). Sắp xếp lại để phần tử cuối luôn là tháng mới nhất.
+  const mocThang = new Set(allDayKeys.map(k=>{
     const {m,y} = parseDMY(allDays[k].date);
     return `${m}-${y}`;
-  }))).map(s=>{ const [m,y]=s.split('-').map(Number); return {m,y}; });
+  }));
+  try{
+    getOrders().forEach(o=>{
+      const p = parseDMY(o && o.date);
+      if(p && p.m && p.y) mocThang.add(`${p.m}-${p.y}`);
+    });
+  }catch(e){ /* gọi sớm khi chưa có đơn -> bỏ qua, vẫn dùng mốc từ allDays */ }
+  const availableMonthYears = Array.from(mocThang)
+    .map(s=>{ const [m,y]=s.split('-').map(Number); return {m,y}; })
+    .sort((a,b)=> a.y-b.y || a.m-b.m);
   // Luôn ưu tiên tháng hiện tại nếu đã có dữ liệu; nếu chưa thì lấy tháng mới nhất đang có.
   const nowMY = {m:(new Date()).getMonth()+1, y:(new Date()).getFullYear()};
   const hasNow = availableMonthYears.some(o=>o.m===nowMY.m && o.y===nowMY.y);
@@ -3233,7 +3247,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 130;
+const APP_VERSION = 131;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3903,12 +3917,22 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   supabaseActiveOrderIds=new Set(activeOrderIds);
   supabaseOrdersLoaded=true;
   let managementQueueChanged=false;
+  const goiBiXoaVìThieuDon=[];
   Object.entries(supabaseManagementOutbox||{}).forEach(([key,item])=>{
     if(!['delete','cancel','restore'].includes(item?.kind)&&!activeOrderIds.has(String(item?.order_id||''))){
+      goiBiXoaVìThieuDon.push({kind:item?.kind,order_id:item?.order_id,team:item?.current_team||item?.support_team||null});
       delete supabaseManagementOutbox[key]; managementQueueChanged=true;
     }
   });
   if(managementQueueChanged)persistSupabaseManagementOutbox();
+  // KHÔNG được im lặng: gói gán tổ/hỗ trợ bị xoá ở đây nghĩa là thao tác của Quản lý
+  // KHÔNG BAO GIỜ tới được máy chủ (máy khác + nhân viên sẽ không thấy tổ đã gán),
+  // trong khi giao diện máy này vẫn hiện như đã gán -> phải báo ra để biết mà làm lại.
+  if(goiBiXoaVìThieuDon.length){
+    console.warn('Bỏ gói thao tác vì đơn chưa có trên Supabase:',goiBiXoaVìThieuDon);
+    const dsDon=Array.from(new Set(goiBiXoaVìThieuDon.map(x=>x.order_id))).slice(0,3).join(', ');
+    supabaseStatus(`⚠ ${goiBiXoaVìThieuDon.length} thao tác gán tổ/hỗ trợ KHÔNG lưu được (đơn chưa có trên máy chủ: ${dsDon}${goiBiXoaVìThieuDon.length>3?'…':''}) · bấm "Làm mới dữ liệu" rồi gán lại`,false);
+  }
   // Khi mất mạng, đơn vừa xóa vẫn phải biến mất ngay trên máy này. Chỉ hiển thị
   // lại nếu người dùng chủ động hủy thao tác, không để lượt đọc cũ phục hồi nó.
   const pendingDeleteIds=new Set(Object.values(supabaseManagementOutbox||{})
@@ -4296,7 +4320,17 @@ async function sendSupabaseManagementItem(item){
     }
     // Dữ liệu cục bộ cũ có thể chứa đơn chưa từng được tạo trên Supabase. Giữ
     // gói 23503 sẽ chặn vĩnh viễn mọi phân công phía sau nên phải loại riêng gói hỏng.
-    if(code==='23503'||code==='22P02') return 'terminal';
+    // NHƯNG không được bỏ im lặng: phải báo rõ thao tác nào không lưu được, vì giao diện
+    // máy này vẫn hiện như đã gán trong khi máy khác/nhân viên không hề thấy.
+    if(code==='23503'||code==='22P02'){
+      const ten=item.kind==='owner'?'gán tổ phụ trách':(item.kind==='support'?'gán tổ hỗ trợ':`thao tác ${item.kind}`);
+      supabaseStatus(`⚠ Không lưu được ${ten} cho đơn ${item.order_id} (lỗi ${code}) · cần gán lại sau khi bấm "Làm mới dữ liệu"`,false);
+      return 'terminal';
+    }
+    // Lỗi nghiệp vụ khác (vd MANAGER_REQUIRED, INVALID_CURRENT_TEAM, PROGRESS_LOCKED):
+    // gói sẽ được thử lại, nhưng vẫn phải cho người dùng biết đang có thao tác chưa lưu.
+    const thongDiep=String(result.error.message||'').slice(0,80);
+    supabaseStatus(`⚠ Chưa lưu được thao tác trên đơn ${item.order_id}${thongDiep?' ('+thongDiep+')':''} · đang thử lại`,false);
     return false;
   }
   const resultRow=Array.isArray(result.data)?result.data[0]:result.data;
@@ -4320,6 +4354,10 @@ async function flushSupabaseManagementOutbox(){
         delete supabaseManagementOutbox[key];
       persistSupabaseManagementOutbox();
       if(ok==='terminal') continue;
+      // Xác nhận rõ ràng khi gán tổ đã lưu thật lên máy chủ, để phân biệt được với
+      // trường hợp chỉ đổi trên giao diện mà không tới được máy chủ.
+      if(item.kind==='owner') supabaseStatus(`Đã lưu tổ phụ trách lên máy chủ (đơn ${item.order_id})`,true);
+      else if(item.kind==='support') supabaseStatus(`Đã lưu tổ hỗ trợ lên máy chủ (đơn ${item.order_id})`,true);
     }
   }finally{supabaseManagementOutboxInFlight=false;}
 }
