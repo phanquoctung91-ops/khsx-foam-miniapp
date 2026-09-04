@@ -3162,7 +3162,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 126;
+const APP_VERSION = 127;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -5291,6 +5291,11 @@ function detectSheetChanges(newRows){
     removedOld.forEach(oldR=>{
       if(usedOld.has(oldR.id)) return;
       const a = assignments[oldR.id];
+      // QUAN TRỌNG (bản Supabase): phải báo xoá xuống server, không chỉ bỏ ở máy này.
+      // Máy khác (và chính máy này ở lượt tải sau) đọc lại đơn từ khsx_orders trên
+      // Supabase, không phải từ sheet vừa tải — nếu không báo xoá, đơn đã bị công ty
+      // bỏ vẫn "sống lại" ngay lần đồng bộ kế tiếp (tổng số liệu bị dư vĩnh viễn).
+      if(SUPABASE_VARIANT) queueSupabaseManagementPatch('delete', oldR);
       if(!hasWork(a)) return;                             // chưa làm gì -> để nó tự biến mất
       const ghostId = 'g_' + oldR.id;
       if(!dynamicOrders.some(x=>x.id === ghostId) && !deletedOrderIds.includes(ghostId)){
