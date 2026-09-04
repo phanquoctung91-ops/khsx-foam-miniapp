@@ -3162,7 +3162,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 125;
+const APP_VERSION = 126;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -5185,17 +5185,21 @@ function hasWork(a){
 function coTienDoDon(o){return !!(o&&CONG_DOAN.some(stage=>tongCongDoan(o,stage)>0));}
 
 // Điểm giống nhau giữa 1 dòng cũ và 1 dòng mới. Phải cùng dòng sản phẩm,
-// và tối đa 2 trường bị đổi thì mới coi là cùng một đơn bị sửa.
-// (Đổi độ dày thường kéo theo đổi mã -> đúng 2 trường.)
+// và tối đa 2 trong 4 trường ĐỊNH DANH (mã/ngang/dài/dày) bị đổi thì mới coi là
+// cùng một đơn bị sửa. (Đổi độ dày thường kéo theo đổi mã -> đúng 2 trường.)
+// LƯU Ý: "số lượng" KHÔNG tính vào đây — sửa số lượng CÙNG LÚC với đổi mã+dày
+// (rất hay xảy ra khi công ty sửa 1 dòng) trước đây làm rớt xuống dưới ngưỡng,
+// khiến hệ thống hiểu nhầm "đơn cũ bị bỏ + đơn mới xuất hiện" -> ghi nhận trùng
+// lặp cả kế hoạch lẫn tiến độ đã nhập, thay vì coi là 1 đơn được sửa số lượng.
 function matchScore(oldR, newR){
   // So sánh tên dòng KHÔNG phân biệt hoa thường và dấu — nếu không, việc chuẩn hoá tên
   // sẽ khiến toàn bộ đơn cũ bị hiểu nhầm là "công ty đã bỏ" ngay lần làm mới đầu tiên.
   if(chuanHoaTenSP(oldR.dong) !== chuanHoaTenSP(newR.dong)) return -1;
   let n = 0;
-  CHANGE_FIELDS.forEach(f=>{ if(sameVal(oldR[f.k], newR[f.k])) n++; });
+  CHANGE_FIELDS.forEach(f=>{ if(f.k === 'so_luong') return; if(sameVal(oldR[f.k], newR[f.k])) n++; });
   return n;
 }
-const MATCH_THRESHOLD = 3;   // giống >= 3/5 trường: tối đa 2 trường bị sửa
+const MATCH_THRESHOLD = 2;   // giống >= 2/4 trường định danh: tối đa 2 trường bị sửa
 
 // Mô tả đúng chỗ bị sửa: "độ dày 10 → 15", "số lượng 9 → 12"...
 function describeFieldChanges(oldR, newR, oldGroupTotal, newGroupTotal){
