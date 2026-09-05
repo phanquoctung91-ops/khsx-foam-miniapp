@@ -156,16 +156,46 @@
   @keyframes kpi-spin{to{transform:rotate(360deg)}}
   .manager-stage-modal select{pointer-events:auto!important;user-select:auto;}
 
-  .tabs{display:flex;gap:4px;margin-bottom:20px;background:#e4e7ed;padding:5px;border-radius:12px;width:fit-content;max-width:100%;overflow-x:auto;}
+  .tabs{display:flex;gap:4px;margin-bottom:20px;background:#1c1b18;padding:5px;border-radius:12px;width:fit-content;max-width:100%;overflow-x:auto;}
   /* Mỗi tab một màu riêng cho dễ phân biệt, tab đang mở tô đậm hẳn */
   .tab-btn{padding:10px 18px;border:none;background:none;font-size:13.5px;font-weight:700;
     color:var(--text2);cursor:pointer;border-radius:8px;white-space:nowrap;transition:all .15s ease;
     border-bottom:3px solid transparent;}
-  .tab-btn:hover{color:var(--text);background:rgba(255,255,255,.6);}
+  .tab-btn:hover{color:var(--text);background:rgba(255,255,255,.06);}
   .tab-btn.active{background:var(--card);box-shadow:var(--shadow);}
   .tab-btn[data-tab="monthly"].active{color:var(--primary);border-bottom-color:var(--primary);}
   .tab-btn[data-tab="autoplan"].active{color:var(--accent);border-bottom-color:var(--accent);}
   .tab-btn[data-tab="progress"].active{color:var(--success);border-bottom-color:var(--success);}
+  .tab-btn[data-tab="capacity"].active{color:#a879ff;border-bottom-color:#a879ff;}
+
+  /* ---- Giai đoạn 2 (2026-09-06): trang "Năng lực" gộp 2 sub-tab nội bộ ---- */
+  .capacity-subtabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .capacity-subtab{padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:#1c1b18;color:var(--text2);font-size:12.5px;font-weight:700;cursor:pointer;}
+  .capacity-subtab:hover{color:var(--text);}
+  .capacity-subtab.active{background:var(--primary-l);color:var(--primary);border-color:var(--primary);}
+  .capacity-subpanel{display:none;}
+  .capacity-subpanel.active{display:block;}
+
+  /* ---- Giai đoạn 2: sidebar cố định trên PC, giữ nguyên thanh tab ngang trên
+     điện thoại + nút "☰ Thêm" mở rộng mục ít dùng (Năng lực) thay vì phá bố cục
+     3 tab quen thuộc của nhân viên. ---- */
+  .tabs-more-toggle{display:none;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;
+    border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;margin:0 0 20px;}
+  @media(max-width:1023px){
+    .tab-extra{display:none;}
+    #mainTabs.show-extra .tab-extra{display:inline-flex;}
+    .tabs-more-toggle{display:inline-block;}
+  }
+  @media(min-width:1024px){
+    body{padding-left:220px;}
+    .tabs{position:fixed;top:0;left:0;bottom:0;width:220px;flex-direction:column;align-items:stretch;
+      border-radius:0;padding:16px 12px;gap:2px;overflow-y:auto;background:var(--card);
+      border-right:1px solid var(--border);z-index:80;margin-bottom:0;}
+    .tab-btn{text-align:left;border-bottom:none!important;border-radius:9px;}
+    .tab-btn.active{box-shadow:none;background:var(--primary-l);}
+    .tab-btn[data-tab="monthly"].active,.tab-btn[data-tab="autoplan"].active,
+    .tab-btn[data-tab="progress"].active,.tab-btn[data-tab="capacity"].active{border-bottom:none!important;}
+  }
 
   .panel{display:none;}
   .panel.active{display:block;}
@@ -1161,11 +1191,13 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <div id="mainContent">
 <div class="kpis" id="kpiRow"></div>
 
-<div class="tabs">
+<div class="tabs" id="mainTabs">
   <button class="tab-btn tab-overview active" data-tab="monthly">📊 Tổng hợp tháng</button>
   <button class="tab-btn tab-overview" data-tab="autoplan">📋 Kế hoạch sản xuất</button>
   <button class="tab-btn only-editor" data-tab="progress">🔧 Tiến độ sản xuất</button>
+  <button class="tab-btn only-manager2 tab-extra" data-tab="capacity">📈 Năng lực</button>
 </div>
+<button id="tabsMoreToggle" type="button" class="tabs-more-toggle only-manager2" aria-label="Thêm mục" aria-expanded="false">☰ Thêm</button>
 
 <div class="panel active" id="panel-monthly">
   <div class="card" style="margin-bottom:18px;">
@@ -1386,47 +1418,54 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-</div>
-
-<div id="warrantyDetailModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.48);padding:16px;overflow:auto;">
-  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:1050px;margin:30px auto;padding:20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-      <div><h3 id="warrantyDetailTitle" style="margin:0;font-size:17px;">Chi tiết bảo hành</h3><div id="warrantyDetailSummary" style="margin-top:4px;color:var(--text2);font-size:12px;"></div></div>
-      <button id="closeWarrantyDetailBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid #cfd6e4;background:#f4f6fa;color:var(--text2);cursor:pointer;">Đóng</button>
+<!-- Sửa 2026-09-06 (Giai đoạn 2 redesign): "Số liệu năng lực" + "Bảo hành" trước đây là
+     2 modal riêng, nay gộp thành 1 trang luôn hiển thị trong sidebar/tab "Năng lực" —
+     giữ NGUYÊN mọi id bên trong (capacityStatsSummary, capacityDanBody, capacityMayBody,
+     capacityPackBody, warrantyDetailTitle, warrantyDetailSummary, warrantyDetailBody) vì
+     renderCapacityStats()/openWarrantyDetail() ghi thẳng vào các id này. -->
+<div class="panel" id="panel-capacity">
+  <div class="card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div><h3 style="margin:0;">Số liệu năng lực</h3><div style="margin-top:4px;color:var(--text2);font-size:12px;">Dán tính theo tổ · May và Đóng gói tính theo người hoàn thành</div></div>
+      <div class="capacity-subtabs" id="capacitySubtabs">
+        <button type="button" class="tab-btn capacity-subtab active" data-subtab="stats">Năng lực</button>
+        <button type="button" class="tab-btn capacity-subtab" data-subtab="warranty">Bảo hành</button>
+      </div>
     </div>
-    <div class="table-scroll" style="max-height:70vh;">
-      <table class="warranty-detail-table">
-        <thead><tr><th>Tổ</th><th>Sản phẩm</th><th>Kích thước</th><th>SL</th><th>Lỗi</th><th>Nguyên nhân</th><th>Hướng xử lý</th></tr></thead>
-        <tbody id="warrantyDetailBody"></tbody>
-      </table>
+
+    <div id="capacitySubpanelStats" class="capacity-subpanel active">
+      <div class="capacity-filters">
+        <div><label for="capacityFromDate">Từ ngày</label><input type="date" id="capacityFromDate"></div>
+        <div><label for="capacityToDate">Đến ngày</label><input type="date" id="capacityToDate"></div>
+        <button id="refreshCapacityStatsBtn" type="button" class="primary-btn">Xem số liệu</button>
+        <button id="capacityQuickToday" type="button" class="capacity-quick-btn">Hôm nay</button>
+        <button id="capacityQuickYesterday" type="button" class="capacity-quick-btn">Hôm qua</button>
+        <button id="capacityQuickLastWeek" type="button" class="capacity-quick-btn">Tuần trước</button>
+        <button id="capacityQuickLastMonth" type="button" class="capacity-quick-btn">Tháng trước</button>
+        <span id="capacityStatsRange" class="save-status"></span>
+      </div>
+      <div id="capacityStatsSummary" class="capacity-summary"></div>
+      <div class="capacity-grid">
+        <section class="capacity-section capacity-full"><h4>Năng lực Tổ Dán</h4><div class="table-scroll" style="max-height:300px;"><table class="capacity-table"><thead><tr><th>Tổ</th><th>Kế hoạch</th><th>Đã dán</th><th>Tỷ lệ</th><th>Hỗ trợ tổ khác</th><th>Còn chờ</th></tr></thead><tbody id="capacityDanBody"></tbody></table></div></section>
+        <section class="capacity-section capacity-full"><h4>Năng lực từng người May</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành</th></tr></thead><tbody id="capacityMayBody"></tbody></table></div></section>
+        <section class="capacity-section capacity-full"><h4>Năng lực từng người Đóng gói</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành</th></tr></thead><tbody id="capacityPackBody"></tbody></table></div></section>
+      </div>
+      <div class="capacity-note">Dữ liệu mới tính đúng người hoàn thành. Dữ liệu cũ đến 24/08/2026 được phân bổ theo quy ước đã chốt; bảo hành được tính riêng ngoài kế hoạch.</div>
+    </div>
+
+    <div id="capacitySubpanelWarranty" class="capacity-subpanel">
+      <h4 id="warrantyDetailTitle" style="margin:0 0 4px;">Chi tiết bảo hành</h4>
+      <div id="warrantyDetailSummary" style="margin-bottom:10px;color:var(--text2);font-size:12px;"></div>
+      <div class="table-scroll" style="max-height:70vh;">
+        <table class="warranty-detail-table">
+          <thead><tr><th>Tổ</th><th>Sản phẩm</th><th>Kích thước</th><th>SL</th><th>Lỗi</th><th>Nguyên nhân</th><th>Hướng xử lý</th></tr></thead>
+          <tbody id="warrantyDetailBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
-<div id="capacityStatsModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="capacityStatsTitle">
-  <div class="capacity-dialog">
-    <div class="capacity-head">
-      <div><h3 id="capacityStatsTitle" style="margin:0;font-size:18px;">Số liệu năng lực</h3><div style="margin-top:4px;color:var(--text2);font-size:12px;">Dán tính theo tổ · May và Đóng gói tính theo người hoàn thành</div></div>
-      <button id="closeCapacityStatsBtn" type="button" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid #cfd6e4;background:#f4f6fa;color:var(--text2);cursor:pointer;">Đóng</button>
-    </div>
-    <div class="capacity-filters">
-      <div><label for="capacityFromDate">Từ ngày</label><input type="date" id="capacityFromDate"></div>
-      <div><label for="capacityToDate">Đến ngày</label><input type="date" id="capacityToDate"></div>
-      <button id="refreshCapacityStatsBtn" type="button" class="primary-btn">Xem số liệu</button>
-      <button id="capacityQuickToday" type="button" class="capacity-quick-btn">Hôm nay</button>
-      <button id="capacityQuickYesterday" type="button" class="capacity-quick-btn">Hôm qua</button>
-      <button id="capacityQuickLastWeek" type="button" class="capacity-quick-btn">Tuần trước</button>
-      <button id="capacityQuickLastMonth" type="button" class="capacity-quick-btn">Tháng trước</button>
-      <span id="capacityStatsRange" class="save-status"></span>
-    </div>
-    <div id="capacityStatsSummary" class="capacity-summary"></div>
-    <div class="capacity-grid">
-      <section class="capacity-section capacity-full"><h4>Năng lực Tổ Dán</h4><div class="table-scroll" style="max-height:300px;"><table class="capacity-table"><thead><tr><th>Tổ</th><th>Kế hoạch</th><th>Đã dán</th><th>Tỷ lệ</th><th>Hỗ trợ tổ khác</th><th>Còn chờ</th></tr></thead><tbody id="capacityDanBody"></tbody></table></div></section>
-      <section class="capacity-section capacity-full"><h4>Năng lực từng người May</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành</th></tr></thead><tbody id="capacityMayBody"></tbody></table></div></section>
-      <section class="capacity-section capacity-full"><h4>Năng lực từng người Đóng gói</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành</th></tr></thead><tbody id="capacityPackBody"></tbody></table></div></section>
-    </div>
-    <div class="capacity-note">Dữ liệu mới tính đúng người hoàn thành. Dữ liệu cũ đến 24/08/2026 được phân bổ theo quy ước đã chốt; bảo hành được tính riêng ngoài kế hoạch.</div>
-  </div>
 </div>
 
 <div id="stageChoiceModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="stageChoiceTitle">
@@ -1453,7 +1492,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=134"></script>
+<script src="raw-data.js?v=135"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3245,7 +3284,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 134;
+const APP_VERSION = 135;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -5927,7 +5966,6 @@ function warrantyDetailButtonHtml(o){
   const count=(o.bh_chi_tiet||[]).length;
   return `<button type="button" class="warranty-detail-btn" data-warranty-date="${thoatHtml(o.date)}">Xem ${count} chi tiết</button>`;
 }
-function closeWarrantyDetail(){ document.getElementById('warrantyDetailModal').style.display='none'; }
 function openWarrantyDetail(date){
   const d=baoHanhTheoNgay[date]||{};
   const rows=Array.isArray(d.chiTiet)?d.chiTiet:[];
@@ -5940,7 +5978,8 @@ function openWarrantyDetail(date){
     <td>${thoatHtml(Array.isArray(x.loi)?x.loi.join(', '):(x.loi||'-'))}</td>
     <td>${thoatHtml(x.nguyen_nhan||'-')}</td><td>${thoatHtml(x.huong_xu_ly||'-')}</td>
   </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text2);">Không có chi tiết.</td></tr>';
-  document.getElementById('warrantyDetailModal').style.display='block';
+  document.querySelector('.tab-btn[data-tab="capacity"]')?.click();
+  switchCapacitySubtab('warranty');
 }
 function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi'){
   const gom = {};
@@ -6197,8 +6236,6 @@ document.getElementById('autoPlanTable').addEventListener('click',e=>{
   const btn=e.target.closest('.warranty-detail-btn');
   if(btn) openWarrantyDetail(btn.dataset.warrantyDate);
 });
-document.getElementById('closeWarrantyDetailBtn').addEventListener('click',closeWarrantyDetail);
-document.getElementById('warrantyDetailModal').addEventListener('click',e=>{ if(e.target.id==='warrantyDetailModal') closeWarrantyDetail(); });
 
 function namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa){
   const k=khoaNgayDMY(ngay);
@@ -6354,25 +6391,35 @@ function renderCapacityStats(){
   document.getElementById('capacityMayBody').innerHTML=htmlDongNangLucCaNhan(may);
   document.getElementById('capacityPackBody').innerHTML=htmlDongNangLucCaNhan(dongGoi);
 }
-function closeCapacityStats(){ document.getElementById('capacityStatsModal').style.display='none'; }
 function isoCuaNgay(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function thuHaiCuaTuan(d){ const x=new Date(d),wd=x.getDay(); x.setDate(x.getDate()-(wd===0?6:wd-1)); return x; }
 function datCapacityRange(tu,den){ document.getElementById('capacityFromDate').value=isoCuaNgay(tu); document.getElementById('capacityToDate').value=isoCuaNgay(den); renderCapacityStats(); }
+// Sửa 2026-09-06: "Số liệu năng lực" không còn là modal — chuyển sang tab/trang
+// "capacity" luôn hiển thị (dùng lại đúng cơ chế .tab-btn/.panel có sẵn) + 1 cặp
+// sub-tab nội bộ (Năng lực/Bảo hành) để gộp chung với chi tiết bảo hành trước đây
+// là modal riêng.
+function switchCapacitySubtab(name){
+  document.querySelectorAll('.capacity-subtab').forEach(b=>b.classList.toggle('active', b.dataset.subtab===name));
+  const stats=document.getElementById('capacitySubpanelStats'), warranty=document.getElementById('capacitySubpanelWarranty');
+  if(stats) stats.classList.toggle('active', name==='stats');
+  if(warranty) warranty.classList.toggle('active', name==='warranty');
+}
 function openCapacityStats(){
   if(!canManage2()) return;
+  document.querySelector('.tab-btn[data-tab="capacity"]')?.click();
+  switchCapacitySubtab('stats');
   const today=new Date();
   document.getElementById('capacityFromDate').value=isoCuaNgay(today);
   document.getElementById('capacityToDate').value=isoCuaNgay(today);
-  document.getElementById('capacityStatsModal').style.display='block'; renderCapacityStats();
+  renderCapacityStats();
 }
 document.getElementById('capacityStatsBtn').addEventListener('click',openCapacityStats);
-document.getElementById('closeCapacityStatsBtn').addEventListener('click',closeCapacityStats);
+document.querySelectorAll('.capacity-subtab').forEach(btn=>btn.addEventListener('click',()=>switchCapacitySubtab(btn.dataset.subtab)));
 document.getElementById('capacityQuickToday').addEventListener('click',()=>{ const d=new Date(); datCapacityRange(d,d); });
 document.getElementById('capacityQuickYesterday').addEventListener('click',()=>{ const d=new Date(); d.setDate(d.getDate()-1); datCapacityRange(d,d); });
 document.getElementById('capacityQuickLastWeek').addEventListener('click',()=>{ const a=thuHaiCuaTuan(new Date()),b=new Date(a),c=new Date(a); b.setDate(b.getDate()-7); c.setDate(c.getDate()-1); datCapacityRange(b,c); });
 document.getElementById('capacityQuickLastMonth').addEventListener('click',()=>{ const n=new Date(); datCapacityRange(new Date(n.getFullYear(),n.getMonth()-1,1),new Date(n.getFullYear(),n.getMonth(),0)); });
 document.getElementById('refreshCapacityStatsBtn').addEventListener('click',renderCapacityStats);
-document.getElementById('capacityStatsModal').addEventListener('click',e=>{if(e.target.id==='capacityStatsModal') closeCapacityStats();});
 document.getElementById('autoPlanDaySelect').addEventListener('change', renderAutoPlan);
 function syncSearchClearButton(input){
   const wrap=input && input.closest('.search-with-clear');
@@ -7048,7 +7095,15 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
+    // Chọn xong thì tự thu gọn drawer "☰ Thêm" trên điện thoại, không để mở lì.
+    document.getElementById('mainTabs')?.classList.remove('show-extra');
+    document.getElementById('tabsMoreToggle')?.setAttribute('aria-expanded','false');
   });
+});
+document.getElementById('tabsMoreToggle')?.addEventListener('click', ()=>{
+  const tabs=document.getElementById('mainTabs');
+  const expanded=tabs.classList.toggle('show-extra');
+  document.getElementById('tabsMoreToggle').setAttribute('aria-expanded', expanded?'true':'false');
 });
 
 // ============ Tiến độ sản xuất tab ============
