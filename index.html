@@ -13,78 +13,80 @@
 <script src="js/khsx-data-core.js?v=125"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
+  /* Giao diện tối theo mẫu Hospital Dashboard (Clinova) — 2026-09-05, giao diện DUY NHẤT
+     của app (đã bỏ giao diện sáng + nút chuyển đổi). Màu đo trực tiếp từ bản mẫu bằng
+     getComputedStyle/canvas, không đoán từ ảnh: nền #100f0c, thẻ #181714, viền #282622,
+     chữ #e6e4e1/#9a9891, accent teal #57b6b6, xanh lá #52b57b, đỏ #e65252, vàng #e6b552. */
   :root{
-    --bg:#eef3f8; --card:#ffffff; --border:#d5dfea; --text:#0d1117; --text2:#4a5768;
-    --primary:#1B3D77; --primary-l:#eaf1fb; --primary-dark:#122C58;
-    --brand-light:#5BC3DC; --brand-light-l:#e8f6fa;
-    --success:#0f8a4c; --success-l:#e9f8ef;
-    --warning:#b7791f; --warning-l:#fdf4e3;
-    --danger:#c0332f; --danger-l:#fbeaea;
-    --accent:#2E8FB5; --accent-l:#e6f2f8;
-    --shadow:0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.04);
+    --bg:#100f0c; --card:#181714; --border:#282622; --text:#e6e4e1; --text2:#9a9891;
+    --primary:#57b6b6; --primary-l:#0c2424; --primary-dark:#7ecccc;
+    --brand-light:#57b6b6; --brand-light-l:#0c2424;
+    --success:#52b57b; --success-l:#0f2b1f;
+    --warning:#e6b552; --warning-l:#3a2c10;
+    --danger:#e65252; --danger-l:#3a1414;
+    --accent:#57b6b6; --accent-l:#0c2424;
+    --shadow:0 1px 0 rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.28);
   }
-  body.dark-mode{--bg:#07111f;--card:#0e1d2d;--text:#eafcff;--text2:#9ab8c9;--border:#204760;--primary:#38d9ff;--primary-dark:#8cecff;--primary-l:#103348;--success:#28e0a2;--success-l:#0d3a32;--warning:#ffc857;--warning-l:#493710;--danger:#ff5d7a;--danger-l:#481b2a;--accent:#a879ff;--accent-l:#2c1f4d;--shadow:0 0 0 1px rgba(56,217,255,.08),0 10px 30px rgba(0,0,0,.36);background:radial-gradient(circle at 15% 0,#102b43 0,#07111f 42%,#050b14 100%);color:var(--text);}
-  body.dark-mode select,body.dark-mode input,body.dark-mode textarea,body.dark-mode button:not(.primary-btn){background:#091827!important;color:var(--text)!important;border-color:var(--border)!important;}
-  body.dark-mode select:focus,body.dark-mode input:focus,body.dark-mode textarea:focus{background:#0b2032!important;border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(56,217,255,.14);}
-  body.dark-mode table th{background:#10243a!important;color:#dffaff!important;}
-  body.dark-mode .panel,body.dark-mode .card,body.dark-mode .kpi,body.dark-mode [role="dialog"]>div{background:linear-gradient(145deg,#102238,#0b1827)!important;color:var(--text);}
-  body.dark-mode [style*="background:#f8f9fb"],body.dark-mode [style*="background:#f7fbff"],body.dark-mode [style*="background:#f4f6fa"],body.dark-mode [style*="background:#fff"],body.dark-mode [style*="background: white"],body.dark-mode [style*="background:white"]{background:#10243a!important;color:var(--text)!important;}
+  body.dark-mode{background:var(--bg);color:var(--text);}
+  body.dark-mode select,body.dark-mode input,body.dark-mode textarea,body.dark-mode button:not(.primary-btn){background:#1c1b18!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode select:focus,body.dark-mode input:focus,body.dark-mode textarea:focus{background:#201f1b!important;border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(56,217,255,.14);}
+  body.dark-mode table th{background:#201f1b!important;color:#e6e4e1!important;}
+  body.dark-mode .panel,body.dark-mode .card,body.dark-mode .kpi,body.dark-mode [role="dialog"]>div{background:linear-gradient(145deg,#1c1b18,#100f0c)!important;color:var(--text);}
+  body.dark-mode [style*="background:#f8f9fb"],body.dark-mode [style*="background:#f7fbff"],body.dark-mode [style*="background:#f4f6fa"],body.dark-mode [style*="background:#fff"],body.dark-mode [style*="background: white"],body.dark-mode [style*="background:white"]{background:#201f1b!important;color:var(--text)!important;}
   /* #fdf2f1 (khối "Nạp lại từ gói sao lưu") và #fdecea trước giờ thiếu trong danh sách dò
      nên không bao giờ đổi màu ở chế độ tối — nền hồng nhạt + chữ đỏ nhạt, rất khó đọc. */
   body.dark-mode [style*="background:#fdf2f1"],body.dark-mode [style*="background:#fdecea"]{background:var(--danger-l)!important;color:var(--danger)!important;}
   body.dark-mode [style*="color:#1a1d23"],body.dark-mode [style*="color:#111"],body.dark-mode [style*="color:black"]{color:var(--text)!important;}
-  body.dark-mode #loginOverlay{background:radial-gradient(circle at 20% 0,#102b43 0,#07111f 48%,#050b14 100%)!important;}
-  body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#091827;border:1px solid var(--border);}
+  body.dark-mode #loginOverlay{background:radial-gradient(circle at 20% 0,#173330 0,#100f0c 48%,#0a0a08 100%)!important;}
+  body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#1c1b18;border:1px solid var(--border);}
   body.dark-mode .tab-btn,body.dark-mode .management-tools-menu button{color:var(--text2);background:#0d2032;}
   body.dark-mode .tab-btn.active{color:var(--primary)!important;box-shadow:0 0 14px rgba(56,217,255,.24);}
   body.dark-mode .table-scroll,body.dark-mode table td{background:var(--card);color:var(--text);border-color:var(--border);}
-  body.dark-mode tr:hover td{background:#10283c!important;}
+  body.dark-mode tr:hover td{background:#201f1b!important;}
   body.dark-mode .modal-overlay,body.dark-mode [id$="Modal"]{color:var(--text);}
-  body.dark-mode [id$="Modal"]>div,body.dark-mode #loginOverlay>div{background:linear-gradient(145deg,#102238,#0b1827)!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode [id$="Modal"]>div,body.dark-mode #loginOverlay>div{background:linear-gradient(145deg,#1c1b18,#100f0c)!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode [id$="Modal"] [style*="background:#f8f9fb"],
   body.dark-mode [id$="Modal"] [style*="background:#f7fbff"],
   body.dark-mode [id$="Modal"] [style*="background:#f4f6fa"],
   body.dark-mode [id$="Modal"] [style*="background:#fff"],
-  body.dark-mode [id$="Modal"] [style*="background:white"]{background:#10243a!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode [id$="Modal"] [style*="background:white"]{background:#201f1b!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode [id$="Modal"] [style*="background:#fdf2f1"],
   body.dark-mode [id$="Modal"] [style*="background:#fdecea"]{background:var(--danger-l)!important;color:var(--danger)!important;border-color:var(--danger)!important;}
   body.dark-mode .tabs,body.dark-mode .team-card,body.dark-mode .stage-summary-item,
   body.dark-mode .capacity-filters,body.dark-mode .capacity-section,
   body.dark-mode .wf-step,body.dark-mode .management-tools-menu button,
   body.dark-mode #supabaseTelegramAdmin,body.dark-mode #autoPlanTable tbody,
-  body.dark-mode #progressTable tbody{background:#0e1d2d!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode #progressTable tbody{background:#181714!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode .wf-step span,body.dark-mode .wf-note,body.dark-mode .capacity-note,
   body.dark-mode .team-card .to-label,body.dark-mode .stage-summary-item,
   body.dark-mode #supabaseTelegramAdmin [style*="color:#1f4d78"]{color:var(--text2)!important;}
-  body.dark-mode .wf-note{background:#493710!important;border-color:var(--warning)!important;}
+  body.dark-mode .wf-note{background:#3a2c10!important;border-color:var(--warning)!important;}
   /* Các bảng này bật/tắt bằng panel.style.display=... trong JS, thao tác đó khiến trình
      duyệt viết lại toàn bộ thuộc tính style (đổi #f8f9fb thành rgb(248,249,251)), làm luật
      [style*="background:#f8f9fb"] phía trên không còn khớp được nữa -> nền vẫn sáng trong khi
      chữ đã đổi màu sáng theo dark mode, gần như vô hình. Chốt luật riêng theo ID, không phụ
      thuộc chuỗi mã màu trong style nữa. */
   body.dark-mode #lockPlanPanel,body.dark-mode #lockProgressPanel,
-  body.dark-mode #manualOrderForm,body.dark-mode #manualOrderFormProgress{background:#10243a!important;color:var(--text)!important;}
+  body.dark-mode #manualOrderForm,body.dark-mode #manualOrderFormProgress{background:#201f1b!important;color:var(--text)!important;}
   body.dark-mode #unlockEditNotice{background:var(--danger-l)!important;color:var(--danger)!important;}
   /* Nút "Đăng ký Telegram ID" ở màn đăng nhập dùng màu #eef8fc/#1e6f96 — không nằm trong
      danh sách hex được dò bên dưới nên trước giờ luôn sáng bất kể chế độ tối. */
-  body.dark-mode #telegramRegisterBtn{background:#10243a!important;color:var(--primary)!important;border-color:var(--primary)!important;}
+  body.dark-mode #telegramRegisterBtn{background:#201f1b!important;color:var(--primary)!important;border-color:var(--primary)!important;}
   body.dark-mode .capacity-quick-btn,body.dark-mode .warranty-detail-btn,
-  body.dark-mode #supabaseTelegramAdmin button{background:#10243a!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode #supabaseTelegramAdmin button{background:#201f1b!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode tr.row-new td,body.dark-mode tr.row-changed td,body.dark-mode tr.row-rot td,
   body.dark-mode tr.row-ghost td,body.dark-mode tr.row-baohanh td,body.dark-mode tr.row-uutien td,
-  body.dark-mode tr.row-split-source td{background:#10243a!important;border-color:var(--border)!important;}
-  body.dark-mode #autoPlanTable tbody tr,body.dark-mode #progressTable tbody tr{background:#0e1d2d!important;border-color:var(--border)!important;}
-  body.dark-mode .ops-command-center{background:linear-gradient(145deg,#102238,#0b1827)!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
-  body.dark-mode .ops-stage-card{background:#0e1d2d!important;border-color:var(--border)!important;}
+  body.dark-mode tr.row-split-source td{background:#201f1b!important;border-color:var(--border)!important;}
+  body.dark-mode #autoPlanTable tbody tr,body.dark-mode #progressTable tbody tr{background:#181714!important;border-color:var(--border)!important;}
+  body.dark-mode .ops-command-center{background:linear-gradient(145deg,#1c1b18,#100f0c)!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
+  body.dark-mode .ops-stage-card{background:#181714!important;border-color:var(--border)!important;}
   body.dark-mode .ops-stage-name,body.dark-mode .ops-stage-value,body.dark-mode .ops-stage-meta strong{color:var(--text)!important;}
-  body.dark-mode .ops-stage-status{background:#10243a!important;color:var(--text2)!important;}
-  body.dark-mode .ops-alert-strip{background:#493710!important;color:var(--text)!important;}
-  body.dark-mode .employee-stage-head{background:linear-gradient(135deg,#0b3157,#075d78)!important;}
-  body.dark-mode .employee-capacity-alert{background:#493710!important;color:var(--text)!important;}
-  body.dark-mode .employee-order-card{background:#0e1d2d!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
+  body.dark-mode .ops-alert-strip{background:#3a2c10!important;color:var(--text)!important;}
+  body.dark-mode .employee-capacity-alert{background:#3a2c10!important;color:var(--text)!important;}
+  body.dark-mode .employee-order-card{background:#181714!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
   body.dark-mode .employee-order-title,body.dark-mode .employee-order-plan strong{color:var(--text)!important;}
   body.dark-mode .employee-order-meta{border-color:var(--border)!important;color:var(--text2)!important;}
-  body.dark-mode .employee-empty{background:#0e1d2d!important;border-color:var(--border)!important;color:var(--text2)!important;}
+  body.dark-mode .employee-empty{background:#181714!important;border-color:var(--border)!important;color:var(--text2)!important;}
   body.dark-mode [style*="background:#fdf2f1"],body.dark-mode [style*="background:#fdecea"],body.dark-mode [style*="background:#fdf4e3"],body.dark-mode [style*="background:#eef3f9"]{background:#2a2430!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode .kpi{box-shadow:0 0 18px rgba(56,217,255,.08);}
   /* Link khách trên PC ưu tiên mật độ thông tin: đủ hai tab nhưng gọn hơn dashboard quản lý. */
@@ -145,7 +147,7 @@
   .weekly-kr-report{margin-top:10px;padding:9px 10px;border-radius:9px;background:var(--primary-l);color:var(--text);font-size:11.5px;line-height:1.45;user-select:text;}
   .weekly-kr-copy{margin-top:7px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--primary-dark);padding:5px 9px;font-size:10.5px;font-weight:700;cursor:pointer;}
   .weekly-kr-copy:hover{border-color:var(--primary);}
-  .kpi-thanh{height:5px;border-radius:99px;background:#e8ecf2;margin-top:8px;overflow:hidden;}
+  .kpi-thanh{height:5px;border-radius:99px;background:var(--border);margin-top:8px;overflow:hidden;}
   .kpi-thanh i{display:block;height:100%;border-radius:99px;transition:width .6s ease;}
   .kpi .value{font-size:25px;font-weight:700;letter-spacing:-0.3px;}
   .kpi-refresh-btn{width:28px;height:28px;padding:0;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--accent);cursor:pointer;font-size:18px;line-height:1;}
@@ -297,7 +299,7 @@
   footer{text-align:center;color:var(--text2);font-size:11.5px;margin-top:32px;padding-top:16px;border-top:1px solid var(--border);}
 
   .primary-btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 18px;border-radius:9px;border:none;background:var(--primary);color:#fff;cursor:pointer;}
-  .primary-btn:disabled{background:#c7d2e0;cursor:not-allowed;}
+  .primary-btn:disabled{background:var(--border);color:var(--text2);cursor:not-allowed;}
   .primary-btn:hover:not(:disabled){background:var(--primary-dark);}
   textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;padding:10px;border-radius:9px;border:1px solid var(--border);background:#fbfbfc;width:100%;resize:vertical;}
   textarea:focus{outline:none;border-color:var(--primary);background:#fff;}
@@ -310,8 +312,8 @@
   .badge-blue{background:var(--primary-l);color:var(--primary-dark);}
   .badge-progress{background:var(--warning-l);color:var(--warning);}
   .badge-done{background:var(--success-l);color:var(--success);}
-  .badge-rot{background:#fceceb;color:#c0332f;}
-  .badge-partial{background:#fdf0e0;color:#b7791f;}
+  .badge-rot{background:#3a1414;color:#e65252;}
+  .badge-partial{background:#3a2c10;color:#e6b552;}
   /* Đơn đã làm rồi nhưng công ty đã bỏ khỏi KHSX -> tô đỏ bắt mắt, ghim đầu bảng */
   tr.row-ghost td{background:#fbd7d4;border-top:2px solid var(--danger);border-bottom:1px solid #efb4af;}
   tr.row-ghost:hover td{background:#f8c6c2;}
@@ -330,7 +332,7 @@
   tr.row-baohanh td:first-child{box-shadow:inset 5px 0 0 #8a5cd0;}
   .badge-baohanh{background:#8a5cd0;color:#fff;border:1px solid #7348b8;}
   .warranty-team-list{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;}
-  .warranty-team-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#eee6ff;color:#6840a3;font-size:10.5px;font-weight:700;white-space:nowrap;}
+  .warranty-team-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#241a38;color:#a879ff;font-size:10.5px;font-weight:700;white-space:nowrap;}
   .warranty-detail-btn{margin-top:5px;padding:5px 9px;border:1px solid #bca7df;border-radius:7px;background:#fff;color:#6840a3;font-size:11px;font-weight:700;cursor:pointer;}
   .warranty-detail-btn:hover{background:#f4efff;}
   .warranty-detail-table{width:100%;min-width:780px;font-size:12px;}
@@ -344,7 +346,7 @@
   .badge-uutien{background:#d9a300;color:#fff;border:1px solid #b98a00;}
   input.uutien-tick{width:17px;height:17px;cursor:pointer;accent-color:#d9a300;}
   @keyframes prioritySlowPulse{0%,100%{box-shadow:0 0 0 1px rgba(217,163,0,.35),0 3px 10px rgba(25,55,90,.07)}50%{box-shadow:0 0 0 4px rgba(217,163,0,.7),0 0 22px rgba(255,193,7,.45)}}
-  .employee-order-card.is-priority{border:2px solid #d9a300;background:#fff8dc;animation:prioritySlowPulse 2.4s ease-in-out infinite;}
+  .employee-order-card.is-priority{border:2px solid #d9a300;background:#2e2410;animation:prioritySlowPulse 2.4s ease-in-out infinite;}
   .employee-priority-flag{display:inline-block;margin-bottom:4px;padding:3px 8px;border-radius:999px;background:#d9a300;color:#fff;font-size:10px;font-weight:900;letter-spacing:.03em;}
 
   /* Dòng vừa bị sheet công ty sửa lại */
@@ -359,7 +361,7 @@
   tr.row-split-source td::after{opacity:.85;}
   tr.row-split-source:hover td{background:#e5ebf2;}
   tr.row-integrity td{box-shadow:inset 0 1px 0 #e0a128,inset 0 -1px 0 #e0a128;}
-  .data-integrity-alert{display:none;margin:0 0 12px;border:1px solid #e5bb66;border-radius:10px;background:#fff8e8;color:#6f4700;padding:9px 12px;font-size:12px;}
+  .data-integrity-alert{display:none;margin:0 0 12px;border:1px solid #5c4520;border-radius:10px;background:#3a2c10;color:#e6b552;padding:9px 12px;font-size:12px;}
   .data-integrity-alert summary{cursor:pointer;font-weight:800;}
   .data-integrity-list{margin-top:7px;display:grid;gap:5px;}
   select.to-select{width:100%;min-width:0;max-width:100%;padding-left:7px;padding-right:24px;}
@@ -369,7 +371,7 @@
   .stage-cell{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-width:0;margin:0 auto;}
   .stage-cell input.qty-input{transition:border-color .15s,box-shadow .15s,background .15s;}
   .stage-cell input.stage-ready{background:#fff;border-color:#4aa3df;box-shadow:0 0 0 2px rgba(74,163,223,.12);}
-  .stage-cell input:disabled{background:#f1f3f6;color:#8b94a3;border-color:#dfe3e9;box-shadow:none;}
+  .stage-cell input:disabled{background:#1c1b18;color:var(--text2);border-color:var(--border);box-shadow:none;}
   .stage-hint{font-size:10.5px;line-height:1.2;font-weight:700;color:var(--text2);white-space:normal;text-align:center;}
   .stage-hint.drop{color:var(--danger);}
   .stage-hint.wait{color:#2475a9;}
@@ -377,14 +379,14 @@
   .stage-readonly{font-size:13px;font-weight:800;color:var(--text);text-align:center;}
   .status-over{display:block;margin-top:4px;color:#2475d0;font-size:11px;font-weight:800;}
   .group-chip{display:inline-block;max-width:100%;margin:1px 2px;padding:3px 7px;border-radius:999px;font-size:10.5px;font-weight:800;line-height:1.2;white-space:normal;overflow-wrap:break-word;border:1px solid transparent;}
-  .group-thanh-cong{background:#dff3e4;color:#17733b;border-color:#a8d8b5;}
-  .group-digital{background:#e2efff;color:#155fa0;border-color:#afd0f3;}
-  .group-global{background:#eee5ff;color:#6b3ab1;border-color:#cfb9f1;}
-  .group-chau-au{background:#fff0d8;color:#9a5a08;border-color:#efcb91;}
-  .group-khsx{background:#e8eef7;color:#365477;border-color:#c4d2e3;}
-  .group-bao-hanh{background:#eee5ff;color:#6d3cad;border-color:#cfb9f1;}
-  .group-phat-sinh{background:#e1f4f8;color:#167087;border-color:#abdbe5;}
-  .group-khac{background:#f0f1f3;color:#59616d;border-color:#d4d7dc;}
+  .group-thanh-cong{background:#12321f;color:#52b57b;border-color:#1f4a30;}
+  .group-digital{background:#10233a;color:#6bb6f0;border-color:#1a3a5c;}
+  .group-global{background:#241a38;color:#b18cf0;border-color:#3a2a5c;}
+  .group-chau-au{background:#3a2810;color:#e0a050;border-color:#5c3f1a;}
+  .group-khsx{background:#1a2230;color:#8fa8c9;border-color:#2a3a4f;}
+  .group-bao-hanh{background:#241a38;color:#a879ff;border-color:#3a2a5c;}
+  .group-phat-sinh{background:#0f2b30;color:#4fc3d9;border-color:#1a4550;}
+  .group-khac{background:#201f1b;color:#9a9891;border-color:#333029;}
 
   .team-ring-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:stretch;}
   /* Chỉ có một thẻ (tài khoản gắn tổ) -> thu lại, không để chiếm hết chiều ngang */
@@ -415,7 +417,7 @@
   .team-ring-done-tick{display:inline-block;margin-left:4px;color:var(--success);font-size:12px;font-weight:900;line-height:1;vertical-align:1px;}
   /* Ưu tiên: tô liền cả ba ô Tên + Kích thước + Số lượng của đúng một dòng.
      Không thêm biểu tượng và không đổi cấu trúc lưới nên thẻ không bị rộng/tràn chữ. */
-  .team-ring-list .team-ring-row-uutien{background:#fff7d9;}
+  .team-ring-list .team-ring-row-uutien{background:#3a3010;}
   .team-ring-list .t.team-ring-row-uutien{border-radius:4px 0 0 4px;}
   .team-ring-list b.team-ring-row-uutien{border-radius:0 4px 4px 0;}
 
@@ -423,7 +425,7 @@
   .capacity-modal{display:none;position:fixed;inset:0;z-index:9350;background:rgba(18,20,26,.48);padding:16px;overflow:auto;}
   .capacity-dialog{background:var(--card);border-radius:16px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:1120px;margin:24px auto;padding:20px;}
   .capacity-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
-  .capacity-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:12px;background:#f7f9fc;border:1px solid var(--border);border-radius:11px;margin-bottom:14px;}
+  .capacity-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:12px;background:#1c1b18;border:1px solid var(--border);border-radius:11px;margin-bottom:14px;}
   .capacity-filters label{display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;}
   .capacity-summary{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
   .capacity-summary .kpi{min-height:84px;}
@@ -431,8 +433,8 @@
   .capacity-section{border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0;}
   .capacity-section.capacity-full{grid-column:1/-1;}
   .capacity-section h4{margin:0 0 10px;font-size:14px;}
-  .capacity-quick-btn{font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid #cfd6e4;background:#f4f6fa;color:var(--text2);cursor:pointer;}
-  .capacity-quick-btn:hover{background:#eaeef4;}
+  .capacity-quick-btn{font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:#201f1b;color:var(--text2);cursor:pointer;}
+  .capacity-quick-btn:hover{background:#282622;}
   .capacity-table{width:100%;min-width:560px;font-size:12px;}
   .capacity-table th,.capacity-table td{padding:8px 9px;}
   .capacity-note{font-size:11.5px;color:var(--text2);line-height:1.45;margin-top:10px;}
@@ -451,11 +453,11 @@
   .speed-detail-source{color:var(--text2);border:1px dashed var(--border);}
   .speed-detail-warning{background:var(--warning-l);border:1px solid var(--warning);color:var(--text);}
   .speed-detail-result{background:var(--success-l);border:1px solid var(--success);color:var(--text);font-weight:700;}
-  body.dark-mode .speed-detail-lead{background:#103348!important;border-color:var(--border)!important;}
-  body.dark-mode .speed-detail-row{background:#0e1d2d!important;border-color:var(--border)!important;}
-  body.dark-mode .speed-detail-formula{background:#2c1f4d!important;border-color:var(--border)!important;}
-  body.dark-mode .speed-detail-warning{background:#493710!important;color:var(--text)!important;}
-  body.dark-mode .speed-detail-result{background:#0d3a32!important;color:var(--text)!important;}
+  body.dark-mode .speed-detail-lead{background:#132b2b!important;border-color:var(--border)!important;}
+  body.dark-mode .speed-detail-row{background:#181714!important;border-color:var(--border)!important;}
+  body.dark-mode .speed-detail-formula{background:#241f30!important;border-color:var(--border)!important;}
+  body.dark-mode .speed-detail-warning{background:#3a2c10!important;color:var(--text)!important;}
+  body.dark-mode .speed-detail-result{background:#0f2b1f!important;color:var(--text)!important;}
   @media(max-width:700px){
     .capacity-dialog{margin:5px auto;padding:14px;border-radius:13px;}
     .capacity-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -491,18 +493,12 @@
     box-shadow:0 1px 3px rgba(29,78,216,.18);
   }
   #managementToolsBtn:hover{background:var(--primary-dark);}
-  #darkModeBtn{
-    font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 11px;border-radius:9px;cursor:pointer;
-    border:1px solid var(--border);background:var(--card);color:var(--text);white-space:nowrap;
-    box-shadow:0 1px 3px rgba(16,24,40,.08);
-  }
-  #darkModeBtn:hover{background:var(--primary-l);border-color:#b9cce5;}
   #managerStageViewBtn{
     font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 11px;border-radius:9px;cursor:pointer;
     border:1px solid #b9cce5;background:#edf6ff;color:#1f4d78;white-space:nowrap;
     box-shadow:0 1px 3px rgba(16,24,40,.08);
   }
-  #managerStageViewBtn:hover{background:#dceeff;border-color:#8fb5dc;}
+  #managerStageViewBtn:hover{background:var(--primary-l);border-color:var(--primary);}
   .management-tools-menu{
     display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:1000;
     width:min(260px,calc(100vw - 24px));padding:7px;background:var(--card);
@@ -581,7 +577,7 @@
 
     /* Màn hình hẹp: mỗi đơn là một thẻ, không ép bảng PC vào điện thoại. */
     #autoPlanTable thead, #progressTable thead{display:none;}
-    #autoPlanTable tbody, #progressTable tbody{display:block;padding:8px;background:#f5f7fa;}
+    #autoPlanTable tbody, #progressTable tbody{display:block;padding:8px;background:var(--bg);}
     #autoPlanTable tbody tr, #progressTable tbody tr{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 7px rgba(26,39,62,.05);}
     #autoPlanTable tbody td, #progressTable tbody td{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;grid-column:span 2;width:auto!important;min-width:0!important;max-width:none!important;padding:9px 7px;border:0;border-right:1px solid #eef1f5;border-bottom:1px solid #eef1f5;white-space:normal;text-align:center;overflow-wrap:break-word;}
     #autoPlanTable tbody td::before, #progressTable tbody td::before{display:block;margin-bottom:5px;color:var(--text2);font-size:9px;font-weight:800;line-height:1.15;text-transform:uppercase;letter-spacing:.15px;}
@@ -683,7 +679,7 @@
     #userBarName{font-size:13px;}
     #userBarRole{font-size:11.5px;}
     .management-tools{margin-top:6px;}
-    #managementToolsBtn,#darkModeBtn,#managerStageViewBtn{padding:7px 9px;font-size:11.5px;}
+    #managementToolsBtn,#managerStageViewBtn{padding:7px 9px;font-size:11.5px;}
 
     .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4px;width:100%;overflow:visible;}
     .tab-btn{min-width:0;padding:8px 6px;overflow:hidden;text-overflow:ellipsis;}
@@ -750,8 +746,8 @@
   .ops-command-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;}
   .ops-command-title{font-size:14px;font-weight:800;color:#163b6d;letter-spacing:.01em;}
   .ops-command-sub{margin-top:3px;font-size:11px;color:var(--text2);}
-  .ops-live-pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:6px 9px;border-radius:999px;background:#e8f7ef;color:#087a43;font-size:10px;font-weight:800;}
-  .ops-live-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:#11a55c;box-shadow:0 0 0 4px rgba(17,165,92,.12);}
+  .ops-live-pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:6px 9px;border-radius:999px;background:#0f2b1f;color:#52b57b;font-size:10px;font-weight:800;}
+  .ops-live-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:#52b57b;box-shadow:0 0 0 4px rgba(82,181,123,.16);}
   .ops-stage-flow{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;align-items:stretch;gap:8px;}
   .ops-stage-arrow{display:flex;align-items:center;justify-content:center;color:#8ca0b7;font-size:20px;font-weight:700;}
   .ops-stage-card{position:relative;min-width:0;padding:13px;border:1px solid #dce5ef;border-radius:13px;background:#fff;overflow:hidden;}
@@ -761,10 +757,10 @@
   .ops-stage-card.is-danger{--stage-color:#cc3732;}
   .ops-stage-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
   .ops-stage-name{font-size:12px;font-weight:800;color:#24364b;text-transform:uppercase;letter-spacing:.04em;}
-  .ops-stage-status{padding:4px 7px;border-radius:999px;background:#f0f3f7;color:#53657a;font-size:9.5px;font-weight:800;}
-  .ops-stage-card.is-ok .ops-stage-status{background:#e6f6ed;color:#087a43;}
-  .ops-stage-card.is-warn .ops-stage-status{background:#fff3dc;color:#9a5b00;}
-  .ops-stage-card.is-danger .ops-stage-status{background:#fdebea;color:#b4231e;}
+  .ops-stage-status{padding:4px 7px;border-radius:999px;background:#1c1b18;color:var(--text2);font-size:9.5px;font-weight:800;}
+  .ops-stage-card.is-ok .ops-stage-status{background:#0f2b1f;color:#52b57b;}
+  .ops-stage-card.is-warn .ops-stage-status{background:#3a2c10;color:#e6b552;}
+  .ops-stage-card.is-danger .ops-stage-status{background:#3a1414;color:#e65252;}
   .ops-stage-value{font-size:25px;font-weight:850;color:#132337;line-height:1;}
   .ops-stage-meta{display:flex;justify-content:space-between;gap:8px;margin-top:8px;color:var(--text2);font-size:10.5px;}
   .ops-stage-meta strong{color:#293b50;}
@@ -812,7 +808,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   body.stage-view-dan header .page-title,body.stage-view-may header .page-title,body.stage-view-dong-goi header .page-title{display:none;}
   body.stage-view-dan #panel-progress .card,
   body.stage-view-may #panel-progress .card,
-  body.stage-view-dong-goi #panel-progress .card{padding:10px;background:#eef3f9;}
+  body.stage-view-dong-goi #panel-progress .card{padding:10px;background:#181714;}
   body.stage-view-dan #panel-progress h3,
   body.stage-view-may #panel-progress h3,
   body.stage-view-dong-goi #panel-progress h3,
@@ -830,7 +826,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   body.stage-view-dan .employee-stage-workspace,
   body.stage-view-may .employee-stage-workspace,
   body.stage-view-dong-goi .employee-stage-workspace{display:block;}
-  .employee-stage-head{position:sticky;top:0;z-index:12;margin:-10px -10px 10px;padding:12px 12px 10px;background:linear-gradient(135deg,#153d73,#2379a8);color:#fff;box-shadow:0 5px 18px rgba(18,58,105,.2);}
+  .employee-stage-head{position:sticky;top:0;z-index:12;margin:-10px -10px 10px;padding:12px 12px 10px;background:linear-gradient(135deg,#12332e,#1c5a54);color:#fff;box-shadow:0 5px 18px rgba(0,0,0,.35);}
   .employee-stage-identity{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
   .employee-stage-name{font-size:18px;font-weight:850;line-height:1.15;}
   .employee-stage-date{font-size:11px;opacity:.85;margin-top:4px;}
@@ -845,18 +841,18 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   .employee-order-card{background:#fff;border:1px solid #d7e1ed;border-radius:13px;box-shadow:0 3px 10px rgba(25,55,90,.07);overflow:hidden;}
   .employee-order-main{display:grid;grid-template-columns:minmax(0,1fr) 68px 98px;align-items:center;gap:8px;padding:11px;}
   .employee-order-title{font-size:15px;font-weight:850;color:#17283d;line-height:1.25;}
-  .employee-order-note{font-size:10px;color:#b4231e;margin-top:3px;line-height:1.3;}
-  .employee-order-plan{text-align:center;color:#52647a;font-size:9px;}
+  .employee-order-note{font-size:10px;color:#e65252;margin-top:3px;line-height:1.3;}
+  .employee-order-plan{text-align:center;color:var(--text2);font-size:9px;}
   .employee-order-plan strong{display:block;color:#17283d;font-size:18px;}
   .employee-order-entry .stage-cell{display:block;}
-  .employee-order-entry .qty-input{width:100%!important;min-height:48px;font-size:20px!important;font-weight:850;text-align:center;border:2px solid #2d8fc1;border-radius:10px;}
+  .employee-order-entry .qty-input{width:100%!important;min-height:48px;font-size:20px!important;font-weight:850;text-align:center;border:2px solid var(--primary);border-radius:10px;}
   .employee-order-entry .stage-hint{font-size:9px;margin-top:3px;text-align:center;}
   .employee-order-meta{display:flex;justify-content:space-between;gap:8px;padding:7px 11px;border-top:1px solid #edf1f6;color:#607086;font-size:9.5px;}
   .employee-empty{padding:26px 15px;text-align:center;background:#fff;border:1px dashed #c9d5e3;border-radius:13px;color:#607086;}
 }
 </style>
 </head>
-<body>
+<body class="dark-mode">
 <div id="localPreviewBanner" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9998;background:#173f73;color:#fff;border:2px solid #fff;border-radius:999px;box-shadow:0 5px 18px rgba(0,0,0,.24);padding:9px 16px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap;max-width:calc(100vw - 28px);overflow:hidden;text-overflow:ellipsis;">
   BẢN XEM THỬ LOCAL — không ghi dữ liệu thật, không xuất báo cáo
 </div>
@@ -1147,7 +1143,6 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div id="userBarRole"></div>
     <div class="management-tools" id="managementTools">
       <button id="managementToolsBtn" type="button" aria-expanded="false">⚙️ Công cụ</button>
-      <button id="darkModeBtn" type="button" title="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối">🌙 Chế độ tối</button>
       <button id="managerStageViewBtn" class="only-manager2" type="button" title="Xem và nhập như tài khoản công đoạn">👷 Vào công đoạn</button>
       <div class="management-tools-menu" id="managementToolsMenu">
         <button id="logoutBtn" title="Đăng xuất và nhập mã khác">↪ Đổi người dùng</button>
@@ -1458,7 +1453,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=133"></script>
+<script src="raw-data.js?v=134"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -1653,7 +1648,7 @@ const totalLabelPlugin = {
     const {ctx} = chart;
     ctx.save();
     ctx.font = '600 11px -apple-system, sans-serif';
-    ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#eafcff' : '#1a1d23';
+    ctx.fillStyle = '#e6e4e1';
     const isHorizontal = chart.options.indexAxis === 'y';
     chart.data.datasets.forEach((ds, dsIndex) => {
       const meta = chart.getDatasetMeta(dsIndex);
@@ -3250,7 +3245,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 133;
+const APP_VERSION = 134;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -9547,18 +9542,10 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   const input=document.getElementById('loginCodeInput');
   if(input) input.focus();
 });
-// Bump key so clients stuck with a previous dark-mode preference get the new
-// light default; the dark-mode button remains available for users who want it.
-const DARK_MODE_KEY='khsx_dark_mode_v2';
-function applyDarkMode(enabled){
-  document.body.classList.toggle('dark-mode',!!enabled);
-  if(window.Chart&&Chart.defaults) Chart.defaults.color=enabled?'#dce7f7':'#182230';
-  const btn=document.getElementById('darkModeBtn');
-  if(btn) btn.textContent=enabled?'☀️ Giao diện sáng':'🌙 Chế độ tối';
-  try{localStorage.setItem(DARK_MODE_KEY,enabled?'1':'0');}catch(e){}
-}
-document.getElementById('darkModeBtn')?.addEventListener('click',()=>applyDarkMode(!document.body.classList.contains('dark-mode')));
-applyDarkMode((()=>{try{return localStorage.getItem(DARK_MODE_KEY)==='1';}catch(e){return false;}})());
+// Sửa 2026-09-05: giao diện tối theo mẫu Clinova nay là giao diện DUY NHẤT của app,
+// đã bỏ nút chuyển đổi sáng/tối và cơ chế nhớ lựa chọn cũ trong localStorage.
+document.body.classList.add('dark-mode');
+if(window.Chart&&Chart.defaults) Chart.defaults.color='#dce7f7';
 
 function closeManagerStageModal(){ document.getElementById('managerStageModal').style.display='none'; }
 document.getElementById('managerStageViewBtn')?.addEventListener('click',()=>{
