@@ -3247,7 +3247,7 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 131;
+const APP_VERSION = 132;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4190,7 +4190,10 @@ async function flushSupabaseStageOutbox(){
       let ok=false;
       try{ ok=await sendSupabaseStageItem(item); }catch(e){ console.warn('Supabase outbox sẽ thử lại',e); }
       if(ok==='terminal') continue;
-      if(!ok) break;
+      // 1 gói lỗi tạm thời (mất mạng, máy chủ chưa xác nhận...) đã tự có lịch thử lại
+      // riêng (next_attempt_at ở trên) - không được chặn đứng các gói KHÁC ĐƠN phía sau
+      // trong cùng hàng đợi. "break" ở đây từng khiến 1 gói kẹt làm treo toàn bộ hàng đợi.
+      if(!ok) continue;
       // Nếu người dùng vừa nhập số mới trong lúc gói cũ đang gửi, không được
       // xóa nhầm gói mới cùng ô. Chỉ xóa đúng operation vừa được xác nhận.
       if(supabaseStageOutbox[key]?.operation_id === item.operation_id)
@@ -4346,7 +4349,11 @@ async function flushSupabaseManagementOutbox(){
   try{
     for(const [key,item] of Object.entries({...supabaseManagementOutbox})){
       let ok=false; try{ok=await sendSupabaseManagementItem(item);}catch(e){console.warn('Supabase sẽ gửi lại phân công',e);}
-      if(!ok) break;
+      // Lỗi phát hiện 2026-09-05: gói lỗi (kể cả lỗi tạm thời chưa phải 'terminal') từng
+      // "break" làm treo TOÀN BỘ hàng đợi - 1 đơn gán tổ lỗi chặn luôn mọi đơn khác chưa
+      // kịp gửi phía sau, dù chúng không liên quan gì tới đơn bị lỗi. Đổi sang "continue"
+      // để chỉ đúng gói lỗi đó chờ vòng gửi kế tiếp (5s sau), các gói khác vẫn gửi ngay.
+      if(!ok) continue;
       // Phân công cũng là last-write-wins: gói cũ thành công không được xóa
       // thay đổi mới hơn vừa được người quản lý nhập trên cùng thiết bị.
       if(supabaseManagementOutbox[key] === item ||

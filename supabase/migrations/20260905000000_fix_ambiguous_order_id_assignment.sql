@@ -1,10 +1,12 @@
 -- Fix: khsx_save_order_assignment_impl luôn báo lỗi "column reference order_id is ambiguous"
--- Nguyên nhân: hàm khai báo RETURNS TABLE(order_id text, ...) khiến Postgres tự tạo biến
--- OUT tên "order_id" trùng với cột order_id của bảng khsx_order_assignments. Dòng
--- "select * into v_existing from public.khsx_order_assignments where order_id=p_order_id"
--- không rõ order_id là cột bảng hay biến OUT -> luôn raise lỗi -> MỌI thao tác gán tổ qua
--- giao diện thất bại âm thầm từ trước tới giờ, dù insert/on conflict phía dưới không sao.
--- Sửa: đặt alias cho bảng, qualify rõ cột.
+-- Nguyên nhân: hàm khai báo RETURNS TABLE(order_id, plan_team, current_team, spinoff_order_id,
+-- updated_at) khiến Postgres tự tạo 5 biến OUT trùng tên với đúng 5 cột của bảng
+-- khsx_order_assignments. KHÔNG CHỈ 1 chỗ: cả dòng SELECT...WHERE order_id=... lẫn
+-- "on conflict(order_id) do update set plan_team=..., current_team=..." đều mơ hồ không rõ
+-- là cột bảng hay biến OUT -> luôn raise lỗi -> MỌI thao tác gán tổ qua giao diện thất bại
+-- âm thầm từ trước tới giờ. Sửa dứt điểm bằng pragma #variable_conflict use_column (chuẩn
+-- Postgres cho đúng lớp lỗi này) thay vì alias từng chỗ (dễ sót, đã sót đúng 1 chỗ ON CONFLICT
+-- ở lần sửa trước) + vẫn giữ alias a. ở 2 chỗ cho rõ ràng.
 
 create or replace function private.khsx_save_order_assignment_impl(
   p_operation_id uuid,
@@ -23,6 +25,7 @@ set search_path to 'public', 'private', 'pg_catalog'
 set lock_timeout to '3s'
 set statement_timeout to '8s'
 as $function$
+#variable_conflict use_column
 declare
   v_actor uuid := (select auth.uid());
   v_existing public.khsx_order_assignments%rowtype;
