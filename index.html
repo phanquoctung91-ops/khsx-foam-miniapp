@@ -1458,7 +1458,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js"></script>
+<script src="raw-data.js?v=133"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3247,7 +3247,10 @@ setInterval(()=>{
 // ---- Tự tải lại khi có bản mới ----
 // index.html trên GitHub Pages là nguồn phiên bản chuẩn. AppStorage vẫn được giữ
 // để các bản cũ (chưa có cơ chế đọc index.html) cũng nhận được tín hiệu cập nhật.
-const APP_VERSION = 132;
+// NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
+// ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
+// nhầm code mới với dữ liệu lịch sử cũ nếu quên.
+const APP_VERSION = 133;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3873,6 +3876,15 @@ async function supabaseSelectAll(table,columns='*',configure=null){
     if(rows.length<pageSize) return {data:all,error:null};
   }
 }
+// Sửa 2026-09-05: trước đây 1 gói 'owner'/'support' bị xoá NGAY LẦN ĐẦU đơn chưa kịp
+// có trên Supabase (race giữa lúc quản lý gán tổ và lúc syncMissingSheetOrdersToSupabase
+// tạo xong đơn gốc) — mất thao tác, quản lý phải gán lại tay. Nay cho 1 khoảng chờ trước
+// khi thật sự bỏ cuộc, dùng chung ở cả nơi lọc hàng đợi (dưới) lẫn nơi gửi (sendSupabaseManagementItem).
+const NGUONG_CHO_DON_CHUA_CO_MS = 3*60*1000;
+function conTrongHanChoDonXuatHien(item){
+  const t=Date.parse(item?.client_updated_at||'');
+  return !Number.isFinite(t) || (Date.now()-t<=NGUONG_CHO_DON_CHUA_CO_MS);
+}
 async function loadSupabaseOperationalData({allowPublic=false}={}){
   if(!supabaseDb) return false;
   const loadSeq=++supabaseOperationalLoadSeq;
@@ -3911,18 +3923,20 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   // cũ lên giao diện sau khi thao tác mới đã hoàn tất.
   if(loadSeq!==supabaseOperationalLoadSeq) return true;
   const [ord,asg,daily,progress,locks,snaps,targets,profiles,workers,credits,workerTeams]=results.map(x=>x.data||[]);
-  // Gói phân công của đơn không còn tồn tại là dữ liệu cục bộ hỏng. Nếu giữ lại,
-  // lỗi khóa ngoại sẽ lặp mỗi 5 giây và chặn toàn bộ thao tác hợp lệ phía sau.
+  // Gói phân công của đơn không còn tồn tại có thể là dữ liệu cục bộ hỏng THẬT, nhưng
+  // cũng có thể chỉ là đơn vừa được quản lý gán tổ ngay khi vừa từ Sheet vào, chưa kịp
+  // đồng bộ ID lên Supabase (race với syncMissingSheetOrdersToSupabase). Cho một khoảng
+  // chờ (NGUONG_CHO_DON_CHUA_CO_MS) trước khi thật sự bỏ gói, để không mất thao tác oan.
   const activeOrderIds=new Set(ord.map(o=>String(o.id)));
   supabaseActiveOrderIds=new Set(activeOrderIds);
   supabaseOrdersLoaded=true;
   let managementQueueChanged=false;
   const goiBiXoaVìThieuDon=[];
   Object.entries(supabaseManagementOutbox||{}).forEach(([key,item])=>{
-    if(!['delete','cancel','restore'].includes(item?.kind)&&!activeOrderIds.has(String(item?.order_id||''))){
-      goiBiXoaVìThieuDon.push({kind:item?.kind,order_id:item?.order_id,team:item?.current_team||item?.support_team||null});
-      delete supabaseManagementOutbox[key]; managementQueueChanged=true;
-    }
+    if(['delete','cancel','restore'].includes(item?.kind)||activeOrderIds.has(String(item?.order_id||''))) return;
+    if(conTrongHanChoDonXuatHien(item)) return; // còn trong hạn chờ -> giữ nguyên, thử gửi lại bình thường
+    goiBiXoaVìThieuDon.push({kind:item?.kind,order_id:item?.order_id,team:item?.current_team||item?.support_team||null});
+    delete supabaseManagementOutbox[key]; managementQueueChanged=true;
   });
   if(managementQueueChanged)persistSupabaseManagementOutbox();
   // KHÔNG được im lặng: gói gán tổ/hỗ trợ bị xoá ở đây nghĩa là thao tác của Quản lý
@@ -4321,11 +4335,17 @@ async function sendSupabaseManagementItem(item){
       supabaseStatus('Phân công đã đổi trên thiết bị khác · tải lại để xem dữ liệu mới',false);
       return 'terminal';
     }
-    // Dữ liệu cục bộ cũ có thể chứa đơn chưa từng được tạo trên Supabase. Giữ
-    // gói 23503 sẽ chặn vĩnh viễn mọi phân công phía sau nên phải loại riêng gói hỏng.
-    // NHƯNG không được bỏ im lặng: phải báo rõ thao tác nào không lưu được, vì giao diện
-    // máy này vẫn hiện như đã gán trong khi máy khác/nhân viên không hề thấy.
+    // Dữ liệu cục bộ cũ có thể chứa đơn chưa từng được tạo trên Supabase — NHƯNG cũng có
+    // thể chỉ là đơn vừa gán tổ ngay lúc từ Sheet vào, chưa kịp đồng bộ ID lên Supabase.
+    // Cho thử lại trong NGUONG_CHO_DON_CHUA_CO_MS trước khi coi là gói hỏng thật, để không
+    // bắt quản lý gán lại tay chỉ vì lệch nhịp đồng bộ vài giây. Sau khi hết hạn chờ mới
+    // loại hẳn (không được bỏ im lặng: phải báo rõ thao tác nào không lưu được, vì giao
+    // diện máy này vẫn hiện như đã gán trong khi máy khác/nhân viên không hề thấy).
     if(code==='23503'||code==='22P02'){
+      if((item.kind==='owner'||item.kind==='support')&&conTrongHanChoDonXuatHien(item)){
+        supabaseStatus(`⚠ Đơn ${item.order_id} có thể chưa đồng bộ xong · đang thử lại...`,false);
+        return false;
+      }
       const ten=item.kind==='owner'?'gán tổ phụ trách':(item.kind==='support'?'gán tổ hỗ trợ':`thao tác ${item.kind}`);
       supabaseStatus(`⚠ Không lưu được ${ten} cho đơn ${item.order_id} (lỗi ${code}) · cần gán lại sau khi bấm "Làm mới dữ liệu"`,false);
       return 'terminal';
@@ -5314,6 +5334,19 @@ function matchScore(oldR, newR){
   CHANGE_FIELDS.forEach(f=>{ if(f.k === 'so_luong') return; if(sameVal(oldR[f.k], newR[f.k])) n++; });
   return n;
 }
+// Khoảng cách số học giữa 2 dòng — dùng để phá hoà giữa các cặp ứng viên CÙNG điểm
+// matchScore, thay vì để thứ tự phần tử trong mảng (vốn không mang ý nghĩa nghiệp vụ
+// gì) quyết định ai ghép với ai. Càng nhỏ càng giống nhau thật.
+function matchDistance(oldR, newR){
+  let d = 0;
+  ['day','ngang','dai'].forEach(k=>{
+    const a = Number(oldR[k]), b = Number(newR[k]);
+    d += (Number.isFinite(a) && Number.isFinite(b)) ? Math.abs(a-b) : (sameVal(oldR[k],newR[k]) ? 0 : 1000);
+  });
+  const qa = Number(oldR.so_luong), qb = Number(newR.so_luong);
+  if(Number.isFinite(qa) && Number.isFinite(qb)) d += Math.abs(qa-qb)/1000; // trọng số rất nhỏ, chỉ phá hoà tuyệt đối
+  return d;
+}
 const MATCH_THRESHOLD = 2;   // giống >= 2/4 trường định danh: tối đa 2 trường bị sửa
 
 // Mô tả đúng chỗ bị sửa: "độ dày 10 → 15", "số lượng 9 → 12"...
@@ -5376,11 +5409,25 @@ function detectSheetChanges(newRows){
         if(sc >= MATCH_THRESHOLD) pairs.push({o, n, sc});
       });
     });
-    pairs.sort((a,b)=>b.sc - a.sc);
+    // Điểm cao hơn ưu tiên trước; cùng điểm thì cặp NÀO GIỐNG NHAU HƠN VỀ SỐ (matchDistance
+    // nhỏ hơn) được ưu tiên ghép trước — không còn phụ thuộc thứ tự dòng trong Sheet.
+    pairs.forEach(p=>{ p.dist = matchDistance(p.o, p.n); });
+    pairs.sort((a,b)=>b.sc - a.sc || a.dist - b.dist);
     const usedOld = new Set(), usedNew = new Set();
 
-    pairs.forEach(({o, n})=>{
+    pairs.forEach(pair=>{
+      const {o, n, sc, dist} = pair;
       if(usedOld.has(o.id) || usedNew.has(n.id)) return;
+      // Ở mức điểm THẤP NHẤT (2/4 — tối đa đã cho phép sửa 2 trường), nếu còn một cặp
+      // khác cùng điểm, cùng khoảng cách, và đụng chung o hoặc n (tức không có căn cứ
+      // nào để chọn ai đúng hơn ai) thì KHÔNG tự ghép — để 2 dòng đứng riêng (1 đơn bị
+      // bỏ + 1 đơn mới), quản lý tự nhận ra qua "đơn mới"/"đơn bị bỏ" thay vì hệ thống
+      // đoán nhầm rồi chuyển nhầm tổ/tiến độ sang dòng không liên quan.
+      if(sc === MATCH_THRESHOLD){
+        const hoa = pairs.some(p2 => p2!==pair && !usedOld.has(p2.o.id) && !usedNew.has(p2.n.id)
+          && p2.sc===MATCH_THRESHOLD && p2.dist===dist && (p2.o.id===o.id || p2.n.id===n.id));
+        if(hoa) return;
+      }
       usedOld.add(o.id); usedNew.add(n.id);
 
       const desc = describeFieldChanges(o, n, oldTotals[groupKeyOf(o)], newTotals[groupKeyOf(n)])
@@ -6196,17 +6243,6 @@ document.getElementById('stageChoiceModal').addEventListener('click',async e=>{
   await moPopupNhapNhanhCongDoan(ids,ngay,btn.dataset.stageChoice);
 });
 function tinhNangLucCaNhan(congDoan,tuKhoa,denKhoa){
-  if(SUPABASE_VARIANT && supabaseStageCredits.length){
-    const theoNguoi={};
-    supabaseStageCredits.filter(x=>x.stage===congDoan).forEach(x=>{
-      const ngay=isoToDMY(x.work_date); if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa))return;
-      const w=supabaseWorkers.find(y=>y.id===x.worker_id),name=w?.display_name||x.worker_id,sl=soCongDoan(x.quantity),o=getOrderById(x.order_id);
-      if(!sl||!o)return;
-      const row=theoNguoi[x.worker_id]||(theoNguoi[x.worker_id]={code:x.worker_id,name,soLuong:0,baoHanh:0,soDon:new Set(),theoNgay:{},dungNgay:0,coMocDungHan:0});
-      row.soLuong+=sl;row.soDon.add(x.order_id);row.theoNgay[ngay]=(row.theoNgay[ngay]||0)+sl;row.coMocDungHan+=sl;if(khoaNgayDMY(ngay)<=khoaNgayDMY(o.date))row.dungNgay+=sl;
-    });
-    return {rows:Object.values(theoNguoi).map(r=>{const days=Object.entries(r.theoNgay).sort((a,b)=>b[1]-a[1]),top=days[0]||['—',0];return {...r,soDon:r.soDon.size,soNgay:days.length,trungBinh:days.length?r.soLuong/days.length:0,ngayCao:top[0],slNgayCao:top[1],tyLeDung:r.coMocDungHan?Math.round(r.dungNgay/r.coMocDungHan*100):null};}).sort((a,b)=>b.soLuong-a.soLuong||a.name.localeCompare(b.name,'vi'))};
-  }
   const theoNguoi={};
   // isWarranty: bảo hành cộng riêng vào row.baoHanh, KHÔNG cộng vào soLuong/soDon/theoNgay —
   // để tổng sản lượng từng người luôn khớp đúng tổng "Hoàn thành" chung (đã loại bảo hành).
@@ -6224,37 +6260,53 @@ function tinhNangLucCaNhan(congDoan,tuKhoa,denKhoa){
     row.theoNgay[ngay]=(row.theoNgay[ngay]||0)+sl;
     if(coTinhDungHan){ row.coMocDungHan+=sl; if(dungHan) row.dungNgay+=sl; }
   };
-  const cu=[];
-  getOrders().forEach(o=>{
-    if(o.is_warranty) return;
-    Object.entries(lichSuCongDoanDeDoc(o)).forEach(([ngay,e])=>{
-      if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa)) return;
-      const sl=soCongDoan(e&&e[congDoan]);
+  // Sửa 2026-09-05: nhánh Supabase trước đây return sớm, không loại đơn is_warranty
+  // (khác nhánh cũ bên dưới) NÊN cộng nhầm sản lượng bảo hành vào soLuong, đồng thời
+  // bỏ luôn khối "Bảo hành theo ngày" phía dưới nên cột Bảo hành ở nhánh này luôn = 0.
+  // Nay dùng chung theoNguoi/cong() cho cả 2 nhánh, và khối Bảo hành theo ngày (nguồn
+  // Sheet riêng, không phụ thuộc SUPABASE_VARIANT) luôn chạy sau, cho cả 2 nhánh.
+  if(SUPABASE_VARIANT && supabaseStageCredits.length){
+    supabaseStageCredits.filter(x=>x.stage===congDoan).forEach(x=>{
+      const ngay=isoToDMY(x.work_date); if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa))return;
+      const o=getOrderById(x.order_id);
+      if(!o || o.is_warranty) return;
+      const w=supabaseWorkers.find(y=>y.id===x.worker_id),sl=soCongDoan(x.quantity);
       if(!sl) return;
-      const actor=nguoiHoanThanhCongDoan(e,congDoan);
-      const evt={o,ngay,sl,team:toThucHienCongDoanNgay(o,ngay,congDoan),dungHan:khoaNgayDMY(ngay)<=khoaNgayDMY(o.date)};
-      if(actor) cong(actor,sl,o.id,ngay,{coTinhDungHan:true,dungHan:evt.dungHan});
-      else if(khoaNgayDMY(ngay)>0 && khoaNgayDMY(ngay)<=WARRANTY_LEGACY_ACTOR_CUTOFF) cu.push(evt);
+      cong({code:x.worker_id,name:w?.display_name||x.worker_id},sl,x.order_id,ngay,{coTinhDungHan:true,dungHan:khoaNgayDMY(ngay)<=khoaNgayDMY(o.date)});
     });
-  });
-  if(congDoan==='dong_goi'){
-    cu.forEach(e=>cong({name:'Minh Thuận'},e.sl,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan}));
-  }else if(congDoan==='may'){
-    const to5={};
-    cu.forEach(e=>{
-      const name=WARRANTY_LEGACY_MAY_BY_TEAM[e.team];
-      if(name) cong({name},e.sl,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
-      else if(e.team==='Tổ 5') (to5[e.ngay]||(to5[e.ngay]=[])).push(e);
-    });
-    Object.values(to5).forEach(ds=>{
-      let phanVy=Math.ceil(ds.reduce((s,e)=>s+e.sl,0)/2);
-      ds.forEach(e=>{
-        const vy=Math.min(e.sl,phanVy), cham=e.sl-vy;
-        if(vy) cong({name:'Thảo Vy'},vy,e.sl?e.o.id:'',e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
-        if(cham) cong({name:'Bảo Chăm'},cham,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
-        phanVy-=vy;
+  }else{
+    const cu=[];
+    getOrders().forEach(o=>{
+      if(o.is_warranty) return;
+      Object.entries(lichSuCongDoanDeDoc(o)).forEach(([ngay,e])=>{
+        if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa)) return;
+        const sl=soCongDoan(e&&e[congDoan]);
+        if(!sl) return;
+        const actor=nguoiHoanThanhCongDoan(e,congDoan);
+        const evt={o,ngay,sl,team:toThucHienCongDoanNgay(o,ngay,congDoan),dungHan:khoaNgayDMY(ngay)<=khoaNgayDMY(o.date)};
+        if(actor) cong(actor,sl,o.id,ngay,{coTinhDungHan:true,dungHan:evt.dungHan});
+        else if(khoaNgayDMY(ngay)>0 && khoaNgayDMY(ngay)<=WARRANTY_LEGACY_ACTOR_CUTOFF) cu.push(evt);
       });
     });
+    if(congDoan==='dong_goi'){
+      cu.forEach(e=>cong({name:'Minh Thuận'},e.sl,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan}));
+    }else if(congDoan==='may'){
+      const to5={};
+      cu.forEach(e=>{
+        const name=WARRANTY_LEGACY_MAY_BY_TEAM[e.team];
+        if(name) cong({name},e.sl,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
+        else if(e.team==='Tổ 5') (to5[e.ngay]||(to5[e.ngay]=[])).push(e);
+      });
+      Object.values(to5).forEach(ds=>{
+        let phanVy=Math.ceil(ds.reduce((s,e)=>s+e.sl,0)/2);
+        ds.forEach(e=>{
+          const vy=Math.min(e.sl,phanVy), cham=e.sl-vy;
+          if(vy) cong({name:'Thảo Vy'},vy,e.sl?e.o.id:'',e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
+          if(cham) cong({name:'Bảo Chăm'},cham,e.o.id,e.ngay,{coTinhDungHan:true,dungHan:e.dungHan});
+          phanVy-=vy;
+        });
+      });
+    }
   }
   Object.entries(baoHanhTheoNgay).forEach(([ngay,d])=>{
     if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa)) return;
@@ -7756,15 +7808,20 @@ function markSyncedOrPending(){
 }
 
 async function pollForUpdates({forceSourceRefresh=false}={}){
-  // Khi Realtime khỏe, tab nền không cần poll. Nếu Realtime rớt thì vẫn poll
-  // làm lưới dự phòng (Telegram/Chrome có thể giữ trang ở trạng thái hidden).
-  if(document.hidden && supabaseRealtimeHealthy) return;
+  // Sửa 2026-09-05: trước đây khi tab ẩn + Realtime khỏe, hàm return NGAY Ở ĐÂY —
+  // tức là bỏ qua LUÔN CẢ bước xác thực phiên (thu hồi quyền) bên dưới, không chỉ mỗi
+  // phần tải lại dữ liệu vận hành. Một tài khoản bị khoá quyền trong lúc app chạy nền
+  // (khoá màn hình, chuyển tab...) có thể giữ Realtime sống và tiếp tục nhận dữ liệu
+  // vượt xa SLA "thu hồi ≤30s" mà chu kỳ SUPABASE_REVALIDATE_EVERY đặt ra. Nay tách
+  // riêng: xác thực phiên vẫn chạy đúng chu kỳ dù tab ẩn, chỉ phần tải lại dữ liệu vận
+  // hành (đã có Realtime lo) mới được bỏ qua khi tab ẩn.
+  const taiAn = document.hidden && supabaseRealtimeHealthy;
   if(pollInFlight) return;
   pollInFlight = true;
   try{
     // Xác thực lại phiên (mã bị thu hồi) — không cần làm mỗi lượt, đỡ tốn mạng trên điện thoại
     pollCount++;
-    checkAppVersion();
+    if(!taiAn) checkAppVersion();
     if(supabasePrimaryActive && pollCount % SUPABASE_REVALIDATE_EVERY === 1){
       await revalidateSupabaseSession();
       if(!currentUser) return;
@@ -7773,6 +7830,7 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
       await revalidateSessionBackground();
       if(!currentUser) return;
     }
+    if(taiAn) return; // đã xác thực xong; phần tải lại dữ liệu vận hành để Realtime lo, khỏi tốn mạng nền
     const refreshSource = forceSourceRefresh || pollCount % SOURCE_REFRESH_EVERY === 1;
     if(refreshSource){
       const jobs=[fetchBaoHanh({silent:true})];
