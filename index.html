@@ -256,6 +256,9 @@
   .panel.active{display:block;}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:var(--shadow);}
   .card h3{font-size:14.5px;font-weight:700;margin:0 0 14px;color:var(--text);}
+  .chart-card-head{margin:-20px -20px 16px;padding:16px 20px;border-bottom:1px solid var(--border);}
+  .chart-card-head h3{margin:0;}
+  .chart-card-sub{margin:4px 0 0;font-size:12px;color:var(--text2);}
 
   .day-select-row{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
   .day-select-row label{font-size:12.5px;color:var(--text2);font-weight:600;}
@@ -1114,16 +1117,25 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <div class="kpis" id="monthlyKpis" style="margin-bottom:18px;"></div>
   <div class="grid2">
     <div class="card">
-      <h3>Sản lượng kế hoạch theo sản phẩm</h3>
+      <div class="chart-card-head">
+        <h3>Sản lượng kế hoạch theo sản phẩm</h3>
+        <p class="chart-card-sub">Theo khoảng ngày đang lọc</p>
+      </div>
       <div class="chart-wrap" style="height:380px;"><canvas id="productChart" role="img" aria-label="Bieu do san luong theo san pham"></canvas></div>
     </div>
     <div class="card">
-      <h3>Kế hoạch / Hoàn thành / Bảo hành theo tổ</h3>
+      <div class="chart-card-head">
+        <h3>Kế hoạch / Hoàn thành / Bảo hành theo tổ</h3>
+        <p class="chart-card-sub">Theo tổ, trong khoảng đang lọc</p>
+      </div>
       <div class="chart-wrap" style="height:340px;"><canvas id="teamMonthChart" role="img" aria-label="Biểu đồ kế hoạch, hoàn thành và bảo hành theo tổ"></canvas></div>
     </div>
   </div>
   <div class="card">
-    <h3>Sản lượng theo ngày trong tháng</h3>
+    <div class="chart-card-head">
+      <h3>Sản lượng theo ngày trong tháng</h3>
+      <p class="chart-card-sub">Theo từng ngày trong khoảng đang lọc</p>
+    </div>
     <div class="chart-wrap" style="height:260px;"><canvas id="dailyTrendChart" role="img" aria-label="Bieu do xu huong san luong theo ngay"></canvas></div>
   </div>
 </div>
@@ -1551,7 +1563,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=144"></script>
+<script src="raw-data.js?v=145"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3477,7 +3489,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 144;
+const APP_VERSION = 145;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
