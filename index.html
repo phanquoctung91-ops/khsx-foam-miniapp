@@ -1551,7 +1551,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=143"></script>
+<script src="raw-data.js?v=144"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2266,7 +2266,15 @@ const CHART_TOOLTIP_STYLE = {
 };
 
 function renderMonthly(){
-  const keysToUse = keysInRange(monthFromSelect.value, monthToSelect.value);
+  // Sửa 2026-09-07 (Phần 7 — sửa bug thật): dùng keysInRangeToanBo (lọc trên
+  // allDayKeys, không phụ thuộc tháng/năm đang chọn ở header) thay vì keysInRange
+  // (lọc trên dayKeys — chỉ chứa đúng tháng header). Từ khi bộ lọc ngày đổi sang
+  // <input type="date"> (Phần 4), người dùng có thể chọn khoảng ngày vượt ra ngoài
+  // tháng header (vd nút "Tuần trước"/"Tháng trước" lấn sang tháng trước) — nếu vẫn
+  // dùng keysInRange, mọi ngày ngoài tháng header bị ÂM THẦM loại khỏi keysToUse,
+  // làm thiếu số liệu ở cả 7 thẻ KPI, 3 biểu đồ, VÀ mẫu số "tốc độ" (không phụ thuộc
+  // dayKeys) vẫn đếm đủ ngày — ra tỷ lệ sai (đã tái hiện bằng dữ liệu thật, xem plan).
+  const keysToUse = keysInRangeToanBo(monthFromSelect.value, monthToSelect.value);
   monthRangeNote.textContent = `(${keysToUse.length} ngày có dữ liệu trong khoảng)`;
 
   const productMap = {};
@@ -3469,7 +3477,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 143;
+const APP_VERSION = 144;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
