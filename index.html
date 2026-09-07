@@ -1551,7 +1551,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=142"></script>
+<script src="raw-data.js?v=143"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2256,6 +2256,15 @@ const ICON_SO_NGAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const ICON_BAO_HANH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l6.5 2.5v5c0 4.8-2.8 8-6.5 9.5-3.7-1.5-6.5-4.7-6.5-9.5v-5L12 3z"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16" r="0.7" fill="currentColor" stroke="none"/></svg>';
 const ICON_TOC_DO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,12 7,12 9,6 13,18 15,12 21,12"/></svg>';
 
+// Sửa 2026-09-07 (Phần 6, đúng chuẩn skill dataviz): style dùng chung cho cả 3 biểu
+// đồ Chart.js của "Tổng Thống kê sản xuất" — lưới NÉT LIỀN mảnh mờ (KHÔNG đứt nét,
+// đứt nét là anti-pattern dễ đọc nhầm thành ngưỡng/dự báo), tooltip khớp theme tối.
+const CHART_GRID_STYLE = {color:'rgba(230,228,225,.06)', drawTicks:false};
+const CHART_TOOLTIP_STYLE = {
+  backgroundColor:'#181714', titleColor:'#e6e4e1', bodyColor:'#e6e4e1',
+  borderColor:'#282622', borderWidth:1, padding:9, cornerRadius:8
+};
+
 function renderMonthly(){
   const keysToUse = keysInRange(monthFromSelect.value, monthToSelect.value);
   monthRangeNote.textContent = `(${keysToUse.length} ngày có dữ liệu trong khoảng)`;
@@ -2380,7 +2389,7 @@ function renderMonthly(){
         if(product) openProductDetail(product.name,keysToUse);
       },
       onHover:(event,elements)=>{ if(event?.native?.target) event.native.target.style.cursor=elements.length?'pointer':'default'; },
-      scales:{x:{beginAtZero:true,grace:'12%',ticks:{precision:0}},y:{grid:{display:false}}},
+      scales:{x:{beginAtZero:true,grace:'12%',ticks:{precision:0},grid:CHART_GRID_STYLE},y:{grid:{display:false}}},
       plugins:{
         totalLabels:true,
         legend:{
@@ -2411,6 +2420,7 @@ function renderMonthly(){
           }
         },
         tooltip:{
+          ...CHART_TOOLTIP_STYLE,
           callbacks:{
             label(ctx){
               const val = Number(ctx.parsed && ctx.parsed.x!=null ? ctx.parsed.x : ctx.parsed)||0;
@@ -2431,16 +2441,16 @@ function renderMonthly(){
     data:{
       labels:teamKeys.map(t=>teamLabel(t)),
       datasets:[
-        {label:'Kế hoạch', data:teamKeys.map(t=>teamMap[t].ke_hoach), backgroundColor:'#6d5bd0', borderRadius:4, maxBarThickness:26},
-        {label:'Hoàn thành', data:teamKeys.map(t=>teamMap[t].hoan_thanh), backgroundColor:'#0f8a4c', borderRadius:4, maxBarThickness:26},
-        {label:'Bảo hành', data:teamKeys.map(t=>teamMap[t].bao_hanh), backgroundColor:'#d97706', borderRadius:4, maxBarThickness:26}
+        {label:'Kế hoạch', data:teamKeys.map(t=>teamMap[t].ke_hoach), backgroundColor:'#57b6b6', borderRadius:4, maxBarThickness:24},
+        {label:'Hoàn thành', data:teamKeys.map(t=>teamMap[t].hoan_thanh), backgroundColor:'#52b57b', borderRadius:4, maxBarThickness:24},
+        {label:'Bảo hành', data:teamKeys.map(t=>teamMap[t].bao_hanh), backgroundColor:'#e6b552', borderRadius:4, maxBarThickness:24}
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
       layout:{padding:{top:24}},
-      plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:11}}}, totalLabels:true},
-      scales:{y:{beginAtZero:true, ticks:{precision:0}}}
+      plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:11}}}, totalLabels:true, tooltip:CHART_TOOLTIP_STYLE},
+      scales:{x:{grid:{display:false}}, y:{beginAtZero:true, ticks:{precision:0}, grid:CHART_GRID_STYLE}}
     }
   });
 
@@ -2452,11 +2462,11 @@ function renderMonthly(){
     data:{
       labels:dailyPlan.map(d=>d.date.slice(0,5)),
       datasets:[
-        {label:'Kế hoạch', data:dailyPlan.map(d=>d.plan), borderColor:'#1d4ed8', backgroundColor:'rgba(29,78,216,0.1)', fill:true, tension:0.25, pointRadius:2},
-        {label:'Đóng gói', data:dailyPlan.map(d=>d.dg), borderColor:'#0f8a4c', backgroundColor:'rgba(15,138,76,0.1)', fill:true, tension:0.25, pointRadius:2}
+        {label:'Kế hoạch', data:dailyPlan.map(d=>d.plan), borderColor:'#57b6b6', backgroundColor:'rgba(87,182,182,0.1)', borderWidth:2, fill:true, tension:0.25, pointRadius:4},
+        {label:'Đóng gói', data:dailyPlan.map(d=>d.dg), borderColor:'#52b57b', backgroundColor:'rgba(82,181,123,0.1)', borderWidth:2, fill:true, tension:0.25, pointRadius:4}
       ]
     },
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:11}}}}, scales:{y:{beginAtZero:true}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:11}}}, tooltip:CHART_TOOLTIP_STYLE}, scales:{x:{grid:{display:false}}, y:{beginAtZero:true, grid:CHART_GRID_STYLE}}}
   });
 }
 function openProductDetail(productName,keys){
@@ -3459,7 +3469,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 142;
+const APP_VERSION = 143;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
