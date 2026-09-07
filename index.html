@@ -221,7 +221,9 @@
     body.role-quan-ly .tab-btn[data-tab="autoplan"],body.role-quan-ly-2 .tab-btn[data-tab="autoplan"]{order:2;}
     body.role-quan-ly .tab-btn[data-tab="progress"],body.role-quan-ly-2 .tab-btn[data-tab="progress"]{order:3;}
     body.role-quan-ly .tab-group-label[data-group="baocao"],body.role-quan-ly-2 .tab-group-label[data-group="baocao"]{order:4;}
-    body.role-quan-ly .tab-btn[data-tab="monthly"],body.role-quan-ly-2 .tab-btn[data-tab="monthly"]{order:5;}
+    /* "Tổng Thống kê sản xuất" đứng riêng, đầu tiên (order 0, nhỏ hơn cả tiêu đề
+       nhóm "vanhanh" order 1) — không thuộc nhóm nào, theo đúng yêu cầu 2026-09-07. */
+    body.role-quan-ly .tab-btn[data-tab="monthly"],body.role-quan-ly-2 .tab-btn[data-tab="monthly"]{order:0;}
     body.role-quan-ly .tab-btn[data-tab="capacity"],body.role-quan-ly-2 .tab-btn[data-tab="capacity"]{order:6;}
     body.role-quan-ly .tab-btn[data-tab="report"],body.role-quan-ly-2 .tab-btn[data-tab="report"]{order:7;}
     body.role-quan-ly .tab-group-label[data-group="quantri"],body.role-quan-ly-2 .tab-group-label[data-group="quantri"]{order:8;}
@@ -1075,7 +1077,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <div class="tab-group-label" data-group="vanhanh">Vận hành hàng ngày</div>
   <div class="tab-group-label" data-group="baocao">Báo cáo &amp; phân tích</div>
   <div class="tab-group-label" data-group="quantri">Quản trị hệ thống</div>
-  <button class="tab-btn tab-overview active" data-tab="monthly"><span class="tab-emoji">📊</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="13"/><line x1="9.3" y1="20" x2="9.3" y2="7"/><line x1="14.7" y1="20" x2="14.7" y2="11"/><line x1="20" y1="20" x2="20" y2="4"/></svg>Tổng hợp tháng</button>
+  <button class="tab-btn tab-overview active" data-tab="monthly"><span class="tab-emoji">📊</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="13"/><line x1="9.3" y1="20" x2="9.3" y2="7"/><line x1="14.7" y1="20" x2="14.7" y2="11"/><line x1="20" y1="20" x2="20" y2="4"/></svg>Tổng Thống kê sản xuất</button>
   <button class="tab-btn tab-overview" data-tab="autoplan"><span class="tab-emoji">📋</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/><line x1="8" y1="10.5" x2="16" y2="10.5"/><line x1="8" y1="14.5" x2="16" y2="14.5"/><line x1="8" y1="18" x2="13" y2="18"/></svg>Kế hoạch sản xuất</button>
   <button class="tab-btn only-editor" data-tab="progress"><span class="tab-emoji">🔧</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,12 7,12 9,6 13,18 15,12 21,12"/></svg>Tiến độ sản xuất</button>
   <button class="tab-btn only-manager2 tab-extra" data-tab="capacity"><span class="tab-emoji">📈</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/></svg>Năng lực</button>
@@ -1087,12 +1089,14 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 
 <div class="panel active" id="panel-monthly">
   <div class="card" style="margin-bottom:18px;">
-    <div class="day-select-row" style="margin-bottom:0;">
-      <label>Từ ngày:</label>
-      <select id="monthFromSelect"></select>
-      <label>Đến ngày:</label>
-      <select id="monthToSelect"></select>
-      <span id="monthRangeNote" style="font-size:12px;color:var(--text2);"></span>
+    <div class="capacity-filters" style="margin-bottom:0;">
+      <div><label for="monthFromSelect">Từ ngày</label><input type="date" id="monthFromSelect"></div>
+      <div><label for="monthToSelect">Đến ngày</label><input type="date" id="monthToSelect"></div>
+      <button id="monthlyQuickToday" type="button" class="capacity-quick-btn">Hôm nay</button>
+      <button id="monthlyQuickYesterday" type="button" class="capacity-quick-btn">Hôm qua</button>
+      <button id="monthlyQuickLastWeek" type="button" class="capacity-quick-btn">Tuần trước</button>
+      <button id="monthlyQuickLastMonth" type="button" class="capacity-quick-btn">Tháng trước</button>
+      <span id="monthRangeNote" class="save-status"></span>
     </div>
   </div>
   <div class="kpis" id="monthlyKpis" style="margin-bottom:18px;"></div>
@@ -1535,7 +1539,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=140"></script>
+<script src="raw-data.js?v=141"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2133,10 +2137,15 @@ function isoDayNumber(s){
   const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m ? Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3]))/86400000 : NaN;
 }
+// Sửa 2026-09-07 (Phần 4): monthFromSelect/monthToSelect đổi từ <select> (chỉ chọn
+// được ngày có dữ liệu) sang <input type="date"> (chọn ngày bất kỳ, giống bộ lọc
+// trang Năng lực) — giá trị vẫn là chuỗi ISO yyyy-mm-dd như trước, không đổi gì ở
+// keysInRange()/renderMonthly(). Hàm này chỉ còn tính mốc first/last mặc định, không
+// còn tạo <option> (input không có .options).
 function populateMonthRangeSelects(){
   const prevFrom = monthFromSelect.value, prevTo = monthToSelect.value;
   const dataDates = dayKeys.map(k=>dmyToIso(allDays[k].date)).filter(Boolean).sort();
-  if(!dataDates.length){ monthFromSelect.innerHTML=''; monthToSelect.innerHTML=''; return; }
+  if(!dataDates.length){ monthFromSelect.value=''; monthToSelect.value=''; return; }
 
   const m = parseInt(monthFilterSelect.value,10), y = parseInt(yearFilterSelect.value,10);
   const now = new Date();
@@ -2151,19 +2160,11 @@ function populateMonthRangeSelects(){
   const last = currentMonth ? todayIso : dataDates[dataDates.length-1];
 
   const startN = isoDayNumber(first), endN = isoDayNumber(last);
-  const opts = [];
-  for(let n=startN; n<=endN; n++){
-    const d = new Date(n*86400000);
-    const iso = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
-    opts.push(`<option value="${iso}">Ngày ${isoToDMY(iso)}</option>`);
-  }
-  const optsHtml = opts.join('');
-  monthFromSelect.innerHTML = optsHtml;
-  monthToSelect.innerHTML = optsHtml;
-
-  const valid = new Set(Array.from(monthFromSelect.options).map(o=>o.value));
-  monthFromSelect.value = valid.has(prevFrom) ? prevFrom : first;
-  monthToSelect.value = valid.has(prevTo) ? prevTo : last;
+  const prevFromN = isoDayNumber(prevFrom), prevToN = isoDayNumber(prevTo);
+  const prevFromValid = Number.isFinite(prevFromN) && prevFromN>=startN && prevFromN<=endN;
+  const prevToValid = Number.isFinite(prevToN) && prevToN>=startN && prevToN<=endN;
+  monthFromSelect.value = prevFromValid ? prevFrom : first;
+  monthToSelect.value = prevToValid ? prevTo : last;
 }
 
 function keysInRange(fromIso, toIso){
@@ -2226,6 +2227,7 @@ function renderMonthly(){
     <div class="kpi ${rangeRate==null?'':rangeRate>=95?'k-success':'k-warning'}"><div class="label">Tỷ lệ hoàn thành</div><div class="value" style="color:${rangeRate==null?'var(--text2)':rangeRate>=95?'var(--success)':rangeRate>=80?'var(--warning)':'var(--danger)'}">${rangeRate==null?'—':rangeRate+'%'}</div></div>
     <div class="kpi k-accent"><div class="label">Đóng gói trong kỳ</div><div class="value">${rangeKpi.throughput.toLocaleString()}</div></div>
     <div class="kpi k-accent"><div class="label">Số ngày có sản xuất</div><div class="value">${rangeActiveDays}</div></div>
+    <div class="kpi k-warning"><div class="label">Tổng bảo hành</div><div class="value">${rangeKpi.warranty.toLocaleString()}</div></div>
     <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="monthly" aria-label="Xem cách tính Tốc độ theo bộ lọc" style="border-top-color:${mauTocDo(tocDoKy.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoKy.trangThai)};">${tocDoKy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoKy.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div><div class="kpi-phu" style="color:${mauTocDo(tocDoKy.trangThai)};font-weight:700;line-height:1.35;">${tocDoKy.danhGia}</div><span class="speed-kpi-hint">Bấm để xem cách tính</span></div>
   `;
 
@@ -2351,6 +2353,13 @@ document.getElementById('closeProductDetailBtn')?.addEventListener('click',close
 document.getElementById('productDetailModal')?.addEventListener('click',e=>{if(e.target.id==='productDetailModal')closeProductDetail();});
 monthFromSelect.addEventListener('change', renderMonthly);
 monthToSelect.addEventListener('change', renderMonthly);
+// Sửa 2026-09-07 (Phần 4): 4 nút nhanh giống hệt pattern datCapacityRange() ở trang
+// Năng lực — tái dùng đúng 2 hàm dùng chung isoCuaNgay()/thuHaiCuaTuan().
+function datMonthlyRange(tu,den){ monthFromSelect.value=isoCuaNgay(tu); monthToSelect.value=isoCuaNgay(den); renderMonthly(); }
+document.getElementById('monthlyQuickToday').addEventListener('click',()=>{ const d=new Date(); datMonthlyRange(d,d); });
+document.getElementById('monthlyQuickYesterday').addEventListener('click',()=>{ const d=new Date(); d.setDate(d.getDate()-1); datMonthlyRange(d,d); });
+document.getElementById('monthlyQuickLastWeek').addEventListener('click',()=>{ const a=thuHaiCuaTuan(new Date()),b=new Date(a),c=new Date(a); b.setDate(b.getDate()-7); c.setDate(c.getDate()-1); datMonthlyRange(b,c); });
+document.getElementById('monthlyQuickLastMonth').addEventListener('click',()=>{ const n=new Date(); datMonthlyRange(new Date(n.getFullYear(),n.getMonth()-1,1),new Date(n.getFullYear(),n.getMonth(),0)); });
 
 // ============ Kế hoạch tuần (tự động) — fetch from company Google Sheet ============
 const SHEET_ID = '1qNC55iN4KKF9hJRrfc4egnHIqnC_-GKEKC2jwXDFxMQ';
@@ -3327,7 +3336,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 140;
+const APP_VERSION = 141;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7113,6 +7122,15 @@ function saveUiState(extra={}){
     localStorage.setItem(UI_STATE_KEY,JSON.stringify(Object.assign(old,{tab:active?active.dataset.tab:'',scrollY:window.scrollY||0},extra)));
   }catch(e){}
 }
+// Sửa 2026-09-07 (Phần 4): dải KPI toàn cục #kpiRow lặp gần hết số liệu với các thẻ
+// riêng của trang "Tổng Thống kê sản xuất" — ẩn #kpiRow riêng khi đang ở đúng trang
+// này, các tab khác giữ nguyên hiện #kpiRow như trước. Đọc trực tiếp tab đang active
+// trong DOM để dùng chung được cho cả restoreUiState() lẫn click thật.
+function capNhatHienThiKpiRow(){
+  const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+  const kpiRow = document.getElementById('kpiRow');
+  if(kpiRow) kpiRow.style.display = (activeTab==='monthly') ? 'none' : '';
+}
 function restoreUiState(){
   try{
     const st=JSON.parse(localStorage.getItem(UI_STATE_KEY)||'{}');
@@ -7126,6 +7144,7 @@ function restoreUiState(){
         if(st.tab==='report') initReportPage();
       }
     }
+    capNhatHienThiKpiRow();
     setTimeout(()=>window.scrollTo(0,Number(st.scrollY)||0),0);
   }catch(e){}
 }
@@ -7138,6 +7157,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='report') initReportPage();
+    capNhatHienThiKpiRow();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
     // Chọn xong thì tự thu gọn drawer "☰ Thêm" trên điện thoại, không để mở lì.
     document.getElementById('mainTabs')?.classList.remove('show-extra');
