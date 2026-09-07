@@ -189,15 +189,22 @@
     #mainTabs.show-extra .tab-extra{display:inline-flex;}
     .tabs-more-toggle{display:inline-block;}
   }
+  /* Sidebar (dòng dưới) CHỈ áp dụng cho vai Quản lý/Quản lý 2 — Nhân viên/Khách xem giữ
+     nguyên hàng tab ngang gốc ở MỌI độ rộng màn hình (yêu cầu 2026-09-07). */
   @media(min-width:1024px){
-    body{padding-left:220px;}
-    .tabs{position:fixed;top:0;left:0;bottom:0;width:220px;flex-direction:column;align-items:stretch;
+    body.role-quan-ly,body.role-quan-ly-2{padding-left:220px;}
+    body.role-quan-ly .tabs,
+    body.role-quan-ly-2 .tabs{position:fixed;top:0;left:0;bottom:0;width:220px;flex-direction:column;align-items:stretch;
       border-radius:0;padding:16px 12px;gap:2px;overflow-y:auto;background:var(--card);
       border-right:1px solid var(--border);z-index:80;margin-bottom:0;}
-    .tab-btn{text-align:left;border-bottom:none!important;border-radius:9px;}
-    .tab-btn.active{box-shadow:none;background:var(--primary-l);}
-    .tab-btn[data-tab="monthly"].active,.tab-btn[data-tab="autoplan"].active,
-    .tab-btn[data-tab="progress"].active,.tab-btn[data-tab="capacity"].active{border-bottom:none!important;}
+    body.role-quan-ly .tab-btn,
+    body.role-quan-ly-2 .tab-btn{text-align:left;border-bottom:none!important;border-radius:9px;}
+    body.role-quan-ly .tab-btn.active,
+    body.role-quan-ly-2 .tab-btn.active{box-shadow:none;background:var(--primary-l);}
+    body.role-quan-ly .tab-btn[data-tab="monthly"].active,body.role-quan-ly .tab-btn[data-tab="autoplan"].active,
+    body.role-quan-ly .tab-btn[data-tab="progress"].active,body.role-quan-ly .tab-btn[data-tab="capacity"].active,
+    body.role-quan-ly-2 .tab-btn[data-tab="monthly"].active,body.role-quan-ly-2 .tab-btn[data-tab="autoplan"].active,
+    body.role-quan-ly-2 .tab-btn[data-tab="progress"].active,body.role-quan-ly-2 .tab-btn[data-tab="capacity"].active{border-bottom:none!important;}
   }
 
   .panel{display:none;}
@@ -958,156 +965,6 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-<!-- Sửa 2026-09-06 (Giai đoạn 3): gộp exportModal + backupModal + quarterTargetModal
-     (3 modal cài đặt, ít bấm) thành 1 trang "Cài đặt" luôn hiển thị, 3 khối xếp dọc.
-     Giữ nguyên toàn bộ id bên trong — mọi hàm JS liên quan không đổi logic. -->
-<div class="panel" id="panel-settings">
-  <div class="card">
-    <h3 style="margin:0 0 4px;">📤 Xuất báo cáo đóng gói</h3>
-    <label style="display:block;font-size:12px;color:var(--text2);margin:10px 0 6px;">Ngày báo cáo</label>
-    <select id="exportDateSelect" style="width:100%;max-width:360px;box-sizing:border-box;"></select>
-
-    <div id="exportSignerBox" style="display:none;margin-top:14px;max-width:420px;">
-      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;">Tên người lập báo cáo</label>
-      <input type="text" id="exportSignerName" placeholder="Nhập tên của bạn" style="width:100%;box-sizing:border-box;">
-      <div style="font-size:11.5px;color:var(--text2);margin-top:5px;line-height:1.5;">
-        Báo cáo do bạn xuất sẽ <strong>không có chữ ký</strong>, chỉ ghi "Người lập: ...".
-        Trưởng nhóm xuất lại để có bản ký duyệt.
-      </div>
-    </div>
-
-    <div id="exportInfo" style="margin-top:12px;font-size:12.5px;line-height:1.6;"></div>
-
-    <div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-      <button id="doExportBtn" class="primary-btn" style="background:var(--success);">📤 Xuất báo cáo</button>
-      <span class="save-status" id="exportStatus"></span>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin:0 0 12px;">💾 Sao lưu &amp; bàn giao</h3>
-    <div style="background:#1c1b18;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
-      <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;">1. Tải gói sao lưu</div>
-      <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">
-        Tải về 2 tệp: một tệp dữ liệu (toàn bộ phân công, tiến độ, đơn phát sinh, ngày đã chốt, danh sách mã)
-        và một tệp hướng dẫn bàn giao. Giữ 2 tệp này là công ty dựng lại được hệ thống trên tài khoản mới.
-      </div>
-      <button id="doBackupBtn" class="primary-btn">⬇ Tải gói sao lưu</button>
-      <span class="save-status" id="backupStatus"></span>
-    </div>
-
-    <div style="background:var(--danger-l);border:1px solid var(--danger);border-radius:10px;padding:14px;">
-      <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--danger);">2. Nạp lại từ gói sao lưu</div>
-      <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">
-        Dùng khi dựng lại hệ thống trên tài khoản mới, hoặc khi cần phục hồi sau sự cố.
-        <strong>Việc này ghi đè toàn bộ dữ liệu hiện tại</strong> — chỉ làm khi bạn chắc chắn.
-      </div>
-      <input type="file" id="restoreFileInput" accept=".json" style="font-size:12.5px;">
-      <button id="doRestoreBtn" class="primary-btn" style="background:var(--danger);">⬆ Nạp lại dữ liệu</button>
-      <div id="restoreStatus" style="margin-top:10px;font-size:12.5px;"></div>
-    </div>
-    <div style="background:var(--primary-l);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:14px;">
-      <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;">3. Đơn đã hủy</div>
-      <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">Đơn hủy không tham gia KPI/năng lực. Có thể xem lý do và khôi phục.</div>
-      <button id="showCancelledOrdersBtn" class="primary-btn" type="button">Xem đơn đã hủy</button>
-      <div id="cancelledOrdersList" style="margin-top:10px;"></div>
-    </div>
-    <div style="background:var(--warning-l);border:1px solid var(--warning);border-radius:10px;padding:14px;margin-top:14px;">
-      <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;">4. Nạp dữ liệu KH/BH khi mạng lỗi kéo dài</div>
-      <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">Chấp nhận Excel/CSV. Đây là lớp tạm; khi mạng trở lại hệ thống đối chiếu nguồn sống, tô sáng và đưa dòng đổi lên đầu để xác nhận/tách.</div>
-      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
-        <input type="file" id="offlinePlanFile" accept=".xlsx,.xls,.csv"><button id="importOfflinePlanBtn" class="primary-btn">Nạp KH</button>
-        <input type="file" id="offlineWarrantyFile" accept=".xlsx,.xls,.csv"><button id="importOfflineWarrantyBtn" class="primary-btn">Nạp BH</button>
-      </div>
-      <div id="offlineImportStatus" style="margin-top:8px;font-size:12.5px;"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin:0 0 4px;">🎯 Mục tiêu quý</h3>
-    <div style="font-size:12.5px;color:var(--text2);margin-bottom:14px;">
-      Nhập sản lượng mục tiêu công ty giao cho quý. Mọi vai đều thấy tiến độ này ở tab Tổng hợp tháng, chỉ Quản lý sửa được.
-    </div>
-    <div style="display:flex;gap:10px;margin-bottom:12px;max-width:420px;">
-      <div style="flex:1;">
-        <label style="font-size:12.5px;color:var(--text2);display:block;margin-bottom:4px;">Quý</label>
-        <select id="quarterTargetQuy" style="width:100%;">
-          <option value="1">Quý 1</option>
-          <option value="2">Quý 2</option>
-          <option value="3">Quý 3</option>
-          <option value="4">Quý 4</option>
-        </select>
-      </div>
-      <div style="flex:1;">
-        <label style="font-size:12.5px;color:var(--text2);display:block;margin-bottom:4px;">Năm</label>
-        <input type="number" id="quarterTargetNam" style="width:100%;">
-      </div>
-    </div>
-    <div style="margin-bottom:14px;max-width:420px;">
-      <label style="font-size:12.5px;color:var(--text2);display:block;margin-bottom:4px;">Sản lượng mục tiêu (tấm)</label>
-      <input type="number" id="quarterTargetSoLuong" min="0" placeholder="VD: 8000" style="width:100%;">
-    </div>
-    <div style="margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:7px;">
-        <label style="font-size:12.5px;color:var(--text2);">Lịch ngày làm việc quý</label>
-        <strong id="quarterWorkdayCount" style="font-size:12px;color:var(--primary);"></strong>
-      </div>
-      <div style="font-size:11.5px;color:var(--text2);margin-bottom:7px;">Mặc định chọn Thứ 2–7; bỏ Chủ nhật và ngày lễ Việt Nam. Quản lý tự chỉnh ngày nghỉ bù/thay đổi của công ty.</div>
-      <div id="quarterWorkCalendar" style="display:grid;grid-template-columns:repeat(7,minmax(44px,1fr));gap:5px;max-height:220px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:10px;"></div>
-    </div>
-    <button id="doSaveQuarterTargetBtn" class="primary-btn">💾 Lưu mục tiêu</button>
-    <span class="save-status" id="quarterTargetStatus"></span>
-  </div>
-</div>
-
-<!-- Sửa 2026-09-06 (Giai đoạn 3): staffUsersModal -> trang "Nhân sự" luôn hiển thị,
-     giữ nguyên toàn bộ id bên trong (loadStaffUsers()/renderStaffUsersList()/... ghi
-     thẳng vào các id này, không đổi logic). -->
-<div class="panel" id="panel-staff">
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
-      <h3 id="staffModalTitle" style="margin:0;font-size:17px;">🔗 Quản lý Telegram &amp; phân tổ</h3>
-    </div>
-
-      <div id="legacyStaffDescription" style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">
-        Tạo mã đăng nhập cho từng người. <strong>Mã ít nhất 4 ký tự</strong>, nên đặt khó đoán. Mã tạo ở đây lưu trên Google nên mọi thiết bị đều dùng được, và không mất khi cập nhật dashboard.
-      </div>
-      <div id="legacyStaffControls" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px;">
-        <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Tên người dùng</label>
-          <input type="text" id="newStaffName" placeholder="VD: Nguyễn Văn A" style="min-width:170px;"></div>
-        <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Mã đăng nhập</label>
-          <input type="text" id="newStaffCode" placeholder="VD: nvA7k2" style="min-width:130px;"></div>
-        <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Vai</label>
-          <select id="newStaffRole">
-            <option value="nhan_vien">Nhân viên</option>
-            <option value="quan_ly_2">Quản lý 2</option>
-            <option value="quan_ly">Quản lý</option>
-          </select></div>
-        <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Gắn tổ</label>
-          <select id="newStaffTeam">
-            <option value="">Không gắn tổ</option>
-            <option value="Tổ 1">Tổ 1</option>
-            <option value="Tổ 2">Tổ 2</option>
-            <option value="Tổ 3">Tổ 3</option>
-            <option value="Tổ 4">Tổ 4</option>
-            <option value="Tổ 5">Tổ 5</option>
-            <option value="Tổ may">Tổ may</option>
-            <option value="Tổ đóng gói">Tổ đóng gói</option>
-          </select></div>
-        <button id="genStaffCodeBtn" class="primary-btn" style="background:var(--text2);">Tạo mã tự động</button>
-        <button id="addStaffBtn" class="primary-btn">+ Thêm người dùng</button>
-        <span class="save-status" id="staffStatus"></span>
-      </div>
-      <div id="supabaseTelegramAdmin" style="display:none;margin:4px 0 14px;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--primary-l);">
-        <div style="font-size:12.5px;font-weight:800;color:#1f4d78;margin-bottom:5px;">🔗 Duyệt tài khoản Telegram</div>
-        <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:9px;">Nhân viên tự gửi Telegram ID. Quản lý duyệt theo luồng: chọn vai, chọn tổ/công đoạn (bắt buộc với Nhân viên), rồi bấm Duyệt.</div>
-        <div id="adminTelegramStatus" aria-live="polite" style="display:none;margin-top:8px;font-size:11.5px;line-height:1.4;"></div>
-        <div id="telegramAccessRequests" style="margin-top:10px;"></div>
-      </div>
-      <div id="staffUsersList"></div>
-  </div>
-</div>
-
 <div id="productDetailModal" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(18,20,26,.55);padding:18px;overflow:auto;">
   <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.28);max-width:820px;margin:36px auto;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
@@ -1460,6 +1317,158 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<!-- Sửa 2026-09-06 (Giai đoạn 3): gộp exportModal + backupModal + quarterTargetModal
+     (3 modal cài đặt, ít bấm) thành 1 trang "Cài đặt" luôn hiển thị, 3 khối xếp dọc.
+     Giữ nguyên toàn bộ id bên trong — mọi hàm JS liên quan không đổi logic.
+     Sửa 2026-09-07 (vá lỗi cấu trúc): di chuyển vào TRONG <div class="wrap"> (trước nằm
+     ngoài, làm header/logo render sau nội dung, phải cuộn qua hết mới thấy). -->
+<div class="panel" id="panel-settings">
+  <div class="card">
+    <h3 style="margin:0 0 4px;">📤 Xuất báo cáo đóng gói</h3>
+    <label style="display:block;font-size:12px;color:var(--text2);margin:10px 0 6px;">Ngày báo cáo</label>
+    <select id="exportDateSelect" style="width:100%;max-width:360px;box-sizing:border-box;"></select>
+
+    <div id="exportSignerBox" style="display:none;margin-top:14px;max-width:420px;">
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;">Tên người lập báo cáo</label>
+      <input type="text" id="exportSignerName" placeholder="Nhập tên của bạn" style="width:100%;box-sizing:border-box;">
+      <div style="font-size:11.5px;color:var(--text2);margin-top:5px;line-height:1.5;">
+        Báo cáo do bạn xuất sẽ <strong>không có chữ ký</strong>, chỉ ghi "Người lập: ...".
+        Trưởng nhóm xuất lại để có bản ký duyệt.
+      </div>
+    </div>
+
+    <div id="exportInfo" style="margin-top:12px;font-size:12.5px;line-height:1.6;"></div>
+
+    <div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button id="doExportBtn" class="primary-btn" style="background:var(--success);">📤 Xuất báo cáo</button>
+      <span class="save-status" id="exportStatus"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 12px;">💾 Sao lưu &amp; bàn giao</h3>
+    <div style="background:#1c1b18;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;">1. Tải gói sao lưu</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">
+        Tải về 2 tệp: một tệp dữ liệu (toàn bộ phân công, tiến độ, đơn phát sinh, ngày đã chốt, danh sách mã)
+        và một tệp hướng dẫn bàn giao. Giữ 2 tệp này là công ty dựng lại được hệ thống trên tài khoản mới.
+      </div>
+      <button id="doBackupBtn" class="primary-btn">⬇ Tải gói sao lưu</button>
+      <span class="save-status" id="backupStatus"></span>
+    </div>
+
+    <div style="background:var(--danger-l);border:1px solid var(--danger);border-radius:10px;padding:14px;">
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--danger);">2. Nạp lại từ gói sao lưu</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">
+        Dùng khi dựng lại hệ thống trên tài khoản mới, hoặc khi cần phục hồi sau sự cố.
+        <strong>Việc này ghi đè toàn bộ dữ liệu hiện tại</strong> — chỉ làm khi bạn chắc chắn.
+      </div>
+      <input type="file" id="restoreFileInput" accept=".json" style="font-size:12.5px;">
+      <button id="doRestoreBtn" class="primary-btn" style="background:var(--danger);">⬆ Nạp lại dữ liệu</button>
+      <div id="restoreStatus" style="margin-top:10px;font-size:12.5px;"></div>
+    </div>
+    <div style="background:var(--primary-l);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:14px;">
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;">3. Đơn đã hủy</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">Đơn hủy không tham gia KPI/năng lực. Có thể xem lý do và khôi phục.</div>
+      <button id="showCancelledOrdersBtn" class="primary-btn" type="button">Xem đơn đã hủy</button>
+      <div id="cancelledOrdersList" style="margin-top:10px;"></div>
+    </div>
+    <div style="background:var(--warning-l);border:1px solid var(--warning);border-radius:10px;padding:14px;margin-top:14px;">
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;">4. Nạp dữ liệu KH/BH khi mạng lỗi kéo dài</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">Chấp nhận Excel/CSV. Đây là lớp tạm; khi mạng trở lại hệ thống đối chiếu nguồn sống, tô sáng và đưa dòng đổi lên đầu để xác nhận/tách.</div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
+        <input type="file" id="offlinePlanFile" accept=".xlsx,.xls,.csv"><button id="importOfflinePlanBtn" class="primary-btn">Nạp KH</button>
+        <input type="file" id="offlineWarrantyFile" accept=".xlsx,.xls,.csv"><button id="importOfflineWarrantyBtn" class="primary-btn">Nạp BH</button>
+      </div>
+      <div id="offlineImportStatus" style="margin-top:8px;font-size:12.5px;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 4px;">🎯 Mục tiêu quý</h3>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:14px;">
+      Nhập sản lượng mục tiêu công ty giao cho quý. Mọi vai đều thấy tiến độ này ở tab Tổng hợp tháng, chỉ Quản lý sửa được.
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;max-width:420px;">
+      <div style="flex:1;">
+        <label style="font-size:12.5px;color:var(--text2);display:block;margin-bottom:4px;">Quý</label>
+        <select id="quarterTargetQuy" style="width:100%;">
+          <option value="1">Quý 1</option>
+          <option value="2">Quý 2</option>
+          <option value="3">Quý 3</option>
+          <option value="4">Quý 4</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:12.5px;color:var(--text2);display:block;margin-bottom:4px;">Năm</label>
+        <input type="number" id="quarterTargetNam" style="width:100%;">
+      </div>
+    </div>
+    <div style="margin-bottom:14px;max-width:420px;">
+      <label style="font-size:12.5px;color:var(--text2);display:block;margin-bottom:4px;">Sản lượng mục tiêu (tấm)</label>
+      <input type="number" id="quarterTargetSoLuong" min="0" placeholder="VD: 8000" style="width:100%;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:7px;">
+        <label style="font-size:12.5px;color:var(--text2);">Lịch ngày làm việc quý</label>
+        <strong id="quarterWorkdayCount" style="font-size:12px;color:var(--primary);"></strong>
+      </div>
+      <div style="font-size:11.5px;color:var(--text2);margin-bottom:7px;">Mặc định chọn Thứ 2–7; bỏ Chủ nhật và ngày lễ Việt Nam. Quản lý tự chỉnh ngày nghỉ bù/thay đổi của công ty.</div>
+      <div id="quarterWorkCalendar" style="display:grid;grid-template-columns:repeat(7,minmax(44px,1fr));gap:5px;max-height:220px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:10px;"></div>
+    </div>
+    <button id="doSaveQuarterTargetBtn" class="primary-btn">💾 Lưu mục tiêu</button>
+    <span class="save-status" id="quarterTargetStatus"></span>
+  </div>
+</div>
+
+<!-- Sửa 2026-09-06 (Giai đoạn 3): staffUsersModal -> trang "Nhân sự" luôn hiển thị,
+     giữ nguyên toàn bộ id bên trong (loadStaffUsers()/renderStaffUsersList()/... ghi
+     thẳng vào các id này, không đổi logic). -->
+<div class="panel" id="panel-staff">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
+      <h3 id="staffModalTitle" style="margin:0;font-size:17px;">🔗 Quản lý Telegram &amp; phân tổ</h3>
+    </div>
+
+      <div id="legacyStaffDescription" style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">
+        Tạo mã đăng nhập cho từng người. <strong>Mã ít nhất 4 ký tự</strong>, nên đặt khó đoán. Mã tạo ở đây lưu trên Google nên mọi thiết bị đều dùng được, và không mất khi cập nhật dashboard.
+      </div>
+      <div id="legacyStaffControls" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px;">
+        <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Tên người dùng</label>
+          <input type="text" id="newStaffName" placeholder="VD: Nguyễn Văn A" style="min-width:170px;"></div>
+        <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Mã đăng nhập</label>
+          <input type="text" id="newStaffCode" placeholder="VD: nvA7k2" style="min-width:130px;"></div>
+        <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Vai</label>
+          <select id="newStaffRole">
+            <option value="nhan_vien">Nhân viên</option>
+            <option value="quan_ly_2">Quản lý 2</option>
+            <option value="quan_ly">Quản lý</option>
+          </select></div>
+        <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Gắn tổ</label>
+          <select id="newStaffTeam">
+            <option value="">Không gắn tổ</option>
+            <option value="Tổ 1">Tổ 1</option>
+            <option value="Tổ 2">Tổ 2</option>
+            <option value="Tổ 3">Tổ 3</option>
+            <option value="Tổ 4">Tổ 4</option>
+            <option value="Tổ 5">Tổ 5</option>
+            <option value="Tổ may">Tổ may</option>
+            <option value="Tổ đóng gói">Tổ đóng gói</option>
+          </select></div>
+        <button id="genStaffCodeBtn" class="primary-btn" style="background:var(--text2);">Tạo mã tự động</button>
+        <button id="addStaffBtn" class="primary-btn">+ Thêm người dùng</button>
+        <span class="save-status" id="staffStatus"></span>
+      </div>
+      <div id="supabaseTelegramAdmin" style="display:none;margin:4px 0 14px;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--primary-l);">
+        <div style="font-size:12.5px;font-weight:800;color:#1f4d78;margin-bottom:5px;">🔗 Duyệt tài khoản Telegram</div>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:9px;">Nhân viên tự gửi Telegram ID. Quản lý duyệt theo luồng: chọn vai, chọn tổ/công đoạn (bắt buộc với Nhân viên), rồi bấm Duyệt.</div>
+        <div id="adminTelegramStatus" aria-live="polite" style="display:none;margin-top:8px;font-size:11.5px;line-height:1.4;"></div>
+        <div id="telegramAccessRequests" style="margin-top:10px;"></div>
+      </div>
+      <div id="staffUsersList"></div>
+  </div>
+</div>
+
 </div>
 
 <div id="stageChoiceModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="stageChoiceTitle">
@@ -1486,7 +1495,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=137"></script>
+<script src="raw-data.js?v=138"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3278,7 +3287,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 137;
+const APP_VERSION = 138;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3526,7 +3535,7 @@ async function sendUserCommand(payload){
 
 function applyRoleUI(){
   const role = currentUser ? currentUser.role : 'chi_xem';
-  document.body.classList.remove('role-quan-ly','role-nhan-vien','role-chi-xem');
+  document.body.classList.remove('role-quan-ly','role-quan-ly-2','role-nhan-vien','role-chi-xem');
   document.body.classList.add('role-' + role.replace(/_/g,'-'));
   document.body.classList.remove('stage-view-dan','stage-view-may','stage-view-dong-goi');
   const congDoanNhanVien = congDoanNhanVienDuocNhap();
