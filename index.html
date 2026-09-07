@@ -158,6 +158,18 @@
   .kpi-refresh-btn:hover{border-color:var(--accent);box-shadow:0 0 12px rgba(46,143,181,.25);}
   .kpi-refresh-btn.is-loading{animation:kpi-spin .8s linear infinite;}
   @keyframes kpi-spin{to{transform:rotate(360deg)}}
+  /* Sửa 2026-09-07 (Phần 5): icon + sparkline + % xu hướng cho thẻ KPI trang "Tổng
+     Thống kê sản xuất" (theo mẫu Clinova đã đo) — CHỈ thêm class/phần tử mới, KHÔNG
+     sửa rule .kpi gốc phía trên (đang dùng chung cho #kpiRow/#autoPlanKpis/#dayKpis/
+     #progressKpis/#capacityStatsSummary) nên không ảnh hưởng các dải KPI khác. */
+  .kpi-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;}
+  .kpi-icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;flex-shrink:0;}
+  .kpi-icon svg{width:18px;height:18px;}
+  .kpi-value-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .kpi-trend{display:inline-flex;align-items:center;gap:2px;font-size:12px;font-weight:700;white-space:nowrap;}
+  .kpi-trend-up{color:var(--success);}
+  .kpi-trend-down{color:var(--danger);}
+  .kpi-trend-flat{color:var(--text2);}
   .manager-stage-modal select{pointer-events:auto!important;user-select:auto;}
 
   .tabs{display:flex;gap:4px;margin-bottom:20px;background:#1c1b18;padding:5px;border-radius:12px;width:fit-content;max-width:100%;overflow-x:auto;}
@@ -1539,7 +1551,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=141"></script>
+<script src="raw-data.js?v=142"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2176,6 +2188,73 @@ function keysInRange(fromIso, toIso){
     return Number.isFinite(n) && n>=a && n<=b;
   });
 }
+// Sửa 2026-09-07 (Phần 5): bản "toàn bộ lịch sử" của keysInRange, lọc trên
+// allDayKeys thay vì dayKeys (dayKeys chỉ chứa đúng tháng/năm đang chọn ở header).
+// Kỳ trước liền kề (kyTruocLienKe) rất hay rơi sang tháng trước tháng đang xem —
+// nếu vẫn lọc trên dayKeys sẽ luôn ra rỗng dù dữ liệu tháng trước có thật trong
+// allDays, làm % xu hướng biến mất oan. CHỈ dùng cho việc so sánh kỳ trước, không
+// đổi hành vi keysInRange gốc (các nơi khác vẫn dùng đúng bản cũ, scope theo tháng).
+function keysInRangeToanBo(fromIso, toIso){
+  let a=isoDayNumber(fromIso), b=isoDayNumber(toIso);
+  if(!Number.isFinite(a) || !Number.isFinite(b)) return [];
+  if(a>b) [a,b]=[b,a];
+  return allDayKeys.filter(k=>{
+    const n=isoDayNumber(dmyToIso(allDays[k].date));
+    return Number.isFinite(n) && n>=a && n<=b;
+  });
+}
+
+// Sửa 2026-09-07 (Phần 5 — thẻ KPI "Tổng Thống kê sản xuất" theo mẫu Clinova):
+// dùng đúng cách quy đổi số-ngày -> ISO qua getUTC*() giống populateMonthRangeSelects()
+// phía trên (tránh lệch ngày theo múi giờ trình duyệt).
+function isoTuDayNumber(n){
+  const d = new Date(n*86400000);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+// Kỳ liền trước, cùng độ dài với khoảng [fromIso,toIso] hiện tại — dùng để tính % xu hướng.
+function kyTruocLienKe(fromIso, toIso){
+  const a = isoDayNumber(fromIso), b = isoDayNumber(toIso);
+  if(!Number.isFinite(a) || !Number.isFinite(b)) return {from:'', to:''};
+  const lo = Math.min(a,b), hi = Math.max(a,b);
+  const soNgay = hi - lo + 1;
+  return {from:isoTuDayNumber(lo-soNgay), to:isoTuDayNumber(lo-1)};
+}
+// Sparkline SVG nhỏ (84x30) từ mảng số liệu theo ngày — đúng cấu trúc đo được từ mẫu
+// (area phủ mờ + line nét liền). Trả rỗng nếu không đủ điểm để vẽ đường.
+function veSparkline(values, colorHex){
+  if(!values || values.length<2) return '';
+  const w=84,h=30;
+  const min=Math.min(...values), max=Math.max(...values);
+  const range=(max-min)||1;
+  const stepX=w/(values.length-1);
+  const pts=values.map((v,i)=>[i*stepX, h-((v-min)/range)*h]);
+  const lineD='M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
+  const areaD=lineD+` L${w},${h} L0,${h} Z`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${areaD}" fill="${colorHex}" fill-opacity="0.14"></path><path d="${lineD}" fill="none" stroke="${colorHex}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
+}
+// Badge % xu hướng so với kỳ trước (mũi tên + %). Trả rỗng nếu không có mốc so sánh
+// hợp lệ (kỳ trước = 0 hoặc không xác định được ngày) — tránh hiện NaN/Infinity.
+function veTrendBadge(hienTai, kyTruoc){
+  if(kyTruoc==null || !(kyTruoc>0)) return '';
+  const diff = hienTai - kyTruoc;
+  const pct = Math.round(Math.abs(diff/kyTruoc)*1000)/10;
+  const flat = diff===0;
+  const up = diff>0;
+  const cls = flat?'kpi-trend-flat':(up?'kpi-trend-up':'kpi-trend-down');
+  const arrow = flat?'→':(up?'↗':'↘');
+  return `<span class="kpi-trend ${cls}">${arrow} ${pct}%</span>`;
+}
+
+// Sửa 2026-09-07 (Phần 5): icon riêng cho từng thẻ KPI của "Tổng Thống kê sản xuất",
+// vẽ tay cùng phong cách icon sidebar (viewBox 24, stroke=currentColor) — 2 icon đầu
+// tái dùng nguyên path đã vẽ cho tab KHSX/TDSX, còn lại vẽ mới, hình học đơn giản an toàn.
+const ICON_KE_HOACH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/><line x1="8" y1="10.5" x2="16" y2="10.5"/><line x1="8" y1="14.5" x2="16" y2="14.5"/><line x1="8" y1="18" x2="13" y2="18"/></svg>';
+const ICON_HOAN_THANH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8,12.5 11,15.5 16,9"/></svg>';
+const ICON_TY_LE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="18" x2="18" y2="6"/><circle cx="7.5" cy="7.5" r="2"/><circle cx="16.5" cy="16.5" r="2"/></svg>';
+const ICON_DONG_GOI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,7 12,3 21,7 21,17 12,21 3,17 3,7"/><polyline points="3,7 12,11 21,7"/><line x1="12" y1="11" x2="12" y2="21"/></svg>';
+const ICON_SO_NGAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>';
+const ICON_BAO_HANH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l6.5 2.5v5c0 4.8-2.8 8-6.5 9.5-3.7-1.5-6.5-4.7-6.5-9.5v-5L12 3z"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16" r="0.7" fill="currentColor" stroke="none"/></svg>';
+const ICON_TOC_DO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,12 7,12 9,6 13,18 15,12 21,12"/></svg>';
 
 function renderMonthly(){
   const keysToUse = keysInRange(monthFromSelect.value, monthToSelect.value);
@@ -2221,14 +2300,62 @@ function renderMonthly(){
   const rangeRate = rangePlan>0 ? Math.round((rangeDone/rangePlan)*1000)/10 : null;
   const tocDoKy = tinhTocDoBoLoc({keys:keysToUse,output:rangeKpi.throughput,fromIso:monthFromSelect.value,toIso:monthToSelect.value});
   speedDetailStore.monthly = tocDoKy;
+
+  // Sửa 2026-09-07 (Phần 5): dữ liệu theo ngày dùng chung cho sparkline 3 thẻ KPI
+  // (kế hoạch/hoàn thành/bảo hành) VÀ biểu đồ xu hướng bên dưới — tính 1 lần duy nhất
+  // ở đây, dailyTrendChart phía dưới tái dùng lại đúng biến này, không tính lại.
+  const dailyPlan = keysToUse.map(k=>{
+    const kpi=tongKpiTuRowsTheoKeys([k]);
+    return {date:allDays[k].date, plan:kpi.plan, dg:kpi.throughput, warranty:kpi.warranty};
+  });
+
+  // Kỳ liền trước cùng độ dài — dùng tính % xu hướng cho từng thẻ KPI.
+  const kyTruoc = kyTruocLienKe(monthFromSelect.value, monthToSelect.value);
+  const keysKyTruoc = keysInRangeToanBo(kyTruoc.from, kyTruoc.to);
+  const rangeKpiKyTruoc = tongKpiTuRowsTheoKeys(keysKyTruoc);
+  let activeDaysKyTruoc = 0;
+  keysKyTruoc.forEach(k=>{ if(tongKpiTuRowsTheoKeys([k]).throughput>0) activeDaysKyTruoc++; });
+  const rangeRateKyTruoc = rangeKpiKyTruoc.plan>0 ? Math.round((rangeKpiKyTruoc.throughput/rangeKpiKyTruoc.plan)*1000)/10 : null;
+
   document.getElementById('monthlyKpis').innerHTML = `
-    <div class="kpi k-accent"><div class="label">Tổng kế hoạch</div><div class="value">${rangePlan.toLocaleString()}</div></div>
-    <div class="kpi k-success"><div class="label">Tổng hoàn thành</div><div class="value">${rangeDone.toLocaleString()}</div></div>
-    <div class="kpi ${rangeRate==null?'':rangeRate>=95?'k-success':'k-warning'}"><div class="label">Tỷ lệ hoàn thành</div><div class="value" style="color:${rangeRate==null?'var(--text2)':rangeRate>=95?'var(--success)':rangeRate>=80?'var(--warning)':'var(--danger)'}">${rangeRate==null?'—':rangeRate+'%'}</div></div>
-    <div class="kpi k-accent"><div class="label">Đóng gói trong kỳ</div><div class="value">${rangeKpi.throughput.toLocaleString()}</div></div>
-    <div class="kpi k-accent"><div class="label">Số ngày có sản xuất</div><div class="value">${rangeActiveDays}</div></div>
-    <div class="kpi k-warning"><div class="label">Tổng bảo hành</div><div class="value">${rangeKpi.warranty.toLocaleString()}</div></div>
-    <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="monthly" aria-label="Xem cách tính Tốc độ theo bộ lọc" style="border-top-color:${mauTocDo(tocDoKy.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoKy.trangThai)};">${tocDoKy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoKy.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div><div class="kpi-phu" style="color:${mauTocDo(tocDoKy.trangThai)};font-weight:700;line-height:1.35;">${tocDoKy.danhGia}</div><span class="speed-kpi-hint">Bấm để xem cách tính</span></div>
+    <div class="kpi k-accent">
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:var(--primary);">${ICON_KE_HOACH}</span>${veSparkline(dailyPlan.map(d=>d.plan),'#57b6b6')}</div>
+      <div class="label">Tổng kế hoạch</div>
+      <div class="kpi-value-row"><div class="value">${rangePlan.toLocaleString()}</div>${veTrendBadge(rangePlan, rangeKpiKyTruoc.plan)}</div>
+    </div>
+    <div class="kpi k-success">
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--success-l);color:var(--success);">${ICON_HOAN_THANH}</span>${veSparkline(dailyPlan.map(d=>d.dg),'#52b57b')}</div>
+      <div class="label">Tổng hoàn thành</div>
+      <div class="kpi-value-row"><div class="value">${rangeDone.toLocaleString()}</div>${veTrendBadge(rangeDone, rangeKpiKyTruoc.throughput)}</div>
+    </div>
+    <div class="kpi ${rangeRate==null?'':rangeRate>=95?'k-success':'k-warning'}">
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:var(--primary);">${ICON_TY_LE}</span></div>
+      <div class="label">Tỷ lệ hoàn thành</div>
+      <div class="kpi-value-row"><div class="value" style="color:${rangeRate==null?'var(--text2)':rangeRate>=95?'var(--success)':rangeRate>=80?'var(--warning)':'var(--danger)'}">${rangeRate==null?'—':rangeRate+'%'}</div>${veTrendBadge(rangeRate, rangeRateKyTruoc)}</div>
+    </div>
+    <div class="kpi k-accent">
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:var(--primary);">${ICON_DONG_GOI}</span>${veSparkline(dailyPlan.map(d=>d.dg),'#57b6b6')}</div>
+      <div class="label">Đóng gói trong kỳ</div>
+      <div class="kpi-value-row"><div class="value">${rangeKpi.throughput.toLocaleString()}</div>${veTrendBadge(rangeKpi.throughput, rangeKpiKyTruoc.throughput)}</div>
+    </div>
+    <div class="kpi k-accent">
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:var(--primary);">${ICON_SO_NGAY}</span></div>
+      <div class="label">Số ngày có sản xuất</div>
+      <div class="kpi-value-row"><div class="value">${rangeActiveDays}</div>${veTrendBadge(rangeActiveDays, activeDaysKyTruoc)}</div>
+    </div>
+    <div class="kpi k-warning">
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--warning-l);color:var(--warning);">${ICON_BAO_HANH}</span>${veSparkline(dailyPlan.map(d=>d.warranty),'#e6b552')}</div>
+      <div class="label">Tổng bảo hành</div>
+      <div class="kpi-value-row"><div class="value">${rangeKpi.warranty.toLocaleString()}</div>${veTrendBadge(rangeKpi.warranty, rangeKpiKyTruoc.warranty)}</div>
+    </div>
+    <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="monthly" aria-label="Xem cách tính Tốc độ theo bộ lọc" style="border-top-color:${mauTocDo(tocDoKy.trangThai)};">
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:${mauTocDo(tocDoKy.trangThai)};">${ICON_TOC_DO}</span></div>
+      <div class="label">Tốc độ theo bộ lọc</div>
+      <div class="value" style="color:${mauTocDo(tocDoKy.trangThai)};">${tocDoKy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div>
+      <div class="kpi-phu">${tocDoKy.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div>
+      <div class="kpi-phu" style="color:${mauTocDo(tocDoKy.trangThai)};font-weight:700;line-height:1.35;">${tocDoKy.danhGia}</div>
+      <span class="speed-kpi-hint">Bấm để xem cách tính</span>
+    </div>
   `;
 
   const products = Object.entries(productMap).map(([name,total])=>({name,total})).sort((a,b)=>b.total-a.total);
@@ -2317,12 +2444,8 @@ function renderMonthly(){
     }
   });
 
-  // Biểu đồ xu hướng dùng cùng tập ngày với các biểu đồ/KPI phía trên,
-  // không được lấy toàn bộ tháng khi người dùng lọc một khoảng ngày.
-  const dailyPlan = keysToUse.map(k=>{
-    const kpi=tongKpiTuRowsTheoKeys([k]);
-    return {date:allDays[k].date, plan:kpi.plan, dg:kpi.throughput};
-  });
+  // dailyPlan đã tính sẵn ở trên (dùng chung với sparkline 3 thẻ KPI) — tái dùng,
+  // không tính lại.
   if(dailyTrendChart) dailyTrendChart.destroy();
   dailyTrendChart = new Chart(document.getElementById('dailyTrendChart'), {
     type:'line',
@@ -3336,7 +3459,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 141;
+const APP_VERSION = 142;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
