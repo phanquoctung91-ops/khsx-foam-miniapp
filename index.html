@@ -72,6 +72,9 @@
   /* Nút "Đăng ký Telegram ID" ở màn đăng nhập dùng màu #eef8fc/#1e6f96 — không nằm trong
      danh sách hex được dò bên dưới nên trước giờ luôn sáng bất kể chế độ tối. */
   body.dark-mode #telegramRegisterBtn{background:#201f1b!important;color:var(--primary)!important;border-color:var(--primary)!important;}
+  /* exitManagerStageBtn cũng bị luật "button:not(.primary-btn)" ở trên ghi đè mất màu đỏ cảnh báo
+     (nút thoát công đoạn) — chốt riêng theo ID để giữ đúng ý nghĩa cảnh báo. */
+  body.dark-mode #exitManagerStageBtn{background:var(--danger)!important;color:#fff!important;}
   body.dark-mode .capacity-quick-btn,body.dark-mode .warranty-detail-btn,
   body.dark-mode #supabaseTelegramAdmin button{background:#201f1b!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode tr.row-new td,body.dark-mode tr.row-changed td,body.dark-mode tr.row-rot td,
@@ -922,7 +925,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:720px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
       <h3 id="wfTitle" style="margin:0;font-size:17px;"></h3>
-      <button id="closeWfBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid #cfd6e4;background:#f4f6fa;color:var(--text2);cursor:pointer;">Đóng</button>
+      <button id="closeWfBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
     </div>
     <div id="wfBody"></div>
   </div>
@@ -932,7 +935,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:720px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
       <h3 style="margin:0;font-size:17px;">🧱 Bảng đặt phôi</h3>
-      <button id="closePhoiBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid #cfd6e4;background:#f4f6fa;color:var(--text2);cursor:pointer;">Đóng</button>
+      <button id="closePhoiBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
     </div>
     <div style="font-size:12.5px;color:var(--text2);margin-bottom:14px;">
       Mỗi cột là <strong>một ngày sản xuất</strong> — hàng phải về trong ngày đó.
@@ -1095,7 +1098,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
         <button id="addStaffBtn" class="primary-btn">+ Thêm người dùng</button>
         <span class="save-status" id="staffStatus"></span>
       </div>
-      <div id="supabaseTelegramAdmin" style="display:none;margin:4px 0 14px;padding:12px;border:1px solid #cfe0ef;border-radius:11px;background:#f7fbff;">
+      <div id="supabaseTelegramAdmin" style="display:none;margin:4px 0 14px;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--primary-l);">
         <div style="font-size:12.5px;font-weight:800;color:#1f4d78;margin-bottom:5px;">🔗 Duyệt tài khoản Telegram</div>
         <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:9px;">Nhân viên tự gửi Telegram ID. Quản lý duyệt theo luồng: chọn vai, chọn tổ/công đoạn (bắt buộc với Nhân viên), rồi bấm Duyệt.</div>
         <div id="adminTelegramStatus" aria-live="polite" style="display:none;margin-top:8px;font-size:11.5px;line-height:1.4;"></div>
@@ -1135,7 +1138,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     </div>
   </div>
 </div>
-<button id="exitManagerStageBtn" type="button" style="display:none;position:fixed;right:12px;top:72px;z-index:9400;padding:8px 11px;border:0;border-radius:9px;background:#b42318;color:#fff;font-weight:800;box-shadow:0 5px 18px rgba(0,0,0,.3);">Thoát công đoạn</button>
+<button id="exitManagerStageBtn" type="button" style="display:none;position:fixed;right:12px;top:72px;z-index:9400;padding:8px 11px;border:0;border-radius:9px;background:var(--danger);color:#fff;font-weight:800;box-shadow:0 5px 18px rgba(0,0,0,.3);">Thoát công đoạn</button>
 
 <div class="wrap">
 
@@ -1483,7 +1486,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=136"></script>
+<script src="raw-data.js?v=137"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3275,7 +3278,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 136;
+const APP_VERSION = 137;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
