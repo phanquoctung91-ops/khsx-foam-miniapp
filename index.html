@@ -19,6 +19,7 @@
      chữ #e6e4e1/#9a9891, accent teal #57b6b6, xanh lá #52b57b, đỏ #e65252, vàng #e6b552. */
   :root{
     --bg:#100f0c; --card:#181714; --border:#282622; --text:#e6e4e1; --text2:#9a9891;
+    --sidebar-bg:#0c0b08;
     --primary:#57b6b6; --primary-l:#0c2424; --primary-dark:#7ecccc;
     --brand-light:#57b6b6; --brand-light-l:#0c2424;
     --success:#52b57b; --success-l:#0f2b1f;
@@ -192,20 +193,49 @@
   /* Sidebar (dòng dưới) CHỈ áp dụng cho vai Quản lý/Quản lý 2 — Nhân viên/Khách xem giữ
      nguyên hàng tab ngang gốc ở MỌI độ rộng màn hình (yêu cầu 2026-09-07). */
   @media(min-width:1024px){
-    body.role-quan-ly,body.role-quan-ly-2{padding-left:220px;}
+    body.role-quan-ly,body.role-quan-ly-2{padding-left:260px;}
     body.role-quan-ly .tabs,
-    body.role-quan-ly-2 .tabs{position:fixed;top:0;left:0;bottom:0;width:220px;flex-direction:column;align-items:stretch;
-      border-radius:0;padding:16px 12px;gap:2px;overflow-y:auto;background:var(--card);
+    body.role-quan-ly-2 .tabs{position:fixed;top:0;left:0;bottom:0;width:260px;flex-direction:column;align-items:stretch;
+      border-radius:0;padding:16px 12px;gap:2px;overflow-y:auto;background:var(--sidebar-bg)!important;
       border-right:1px solid var(--border);z-index:80;margin-bottom:0;}
-    body.role-quan-ly .tab-btn,
-    body.role-quan-ly-2 .tab-btn{text-align:left;border-bottom:none!important;border-radius:9px;}
-    body.role-quan-ly .tab-btn.active,
-    body.role-quan-ly-2 .tab-btn.active{box-shadow:none;background:var(--primary-l);}
+    /* Nút "button:not(.primary-btn)" chung (dòng 31) và ".tabs" chung (nhóm dòng ~55-59)
+       đang ép background !important theo đặc trưng cao hơn 2 luật trên (nhiều type
+       selector hơn) — phải thêm ".tabs" vào chuỗi chọn để tăng đặc trưng, thắng đúng
+       trong ngữ cảnh sidebar: nút hoà vào nền sidebar (mẫu không có khối nền riêng cho
+       mục chưa chọn), mục đang chọn hiện đúng màu nền teal nhạt đã đo từ mẫu (trước đây
+       bị luật chung đè mất, không hiện ra). */
+    body.role-quan-ly #mainTabs.tabs .tab-btn,
+    body.role-quan-ly-2 #mainTabs.tabs .tab-btn{text-align:left;border-bottom:none!important;border-radius:8px;
+      padding:8px 12px;font-size:14px;font-weight:500;background-color:var(--sidebar-bg)!important;}
+    body.role-quan-ly .tabs .tab-btn.active,
+    body.role-quan-ly-2 .tabs .tab-btn.active{box-shadow:none;background:var(--primary-l)!important;}
     body.role-quan-ly .tab-btn[data-tab="monthly"].active,body.role-quan-ly .tab-btn[data-tab="autoplan"].active,
     body.role-quan-ly .tab-btn[data-tab="progress"].active,body.role-quan-ly .tab-btn[data-tab="capacity"].active,
     body.role-quan-ly-2 .tab-btn[data-tab="monthly"].active,body.role-quan-ly-2 .tab-btn[data-tab="autoplan"].active,
     body.role-quan-ly-2 .tab-btn[data-tab="progress"].active,body.role-quan-ly-2 .tab-btn[data-tab="capacity"].active{border-bottom:none!important;}
+    /* Nhóm nghiệp vụ (chốt 2026-09-07): chỉ đổi THỨ TỰ HIỂN THỊ bằng flex `order`,
+       không đổi thứ tự trong DOM — vì Nhân viên/Khách xem dùng chung đúng các nút
+       này (ẩn/hiện qua class only-*), đổi DOM order sẽ làm lệch thứ tự 2 tab họ thấy. */
+    body.role-quan-ly .tab-group-label,body.role-quan-ly-2 .tab-group-label{display:block;}
+    body.role-quan-ly .tab-group-label[data-group="vanhanh"],body.role-quan-ly-2 .tab-group-label[data-group="vanhanh"]{order:1;}
+    body.role-quan-ly .tab-btn[data-tab="autoplan"],body.role-quan-ly-2 .tab-btn[data-tab="autoplan"]{order:2;}
+    body.role-quan-ly .tab-btn[data-tab="progress"],body.role-quan-ly-2 .tab-btn[data-tab="progress"]{order:3;}
+    body.role-quan-ly .tab-group-label[data-group="baocao"],body.role-quan-ly-2 .tab-group-label[data-group="baocao"]{order:4;}
+    body.role-quan-ly .tab-btn[data-tab="monthly"],body.role-quan-ly-2 .tab-btn[data-tab="monthly"]{order:5;}
+    body.role-quan-ly .tab-btn[data-tab="capacity"],body.role-quan-ly-2 .tab-btn[data-tab="capacity"]{order:6;}
+    body.role-quan-ly .tab-group-label[data-group="quantri"],body.role-quan-ly-2 .tab-group-label[data-group="quantri"]{order:7;}
+    body.role-quan-ly .tab-btn[data-tab="staff"],body.role-quan-ly-2 .tab-btn[data-tab="staff"]{order:8;}
+    body.role-quan-ly .tab-btn[data-tab="settings"],body.role-quan-ly-2 .tab-btn[data-tab="settings"]{order:9;}
   }
+  .tab-group-label{display:none;order:0;padding:10px 12px 6px;font-size:10px;font-weight:600;
+    text-transform:uppercase;letter-spacing:1px;color:var(--text2);}
+  /* Icon: chỉ Quản lý/Quản lý 2 thấy icon SVG đơn sắc theo mẫu (currentColor, đổi màu
+     theo trạng thái active/inactive như chữ) — Nhân viên/Khách xem giữ NGUYÊN emoji cũ,
+     không đổi giao diện của họ (yêu cầu 2026-09-07). */
+  .tab-svg{display:none;width:18px;height:18px;vertical-align:-4px;margin-right:8px;flex-shrink:0;}
+  .tab-emoji{margin-right:8px;}
+  body.role-quan-ly .tab-emoji,body.role-quan-ly-2 .tab-emoji{display:none;}
+  body.role-quan-ly .tab-svg,body.role-quan-ly-2 .tab-svg{display:inline-block;}
 
   .panel{display:none;}
   .panel.active{display:block;}
@@ -1041,12 +1071,15 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <div class="kpis" id="kpiRow"></div>
 
 <div class="tabs" id="mainTabs">
-  <button class="tab-btn tab-overview active" data-tab="monthly">📊 Tổng hợp tháng</button>
-  <button class="tab-btn tab-overview" data-tab="autoplan">📋 Kế hoạch sản xuất</button>
-  <button class="tab-btn only-editor" data-tab="progress">🔧 Tiến độ sản xuất</button>
-  <button class="tab-btn only-manager2 tab-extra" data-tab="capacity">📈 Năng lực</button>
-  <button class="tab-btn only-manager2 tab-extra" data-tab="staff">👥 Nhân sự</button>
-  <button class="tab-btn only-manager tab-extra" data-tab="settings">⚙️ Cài đặt</button>
+  <div class="tab-group-label" data-group="vanhanh">Vận hành hàng ngày</div>
+  <div class="tab-group-label" data-group="baocao">Báo cáo &amp; phân tích</div>
+  <div class="tab-group-label" data-group="quantri">Quản trị hệ thống</div>
+  <button class="tab-btn tab-overview active" data-tab="monthly"><span class="tab-emoji">📊</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="13"/><line x1="9.3" y1="20" x2="9.3" y2="7"/><line x1="14.7" y1="20" x2="14.7" y2="11"/><line x1="20" y1="20" x2="20" y2="4"/></svg>Tổng hợp tháng</button>
+  <button class="tab-btn tab-overview" data-tab="autoplan"><span class="tab-emoji">📋</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/><line x1="8" y1="10.5" x2="16" y2="10.5"/><line x1="8" y1="14.5" x2="16" y2="14.5"/><line x1="8" y1="18" x2="13" y2="18"/></svg>Kế hoạch sản xuất</button>
+  <button class="tab-btn only-editor" data-tab="progress"><span class="tab-emoji">🔧</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,12 7,12 9,6 13,18 15,12 21,12"/></svg>Tiến độ sản xuất</button>
+  <button class="tab-btn only-manager2 tab-extra" data-tab="capacity"><span class="tab-emoji">📈</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/></svg>Năng lực</button>
+  <button class="tab-btn only-manager2 tab-extra" data-tab="staff"><span class="tab-emoji">👥</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.9-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17" cy="8.7" r="2.4"/><path d="M15.6 14.8c2.3.5 3.9 2.3 3.9 5.2"/></svg>Nhân sự</button>
+  <button class="tab-btn only-manager tab-extra" data-tab="settings"><span class="tab-emoji">⚙️</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8" stroke-dasharray="2.4 2.6"/></svg>Cài đặt</button>
 </div>
 <button id="tabsMoreToggle" type="button" class="tabs-more-toggle only-manager2" aria-label="Thêm mục" aria-expanded="false">☰ Thêm</button>
 
@@ -1495,7 +1528,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=138"></script>
+<script src="raw-data.js?v=139"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3287,7 +3320,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 138;
+const APP_VERSION = 139;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
