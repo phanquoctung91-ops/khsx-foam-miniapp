@@ -223,9 +223,10 @@
     body.role-quan-ly .tab-group-label[data-group="baocao"],body.role-quan-ly-2 .tab-group-label[data-group="baocao"]{order:4;}
     body.role-quan-ly .tab-btn[data-tab="monthly"],body.role-quan-ly-2 .tab-btn[data-tab="monthly"]{order:5;}
     body.role-quan-ly .tab-btn[data-tab="capacity"],body.role-quan-ly-2 .tab-btn[data-tab="capacity"]{order:6;}
-    body.role-quan-ly .tab-group-label[data-group="quantri"],body.role-quan-ly-2 .tab-group-label[data-group="quantri"]{order:7;}
-    body.role-quan-ly .tab-btn[data-tab="staff"],body.role-quan-ly-2 .tab-btn[data-tab="staff"]{order:8;}
-    body.role-quan-ly .tab-btn[data-tab="settings"],body.role-quan-ly-2 .tab-btn[data-tab="settings"]{order:9;}
+    body.role-quan-ly .tab-btn[data-tab="report"],body.role-quan-ly-2 .tab-btn[data-tab="report"]{order:7;}
+    body.role-quan-ly .tab-group-label[data-group="quantri"],body.role-quan-ly-2 .tab-group-label[data-group="quantri"]{order:8;}
+    body.role-quan-ly .tab-btn[data-tab="staff"],body.role-quan-ly-2 .tab-btn[data-tab="staff"]{order:9;}
+    body.role-quan-ly .tab-btn[data-tab="settings"],body.role-quan-ly-2 .tab-btn[data-tab="settings"]{order:10;}
   }
   .tab-group-label{display:none;order:0;padding:10px 12px 6px;font-size:10px;font-weight:600;
     text-transform:uppercase;letter-spacing:1px;color:var(--text2);}
@@ -1078,6 +1079,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <button class="tab-btn tab-overview" data-tab="autoplan"><span class="tab-emoji">📋</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/><line x1="8" y1="10.5" x2="16" y2="10.5"/><line x1="8" y1="14.5" x2="16" y2="14.5"/><line x1="8" y1="18" x2="13" y2="18"/></svg>Kế hoạch sản xuất</button>
   <button class="tab-btn only-editor" data-tab="progress"><span class="tab-emoji">🔧</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,12 7,12 9,6 13,18 15,12 21,12"/></svg>Tiến độ sản xuất</button>
   <button class="tab-btn only-manager2 tab-extra" data-tab="capacity"><span class="tab-emoji">📈</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/></svg>Năng lực</button>
+  <button class="tab-btn only-manager tab-extra" data-tab="report"><span class="tab-emoji">📤</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><polyline points="7,8 12,3 17,8"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>Xuất báo cáo</button>
   <button class="tab-btn only-manager2 tab-extra" data-tab="staff"><span class="tab-emoji">👥</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.9-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17" cy="8.7" r="2.4"/><path d="M15.6 14.8c2.3.5 3.9 2.3 3.9 5.2"/></svg>Nhân sự</button>
   <button class="tab-btn only-manager tab-extra" data-tab="settings"><span class="tab-emoji">⚙️</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8" stroke-dasharray="2.4 2.6"/></svg>Cài đặt</button>
 </div>
@@ -1119,7 +1121,6 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <button id="addManualOrderBtn" class="primary-btn only-manager" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
       <button id="lockPlanBtn" class="primary-btn only-manager" style="background:var(--text2);">🔒 Chốt đầu vào</button>
-      <button id="exportReportBtn" class="primary-btn only-manager" style="background:var(--success);">📤 Xuất báo cáo</button>
       <button id="phoiBtn" class="primary-btn only-manager" style="background:var(--accent);">🧱 Bảng đặt phôi</button>
     </div>
     <div class="day-select-row toolbar-filter-row">
@@ -1225,7 +1226,6 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <button id="addManualOrderBtnProgress" class="primary-btn only-manager2" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="bulkCompleteBtn" class="primary-btn only-manager2" style="display:none;background:var(--success);">✓ Hoàn thành</button>
       <button id="lockProgressBtn" class="primary-btn only-manager2" style="background:var(--text2);">🔒 Chốt tiến độ</button>
-      <button id="capacityStatsBtn" class="primary-btn only-manager2" style="background:#6d4bc3;">Số liệu năng lực</button>
       <button id="overtimeBtn" class="primary-btn only-manager2" style="background:var(--warning);">⏱ Ghi nhận OT</button>
       <button id="refreshProgressBtn" class="primary-btn">↻ Làm mới</button>
     </div>
@@ -1350,12 +1350,10 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-<!-- Sửa 2026-09-06 (Giai đoạn 3): gộp exportModal + backupModal + quarterTargetModal
-     (3 modal cài đặt, ít bấm) thành 1 trang "Cài đặt" luôn hiển thị, 3 khối xếp dọc.
-     Giữ nguyên toàn bộ id bên trong — mọi hàm JS liên quan không đổi logic.
-     Sửa 2026-09-07 (vá lỗi cấu trúc): di chuyển vào TRONG <div class="wrap"> (trước nằm
-     ngoài, làm header/logo render sau nội dung, phải cuộn qua hết mới thấy). -->
-<div class="panel" id="panel-settings">
+<!-- Sửa 2026-09-07 (Phần 3): tách khối "Xuất báo cáo đóng gói" ra khỏi Cài đặt thành
+     1 trang riêng trong nhóm "Báo cáo & phân tích" — đúng bản chất là tạo báo cáo,
+     không phải cấu hình hệ thống. Giữ nguyên mọi id bên trong, không đổi logic. -->
+<div class="panel" id="panel-report">
   <div class="card">
     <h3 style="margin:0 0 4px;">📤 Xuất báo cáo đóng gói</h3>
     <label style="display:block;font-size:12px;color:var(--text2);margin:10px 0 6px;">Ngày báo cáo</label>
@@ -1377,7 +1375,16 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <span class="save-status" id="exportStatus"></span>
     </div>
   </div>
+</div>
 
+<!-- Sửa 2026-09-06 (Giai đoạn 3): gộp backupModal + quarterTargetModal (2 modal cài đặt,
+     ít bấm) thành 1 trang "Cài đặt" luôn hiển thị. Giữ nguyên toàn bộ id bên trong —
+     mọi hàm JS liên quan không đổi logic.
+     Sửa 2026-09-07 (vá lỗi cấu trúc): di chuyển vào TRONG <div class="wrap"> (trước nằm
+     ngoài, làm header/logo render sau nội dung, phải cuộn qua hết mới thấy).
+     Sửa 2026-09-07 (Phần 3): bỏ khối Xuất báo cáo ra trang riêng (panel-report ở trên). -->
+<div class="panel" id="panel-settings">
+  <h3 style="margin:0 0 14px;font-size:17px;">⚙️ Cài đặt hệ thống</h3>
   <div class="card">
     <h3 style="margin:0 0 12px;">💾 Sao lưu &amp; bàn giao</h3>
     <div style="background:#1c1b18;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
@@ -1528,7 +1535,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=139"></script>
+<script src="raw-data.js?v=140"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3320,7 +3327,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 139;
+const APP_VERSION = 140;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6449,7 +6456,6 @@ function openCapacityStats(){
   document.getElementById('capacityToDate').value=isoCuaNgay(today);
   renderCapacityStats();
 }
-document.getElementById('capacityStatsBtn').addEventListener('click',openCapacityStats);
 document.querySelectorAll('.capacity-subtab').forEach(btn=>btn.addEventListener('click',()=>switchCapacitySubtab(btn.dataset.subtab)));
 document.getElementById('capacityQuickToday').addEventListener('click',()=>{ const d=new Date(); datCapacityRange(d,d); });
 document.getElementById('capacityQuickYesterday').addEventListener('click',()=>{ const d=new Date(); d.setDate(d.getDate()-1); datCapacityRange(d,d); });
@@ -7117,6 +7123,7 @@ function restoreUiState(){
         document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
         btn.classList.add('active');
         const panel=document.getElementById('panel-'+st.tab); if(panel) panel.classList.add('active');
+        if(st.tab==='report') initReportPage();
       }
     }
     setTimeout(()=>window.scrollTo(0,Number(st.scrollY)||0),0);
@@ -7130,6 +7137,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='report') initReportPage();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
     // Chọn xong thì tự thu gọn drawer "☰ Thêm" trên điện thoại, không để mở lì.
     document.getElementById('mainTabs')?.classList.remove('show-extra');
@@ -9174,9 +9182,11 @@ async function xuatBaoCao(){
   st.style.color = 'var(--warning)';
 }
 
-document.getElementById('exportReportBtn').addEventListener('click', async ()=>{
+// Sửa 2026-09-07 (Phần 3): "Xuất báo cáo" không còn nút lối tắt (exportReportBtn đã xoá,
+// sidebar đã có sẵn trang riêng data-tab="report") — khởi tạo trang gọi hàm này thay vì
+// gắn vào click nút, xem tab-click-handler và restoreUiState().
+async function initReportPage(){
   if(!canManage2()) return;
-  document.querySelector('.tab-btn[data-tab="settings"]')?.click();
   document.getElementById('exportStatus').textContent = '';
   document.getElementById('exportInfo').innerHTML = 'Đang đọc danh sách báo cáo đã có...';
   const coKy = canManage();
@@ -9187,7 +9197,7 @@ document.getElementById('exportReportBtn').addEventListener('click', async ()=>{
   }
   await taiDanhSachBaoCao();
   veHopThoaiXuat();
-});
+}
 document.getElementById('exportDateSelect').addEventListener('change', capNhatThongTinXuat);
 document.getElementById('doExportBtn').addEventListener('click', xuatBaoCao);
 
