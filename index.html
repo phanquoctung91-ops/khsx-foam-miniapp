@@ -1616,7 +1616,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=154"></script>
+<script src="raw-data.js?v=155"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2617,6 +2617,11 @@ const PROCESS_TEAM_STAGE = Object.freeze({
   'Tổ may': 'may',
   'Tổ đóng gói': 'dong_goi'
 });
+// Việc 17 (2026-09-08): quy tắc tick sẵn người May/Đóng gói theo đúng Tổ THỰC TẾ đã Dán đơn
+// đó (anh Tùng chốt — không phải tổ kế hoạch gốc, vì đơn có thể đổi tổ qua tổ hỗ trợ/tách
+// đơn). Chỉ là gợi ý ban đầu, Quản lý vẫn tick lại bình thường nếu sai. Tổ 5 cố ý không có
+// quy tắc — để trống, chọn tay như cũ.
+const NGUOI_MAY_DONG_GOI_MAC_DINH_THEO_TO = {'Tổ 1':'Thảo Vy','Tổ 2':'Bảo Chăm','Tổ 3':'Loan Anh','Tổ 4':'Loan Anh'};
 
 // Đơn "trong kế hoạch" = đơn gốc từ sheet công ty, được giao thẳng cho 1 tổ.
 // Đơn "ngoài kế hoạch" = đơn hàng phát sinh (tự thêm tay) hoặc đơn rớt (phần thiếu do tổ khác hỗ trợ) —
@@ -3203,7 +3208,7 @@ function ganNguoiHoanThanhCongDoan(entry,congDoan,actor){
     entry[truongNguoiHoanThanh(congDoan,'at')]=actor.at||new Date().toISOString();
   }
 }
-async function chonNguoiHoanThanhCongDoan(congDoan){
+async function chonNguoiHoanThanhCongDoan(congDoan,o,ngay){
   if(!CONG_DOAN_TINH_KPI_CA_NHAN.includes(congDoan)) return undefined;
   if(currentUser && currentUser.role==='nhan_vien') return {code:currentUser.code||'',name:currentUser.name||currentUser.code||'Nhân viên',worker_id:currentUser.worker_id||null,at:new Date().toISOString()};
   if(!canManage2()) return null;
@@ -3211,16 +3216,21 @@ async function chonNguoiHoanThanhCongDoan(congDoan){
   const donViCan=congDoan==='may'?'tổ may':'tổ đóng gói';
   const ds=staffUsers.filter(u=>u.role==='nhan_vien' && String(u.unit||toGanTheoMa(u.code)||'').toLowerCase()===donViCan);
   if(!ds.length){ alert(`Chưa tải được tài khoản ${congDoan==='may'?'Tổ May':'Tổ Đóng gói'}. Không thể ghi KPI cá nhân.`); return null; }
-  const u=await chonNhanSuBangDanhSach(ds,congDoan==='may'?'May':'Đóng gói');
+  // Việc 17: gợi ý sẵn theo Tổ THỰC TẾ đã Dán đơn này — chỉ gợi ý, Quản lý tick lại bình
+  // thường nếu sai (Tổ 5 cố ý không có trong bảng ánh xạ nên không gợi ý ai).
+  const toDan=(o&&ngay)?toThucHienCongDoanNgay(o,ngay,'dan'):null;
+  const tenGoiY=toDan?NGUOI_MAY_DONG_GOI_MAC_DINH_THEO_TO[toDan]:null;
+  const indexMacDinh=tenGoiY?ds.findIndex(u=>String(u.name||'').trim()===tenGoiY):-1;
+  const u=await chonNhanSuBangDanhSach(ds,congDoan==='may'?'May':'Đóng gói',indexMacDinh>=0?indexMacDinh:null);
   return u?{code:u.code||'',name:u.name||u.code||'Nhân viên',worker_id:u.worker_id||u.code||null,at:new Date().toISOString()}:null;
 }
 let chonNhanSuOverlayPending = null; // popup đang mở sẵn -> lần gọi sau trả lại đúng promise này, không chồng overlay
-function chonNhanSuBangDanhSach(ds,nhanCongDoan){
+function chonNhanSuBangDanhSach(ds,nhanCongDoan,indexMacDinh){
   if(chonNhanSuOverlayPending) return chonNhanSuOverlayPending;
   const promise = new Promise(resolve=>{
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;z-index:9600;background:rgba(18,20,26,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
-    overlay.innerHTML=`<div style="width:min(420px,100%);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 55px rgba(0,0,0,.25);"><h3 style="margin:0 0 6px;font-size:17px;">Chọn người ${nhanCongDoan} hoàn thành</h3><div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Tick đúng một người thực hiện.</div><div class="staff-check-list" style="display:grid;gap:8px;">${ds.map((u,i)=>`<label style="display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--border);border-radius:9px;cursor:pointer;"><input type="checkbox" name="staff-completer" value="${i}"><span>${thoatHtml(u.name||u.code)}</span></label>`).join('')}</div><div class="staff-check-error" style="display:none;color:var(--danger);font-size:12px;margin-top:9px;">Hãy tick đúng một người.</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;"><button type="button" data-action="cancel" class="capacity-quick-btn">Hủy</button><button type="button" data-action="ok" class="primary-btn">Xác nhận</button></div></div>`;
+    overlay.innerHTML=`<div style="width:min(420px,100%);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 55px rgba(0,0,0,.25);"><h3 style="margin:0 0 6px;font-size:17px;">Chọn người ${nhanCongDoan} hoàn thành</h3><div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Tick đúng một người thực hiện.</div><div class="staff-check-list" style="display:grid;gap:8px;">${ds.map((u,i)=>`<label style="display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--border);border-radius:9px;cursor:pointer;"><input type="checkbox" name="staff-completer" value="${i}" ${i===indexMacDinh?'checked':''}><span>${thoatHtml(u.name||u.code)}</span></label>`).join('')}</div><div class="staff-check-error" style="display:none;color:var(--danger);font-size:12px;margin-top:9px;">Hãy tick đúng một người.</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;"><button type="button" data-action="cancel" class="capacity-quick-btn">Hủy</button><button type="button" data-action="ok" class="primary-btn">Xác nhận</button></div></div>`;
     document.body.appendChild(overlay);
     const close=value=>{overlay.remove();chonNhanSuOverlayPending=null;resolve(value);};
     overlay.addEventListener('change',e=>{ if(e.target.name==='staff-completer'&&e.target.checked) overlay.querySelectorAll('input[name="staff-completer"]').forEach(x=>{if(x!==e.target)x.checked=false;}); });
@@ -3612,7 +3622,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 154;
+const APP_VERSION = 155;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7727,8 +7737,8 @@ function suaCongDoanCellHtml(o, ngay){
 async function completeOrderForDay(o,ngay){
   if(!canManage2()||!o||khoaNhapCongDoan(o,ngay))return false;
   const target=soCongDoan(o.so_luong);if(target<=0)return false;
-  const mayActor=await chonNguoiHoanThanhCongDoan('may');if(!mayActor)return false;
-  const packActor=await chonNguoiHoanThanhCongDoan('dong_goi');if(!packActor)return false;
+  const mayActor=await chonNguoiHoanThanhCongDoan('may',o,ngay);if(!mayActor)return false;
+  const packActor=await chonNguoiHoanThanhCongDoan('dong_goi',o,ngay);if(!packActor)return false;
   const history=damBaoLichSuCongDoan(o),entry=history[ngay]||(history[ngay]={});
   for(const stage of CONG_DOAN){
     const other=tongCongDoan(o,stage)-soCongDoan(entry[stage]);
@@ -7779,7 +7789,7 @@ async function handleStageQtyChange(orderId, ngay, congDoan, rawVal){
     let actor=undefined;
     if(CONG_DOAN_TINH_KPI_CA_NHAN.includes(congDoan)){
       const daHoanTat=congDoan==='may' ? totalDanMoi>0&&totalMayMoi>=totalDanMoi : totalMayMoi>0&&totalDongGoiMoi>=totalMayMoi;
-      actor=daHoanTat?await chonNguoiHoanThanhCongDoan(congDoan):null;
+      actor=daHoanTat?await chonNguoiHoanThanhCongDoan(congDoan,o,ngay):null;
       if(daHoanTat&&!actor){ renderProgress(); return; }
     }
     if(parsed == null){
