@@ -923,6 +923,12 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   .employee-stage-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
   .employee-stage-metric{padding:7px 5px;text-align:center;border-radius:9px;background:rgba(255,255,255,.12);font-size:9px;}
   .employee-stage-metric strong{display:block;margin-top:2px;font-size:16px;}
+  .employee-my-total-wrap{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.25);}
+  .employee-my-total-wrap>div{text-align:center;}
+  .employee-my-total-label{font-size:9px;opacity:.75;text-transform:uppercase;letter-spacing:.04em;}
+  .employee-my-total-value{display:block;margin-top:2px;font-size:17px;font-weight:850;}
+  .employee-my-total-loading,.employee-my-total-error{grid-column:1/-1;font-size:10px;opacity:.8;margin-top:6px;}
+  .employee-my-total-error{color:#ffd7d7;}
   .employee-capacity-alert{margin:8px 0 10px;padding:9px 11px;border-radius:10px;background:#fff2d9;color:#8a5200;font-size:11px;font-weight:700;}
   .employee-order-list{display:grid;gap:9px;}
   .employee-order-card{background:#fff;border:1px solid #d7e1ed;border-radius:13px;box-shadow:0 3px 10px rgba(25,55,90,.07);overflow:hidden;}
@@ -1564,7 +1570,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=146"></script>
+<script src="raw-data.js?v=147"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3492,7 +3498,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 146;
+const APP_VERSION = 147;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7686,6 +7692,48 @@ function renderOpsCommandCenter(rows, dayVal, totalPlan){
   if(subtitle) subtitle.textContent=`${dayVal==='all'?'Tất cả ngày':`Ngày ${dayVal}`} · Luồng thực tế Dán → May → Đóng gói`;
 }
 
+// Việc 9 Phần B: tổng KPI cá nhân lũy kế (tháng này + tất cả) cho nhân viên May/Đóng gói,
+// đọc thẳng khsx_stage_credits (nguồn đúng nhất cho lương) — không tính lại từ allDays/đơn
+// hàng để tránh lặp lỗi phạm vi tháng như Phần 7. Cache theo worker_id+stage, chỉ tải lại
+// khi đổi người/công đoạn (không tải lại mỗi lần đổi ngày lọc, vì số này không phụ thuộc
+// ngày đang chọn).
+let employeeMyTotalCache={key:null,monthQty:0,allQty:0,loading:false,error:false};
+function veTongCuaToiHtml(stage){
+  const box=document.getElementById('employeeMyTotal'); if(!box) return;
+  const c=employeeMyTotalCache;
+  if(c.loading && !c.monthQty && !c.allQty){
+    box.innerHTML='<div class="employee-my-total-loading">Đang tải tổng của tôi...</div>';
+    return;
+  }
+  if(c.error){
+    box.innerHTML='<div class="employee-my-total-error">Không tải được tổng KPI cá nhân — thử lại sau.</div>';
+    return;
+  }
+  box.innerHTML=`<div><div class="employee-my-total-label">Tháng này</div><strong class="employee-my-total-value">${c.monthQty.toLocaleString('vi-VN')}</strong></div><div><div class="employee-my-total-label">Tất cả</div><strong class="employee-my-total-value">${c.allQty.toLocaleString('vi-VN')}</strong></div>`;
+}
+async function taiTongCuaToi(workerId,stage){
+  const key=workerId+'|'+stage;
+  if(!supabaseDb) return;
+  if(employeeMyTotalCache.key===key && !employeeMyTotalCache.error) return;   // đã có đúng người/công đoạn, không tải lại
+  employeeMyTotalCache={key,monthQty:0,allQty:0,loading:true,error:false};
+  veTongCuaToiHtml(stage);
+  try{
+    const {data,error}=await supabaseDb.from('khsx_stage_credits').select('quantity,work_date').eq('worker_id',workerId).eq('stage',stage);
+    if(error) throw error;
+    const now=new Date(),namNay=now.getFullYear(),thangNay=now.getMonth()+1;
+    let monthQty=0,allQty=0;
+    (data||[]).forEach(r=>{
+      const q=Number(r.quantity)||0; allQty+=q;
+      const d=new Date(String(r.work_date)+'T00:00:00');
+      if(d.getFullYear()===namNay && d.getMonth()+1===thangNay) monthQty+=q;
+    });
+    employeeMyTotalCache={key,monthQty,allQty,loading:false,error:false};
+  }catch(e){
+    console.warn('Không tải được tổng KPI cá nhân',e);
+    employeeMyTotalCache={key,monthQty:0,allQty:0,loading:false,error:true};
+  }
+  veTongCuaToiHtml(stage);
+}
 function renderEmployeeStageWorkspace(rows,stage,dayVal){
   const workspace=document.getElementById('employeeStageWorkspace');
   if(!workspace) return;
@@ -7702,10 +7750,15 @@ function renderEmployeeStageWorkspace(rows,stage,dayVal){
   const rate=input>0?Math.min(100,Math.round(done/input*100)):0;
   const rating=rate>=100?'Đạt':rate>=80?'Gần đạt':'Cần xử lý';
   const head=document.getElementById('employeeStageHead');
+  // Việc 9 Phần B: chỉ May/Đóng gói có worker_id cá nhân (sau Việc 8) mới xem được tổng
+  // lũy kế của mình — Tổ dán tính KPI theo tổ, không có số cá nhân đúng để hiện.
+  const myTotalWorkerId=(stage==='may'||stage==='dong_goi')?(currentUser?.worker_id||null):null;
   head.innerHTML=`
     <div class="employee-stage-identity"><div><div class="employee-stage-name">${thoatHtml(currentUser?.name||stageName)} · ${stageName}</div><div class="employee-stage-date">${dayVal==='all'?'Tất cả ngày':`Ngày ${dayVal}`} · Dữ liệu đã xác nhận</div></div><div class="employee-stage-score"><strong>${rate}%</strong><span>${rating}</span></div></div>
     <div class="employee-stage-metrics"><div class="employee-stage-metric">Đầu vào<strong>${input.toLocaleString('vi-VN')}</strong></div><div class="employee-stage-metric">Hoàn thành<strong>${done.toLocaleString('vi-VN')}</strong></div><div class="employee-stage-metric">Còn chờ<strong>${waiting.toLocaleString('vi-VN')}</strong></div></div>
+    ${myTotalWorkerId?'<div id="employeeMyTotal" class="employee-my-total-wrap"></div>':''}
     `;
+  if(myTotalWorkerId){ veTongCuaToiHtml(stage); taiTongCuaToi(myTotalWorkerId,stage); }
   const alert=document.getElementById('employeeCapacityAlert');
   alert.style.display=waiting||dropped?'block':'none';
   alert.textContent=dropped?`${dropped} đơn rớt đang chờ ${stageName.toLowerCase()} · ưu tiên xử lý trước`:`Còn ${waiting.toLocaleString('vi-VN')} sản phẩm chờ ${stageName.toLowerCase()} · ${completed} đơn đã hoàn thành`;
