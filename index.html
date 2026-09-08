@@ -484,6 +484,9 @@
   .team-ring-inner{width:48px;height:48px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
   .team-ring-label{font-size:13px;font-weight:800;margin-bottom:2px;color:var(--text);}
   .team-ring.ring-canh-bao{box-shadow:0 0 0 2px var(--danger);}
+  /* Viec 18: to lam VUOT ke hoach ngay -> vien vang. Vong tron luon day o ca hai
+     truong hop (100% va 130%), nen can dau hieu rieng de liec phat biet la vuot. */
+  .team-ring.ring-vuot-kh{box-shadow:0 0 0 3px var(--warning);}
   .team-ring-canhbao{font-size:11px;font-weight:700;color:var(--danger);margin-top:3px;}
   .team-ring-bh{font-size:11px;font-weight:700;color:#8a5cd0;margin-top:3px;}
   /* Danh sách mã đơn được gán cho tổ, nằm dưới vòng tròn tỷ lệ */
@@ -503,6 +506,7 @@
   .team-ring-list .k{color:var(--text2);text-align:right;white-space:nowrap;padding-left:4px;padding-right:4px;}
   .team-ring-list b{color:var(--text);text-align:right;padding-left:4px;padding-right:4px;}
   .team-ring-done-tick{display:inline-block;margin-left:4px;color:var(--success);font-size:12px;font-weight:900;line-height:1;vertical-align:1px;}
+  .team-ring-fail-tick{display:inline-block;margin-left:4px;color:var(--danger);font-size:12px;font-weight:900;line-height:1;vertical-align:1px;}
   /* Ưu tiên: tô liền cả ba ô Tên + Kích thước + Số lượng của đúng một dòng.
      Không thêm biểu tượng và không đổi cấu trúc lưới nên thẻ không bị rộng/tràn chữ. */
   .team-ring-list .team-ring-row-uutien{background:#3a3010;}
@@ -1616,7 +1620,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=156"></script>
+<script src="raw-data.js?v=157"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3338,6 +3342,13 @@ function toHoTroTheoNgay(o, ngay){
 function toPhuTrachTheoNgay(o, ngay){
   return toHoTroTheoNgay(o,ngay) || (assignments[o.id]?.to || null);
 }
+// Viec 18 (2026-09-08): THE TO bam TO DUOC GIAO, khong de to ho tro de len nhu
+// toPhuTrachTheoNgay. Nho vay don goc o lai the to phu trach de phan rot hien X do
+// dung cho, con dong tach ho tro (don rieng, is_drop) nam o the to ho tro va an tick xanh.
+// Ke hoach thuoc to duoc giao, san luong thuoc to lam ra -> cong 5 the lai khong doi KH len.
+function toTheToCuaDon(o){
+  return assignments[o.id]?.to || null;
+}
 function toPhuTrachCongDoanTheoNgay(o, ngay, congDoan){
   // Tổ hỗ trợ chỉ nhận phần Dán còn thiếu; không đổi chủ thể May/Đóng gói.
   return congDoan === 'dan' ? toPhuTrachTheoNgay(o,ngay) : (assignments[o.id]?.to || null);
@@ -3622,7 +3633,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 156;
+const APP_VERSION = 157;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6334,7 +6345,7 @@ function openWarrantyDetail(date){
   document.querySelector('.tab-btn[data-tab="capacity"]')?.click();
   switchCapacitySubtab('warranty');
 }
-function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi'){
+function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=null){
   const gom = {};
   teamOrders.forEach(o=>{
     if(o.is_drop && !toDuocHoTro(o)) return;     // phần thiếu không rõ đơn gốc -> bỏ
@@ -6345,20 +6356,25 @@ function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi'){
     const kt = formatKichThuoc(o);
     const hoTro = toDuocHoTro(o);
     const k = ten + '|' + kt + '|' + (hoTro || '');
-    if(!gom[k]) gom[k] = {ten, tenGon:tenGonTrenTheTo(o), kt, sl:0, hoTro, uuTien:false, xong:true, day: parseFloat(o.day) || 0, ngang: parseFloat(o.ngang) || 0, ids:[]};
+    if(!gom[k]) gom[k] = {ten, tenGon:tenGonTrenTheTo(o), kt, sl:0, hoTro, uuTien:false, xong:true, rot:false, day: parseFloat(o.day) || 0, ngang: parseFloat(o.ngang) || 0, ids:[]};
     gom[k].sl += Number(o.so_luong) || 0;
     gom[k].ids.push(o.id);
     if(laUuTien(o.id)) gom[k].uuTien = true;
     // Tick chỉ có khi Đóng gói đã đủ toàn bộ kế hoạch. Không dùng trạng thái
     // "còn chờ = 0" vì công đoạn trước chưa có đầu vào cũng có thể trả về 0.
-    if(soCongDoan(o.so_luong)<=0 || tongCongDoan(o,congDoan)<soCongDoan(o.so_luong)) gom[k].xong=false;
+    const chuaDu = soCongDoan(o.so_luong)<=0 || tongCongDoan(o,congDoan)<soCongDoan(o.so_luong);
+    if(chuaDu) gom[k].xong=false;
+    // Viec 18: X do CHI danh cho phan viec to nay khong con co hoi lam nua — da giao
+    // phan thieu cho to ho tro, hoac ngay dang xem da troi qua ma van chua du.
+    // Don dang lam do trong ngay thi khong danh dau gi, tranh ca bang do lom.
+    if(chuaDu && (assignments[o.id]?.spinoff_id || (ngay && ngay!=='all' && isPastDate(ngay)))) gom[k].rot=true;
   });
   return Object.keys(gom).map(k=>gom[k])
     .sort((a,b)=> (a.day - b.day) || (a.ngang - b.ngang) || a.ten.localeCompare(b.ten,'vi'));
 }
 
 function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=null){
-  const ds = danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan);
+  const ds = danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan, ngay);
   if(!ds.length){
     return anDongDaXong ? `<div class="team-ring-list-xong">✓ Đã xong hết</div>` : '';
   }
@@ -6366,8 +6382,10 @@ function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nul
   return `<div class="team-ring-list">`
       + ds.map(r=>{
         const uuTienClass = r.uuTien ? ' team-ring-row-uutien' : '';
-        const tickXong = canManage2() && r.xong
-          ? `<span class="team-ring-done-tick" title="Đã hoàn thành">✓</span>` : '';
+        const tickXong = !canManage2() ? ''
+          : r.xong ? `<span class="team-ring-done-tick" title="Đã hoàn thành">✓</span>`
+          : r.rot  ? `<span class="team-ring-fail-tick" title="Không hoàn thành · đã giao tổ hỗ trợ hoặc đã qua ngày">✗</span>`
+          : '';
         const dataAttr=coTheBam?` data-ids="${r.ids.join('|')}" data-ngay="${ngay}" data-stage="${congDoan}"`:'';
         const clickCls=coTheBam?' team-ring-clickable':'';
         return `<span class="t${uuTienClass}${clickCls}"${dataAttr} title="${thoatHtml(r.ten)}${coTheBam?' — bấm để nhập số':''}">${thoatHtml(r.tenGon)}${r.hoTro?` <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}</span>`
@@ -6387,11 +6405,9 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
   const cacTo = toSanXuat ? TEAM_OPTIONS.filter(t=>t === toSanXuat) : (TEAM_OPTIONS.includes(chiTo) ? [chiTo] : TEAM_OPTIONS);
   container.classList.toggle('mot-the', cacTo.length === 1);
   container.innerHTML = cacTo.map(team=>{
-    const teamOrders = orders.filter(o=>{
-      if(motNgay) return toPhuTrachTheoNgay(o,ngayDangXem) === team;
-      const a = assignments[o.id] || {};
-      return a.to === team || Object.values(a.support_by_date || {}).includes(team);
-    });
+    // Viec 18: loc theo TO DUOC GIAO. Truoc day to ho tro de len to phu trach nen don
+    // goc bien mat khoi the to phu trach — to do rot hang ma the van sach tron.
+    const teamOrders = orders.filter(o=> toTheToCuaDon(o) === team);
     if(anTyLe){
       const slBaoHanh=baoHanhCuaTo(team,cacNgayDangXem);
       return `<div class="team-ring-card team-ring-card-simple"><div class="team-ring-label">${team}</div>${slBaoHanh>0?`<div class="team-ring-bh">🛠 Bảo hành: ${slBaoHanh}</div>`:''}${dsHtml(teamOrders)}</div>`;
@@ -6431,7 +6447,7 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
                 : pctThat >= 60 ? 'var(--danger)' : '#c9ced8';
     return `
     <div class="team-ring-card">
-      <div class="team-ring${duoiChuan ? ' ring-canh-bao' : ''}" style="background:conic-gradient(${color} 0% ${pct}%, #e4e7ed ${pct}% 100%);">
+      <div class="team-ring${duoiChuan ? ' ring-canh-bao' : ''}${extra>0 ? ' ring-vuot-kh' : ''}" style="background:conic-gradient(${color} 0% ${pct}%, #e4e7ed ${pct}% 100%);">
         <div class="team-ring-inner"${duoiChuan ? ' style="color:var(--danger);font-weight:800;"' : ''}>${pct}%</div>
       </div>
       <div class="team-ring-label">${team}</div>
@@ -7611,9 +7627,11 @@ function getProgressRowsForCurrentFilters(chiConChoCongDoan=true,chiDungNgayGoc=
     }
     if(teamVal !== 'all'){
       if(dayVal !== 'all'){
-        if(toPhuTrachTheoNgay(r,dayVal) !== teamVal) return false;
+        // Viec 18: nhan ca to duoc giao lan to ho tro, de loc theo to khong lam bien mat
+        // don goc khoi the to phu trach khi ngay do co to khac ho tro.
+        if(toPhuTrachTheoNgay(r,dayVal) !== teamVal && toTheToCuaDon(r) !== teamVal) return false;
       }else{
-        const coNgayCuaTo = getCarryForwardDates(r).some(d=>toPhuTrachTheoNgay(r,d) === teamVal);
+        const coNgayCuaTo = toTheToCuaDon(r) === teamVal || getCarryForwardDates(r).some(d=>toPhuTrachTheoNgay(r,d) === teamVal);
         if(!coNgayCuaTo) return false;
       }
     }
