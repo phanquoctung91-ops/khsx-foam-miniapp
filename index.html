@@ -148,7 +148,6 @@
   .kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(16,24,40,.10);}
   .kpi-phu{font-size:11.5px;color:var(--text2);margin-top:5px;}
   .kpi-phu b{color:var(--text);}
-  .weekly-kr-report{margin-top:10px;padding:9px 10px;border-radius:9px;background:var(--primary-l);color:var(--text);font-size:11.5px;line-height:1.45;user-select:text;}
   .weekly-kr-copy{margin-top:7px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--primary-dark);padding:5px 9px;font-size:10.5px;font-weight:700;cursor:pointer;}
   .weekly-kr-copy:hover{border-color:var(--primary);}
   .kpi-thanh{height:5px;border-radius:99px;background:var(--border);margin-top:8px;overflow:hidden;}
@@ -1617,7 +1616,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=152"></script>
+<script src="raw-data.js?v=153"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2025,7 +2024,16 @@ function taoCauBaoCaoKrTuan(nam,thang,hienTai=new Date()){
   const weekPaceText=weekPct==null?'chưa xác định (không có ngày làm việc trong tuần)':
     `${dinhDangPhanTramBaoCao(weekPct)}% mục tiêu tuần (${Math.round(weekTarget).toLocaleString('vi-VN')} tấm), tức đang ${weekPct>=100?'vượt':'chậm'} tiến độ đều của tháng ${dinhDangPhanTramBaoCao(Math.abs(weekPct-100))}%`;
   const monthPaceText=`${monthGap>=0?'vượt':'chậm'} tiến độ đều (${dinhDangPhanTramBaoCao(monthSchedule)}% thời gian đã qua) ${dinhDangPhanTramBaoCao(Math.abs(monthGap))} điểm`;
-  return {text:`Tuần này (${weekRangeLabel}, ${weekWorkdays.length} ngày làm việc) hoàn thành ${Math.round(weekOutput).toLocaleString('vi-VN')} tấm — đạt ${weekPaceText}. Lũy kế tháng ${thang} đạt ${dinhDangPhanTramBaoCao(monthActual)}% mục tiêu tháng (${Math.round(monthOutput).toLocaleString('vi-VN')}/${Math.round(monthTarget).toLocaleString('vi-VN')} tấm) — ${monthPaceText}. Lũy kế quý đến nay đạt ${dinhDangPhanTramBaoCao(quarterOutput/target*100)}% (${Math.round(quarterOutput).toLocaleString('vi-VN')}/${target.toLocaleString('vi-VN')} tấm) — ${quarterState}.`,cutoffIso,monthActual,monthSchedule,monthGap,quarterGap,previousGap,weekPct};
+  return {
+    text:`Tuần này (${weekRangeLabel}, ${weekWorkdays.length} ngày làm việc) hoàn thành ${Math.round(weekOutput).toLocaleString('vi-VN')} tấm — đạt ${weekPaceText}. Lũy kế tháng ${thang} đạt ${dinhDangPhanTramBaoCao(monthActual)}% mục tiêu tháng (${Math.round(monthOutput).toLocaleString('vi-VN')}/${Math.round(monthTarget).toLocaleString('vi-VN')} tấm) — ${monthPaceText}. Lũy kế quý đến nay đạt ${dinhDangPhanTramBaoCao(quarterOutput/target*100)}% (${Math.round(quarterOutput).toLocaleString('vi-VN')}/${target.toLocaleString('vi-VN')} tấm) — ${quarterState}.`,
+    cutoffIso,monthActual,monthSchedule,monthGap,quarterGap,previousGap,weekPct,
+    // Việc 14: dữ liệu thô để popup "Bấm xem báo cáo tuần" dựng bảng thông số, không cần
+    // tính lại — mọi biến bên dưới đều đã có sẵn ở trên, chỉ gom lại để trả ra ngoài.
+    thang,nam,dailyRate,weekRangeLabel,
+    weekOutput,weekTarget,weekWorkdaysCount:weekWorkdays.length,
+    monthOutput,monthTarget,monthDatesCount:monthDates.length,monthElapsedDatesCount:monthElapsedDates.length,
+    quarterOutput,target,quarterElapsed,registeredLen:registered.length,
+  };
 }
 
 function computeAndRenderKpis(){
@@ -2064,6 +2072,7 @@ function computeAndRenderKpis(){
   const tocDoQuy = tinhTocDoQuy();
   const namHeader=Number(yearFilterSelect.value),thangHeader=Number(monthFilterSelect.value);
   const baoCaoKr=taoCauBaoCaoKrTuan(namHeader,thangHeader);
+  weeklyKrDetail = baoCaoKr.text ? baoCaoKr : null;
   speedDetailStore.quarter = tocDoQuy;
   const tocDoQuyHtml = tocDoQuy.mucTieu>0
     ? `<div class="kpi-phu">Mục tiêu <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b>/ngày · ${tocDoQuy.chenhlech>=0?'nhanh hơn':'chậm hơn'} <b>${formatTocDo(Math.abs(tocDoQuy.chenhlech||0))}</b>/ngày</div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;">Dự báo cuối quý: ${Math.round(tocDoQuy.duBao||0).toLocaleString('vi-VN')} tấm</div><span class="speed-kpi-hint">Bấm xem cách tính</span>`
@@ -2079,7 +2088,7 @@ function computeAndRenderKpis(){
       <div class="label">Tổng hoàn thành</div>
       <div class="value" data-dem="${totalDG}">${totalDG.toLocaleString()}</div>
       <div class="kpi-phu">${trungBinhThangQuyHtml}</div>
-      ${baoCaoKr.text&&canManage2()?`<div id="weeklyKrReport" class="weekly-kr-report">${thoatHtml(baoCaoKr.text)}<br><button id="copyWeeklyKrBtn" type="button" class="weekly-kr-copy">Sao chép câu báo cáo</button></div>`:''}
+      ${baoCaoKr.text&&canManage2()?`<button type="button" id="krReportHintBtn" class="speed-kpi-hint" style="background:none;border:none;padding:0;font:inherit;cursor:pointer;">📋 Bấm xem báo cáo tuần</button>`:''}
       <div class="kpi-thanh"><i style="width:${rate==null?0:Math.min(100,rate)}%;background:var(--accent);"></i></div>
     </div>
     <div class="kpi ${rate==null?'':rate>=95?'k-success':'k-warning'}">
@@ -2109,11 +2118,7 @@ function computeAndRenderKpis(){
       ${tocDoQuyHtml}
     </div>
   `;
-  document.getElementById('copyWeeklyKrBtn')?.addEventListener('click',async e=>{
-    const btn=e.currentTarget;
-    try{await navigator.clipboard.writeText(baoCaoKr.text);btn.textContent='Đã sao chép';setTimeout(()=>{btn.textContent='Sao chép câu báo cáo';},1600);}
-    catch(err){btn.textContent='Không sao chép được';}
-  });
+  document.getElementById('krReportHintBtn')?.addEventListener('click',moPopupBaoCaoKr);
   document.getElementById('refreshWarrantyKpiBtn')?.addEventListener('click',async e=>{
     const btn=e.currentTarget; btn.classList.add('is-loading');
     await fetchBaoHanh({force:true}); btn.classList.remove('is-loading');
@@ -2901,6 +2906,9 @@ function tinhTocDoBoLoc({keys=[],output=null,fromIso='',toIso='',scope='Toàn te
 function mauTocDo(trangThai){ return trangThai==='green'?'var(--success)':trangThai==='yellow'?'var(--warning)':trangThai==='red'?'var(--danger)':'var(--text2)'; }
 
 const speedDetailStore={quarter:null,monthly:null,autoPlan:null};
+// Việc 14: chi tiết câu báo cáo KR tuần/tháng/quý cho popup "Bấm xem báo cáo tuần" — tách
+// riêng khỏi speedDetailStore vì cấu trúc dữ liệu khác hẳn "tốc độ" (3 mốc thay vì 1).
+let weeklyKrDetail=null;
 function speedDateLabel(iso){ return isoToDMY(iso)||iso||'—'; }
 function moPopupTocDo(kind){
   const detail=speedDetailStore[kind];
@@ -2940,6 +2948,37 @@ function moPopupTocDo(kind){
     ${isQuarter&&detail.vuotNangLuc?`<div class="speed-detail-warning"><strong>Cảnh báo năng lực:</strong> tốc độ cần thiết ${formatTocDo(detail.tocDoCanChoPhanConLai)} vượt năng lực bình quân còn lại ${formatTocDo(detail.availableCapacity)} tấm/ngày theo lịch OT đã ghi.</div>`:''}
     <div class="speed-detail-result">${detail.danhGia}</div>`;
   modal.style.display='block';
+}
+// Việc 14: tái dùng ĐÚNG modal speedDetailModal (không tạo modal mới) cho câu báo cáo KR —
+// chỉ khác nội dung dựng vào #speedDetailBody, đóng vẫn dùng chung dongPopupTocDo().
+function moPopupBaoCaoKr(){
+  const d=weeklyKrDetail;
+  const modal=document.getElementById('speedDetailModal');
+  const title=document.getElementById('speedDetailTitle');
+  const body=document.getElementById('speedDetailBody');
+  if(!d||!modal||!body||!title) return;
+  title.textContent='Cách tính báo cáo tiến độ tuần';
+  body.innerHTML=`
+    <div class="speed-detail-lead">Tuần/tháng/quý đều quy về cùng 1 tốc độ ngày của quý (mục tiêu quý ÷ tổng ngày làm việc đã đăng ký cả quý) để so sánh nhất quán.</div>
+    <div class="speed-detail-grid">
+      <div class="speed-detail-row"><span>Tốc độ ngày của quý</span><strong>${formatTocDo(d.dailyRate)} tấm/ngày</strong></div>
+      <div class="speed-detail-row"><span>Tuần (${d.weekRangeLabel}, ${d.weekWorkdaysCount} ngày làm việc)</span><strong>${Math.round(d.weekOutput).toLocaleString('vi-VN')} / ${Math.round(d.weekTarget).toLocaleString('vi-VN')} tấm</strong></div>
+      <div class="speed-detail-row"><span>Đạt so với mục tiêu tuần</span><strong>${dinhDangPhanTramBaoCao(d.weekPct)}%</strong></div>
+      <div class="speed-detail-row"><span>Tháng ${d.thang}: đã qua</span><strong>${d.monthElapsedDatesCount}/${d.monthDatesCount} ngày làm việc</strong></div>
+      <div class="speed-detail-row"><span>Lũy kế tháng ${d.thang}</span><strong>${Math.round(d.monthOutput).toLocaleString('vi-VN')} / ${Math.round(d.monthTarget).toLocaleString('vi-VN')} tấm (${dinhDangPhanTramBaoCao(d.monthActual)}%)</strong></div>
+      <div class="speed-detail-row"><span>Chênh lệch so với tiến độ đều tháng</span><strong>${d.monthGap>=0?'vượt':'chậm'} ${dinhDangPhanTramBaoCao(Math.abs(d.monthGap))} điểm</strong></div>
+      <div class="speed-detail-row"><span>Lũy kế quý (${d.quarterElapsed}/${d.registeredLen} ngày đã qua)</span><strong>${Math.round(d.quarterOutput).toLocaleString('vi-VN')} / ${d.target.toLocaleString('vi-VN')} tấm (${dinhDangPhanTramBaoCao(d.quarterOutput/d.target*100)}%)</strong></div>
+      <div class="speed-detail-row"><span>Chênh lệch quý hiện tại / tuần trước</span><strong>${d.quarterGap>=0?'vượt':'chậm'} ${dinhDangPhanTramBaoCao(Math.abs(d.quarterGap))}% / ${d.previousGap>=0?'vượt':'chậm'} ${dinhDangPhanTramBaoCao(Math.abs(d.previousGap))}%</strong></div>
+    </div>
+    <div class="speed-detail-formula"><strong>Công thức</strong><br>Tốc độ ngày quý = mục tiêu quý ÷ tổng ngày làm việc cả quý. Mục tiêu tuần/tháng = tốc độ ngày quý × số ngày làm việc trong tuần/tháng. % đạt = sản lượng thật ÷ mục tiêu × 100. Chênh lệch = % đạt − % thời gian đã qua.</div>
+    <div class="speed-detail-result">${thoatHtml(d.text)}</div>
+    <div style="margin-top:10px;"><button type="button" id="copyWeeklyKrBtn" class="weekly-kr-copy">Sao chép câu báo cáo</button></div>`;
+  modal.style.display='block';
+  document.getElementById('copyWeeklyKrBtn')?.addEventListener('click',async e=>{
+    const btn=e.currentTarget;
+    try{await navigator.clipboard.writeText(d.text);btn.textContent='Đã sao chép';setTimeout(()=>{btn.textContent='Sao chép câu báo cáo';},1600);}
+    catch(err){btn.textContent='Không sao chép được';}
+  });
 }
 function dongPopupTocDo(){ const modal=document.getElementById('speedDetailModal'); if(modal) modal.style.display='none'; }
 document.addEventListener('click',e=>{
@@ -3573,7 +3612,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 152;
+const APP_VERSION = 153;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
