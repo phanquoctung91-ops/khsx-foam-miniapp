@@ -1616,7 +1616,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=155"></script>
+<script src="raw-data.js?v=156"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3622,7 +3622,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 155;
+const APP_VERSION = 156;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7093,6 +7093,9 @@ async function handleSupportDayChange(orderId, ngay, val){
       const sa=assignments[spin.id]||(assignments[spin.id]={});
       sa.to=val||sa.to||null; sa.to_goc=sa.to_goc||sa.to;
     }
+    // Việc 16 (lỗi A): nhánh thành công trước đây không báo gì cả — anh Tùng chọn tổ hỗ
+    // trợ xong tưởng app "im re" dù đã lưu thật. Báo rõ như các thao tác Supabase khác.
+    supabaseStatus(val?'Đã lưu tổ hỗ trợ · các máy đang đồng bộ':'Đã bỏ tổ hỗ trợ · các máy đang đồng bộ',true);
   }
   else{
     dirtyAssignmentIds.set(orderId, monthKeyOf(o && o.date));
@@ -8341,7 +8344,13 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
       // Realtime đang khoẻ -> đã có scheduleSupabaseReload/applySupabaseProgressEvent lo
       // phần cập nhật, chỉ cần tải lại toàn bộ theo chu kỳ dài làm lưới dự phòng, không
       // phải mỗi 12s nữa.
-      const canBoQuaTaiLai = supabaseRealtimeHealthy && pollCount % SUPABASE_SAFETY_RELOAD_EVERY !== 1;
+      // Việc 16 (lỗi B, 2026-09-08): "quay lại tab"/"có mạng trở lại" gọi forceSourceRefresh
+      // với đúng ý định "kiểm tra ngay" (dòng ~8467), nhưng trước đây forceSourceRefresh
+      // không ảnh hưởng gì tới canBoQuaTaiLai — nếu Realtime đang bị đánh dấu "khoẻ" (dù
+      // thực tế đã bỏ lỡ sự kiện, rất hay gặp trên WebView Telegram chạy nền) và chưa tới
+      // đúng chu kỳ an toàn (~120s), máy vẫn KHÔNG tải lại đơn hàng thật dù vừa mở app lại
+      // ngay lập tức — đúng nguyên nhân 1 máy khác không thấy đơn/tổ hỗ trợ vừa được gán.
+      const canBoQuaTaiLai = !forceSourceRefresh && supabaseRealtimeHealthy && pollCount % SUPABASE_SAFETY_RELOAD_EVERY !== 1;
       if(canBoQuaTaiLai){ markSyncedOrPending(); return; }
       const ok=await refreshFromPrimarySupabase();
       if(ok) markSyncedOrPending();
