@@ -1616,7 +1616,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=153"></script>
+<script src="raw-data.js?v=154"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3612,7 +3612,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 153;
+const APP_VERSION = 154;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6296,7 +6296,13 @@ function warrantyDetailButtonHtml(o){
   const count=(o.bh_chi_tiet||[]).length;
   return `<button type="button" class="warranty-detail-btn" data-warranty-date="${thoatHtml(o.date)}">Xem ${count} chi tiết</button>`;
 }
-function openWarrantyDetail(date){
+// Việc 15: tách phần VẼ dữ liệu ra riêng khỏi phần ĐIỀU HƯỚNG — sub-tab "Bảo hành" bấm
+// thẳng (không qua nút "Xem chi tiết" của 1 đơn) cần gọi được phần vẽ mà không điều
+// hướng lại (đang đứng sẵn trên tab rồi). warrantyDetailDate nhớ ngày đã hiện gần nhất để
+// bấm qua lại sub-tab không làm mất lựa chọn.
+let warrantyDetailDate=null;
+function renderWarrantyDetailBody(date){
+  warrantyDetailDate=date;
   const d=baoHanhTheoNgay[date]||{};
   const rows=Array.isArray(d.chiTiet)?d.chiTiet:[];
   document.getElementById('warrantyDetailTitle').textContent=`Bảo hành ngày ${date}`;
@@ -6308,6 +6314,13 @@ function openWarrantyDetail(date){
     <td>${thoatHtml(Array.isArray(x.loi)?x.loi.join(', '):(x.loi||'-'))}</td>
     <td>${thoatHtml(x.nguyen_nhan||'-')}</td><td>${thoatHtml(x.huong_xu_ly||'-')}</td>
   </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text2);">Không có chi tiết.</td></tr>';
+}
+function ngayBaoHanhGanNhat(){
+  const keys=Object.keys(baoHanhTheoNgay);
+  return keys.length?keys.slice().sort((a,b)=>khoaNgayDMY(b)-khoaNgayDMY(a))[0]:null;
+}
+function openWarrantyDetail(date){
+  renderWarrantyDetailBody(date);
   document.querySelector('.tab-btn[data-tab="capacity"]')?.click();
   switchCapacitySubtab('warranty');
 }
@@ -6743,7 +6756,20 @@ function openCapacityStats(){
   document.getElementById('capacityToDate').value=isoCuaNgay(today);
   renderCapacityStats();
 }
-document.querySelectorAll('.capacity-subtab').forEach(btn=>btn.addEventListener('click',()=>switchCapacitySubtab(btn.dataset.subtab)));
+document.querySelectorAll('.capacity-subtab').forEach(btn=>btn.addEventListener('click',()=>{
+  switchCapacitySubtab(btn.dataset.subtab);
+  // Việc 15: bấm thẳng sub-tab "Bảo hành" (không qua nút "Xem chi tiết" của 1 đơn) — nếu
+  // chưa từng hiện ngày nào thì tự chọn ngày gần nhất có dữ liệu, tránh bảng trống mãi.
+  if(btn.dataset.subtab==='warranty' && warrantyDetailDate==null){
+    const ngay=ngayBaoHanhGanNhat();
+    if(ngay) renderWarrantyDetailBody(ngay);
+    else{
+      document.getElementById('warrantyDetailTitle').textContent='Chi tiết bảo hành';
+      document.getElementById('warrantyDetailSummary').textContent='Chưa có dữ liệu bảo hành.';
+      document.getElementById('warrantyDetailBody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text2);">Chưa có dữ liệu bảo hành.</td></tr>';
+    }
+  }
+}));
 document.getElementById('capacityQuickToday').addEventListener('click',()=>{ const d=new Date(); datCapacityRange(d,d); });
 document.getElementById('capacityQuickYesterday').addEventListener('click',()=>{ const d=new Date(); d.setDate(d.getDate()-1); datCapacityRange(d,d); });
 document.getElementById('capacityQuickThisWeek').addEventListener('click',()=>{ datCapacityRange(thuHaiCuaTuan(new Date()), new Date()); });
