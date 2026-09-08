@@ -1393,8 +1393,15 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <div class="panel" id="panel-report">
   <div class="card">
     <h3 style="margin:0 0 4px;">📤 Xuất báo cáo đóng gói</h3>
-    <label style="display:block;font-size:12px;color:var(--text2);margin:10px 0 6px;">Ngày báo cáo</label>
-    <select id="exportDateSelect" style="width:100%;max-width:360px;box-sizing:border-box;"></select>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Chọn 1 ngày hoặc cả khoảng — mỗi ngày vẫn là 1 tab báo cáo riêng, xuất lần lượt tự động.</div>
+    <div class="capacity-filters" style="margin-bottom:0;">
+      <div><label for="exportFromDate">Từ ngày</label><input type="date" id="exportFromDate"></div>
+      <div><label for="exportToDate">Đến ngày</label><input type="date" id="exportToDate"></div>
+      <button id="exportQuickToday" type="button" class="capacity-quick-btn">Hôm nay</button>
+      <button id="exportQuickYesterday" type="button" class="capacity-quick-btn">Hôm qua</button>
+      <button id="exportQuickThisWeek" type="button" class="capacity-quick-btn">Tuần này</button>
+      <button id="exportQuickLastWeek" type="button" class="capacity-quick-btn">Tuần trước</button>
+    </div>
 
     <div id="exportSignerBox" style="display:none;margin-top:14px;max-width:420px;">
       <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;">Tên người lập báo cáo</label>
@@ -1610,7 +1617,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=148"></script>
+<script src="raw-data.js?v=149"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3538,7 +3545,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 148;
+const APP_VERSION = 149;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -9454,68 +9461,59 @@ function ngayGoiY(){
   return homNay;
 }
 
+// Việc 9 Phần D (2026-09-08): đổi từ chọn đúng 1 ngày sang chọn cả khoảng — mỗi ngày
+// trong khoảng vẫn xuất thành 1 tab riêng (giữ nguyên quy ước ký duyệt/ghi đè theo ngày),
+// chỉ tự động lặp thay vì bấm từng ngày một. Tái dùng danhSachNgayTrongKhoang() đã viết
+// cho Phần C (trả về mảng ngày dạng iso), chuyển sang dmy bằng isoToDMY() có sẵn vì
+// getOrders()/chuanBiDongBaoCao() dùng định dạng dd/mm/yyyy.
 function veHopThoaiXuat(){
-  const sel = document.getElementById('exportDateSelect');
-  const dates = Array.from(new Set(getOrders().map(o=>o.date)))
-    .sort((a,b)=> a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
-  sel.innerHTML = dates.map(d=>`<option value="${d}">Ngày ${d}</option>`).join('');
   const goiY = ngayGoiY();
-  if(dates.includes(goiY)) sel.value = goiY;
+  const iso = dmyToIso(goiY);
+  document.getElementById('exportFromDate').value = iso;
+  document.getElementById('exportToDate').value = iso;
   capNhatThongTinXuat();
 }
+function datExportRange(tu,den){ document.getElementById('exportFromDate').value=isoCuaNgay(tu); document.getElementById('exportToDate').value=isoCuaNgay(den); capNhatThongTinXuat(); }
 
 function capNhatThongTinXuat(){
-  const ngay = document.getElementById('exportDateSelect').value;
+  const fromIso=document.getElementById('exportFromDate').value, toIso=document.getElementById('exportToDate').value;
   const box = document.getElementById('exportInfo');
-  if(!ngay){ box.innerHTML = ''; return; }
+  const days = danhSachNgayTrongKhoang(fromIso,toIso).map(isoToDMY);
+  if(!days.length){ box.innerHTML = ''; return; }
 
-  const rows = chuanBiDongBaoCao(ngay);
-  const tongKH = rows.reduce((a,r)=>a+r[5],0);
-  const tongTT = rows.reduce((a,r)=>a+r[6],0);
-  const thieuMa = rows.filter(r=>!String(r[0] || '').trim()).length;
-  const daCo = danhSachBaoCao.find(r=>r.ngay === ngay && !r.bs);
+  let tongDong=0,tongKH=0,tongTT=0,ngayThieuMa=0;
+  const ngayDaCo=[],ngayChuNhat=[],ngayLe=[],ngayKhongDuLieu=[];
+  days.forEach(ngay=>{
+    const rows = chuanBiDongBaoCao(ngay);
+    if(!rows.length){ ngayKhongDuLieu.push(ngay); return; }
+    tongDong += rows.length;
+    tongKH += rows.reduce((a,r)=>a+r[5],0);
+    tongTT += rows.reduce((a,r)=>a+r[6],0);
+    ngayThieuMa += rows.filter(r=>!String(r[0] || '').trim()).length;
+    if(danhSachBaoCao.find(r=>r.ngay === ngay && !r.bs)) ngayDaCo.push(ngay);
+    if(laChuNhat(ngay)) ngayChuNhat.push(ngay);
+    if(laNgayLe(ngay)) ngayLe.push(ngay);
+  });
+  const ngaySeXuat = days.length - ngayKhongDuLieu.length;
 
-  let html = `<div>Sẽ ghi <strong>${rows.length}</strong> dòng — kế hoạch <strong>${tongKH}</strong>, thực tế <strong>${tongTT}</strong>`
+  let html = `<div>${days.length===1?`Ngày ${days[0]}`:`${days.length} ngày đã chọn, ${ngaySeXuat} ngày có dữ liệu`} — sẽ ghi <strong>${tongDong}</strong> dòng, kế hoạch <strong>${tongKH}</strong>, thực tế <strong>${tongTT}</strong>`
            + (tongKH ? ` (${Math.round(tongTT/tongKH*1000)/10}%)` : '') + `</div>`;
-  if(daCo){
-    html += `<div style="color:var(--danger);font-weight:600;margin-top:6px;">⚠ Báo cáo ngày này đã có (tab "${daCo.tab}"). Bấm xuất sẽ GHI ĐÈ toàn bộ.</div>`;
-  }else{
-    html += `<div style="color:var(--success);margin-top:6px;">Báo cáo ngày này chưa xuất lần nào.</div>`;
+  if(ngayDaCo.length){
+    html += `<div style="color:var(--danger);font-weight:600;margin-top:6px;">⚠ ${ngayDaCo.length} ngày đã có báo cáo (${ngayDaCo.join(', ')}). Bấm xuất sẽ GHI ĐÈ.</div>`;
+  }else if(ngaySeXuat){
+    html += `<div style="color:var(--success);margin-top:6px;">Chưa ngày nào trong khoảng này được xuất trước đó.</div>`;
   }
-  if(laChuNhat(ngay)) html += `<div style="color:var(--warning);margin-top:6px;">⚠ Ngày này là Chủ nhật — chỉ xuất nếu có tăng ca.</div>`;
-  if(laNgayLe(ngay))  html += `<div style="color:var(--warning);margin-top:6px;">⚠ Ngày này là ngày lễ.</div>`;
-  if(thieuMa)         html += `<div style="color:var(--warning);margin-top:6px;">⚠ Có ${thieuMa} dòng không có mã hàng trong dữ liệu nguồn; cột Mã hàng của các dòng đó sẽ để trống.</div>`;
-  if(!rows.length)    html += `<div style="color:var(--danger);margin-top:6px;">Không có dòng dữ liệu nào để xuất.</div>`;
+  if(ngayChuNhat.length) html += `<div style="color:var(--warning);margin-top:6px;">⚠ Có Chủ nhật trong khoảng (${ngayChuNhat.join(', ')}) — chỉ xuất nếu có tăng ca.</div>`;
+  if(ngayLe.length)      html += `<div style="color:var(--warning);margin-top:6px;">⚠ Có ngày lễ trong khoảng (${ngayLe.join(', ')}).</div>`;
+  if(ngayThieuMa)        html += `<div style="color:var(--warning);margin-top:6px;">⚠ Có ${ngayThieuMa} dòng không có mã hàng trong dữ liệu nguồn; cột Mã hàng của các dòng đó sẽ để trống.</div>`;
+  if(ngayKhongDuLieu.length) html += `<div style="color:var(--text2);margin-top:6px;">${ngayKhongDuLieu.length} ngày không có dữ liệu, sẽ tự bỏ qua khi xuất: ${ngayKhongDuLieu.join(', ')}.</div>`;
+  if(!ngaySeXuat) html += `<div style="color:var(--danger);margin-top:6px;">Không có ngày nào có dữ liệu để xuất.</div>`;
   box.innerHTML = html;
 }
 
-async function xuatBaoCao(){
-  if(!canManage2()) return;
-  if(LOCAL_PREVIEW_MODE){
-    alert('Bản xem thử local không tạo hoặc ghi đè báo cáo thật.');
-    return;
-  }
-  const ngay = document.getElementById('exportDateSelect').value;
-  const st = document.getElementById('exportStatus');
-  const rows = chuanBiDongBaoCao(ngay);
-  if(!rows.length){
-    st.textContent = `Xuất báo cáo ngày ${ngay} thất bại: không có dòng dữ liệu nào.`;
-    st.style.color = 'var(--danger)';
-    return;
-  }
-
-  if(!canManage() && !(document.getElementById('exportSignerName').value || '').trim()){
-    st.textContent = 'Chưa nhập tên người lập báo cáo.';
-    st.style.color = 'var(--danger)';
-    return;
-  }
-
-  const daCo = danhSachBaoCao.find(r=>r.ngay === ngay && !r.bs);
-  if(daCo && !confirm(`Báo cáo ngày ${ngay} đã có (tab "${daCo.tab}").\n\nGHI ĐÈ toàn bộ tab đó bằng ${rows.length} dòng dữ liệu mới?`)) return;
-
-  st.textContent = 'Đang ghi vào file báo cáo...';
-  st.style.color = 'var(--text2)';
-
+// Xuất 1 ngày — tách riêng từ xuatBaoCao() gốc để xuatBaoCao() có thể lặp gọi cho cả
+// khoảng ngày mà không trùng lặp logic gửi/chờ kết quả.
+async function xuatMotNgayBaoCao(ngay, rows){
   const token = 'x' + Date.now() + Math.random().toString(36).slice(2,7);
   try{
     await fetch(REPORT_API_URL, {
@@ -9528,31 +9526,66 @@ async function xuatBaoCao(){
       })
     });
   }catch(e){
-    st.textContent = `Xuất báo cáo ngày ${ngay} thất bại: không gửi được lệnh.`;
-    st.style.color = 'var(--danger)';
-    return;
+    return {ok:false, message:'không gửi được lệnh'};
   }
-
   // Không đọc được phản hồi của lệnh gửi (chế độ no-cors) -> hỏi lại kết quả theo mã phiếu
   for(let i=0;i<20;i++){
     await new Promise(r=>setTimeout(r, 1500));
     let kq = null;
     try{ kq = await jsonpRequest(`${REPORT_API_URL}?action=result&token=${token}&_cb=${Date.now()}`); }catch(e){}
     if(kq && kq.done){
-      if(kq.success){
-        st.textContent = kq.message || `Xuất báo cáo ngày ${ngay} thành công.`;
-        st.style.color = 'var(--success)';
-        await taiDanhSachBaoCao();
-        capNhatThongTinXuat();
-      }else{
-        st.textContent = `Xuất báo cáo ngày ${ngay} thất bại: ${kq.message || 'không rõ lý do'}`;
-        st.style.color = 'var(--danger)';
-      }
-      return;
+      return kq.success ? {ok:true, message:kq.message} : {ok:false, message:kq.message || 'không rõ lý do'};
     }
   }
-  st.textContent = `Chưa nhận được kết quả cho ngày ${ngay}. Hãy mở file báo cáo kiểm tra trực tiếp.`;
-  st.style.color = 'var(--warning)';
+  return {ok:false, message:'chưa nhận được kết quả, hãy mở file kiểm tra trực tiếp'};
+}
+
+async function xuatBaoCao(){
+  if(!canManage2()) return;
+  if(LOCAL_PREVIEW_MODE){
+    alert('Bản xem thử local không tạo hoặc ghi đè báo cáo thật.');
+    return;
+  }
+  const fromIso=document.getElementById('exportFromDate').value, toIso=document.getElementById('exportToDate').value;
+  const st = document.getElementById('exportStatus');
+  const days = danhSachNgayTrongKhoang(fromIso,toIso).map(isoToDMY);
+  if(!days.length){
+    st.textContent = 'Khoảng ngày không hợp lệ.';
+    st.style.color = 'var(--danger)';
+    return;
+  }
+
+  if(!canManage() && !(document.getElementById('exportSignerName').value || '').trim()){
+    st.textContent = 'Chưa nhập tên người lập báo cáo.';
+    st.style.color = 'var(--danger)';
+    return;
+  }
+
+  const ngayDaCo = days.filter(ngay=>danhSachBaoCao.find(r=>r.ngay===ngay && !r.bs));
+  if(ngayDaCo.length && !confirm(`${ngayDaCo.length} ngày đã có báo cáo (${ngayDaCo.join(', ')}).\n\nGHI ĐÈ toàn bộ các ngày này?`)) return;
+
+  const ketQua=[];
+  for(let i=0;i<days.length;i++){
+    const ngay = days[i];
+    st.textContent = `Đang xuất ngày ${i+1}/${days.length} (${ngay})...`;
+    st.style.color = 'var(--text2)';
+    const rows = chuanBiDongBaoCao(ngay);
+    if(!rows.length){ ketQua.push({ngay, skipped:true}); continue; }
+    const kq = await xuatMotNgayBaoCao(ngay, rows);
+    ketQua.push({ngay, ...kq});
+  }
+
+  await taiDanhSachBaoCao();
+  capNhatThongTinXuat();
+
+  const thanhCong = ketQua.filter(k=>k.ok);
+  const boQua = ketQua.filter(k=>k.skipped);
+  const thatBai = ketQua.filter(k=>!k.ok && !k.skipped);
+  let msg = `Xong · ${thanhCong.length}/${days.length} ngày thành công`;
+  if(boQua.length) msg += `, ${boQua.length} ngày bỏ qua (không có dữ liệu)`;
+  if(thatBai.length) msg += `, ${thatBai.length} ngày THẤT BẠI: ${thatBai.map(k=>`${k.ngay} (${k.message})`).join('; ')}`;
+  st.textContent = msg;
+  st.style.color = thatBai.length ? 'var(--danger)' : 'var(--success)';
 }
 
 // Sửa 2026-09-07 (Phần 3): "Xuất báo cáo" không còn nút lối tắt (exportReportBtn đã xoá,
@@ -9571,7 +9604,12 @@ async function initReportPage(){
   await taiDanhSachBaoCao();
   veHopThoaiXuat();
 }
-document.getElementById('exportDateSelect').addEventListener('change', capNhatThongTinXuat);
+document.getElementById('exportFromDate').addEventListener('change', capNhatThongTinXuat);
+document.getElementById('exportToDate').addEventListener('change', capNhatThongTinXuat);
+document.getElementById('exportQuickToday').addEventListener('click',()=>{ const d=new Date(); datExportRange(d,d); });
+document.getElementById('exportQuickYesterday').addEventListener('click',()=>{ const d=new Date(); d.setDate(d.getDate()-1); datExportRange(d,d); });
+document.getElementById('exportQuickThisWeek').addEventListener('click',()=>{ datExportRange(thuHaiCuaTuan(new Date()), new Date()); });
+document.getElementById('exportQuickLastWeek').addEventListener('click',()=>{ const a=thuHaiCuaTuan(new Date()),b=new Date(a),c=new Date(a); b.setDate(b.getDate()-7); c.setDate(c.getDate()-1); datExportRange(b,c); });
 document.getElementById('doExportBtn').addEventListener('click', xuatBaoCao);
 
 // ============================================================================
