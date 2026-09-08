@@ -1617,7 +1617,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=149"></script>
+<script src="raw-data.js?v=150"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -1979,9 +1979,6 @@ function taoCauBaoCaoKrTuan(nam,thang,hienTai=new Date()){
   const previousOutput=tongKpiTuRowsTheoKeys(keysBetween(quarterFrom,previousIso)).throughput;
   const previousElapsed=registered.filter(iso=>iso<=previousIso).length;
   const previousGap=previousOutput/target*100-previousElapsed/registered.length*100;
-  const monthState=monthGap>=0
-    ? `đang vượt ${dinhDangPhanTramBaoCao(monthGap)}% so với tiến độ tháng`
-    : `đang chậm ${dinhDangPhanTramBaoCao(monthGap)}% so với tiến độ tháng`;
   let quarterState='';
   if(quarterGap<0&&previousGap<0){
     const currentLate=Math.abs(quarterGap),previousLate=Math.abs(previousGap);
@@ -1995,9 +1992,14 @@ function taoCauBaoCaoKrTuan(nam,thang,hienTai=new Date()){
   }else{
     quarterState=`hiện đang chậm ${dinhDangPhanTramBaoCao(quarterGap)}%`;
   }
+  // Sửa 2026-09-08 (Việc 11): viết lại câu cho rõ đây là LŨY KẾ TỪ ĐẦU THÁNG (không phải
+  // "trong tuần"), kèm số ngày làm việc đã qua/tổng số — anh Tùng phản hồi câu cũ ("Đến
+  // hết tuần...") đọc như báo cáo riêng 1 tuần nên % lũy kế cả tháng nhìn "lạ"/vô lý dù
+  // công thức đúng (đã tra lại bằng dữ liệu thật, không đổi bất kỳ phép tính nào ở trên).
   const isPastMonth=nam<today.getFullYear()||(nam===today.getFullYear()&&thang<today.getMonth()+1);
-  const period=isPastMonth?`Đến hết tuần cuối tháng ${thang}/${nam}`:`Đến hết tuần kết thúc ngày ${isoToDMY(cutoffIso)}`;
-  return {text:`${period}, tiến độ hoàn thành KR đạt ${dinhDangPhanTramBaoCao(monthActual)}%, ${monthState}. So với tiến độ chung của quý, ${quarterState}.`,cutoffIso,monthActual,monthSchedule,monthGap,quarterGap,previousGap};
+  const period=isPastMonth?`Đến hết tháng ${thang}/${nam}`:`Tính đến ngày ${isoToDMY(cutoffIso)}`;
+  const monthPaceText=`${monthGap>=0?'nhanh':'chậm'} hơn tiến độ đều (${dinhDangPhanTramBaoCao(monthSchedule)}%) là ${dinhDangPhanTramBaoCao(Math.abs(monthGap))} điểm`;
+  return {text:`${period}, đã qua ${monthElapsedDates.length}/${monthDates.length} ngày làm việc của tháng, đóng gói đạt ${dinhDangPhanTramBaoCao(monthActual)}% kế hoạch cả tháng — ${monthPaceText}. So với tiến độ chung của quý (đã qua ${quarterElapsed}/${registered.length} ngày làm việc), ${quarterState}.`,cutoffIso,monthActual,monthSchedule,monthGap,quarterGap,previousGap};
 }
 
 function computeAndRenderKpis(){
@@ -3545,7 +3547,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 149;
+const APP_VERSION = 150;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
