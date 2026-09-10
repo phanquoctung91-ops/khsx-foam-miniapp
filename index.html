@@ -9359,7 +9359,7 @@ function parseOfflineWarrantyTables(tables){
   return out;
 }
 document.getElementById('offlinePlanFile')?.addEventListener('change',async()=>{
-  const st=document.getElementById('offlineImportStatus');
+  const st=document.getElementById('autoPlanStatus')||document.getElementById('offlineImportStatus');
   try{
     const tables=await readOfflineTables(document.getElementById('offlinePlanFile').files[0]);
     const rows=tables.flatMap(t=>parseSheetTable(t).rows);if(!rows.length)throw new Error('Không tìm thấy dòng Tổ = Foam có ngày hợp lệ.');
