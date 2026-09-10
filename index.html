@@ -439,6 +439,10 @@
   .stage-cell{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-width:0;margin:0 auto;}
   .stage-cell input.qty-input{transition:border-color .15s,box-shadow .15s,background .15s;}
   .stage-cell input.stage-ready{background:#fff;border-color:#4aa3df;box-shadow:0 0 0 2px rgba(74,163,223,.12);}
+  .stage-sync-badge{align-self:center;font-size:12px;line-height:1;cursor:help;}
+  .stage-sync-badge.sync-pending{animation:stageSyncPulse 1s ease-in-out infinite;}
+  .stage-sync-badge.sync-error{color:var(--danger);}
+  @keyframes stageSyncPulse{0%,100%{opacity:.4;}50%{opacity:1;}}
   .stage-cell input:disabled{background:#1c1b18;color:var(--text2);border-color:var(--border);box-shadow:none;}
   .stage-hint{font-size:10.5px;line-height:1.2;font-weight:700;color:var(--text2);white-space:normal;text-align:center;}
   .stage-hint.drop{color:var(--danger);}
@@ -4407,6 +4411,18 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     applyVerifiedDataCorrections(overlayPendingAssignments(
       overlayPendingSupabaseManagement(nextAssignments),assignments))
   );
+  // Khong duoc de luot tai lai xoa mat so cong doan vua nhap nhung server chua kip
+  // xac nhan (RPC con dang bay/dang thu lai) - dap lai dung gia tri dang cho gui len
+  // TREN ban vua tai, de khong bao gio "hien xong roi bien mat" du tai lai chay dung
+  // luc do. Chi ap dung item con song (khong phai 'failed' - loai do server tu choi that).
+  Object.values(supabaseStageOutbox).forEach(item=>{
+    if(!item||item.status==='failed')return;
+    const a=assignments[item.order_id]||(assignments[item.order_id]={stage_by_date:{},support_by_date:{}});
+    if(!a.stage_by_date)a.stage_by_date={};
+    const e=a.stage_by_date[item.work_date]||(a.stage_by_date[item.work_date]={});
+    e[item.stage]=item.value;
+    if(item.kpi_team)e[`_${item.stage}_to`]=item.kpi_team;
+  });
   lockedPlanDates=locks.filter(x=>x.plan_locked).map(x=>isoToDMY(x.work_date));
   lockedProgressDates=locks.filter(x=>x.progress_locked).map(x=>isoToDMY(x.work_date));
   planSnapshots={}; snaps.forEach(x=>{planSnapshots[isoToDMY(x.work_date)]=x.rows_json||[];});
@@ -4585,6 +4601,8 @@ async function flushSupabaseStageOutbox(){
       if(Number(item.next_attempt_at||0)>Date.now()) continue;
       let ok=false;
       try{ ok=await sendSupabaseStageItem(item); }catch(e){ console.warn('Supabase outbox sẽ thử lại',e); }
+      // Cap nhat ngay badge tai o nhap (dang cho/da luu/loi) - khong doi den lan render tiep theo.
+      renderProgress();
       if(ok==='terminal') continue;
       // 1 gói lỗi tạm thời (mất mạng, máy chủ chưa xác nhận...) đã tự có lịch thử lại
       // riêng (next_attempt_at ở trên) - không được chặn đứng các gói KHÁC ĐƠN phía sau
@@ -7779,6 +7797,14 @@ function hintCongDoanHtml(o, ngay, congDoan, info){
   return choDongGoi ? `<span class="stage-hint wait">Chờ đóng gói ${choDongGoi}<br>Tối đa ${info.maxDongGoi}</span>`
                     : (info.maxDongGoi>0 ? `<span class="stage-hint wait">Tối đa ${info.maxDongGoi}</span>` : '<span class="stage-hint">Chờ may</span>');
 }
+function stageSyncBadgeHtml(orderId, ngay, congDoan){
+  if(!SUPABASE_VARIANT) return '';
+  const item=supabaseStageOutbox[[orderId,ngay,congDoan].join('|')];
+  if(!item) return '';
+  if(item.status==='failed')
+    return `<span class="stage-sync-badge sync-error" title="Chưa lưu được lên máy chủ${item.error_code?' ('+thoatHtml(item.error_code)+')':''} · sửa lại số để gửi lại">⚠</span>`;
+  return `<span class="stage-sync-badge sync-pending" title="Đang lưu lên máy chủ...">⏳</span>`;
+}
 function oNhapCongDoanHtml(o, ngay, congDoan){
   if(!ngay || ngay === 'all') return `<div class="stage-total">${tongCongDoan(o,congDoan).toLocaleString('vi-VN')}</div>`;
   const info = thongTinCongDoanNgay(o,ngay);
@@ -7802,6 +7828,7 @@ function oNhapCongDoanHtml(o, ngay, congDoan){
   return `<div class="stage-cell">
     <input type="number" class="qty-input stage-qty-input${readyClass}" data-order-id="${o.id}" data-stage="${congDoan}" data-day="${ngay}"
       min="0" step="1"${maxAttr} value="${value == null ? '' : value}" placeholder="Nhập số..." ${enabled?'':'disabled'}>
+    ${stageSyncBadgeHtml(o.id,ngay,congDoan)}
     ${hintCongDoanHtml(o,ngay,congDoan,info)}
   </div>`;
 }
