@@ -372,10 +372,7 @@ begin
   end if;
   select * into v_existing from public.khsx_order_assignments where order_id=p_order_id for update;
   if found and v_existing.updated_at is not null and p_client_updated_at is not null and v_existing.updated_at>p_client_updated_at then
-    -- Hotfix 2026-09-10: 40001 is a retryable SQLSTATE under PostgREST 14 and caused
-    -- infinite-retry CPU load for this business conflict. See
-    -- supabase/migrations/20260910133312_hotfix_assignment_retry_and_circuit.sql.
-    raise exception using errcode='PT409',message='ASSIGNMENT_CONFLICT';
+    raise exception using errcode='40001',message='ASSIGNMENT_CONFLICT';
   end if;
   insert into public.khsx_order_assignments(order_id,plan_team,current_team,spinoff_order_id,change_note,priority,assigned_by,assigned_at,updated_at)
     values(p_order_id,p_plan_team,p_current_team,p_spinoff_order_id,coalesce(p_change_note,''),coalesce(p_priority,false),v_actor,now(),v_updated)
