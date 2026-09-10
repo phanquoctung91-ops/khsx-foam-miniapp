@@ -11,7 +11,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="js/khsx-data-core.js?v=125"></script>
-<script src="js/khsx-capacity-core.js?v=158"></script>
+<script src="js/khsx-capacity-core.js?v=159"></script>
+<script src="js/khsx-capacity-timing.js?v=159"></script>
+<script src="js/khsx-capacity-details.js?v=159"></script>
 <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 <style>
   /* Giao diện tối theo mẫu Hospital Dashboard (Clinova) — 2026-09-05, giao diện DUY NHẤT
@@ -1349,11 +1351,11 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       </div>
       <div id="capacityStatsSummary" class="capacity-summary"></div>
       <div class="capacity-grid">
-        <section class="capacity-section capacity-full"><h4>Năng lực Tổ Dán</h4><p class="capacity-note">Kế hoạch, Hoàn thành, Rớt và Tỷ lệ theo khoảng lọc, chỉ tính Dán do chính tổ thực hiện. Hỗ trợ và Bảo hành lũy kế toàn bộ lịch sử; không cộng vào tỷ lệ. KPI tổng từng tổ hiển thị dưới tên tổ.</p><div class="table-scroll" style="max-height:300px;"><table class="capacity-table"><thead><tr><th>Tổ</th><th>Kế hoạch</th><th>Hoàn thành</th><th title="Phần tổ chưa tự Dán xong; không phải trạng thái May/Đóng gói">Rớt</th><th>Tỷ lệ</th><th>Hỗ trợ<br><small>Lũy kế lịch sử</small></th><th>Bảo hành<br><small>Lũy kế lịch sử</small></th></tr></thead><tbody id="capacityDanBody"></tbody></table></div></section>
-        <section class="capacity-section capacity-full"><h4>Năng lực từng người May</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành<br><small>Lũy kế lịch sử</small></th><th>KPI tổng<br><small>Lũy kế lịch sử</small></th></tr></thead><tbody id="capacityMayBody"></tbody></table></div></section>
-        <section class="capacity-section capacity-full"><h4>Năng lực từng người Đóng gói</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành<br><small>Lũy kế lịch sử</small></th><th>KPI tổng<br><small>Lũy kế lịch sử</small></th></tr></thead><tbody id="capacityPackBody"></tbody></table></div></section>
+        <section class="capacity-section capacity-full"><h4>Năng lực Tổ Dán</h4><p class="capacity-note">Kế hoạch, Hoàn thành, Rớt và Tỷ lệ theo khoảng lọc, chỉ tính Dán do chính tổ thực hiện. Hỗ trợ và Bảo hành theo khoảng lọc; không cộng vào tỷ lệ. Chỉ KPI tổng dưới tên tổ là lũy kế toàn bộ lịch sử.</p><div class="table-scroll" style="max-height:300px;"><table class="capacity-table"><thead><tr><th>Tổ</th><th>Kế hoạch</th><th>Hoàn thành</th><th title="Phần tổ chưa tự Dán xong; không phải trạng thái May/Đóng gói">Rớt</th><th>Tỷ lệ</th><th>Hỗ trợ<br><small>Trong kỳ</small></th><th>Bảo hành<br><small>Trong kỳ</small></th><th>Chi tiết</th></tr></thead><tbody id="capacityDanBody"></tbody></table></div></section>
+        <section class="capacity-section capacity-full"><h4>Năng lực từng người May</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành<br><small>Trong kỳ</small></th><th>KPI tổng<br><small>Lũy kế lịch sử</small></th><th>Chi tiết</th></tr></thead><tbody id="capacityMayBody"></tbody></table></div></section>
+        <section class="capacity-section capacity-full"><h4>Năng lực từng người Đóng gói</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành<br><small>Trong kỳ</small></th><th>KPI tổng<br><small>Lũy kế lịch sử</small></th><th>Chi tiết</th></tr></thead><tbody id="capacityPackBody"></tbody></table></div></section>
       </div>
-      <div class="capacity-note">Sản lượng, Đơn, TB/ngày, Ngày cao nhất và Đúng ngày của từng người theo khoảng lọc. Bảo hành và KPI tổng lũy kế toàn bộ lịch sử đã tải. Khi xuất, tất cả số liệu chỉ thuộc khoảng ngày đang chọn. Dữ liệu cũ đến 24/08/2026 dùng quy ước cũ; May bảo hành mới thiếu tên được ghi Chưa ghi người May.</div>
+      <div class="capacity-note">Sản lượng, Đơn, TB/ngày, Ngày cao nhất và Đúng ngày của từng người theo khoảng lọc. Bảo hành theo khoảng lọc; chỉ KPI tổng lũy kế toàn bộ lịch sử đã tải. Popup May/Đóng gói tính phút/tấm theo ca trên tổng sản xuất + bảo hành. Khi xuất, tất cả số liệu chỉ thuộc khoảng ngày đang chọn. Dữ liệu cũ đến 24/08/2026 dùng quy ước cũ; May bảo hành mới thiếu tên được ghi Chưa ghi người May.</div>
     </div>
 
     <div id="capacitySubpanelWarranty" class="capacity-subpanel">
@@ -3617,7 +3619,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 158;
+const APP_VERSION = 159;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4523,7 +4525,7 @@ function queueStagePatchForSupabase(o,ngay,congDoan,value,team,workerId=null,sen
   supabaseStageOutbox[key]={key,operation_id:makeOperationId(),device_id:getSupabaseDeviceId(),
     order_id:o.id,work_date:ngay,stage:congDoan,
     value:value==null?0:soCongDoan(value),kpi_team:team||toKpiKhiNhapCongDoan(o,ngay,congDoan)||null,
-    worker_id:workerId||null,status:'pending',attempts:0,next_attempt_at:0};
+    worker_id:workerId||null,occurred_at:new Date().toISOString(),status:'pending',attempts:0,next_attempt_at:0};
   markLocalWrite();
   persistSupabaseStageOutbox();
   if(sendNow) flushSupabaseStageOutbox();
@@ -4535,10 +4537,10 @@ async function sendSupabaseStageItem(item){
   const workDate=`${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`;
   if(!item.operation_id) item.operation_id=makeOperationId();
   if(!item.device_id) item.device_id=getSupabaseDeviceId();
-  const {data,error}=await supabaseDb.rpc('khsx_apply_stage_progress_v2',{
+  const {data,error}=await supabaseDb.rpc('khsx_apply_stage_progress_timed',{
     p_operation_id:item.operation_id,p_order_id:item.order_id,p_work_date:workDate,
     p_stage:item.stage,p_quantity:soCongDoan(item.value),p_kpi_team:uiUnitToSupabase(item.kpi_team),
-    p_worker_id:item.worker_id||null,p_device_id:item.device_id
+    p_worker_id:item.worker_id||null,p_device_id:item.device_id,p_occurred_at:item.occurred_at||null
   });
   if(error){
     const kind=window.KhsxDataCore?.classifyWriteError(error)||{retryable:false,code:error.code||'UNKNOWN'};
@@ -6650,14 +6652,16 @@ function tinhNangLucCaNhan(congDoan,tuKhoa,denKhoa){
   const theoNguoi={};
   // isWarranty: bảo hành cộng riêng vào row.baoHanh, KHÔNG cộng vào soLuong/soDon/theoNgay —
   // để tổng sản lượng từng người luôn khớp đúng tổng "Hoàn thành" chung (đã loại bảo hành).
-  const cong=(actor,sl,id,ngay,{coTinhDungHan=false,dungHan=false,isWarranty=false}={})=>{
+  const cong=(actor,sl,id,ngay,{coTinhDungHan=false,dungHan=false,isWarranty=false,detail=null}={})=>{
     if(!actor || !sl) return;
     const name=String(actor.name||actor.code||'').trim();
     const code=String(actor.code||'').trim();
     if(!name) return;
     const key=`name:${normHeaderText(name)}`;
-    const row=theoNguoi[key]||(theoNguoi[key]={code,name,soLuong:0,baoHanh:0,soDon:new Set(),theoNgay:{},dungNgay:0,coMocDungHan:0});
+    const row=theoNguoi[key]||(theoNguoi[key]={code,name,soLuong:0,baoHanh:0,soDon:new Set(),theoNgay:{},details:[],dungNgay:0,coMocDungHan:0});
     if(!row.code && code) row.code=code;
+    const detailOrder=isWarranty?null:getOrderById(id);
+    row.details.push({date:dmyToIso(ngay),orderId:id,code:detailOrder?.ma||'Bảo hành',product:detailOrder?.dong||'',size:detailOrder?[detailOrder.ngang,detailOrder.dai,detailOrder.day].join('×'):'',quantity:sl,warranty:isWarranty,...(detail||{})});
     if(isWarranty){ row.baoHanh+=sl; return; }
     row.soLuong+=sl;
     row.soDon.add(id);
@@ -6716,7 +6720,7 @@ function tinhNangLucCaNhan(congDoan,tuKhoa,denKhoa){
     if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa)) return;
     phanBoBaoHanhChoNangLuc(ngay,d&&d.chiTiet).forEach((x,i)=>{
       const ds=congDoan==='may'?x.bh_may_phan_bo:x.bh_dong_goi_phan_bo;
-      (ds||[]).forEach(p=>cong({name:p.name},soCongDoan(p.so_luong),`bh_${ngay}_${i}`,ngay,{isWarranty:true}));
+      (ds||[]).forEach(p=>cong({name:p.name},soCongDoan(p.so_luong),`bh_${ngay}_${i}`,ngay,{isWarranty:true,detail:{code:x.ten||'Bảo hành',product:x.ten||'',size:x.kich_thuoc||''}}));
     });
   });
   const rows=Object.values(theoNguoi).map(r=>{
@@ -6755,18 +6759,18 @@ function tinhNangLucToDan(tuKhoa,denKhoa,{xuat=false}={}){
     totalsFrom:xuat?tuKhoa:0,totalsTo:xuat?denKhoa:99991231});
 }
 function duLieuNangLucCaNhan(congDoan,tu,den,{xuat=false}={}){
-  const period=tinhNangLucCaNhan(congDoan,tu,den);
+  const period=tinhNangLucCaNhan(congDoan,tu,Math.min(den,Number(KhsxCapacityCore.vietnamToday().replaceAll('-',''))));
   const all=xuat?period:tinhNangLucCaNhan(congDoan,0,Number(KhsxCapacityCore.vietnamToday().replaceAll('-','')));
   const key=r=>normHeaderText(r.name||r.code),current=new Map(period.rows.map(r=>[key(r),r]));
   const rows=all.rows.map(total=>{
     const r=current.get(key(total))||{name:total.name,code:total.code,soLuong:0,soDon:0,trungBinh:0,ngayCao:'—',slNgayCao:0,tyLeDung:null};
-    return {...r,baoHanh:total.baoHanh||0,tong:total.soLuong+(total.baoHanh||0)};
+    return {...r,baoHanh:r.baoHanh||0,details:r.details||[],tong:total.soLuong+(total.baoHanh||0)};
   });
   return {rows};
 }
-function htmlDongNangLucCaNhan(data){
-  const rows=data.rows.map(r=>`<tr><td><strong>${thoatHtml(r.name||r.code)}</strong></td><td>${r.soLuong.toLocaleString('vi-VN')}</td><td>${r.soDon}</td><td>${r.trungBinh.toLocaleString('vi-VN',{maximumFractionDigits:1})}</td><td>${r.ngayCao==='—'?'—':`${r.ngayCao} · ${r.slNgayCao}`}</td><td>${r.tyLeDung==null?'—':r.tyLeDung+'%'}</td><td>${r.baoHanh.toLocaleString('vi-VN')}</td><td>${r.tong.toLocaleString('vi-VN')}</td></tr>`);
-  return rows.length?rows.join(''):'<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:16px;">Chưa có dữ liệu hoàn thành.</td></tr>';
+function htmlDongNangLucCaNhan(data,stage){
+  const rows=data.rows.map(r=>`<tr><td><strong>${thoatHtml(r.name||r.code)}</strong></td><td>${r.soLuong.toLocaleString('vi-VN')}</td><td>${r.soDon}</td><td>${r.trungBinh.toLocaleString('vi-VN',{maximumFractionDigits:1})}</td><td>${r.ngayCao==='—'?'—':`${r.ngayCao} · ${r.slNgayCao}`}</td><td>${r.tyLeDung==null?'—':r.tyLeDung+'%'}</td><td>${r.baoHanh.toLocaleString('vi-VN')}</td><td>${r.tong.toLocaleString('vi-VN')}</td><td>${capacityDetailButton(stage,r.name||r.code)}</td></tr>`);
+  return rows.length?rows.join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px;">Chưa có dữ liệu hoàn thành.</td></tr>';
 }
 function renderCapacityStats(){
   const tu=isoToDMY(document.getElementById('capacityFromDate').value),den=isoToDMY(document.getElementById('capacityToDate').value);
@@ -6780,10 +6784,10 @@ function renderCapacityStats(){
   document.getElementById('capacityDanBody').innerHTML=dan.map(r=>{
     const support=Object.entries(r.hoTroTheoTo).map(([team,n])=>`${n} giúp ${thoatHtml(team)}`).join(' · ');
     const pending=r.choHomNay?`<br><small>Chưa xong hôm nay: ${r.choHomNay} (tạm tính)</small>`:'';
-    return `<tr><td><strong>${r.team}</strong><br><small>KPI tổng: ${r.tong.toLocaleString('vi-VN')}</small></td><td>${r.keHoach}</td><td>${r.daDan}</td><td>${r.conCho}${pending}</td><td>${r.keHoach?Math.round(r.daDan/r.keHoach*100)+'%':'—'}</td><td>${r.hoTro}${support?`<br><small>${support}</small>`:''}</td><td>${r.baoHanh}</td></tr>`;
+    return `<tr><td><strong>${r.team}</strong><br><small>KPI tổng: ${r.tong.toLocaleString('vi-VN')}</small></td><td>${r.keHoach}</td><td>${r.daDan}</td><td>${r.conCho}${pending}</td><td>${r.keHoach?Math.round(r.daDan/r.keHoach*100)+'%':'—'}</td><td>${r.hoTro}${support?`<br><small>${support}</small>`:''}</td><td>${r.baoHanh}</td><td>${capacityDetailButton('dan',r.team)}</td></tr>`;
   }).join('');
-  document.getElementById('capacityMayBody').innerHTML=htmlDongNangLucCaNhan(may);
-  document.getElementById('capacityPackBody').innerHTML=htmlDongNangLucCaNhan(pack);
+  document.getElementById('capacityMayBody').innerHTML=htmlDongNangLucCaNhan(may,'may');
+  document.getElementById('capacityPackBody').innerHTML=htmlDongNangLucCaNhan(pack,'dong_goi');
 }
 function resetCapacityWeek(){
   const {from,to}=KhsxCapacityCore.weekRange();
@@ -6791,22 +6795,7 @@ function resetCapacityWeek(){
   document.getElementById('capacityToDate').value=to;
   renderCapacityStats();
 }
-function exportCapacityStats(){
-  if(!canManage2())return;
-  const from=document.getElementById('capacityFromDate').value,to=document.getElementById('capacityToDate').value;
-  const a=khoaNgayDMY(isoToDMY(from)),b=khoaNgayDMY(isoToDMY(to));
-  if(!a||!b||a>b){renderCapacityStats();return;}
-  if(!window.XLSX){alert('Chưa tải được công cụ xuất Excel. Vui lòng thử lại.');return;}
-  const wb=XLSX.utils.book_new(),dan=tinhNangLucToDan(a,b,{xuat:true});
-  const add=(name,headers,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
-    ['Số liệu năng lực',from,to],['Tất cả cột chỉ tính trong khoảng xuất; Dán chỉ tính công đoạn Dán.'],headers,...rows]),name);
-  add('To Dan',['Tổ','Kế hoạch','Hoàn thành','Rớt','Chưa xong hôm nay','Tỷ lệ','Hỗ trợ','Bảo hành','KPI tổng trong khoảng'],dan.map(r=>[r.team,r.keHoach,r.daDan,r.conCho,r.choHomNay,r.keHoach?Math.round(r.daDan/r.keHoach*100)+'%':'—',r.hoTro,r.baoHanh,r.tong]));
-  [['may','May'],['dong_goi','Dong goi']].forEach(([stage,name])=>{
-    const data=duLieuNangLucCaNhan(stage,a,b,{xuat:true});
-    add(name,['Người hoàn thành','Sản lượng','Đơn','TB/ngày','Ngày cao nhất','SL ngày cao nhất','Đúng ngày (%)','Bảo hành','KPI tổng trong khoảng'],data.rows.map(r=>[r.name,r.soLuong,r.soDon,r.trungBinh,r.ngayCao,r.slNgayCao,r.tyLeDung,r.baoHanh,r.tong]));
-  });
-  XLSX.writeFile(wb,`Nang-luc_${from}_${to}.xlsx`);
-}
+async function exportCapacityStats(){ return exportCapacityWorkbook(false); }
 
 function isoCuaNgay(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function thuHaiCuaTuan(d){ const x=new Date(d),wd=x.getDay(); x.setDate(x.getDate()-(wd===0?6:wd-1)); return x; }
@@ -10535,6 +10524,7 @@ async function bootstrap(){
   checkAppVersion();
   startPolling();
 }
+initCapacityDetails();
 bootstrap().finally(()=>{ window.__khsxBootstrapDone=true; });
 
 // ---- Xử lý xoay màn hình (điện thoại/tablet) ----

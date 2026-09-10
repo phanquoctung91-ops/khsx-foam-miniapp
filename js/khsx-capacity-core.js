@@ -33,7 +33,7 @@
     };
     // Kế hoạch thuộc tổ đang được giao trong KHSX; plan_team cũ không chứng minh hỗ trợ.
     const owner=o=>assignments[o.id]?.to||assignments[o.id]?.to_goc||null;
-    const rows=Object.fromEntries(teams.map(team=>[team,{team,keHoach:0,daDan:0,conCho:0,choHomNay:0,hoTro:0,baoHanh:0,sanLuongTong:0,hoTroTheoTo:{}}]));
+    const rows=Object.fromEntries(teams.map(team=>[team,{team,keHoach:0,daDan:0,conCho:0,choHomNay:0,hoTro:0,baoHanh:0,baoHanhTong:0,sanLuongTong:0,hoTroTheoTo:{}}]));
     const ownByRoot=new Map();
     const inRange=(d,a,b)=>d&&d>=a&&d<=b;
     orders.filter(o=>!o.is_warranty&&!o.is_ghost).forEach(o=>{
@@ -49,8 +49,8 @@
         const support=!!rootTeam&&team!==rootTeam&&(linkedSupport||directSupport);
         if(inRange(d,totalsFrom,totalsTo)){
           row.sanLuongTong+=n;
-          if(support){row.hoTro+=n;row.hoTroTheoTo[rootTeam]=(row.hoTroTheoTo[rootTeam]||0)+n;}
         }
+        if(support&&inRange(d,from,to)){row.hoTro+=n;row.hoTroTheoTo[rootTeam]=(row.hoTroTheoTo[rootTeam]||0)+n;}
         if(team===rootTeam&&!support&&inRange(d,from,to))ownByRoot.set(root.id,(ownByRoot.get(root.id)||0)+n);
       });
     });
@@ -62,10 +62,13 @@
       else if(d===today)row.choHomNay+=left;
     });
     Object.entries(warrantyByDay||{}).forEach(([date,w])=>{
-      const d=dayKey(date); if(!inRange(d,totalsFrom,totalsTo)||d>today)return;
-      Object.entries(w.theoTo||{}).forEach(([team,n])=>{if(rows[team])rows[team].baoHanh+=qty(n);});
+      const d=dayKey(date); if(!d||d>today)return;
+      Object.entries(w.theoTo||{}).forEach(([team,n])=>{if(rows[team]){
+        if(inRange(d,from,to))rows[team].baoHanh+=qty(n);
+        if(inRange(d,totalsFrom,totalsTo))rows[team].baoHanhTong+=qty(n);
+      }});
     });
-    return teams.map(team=>({...rows[team],tong:rows[team].sanLuongTong+rows[team].baoHanh}));
+    return teams.map(team=>({...rows[team],tong:rows[team].sanLuongTong+rows[team].baoHanhTong}));
   }
   global.KhsxCapacityCore=Object.freeze({vietnamToday,weekRange,teamReport,dayKey});
 })(typeof window==='undefined'?globalThis:window);

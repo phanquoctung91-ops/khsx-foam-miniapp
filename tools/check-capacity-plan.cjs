@@ -31,7 +31,7 @@ check('current and future plans are not final drops',()=>{
 });
 check('lifetime does not change with period; exports honor exact period',()=>{
  const r=core.teamReport({...base,from:20260901,to:20260901});
- assert.equal(r[0].keHoach,0);assert.equal(r[0].tong,46);assert.equal(r[3].hoTro,2);
+ assert.equal(r[0].keHoach,0);assert.equal(r[0].tong,46);assert.equal(r[3].hoTro,0);assert.equal(r[0].baoHanh,0);
  const exp=core.teamReport({...base,from:20260901,to:20260901,totalsFrom:20260901,totalsTo:20260901});
  assert.equal(exp[0].tong,0);assert.equal(exp[3].hoTro,0);
 });
