@@ -1176,6 +1176,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div class="day-select-row" style="margin-bottom:10px;">
         <label>Ngày:</label>
         <input type="date" id="manualOrderDate">
+        <label>Mã hàng:</label>
+        <input type="text" id="manualOrderCode" placeholder="VD: SORA10-6" style="min-width:120px;">
         <label>Tên sản phẩm:</label>
         <input type="text" id="manualOrderName" placeholder="VD: Sora" style="min-width:140px;">
         <label>Kích thước:</label>
@@ -1284,6 +1286,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div class="day-select-row" style="margin-bottom:10px;">
         <label>Ngày:</label>
         <input type="date" id="manualOrderDateProgress">
+        <label>Mã hàng:</label>
+        <input type="text" id="manualOrderCodeProgress" placeholder="VD: SORA10-6" style="min-width:120px;">
         <label>Tên sản phẩm:</label>
         <input type="text" id="manualOrderNameProgress" placeholder="VD: Sora" style="min-width:140px;">
         <label>Kích thước:</label>
@@ -6926,7 +6930,7 @@ document.getElementById('autoPlanSearchBox').addEventListener('input',window.Khs
 document.getElementById('autoPlanAssignFilter').addEventListener('change', renderAutoPlan);
 
 // ---- Thêm đơn hàng phát sinh — dùng chung cho cả tab Kế hoạch tuần và Tiến độ sản xuất ----
-async function createManualOrder({dateVal, name, size, qty, note, team}){
+async function createManualOrder({dateVal, name, size, qty, note, team, code}){
   if(!canManage2()) return null;
   if(currentUser?.role === 'quan_ly_2' && progressLockBlocksManager2({date:isoToDMY(dateVal)})) return null;
   const sizeParts=String(size||'').match(/\d+(?:[.,]\d+)?/g)?.map(x=>Number(x.replace(',','.')))||[];
@@ -6936,7 +6940,7 @@ async function createManualOrder({dateVal, name, size, qty, note, team}){
   const newOrder = {
     id: 'm' + Date.now() + Math.random().toString(36).slice(2,7),
     date: isoToDMY(dateVal),
-    ma: '',
+    ma: String(code||'').trim(),
     dong: chuanTenDong(name),
     ngang: size || '-',
     dai: '',
@@ -6951,7 +6955,7 @@ async function createManualOrder({dateVal, name, size, qty, note, team}){
     const {data:{session}}=await supabaseDb.auth.getSession();
     if(!session){ supabaseStatus('Phiên đăng nhập đã hết · chưa tạo đơn',false); return null; }
     const {data,error}=await supabaseDb.from('khsx_orders').insert({
-      id:newOrder.id,production_date:dateVal,product_code:'',product_name:newOrder.dong||'Phát sinh',
+      id:newOrder.id,production_date:dateVal,product_code:newOrder.ma,product_name:newOrder.dong||'Phát sinh',
       width_mm:width,length_mm:length,thickness_mm:thickness,plan_qty:Number(qty),note:note||'',
       order_group:'Phát sinh',source_order_id:null,is_manual:true,is_drop:false,is_ghost:false,
       is_warranty:false,is_lot:false,lot_label:'',source_payload:{source:'miniapp',created_by:session.user.id}
@@ -6982,10 +6986,11 @@ async function createManualOrder({dateVal, name, size, qty, note, team}){
   return newOrder;
 }
 
-function wireManualOrderForm({btnId, formId, dateId, nameId, sizeId, qtyId, teamId, noteId, saveId, statusId}){
+function wireManualOrderForm({btnId, formId, dateId, codeId, nameId, sizeId, qtyId, teamId, noteId, saveId, statusId}){
   const btn = document.getElementById(btnId);
   const form = document.getElementById(formId);
   const dateEl = document.getElementById(dateId);
+  const codeEl = codeId ? document.getElementById(codeId) : null;
   const nameEl = document.getElementById(nameId);
   const sizeEl = document.getElementById(sizeId);
   const qtyEl = document.getElementById(qtyId);
@@ -7026,7 +7031,7 @@ function wireManualOrderForm({btnId, formId, dateId, nameId, sizeId, qtyId, team
     saveBtn.disabled = true; // chặn bấm nhiều lần liên tiếp tạo trùng đơn
     statusEl.textContent = 'Đang lưu...';
     statusEl.style.color = 'var(--text2)';
-    const created=await createManualOrder({dateVal, name, size, qty, note: noteEl.value.trim(), team});
+    const created=await createManualOrder({dateVal, name, size, qty, note: noteEl.value.trim(), team, code: codeEl ? codeEl.value.trim() : ''});
     if(!created){
       statusEl.textContent = 'Chưa lưu được đơn. Dữ liệu không bị tạo dở, hãy kiểm tra kết nối rồi thử lại.';
       statusEl.style.color = 'var(--danger)';
@@ -7035,18 +7040,18 @@ function wireManualOrderForm({btnId, formId, dateId, nameId, sizeId, qtyId, team
     }
     statusEl.textContent = 'Đã thêm đơn hàng ✓';
     statusEl.style.color = 'var(--success)';
-    nameEl.value = ''; sizeEl.value = ''; qtyEl.value = ''; noteEl.value = ''; if(teamEl) teamEl.value = '';
+    if(codeEl) codeEl.value = ''; nameEl.value = ''; sizeEl.value = ''; qtyEl.value = ''; noteEl.value = ''; if(teamEl) teamEl.value = '';
     saveBtn.disabled = false;
   });
 }
 
 wireManualOrderForm({
-  btnId:'addManualOrderBtn', formId:'manualOrderForm', dateId:'manualOrderDate',
+  btnId:'addManualOrderBtn', formId:'manualOrderForm', dateId:'manualOrderDate', codeId:'manualOrderCode',
   nameId:'manualOrderName', sizeId:'manualOrderSize', qtyId:'manualOrderQty',
   teamId:null, noteId:'manualOrderNote', saveId:'saveManualOrderBtn', statusId:'manualOrderStatus'
 });
 wireManualOrderForm({
-  btnId:'addManualOrderBtnProgress', formId:'manualOrderFormProgress', dateId:'manualOrderDateProgress',
+  btnId:'addManualOrderBtnProgress', formId:'manualOrderFormProgress', dateId:'manualOrderDateProgress', codeId:'manualOrderCodeProgress',
   nameId:'manualOrderNameProgress', sizeId:'manualOrderSizeProgress', qtyId:'manualOrderQtyProgress',
   teamId:'manualOrderTeamProgress', noteId:'manualOrderNoteProgress', saveId:'saveManualOrderBtnProgress', statusId:'manualOrderStatusProgress'
 });
