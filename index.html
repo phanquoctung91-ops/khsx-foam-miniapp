@@ -1135,7 +1135,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <h3>Kế hoạch sản xuất — Tổ Mút Foam</h3>
     <div class="wf-link" data-wf="khsx">🔗 Workflow hoạt động</div>
     <div class="btn-row">
-      <button id="autoPlanRefreshBtn" class="primary-btn">↻ Làm mới dữ liệu</button>
+      <input type="file" id="offlinePlanFile" accept=".xlsx,.xls,.csv" style="display:none;">
+      <button id="importOfflinePlanBtn" class="primary-btn only-manager">📂 Nạp file KHSX</button>
       <button id="addManualOrderBtn" class="primary-btn only-manager" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
       <button id="lockPlanBtn" class="primary-btn only-manager" style="background:var(--text2);">🔒 Chốt đầu vào</button>
@@ -1483,9 +1484,9 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;">4. Nạp dữ liệu KH/BH khi mạng lỗi kéo dài</div>
       <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">Chấp nhận Excel/CSV. Đây là lớp tạm; khi mạng trở lại hệ thống đối chiếu nguồn sống, tô sáng và đưa dòng đổi lên đầu để xác nhận/tách.</div>
       <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
-        <input type="file" id="offlinePlanFile" accept=".xlsx,.xls,.csv"><button id="importOfflinePlanBtn" class="primary-btn">Nạp KH</button>
         <input type="file" id="offlineWarrantyFile" accept=".xlsx,.xls,.csv"><button id="importOfflineWarrantyBtn" class="primary-btn">Nạp BH</button>
       </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text2);">Nạp KHSX (kế hoạch) đã chuyển lên nút "📂 Nạp file KHSX" ở đầu trang Kế hoạch sản xuất.</div>
       <div id="offlineImportStatus" style="margin-top:8px;font-size:12.5px;"></div>
     </div>
   </div>
@@ -4202,7 +4203,7 @@ async function enterWithTelegram(){
     if(await loadSupabaseOperationalData()){
       supabasePrimaryActive=true;
       document.documentElement.setAttribute('data-primary-source','supabase');
-      await syncMissingSheetOrdersToSupabase({silent:true});
+      // Da ngat ket noi Sheet cong ty - chi nap KHSX bang file tay (nut Nap file KHSX).
       await fetchBaoHanh({silent:true,force:true});
       await startSupabaseRealtime();
       await flushSupabaseStageOutbox();
@@ -4319,7 +4320,7 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   if(goiBiXoaVìThieuDon.length){
     console.warn('Bỏ gói thao tác vì đơn chưa có trên Supabase:',goiBiXoaVìThieuDon);
     const dsDon=Array.from(new Set(goiBiXoaVìThieuDon.map(x=>x.order_id))).slice(0,3).join(', ');
-    supabaseStatus(`⚠ ${goiBiXoaVìThieuDon.length} thao tác gán tổ/hỗ trợ KHÔNG lưu được (đơn chưa có trên máy chủ: ${dsDon}${goiBiXoaVìThieuDon.length>3?'…':''}) · bấm "Làm mới dữ liệu" rồi gán lại`,false);
+    supabaseStatus(`⚠ ${goiBiXoaVìThieuDon.length} thao tác gán tổ/hỗ trợ KHÔNG lưu được (đơn chưa có trên máy chủ: ${dsDon}${goiBiXoaVìThieuDon.length>3?'…':''}) · bấm "📂 Nạp file KHSX" rồi gán lại`,false);
   }
   // Khi mất mạng, đơn vừa xóa vẫn phải biến mất ngay trên máy này. Chỉ hiển thị
   // lại nếu người dùng chủ động hủy thao tác, không để lượt đọc cũ phục hồi nó.
@@ -4722,7 +4723,7 @@ async function sendSupabaseManagementItem(item){
         return false;
       }
       const ten=item.kind==='owner'?'gán tổ phụ trách':(item.kind==='support'?'gán tổ hỗ trợ':`thao tác ${item.kind}`);
-      supabaseStatus(`⚠ Không lưu được ${ten} cho đơn ${item.order_id} (lỗi ${code}) · cần gán lại sau khi bấm "Làm mới dữ liệu"`,false);
+      supabaseStatus(`⚠ Không lưu được ${ten} cho đơn ${item.order_id} (lỗi ${code}) · cần gán lại sau khi nạp lại KHSX`,false);
       return 'terminal';
     }
     // Lỗi nghiệp vụ khác (vd MANAGER_REQUIRED, INVALID_CURRENT_TEAM, PROGRESS_LOCKED):
@@ -5530,6 +5531,22 @@ function resolveSheetColumns(table){
   // Khớp được quá ít cột thì không coi là hàng tiêu đề (tránh nhận nhầm dòng tiêu đề lớn
   // kiểu "KẾ HOẠCH SẢN XUẤT XƯỞNG"). Khi đó quay về đọc theo vị trí cột và cảnh báo.
   if(best.hits < 4) best = {rowIndex:-1, map:{}, hits:0};
+  // File KHSX nạp tay (xuất từ hệ thống nội bộ, KHÔNG có dòng tiêu đề) có cấu trúc cố định:
+  // Ngày, Thứ, Tổ, Mã, Mô tả, Dòng, Ngang, Dài, Dày, (trống), Số lượng, Ghi chú — nhận diện
+  // bằng cách tìm ô chứa đúng tên xưởng (Foam/Cao su/Mút) trong vài dòng đầu.
+  if(best.rowIndex === -1){
+    const sample = table.slice(0, 5);
+    for(let toIdx = 2; toIdx < 6; toIdx++){
+      const laDongXuong = sample.some(row=>['foam','caosu','mut'].includes(normHeaderText(row && row[toIdx])));
+      if(laDongXuong){
+        best = {rowIndex:-1, hits:9, missing:[], map:{
+          date: toIdx-2, to: toIdx, ma: toIdx+1, dong: toIdx+3,
+          ngang: toIdx+4, dai: toIdx+5, day: toIdx+6, so_luong: toIdx+8, ghi_chu: toIdx+9
+        }};
+        break;
+      }
+    }
+  }
   // Trường nào không nhận ra thì lấy theo vị trí cũ và ghi nhận để cảnh báo
   const missing = [];
   Object.keys(SHEET_FALLBACK_COLS).forEach(field=>{
@@ -5634,6 +5651,14 @@ function docNgayLinhHoat(v){
   m = t.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);        // năm-tháng-ngày
   if(m){
     const na = Number(m[1]), th = Number(m[2]), ng = Number(m[3]);
+    if(ng >= 1 && ng <= 31 && th >= 1 && th <= 12) return `${p(ng)}/${p(th)}/${na}`;
+    return null;
+  }
+  // File Excel nạp tay: SheetJS (raw:false) xuất ô ngày không có định dạng riêng
+  // thành text kiểu Mỹ "M/D/YY" (tháng/ngày/năm 2 số) thay vì D/M/YYYY quen thuộc.
+  m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})$/);
+  if(m){
+    const th = Number(m[1]), ng = Number(m[2]), na = 2000 + Number(m[3]);
     if(ng >= 1 && ng <= 31 && th >= 1 && th <= 12) return `${p(ng)}/${p(th)}/${na}`;
     return null;
   }
@@ -6151,14 +6176,15 @@ function sheetOrderToSupabase(o){
   };
 }
 let sheetPlanSyncInFlight=false;
-async function syncMissingSheetOrdersToSupabase({silent=false}={}){
-  // QL2 chỉ được xem KHSX theo phân quyền v119. Việc nạp đơn gốc từ Sheet chỉ
-  // chạy dưới vai Quản lý; nhân viên/QL2 chỉ đọc kết quả đã đồng bộ.
+// Dung chung cho ca "dong bo Sheet cong ty song" (da ngat 2026-09-10) va "nap file
+// KHSX tay" - ca hai deu can hanh xu GIONG HET nhau: ghi thang vao khsx_orders qua
+// RPC giao dich duy nhat, de gan to/thua ke san luong giua cac cong doan hoat dong
+// binh thuong nhu don den tu Sheet, va moi may/tai khoan deu thay ngay.
+async function reconcileSourceRowsToSupabase(rows,{silent=false}={}){
   if(!SUPABASE_VARIANT||!supabaseDb||!canManage()||sheetPlanSyncInFlight)return {ok:false,skipped:true,inserted:0};
   sheetPlanSyncInFlight=true;
   try{
     const sourceReadAt=new Date().toISOString();
-    const source=await readSheetPlanSource();
     // Không loại dòng trước khi gửi: máy chủ cần toàn bộ ngày trong nguồn để
     // nhận biết dòng bị bỏ, kiểm tra lại khóa ngày và tiến độ trong một giao dịch.
     const pendingIds=new Set([
@@ -6168,7 +6194,7 @@ async function syncMissingSheetOrdersToSupabase({silent=false}={}){
       ...getOrders().filter(coTienDoDon).map(x=>x.id)
     ].filter(Boolean));
     const {data,error}=await supabaseDb.rpc('khsx_reconcile_sheet_plan',{
-      p_source_orders:source.rows.map(sheetOrderToSupabase),
+      p_source_orders:rows.map(sheetOrderToSupabase),
       p_source_read_at:sourceReadAt,p_pending_order_ids:[...pendingIds]
     });
     if(error)throw error;
@@ -6177,13 +6203,27 @@ async function syncMissingSheetOrdersToSupabase({silent=false}={}){
     // và ghi chú cần kiểm tra. Loader hiện có ghép lại các thao tác chờ gửi.
     if(data.changed)await loadSupabaseOperationalData();
     if(!silent||data.changed||data.review_count)supabaseStatus(
-      `Đồng bộ Sheet: thêm ${data.inserted} đơn · hủy mềm ${data.cancelled} đơn chưa có tiến độ · ${data.review_count} đơn cần quản lý kiểm tra`,true);
-    return {...data,total:source.rows.length,source};
+      `Đồng bộ KHSX: thêm ${data.inserted} đơn · hủy mềm ${data.cancelled} đơn chưa có tiến độ · ${data.review_count} đơn cần quản lý kiểm tra`,true);
+    return {...data,total:rows.length};
   }catch(error){
-    console.warn('Không đối chiếu được KHSX Sheet với Supabase',error);
-    if(!silent)supabaseStatus(`Chưa đồng bộ được KHSX từ Sheet: ${error.message||error.code||'lỗi không xác định'}`,false);
+    console.warn('Không đối chiếu được KHSX với Supabase',error);
+    if(!silent)supabaseStatus(`Chưa đồng bộ được KHSX: ${error.message||error.code||'lỗi không xác định'}`,false);
     return {ok:false,error,inserted:0};
   }finally{sheetPlanSyncInFlight=false;}
+}
+// Giữ lại nguyên vẹn (không còn nơi nào tự động gọi từ 2026-09-10, đã ngắt Sheet
+// công ty theo yêu cầu) — chỉ để tương thích nếu cần bật lại đồng bộ sống sau này.
+async function syncMissingSheetOrdersToSupabase({silent=false}={}){
+  if(!SUPABASE_VARIANT||!supabaseDb||!canManage()||sheetPlanSyncInFlight)return {ok:false,skipped:true,inserted:0};
+  try{
+    const source=await readSheetPlanSource();
+    const result=await reconcileSourceRowsToSupabase(source.rows,{silent});
+    return {...result,source};
+  }catch(error){
+    console.warn('Không đọc được nguồn Sheet',error);
+    if(!silent)supabaseStatus(`Chưa đồng bộ được KHSX từ Sheet: ${error.message||error.code||'lỗi không xác định'}`,false);
+    return {ok:false,error,inserted:0};
+  }
 }
 
 async function fetchAutoPlan(){
@@ -6234,8 +6274,8 @@ async function fetchAutoPlan(){
     const cached = loadLocalCache();
     const when = cached && cached.t ? new Date(cached.t).toLocaleTimeString('vi-VN') : null;
     statusEl.innerHTML = sheetRows.length
-      ? `⚠ Chưa tải được bản mới — đang dùng bản lưu${when ? ' lúc ' + when : ''}. Bấm "Làm mới dữ liệu" để thử lại.`
-      : `⚠ Chưa tải được dữ liệu từ Google Sheet. Kiểm tra kết nối rồi bấm "Làm mới dữ liệu".`;
+      ? `⚠ Chưa tải được bản mới — đang dùng bản lưu${when ? ' lúc ' + when : ''}. Bấm "📂 Nạp file KHSX" để nạp lại.`
+      : `⚠ Chưa tải được dữ liệu từ Google Sheet. Dùng nút "📂 Nạp file KHSX" để nạp kế hoạch.`;
     statusEl.style.color = 'var(--warning)';
   }
   renderAutoPlanDaySelect();
@@ -6595,16 +6635,8 @@ function parseDMYForDate(dmy){
   return [y, m-1, d];
 }
 
-document.getElementById('autoPlanRefreshBtn').addEventListener('click', async ()=>{
-  if(PUBLIC_VIEW_MODE){guestWarrantyReadAt=0;await refreshGuestDashboard();return;}
-  if(SUPABASE_VARIANT&&supabaseDb){
-    await syncMissingSheetOrdersToSupabase();
-    await Promise.all([loadSupabaseOperationalData(),fetchBaoHanh({force:true})]);
-    renderAutoPlan();
-    return;
-  }
-  await Promise.all([fetchAutoPlan(), fetchOrderGroups(), fetchBaoHanh({force:true})]);
-  renderAutoPlan();
+document.getElementById('importOfflinePlanBtn')?.addEventListener('click', ()=>{
+  document.getElementById('offlinePlanFile').click();
 });
 document.getElementById('autoPlanTable').addEventListener('click',e=>{
   const btn=e.target.closest('.warranty-detail-btn');
@@ -8384,8 +8416,8 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
       const jobs=[fetchBaoHanh({silent:true})];
       // Quản lý đối chiếu Sheet: thêm đơn mới, hủy mềm dòng bị bỏ chưa có
       // tiến độ; máy chủ giữ ngày khóa và đơn cần kiểm tra. QL2/nhân viên chỉ đọc.
-      if(supabasePrimaryActive){if(canManage())jobs.push(syncMissingSheetOrdersToSupabase({silent:true}));}
-      else jobs.push(fetchAutoPlan(),fetchOrderGroups());
+      // Da ngat ket noi Sheet cong ty - khong tu dong doi chieu nua, chi nap file tay.
+      if(!supabasePrimaryActive)jobs.push(fetchAutoPlan(),fetchOrderGroups());
       await Promise.allSettled(jobs);
     }
     // Chỉ giữ lại đúng ô SỐ LƯỢNG đang gõ dở (nếu có), không dừng đồng bộ nữa.
@@ -8612,7 +8644,7 @@ document.getElementById('saveLockPlanBtn').addEventListener('click', async ()=>{
   const ngayRong = needsSnapshot.filter(d => snapshotRowsByDate[d].length === 0);
   if(ngayRong.length){
     statusEl.innerHTML = `Không chốt được ${ngayRong.join(', ')} vì <strong>không đọc được đơn nào</strong> của ngày đó. `
-      + `Bấm "↻ Làm mới dữ liệu" rồi thử lại. Chốt khi chưa có dữ liệu sẽ làm mất ngày đó.`;
+      + `Dùng nút "📂 Nạp file KHSX" rồi thử lại. Chốt khi chưa có dữ liệu sẽ làm mất ngày đó.`;
     statusEl.style.color = 'var(--danger)';
     return;
   }
@@ -9326,18 +9358,34 @@ function parseOfflineWarrantyTables(tables){
   });
   return out;
 }
-document.getElementById('importOfflinePlanBtn')?.addEventListener('click',async()=>{
+document.getElementById('offlinePlanFile')?.addEventListener('change',async()=>{
   const st=document.getElementById('offlineImportStatus');
   try{
     const tables=await readOfflineTables(document.getElementById('offlinePlanFile').files[0]);
     const rows=tables.flatMap(t=>parseSheetTable(t).rows);if(!rows.length)throw new Error('Không tìm thấy dòng Tổ = Foam có ngày hợp lệ.');
-    sheetRows=applyLotSplitRule(assignStableIds(rows));autoPlanLoaded=true;
+    const finalRows=applyLotSplitRule(assignStableIds(rows));
+    if(SUPABASE_VARIANT&&supabaseDb){
+      // 2026-09-10: nạp file KHSX giờ ghi thẳng lên Supabase qua đúng RPC đối chiếu
+      // dùng chung với Sheet công ty (đã ngắt) — mọi tài khoản/thiết bị đều thấy ngay,
+      // gán tổ/kế thừa sản lượng giữa các công đoạn hoạt động y hệt đơn từ Sheet.
+      if(!canManage()){st.textContent='Chỉ Quản lý được nạp KHSX.';st.style.color='var(--danger)';return;}
+      st.textContent='Đang nạp lên hệ thống...';st.style.color='var(--text2)';
+      const result=await reconcileSourceRowsToSupabase(finalRows,{silent:false});
+      if(!result.ok){
+        st.textContent=`Nạp KHSX thất bại: ${result.error?.message||result.error?.code||(result.skipped?'đang đồng bộ dở, thử lại sau':'lỗi không xác định')}`;
+        st.style.color='var(--danger)';return;
+      }
+      st.textContent=`Đã nạp ${finalRows.length} dòng KHSX lên hệ thống: thêm ${result.inserted} đơn · hủy mềm ${result.cancelled} đơn chưa có tiến độ${result.review_count?` · ${result.review_count} đơn cần quản lý kiểm tra`:''}.`;
+      st.style.color='var(--success)';
+      return;
+    }
+    sheetRows=finalRows;autoPlanLoaded=true;
     new Set(sheetRows.map(x=>x.date)).forEach(d=>{backupRowsByDate[d]=sheetRows.filter(x=>x.date===d);});
     sheetRows.forEach(x=>{changeNotes[x.id]='Đang dùng file KH tạm khi mất mạng';newFromSheet[x.id]=true;});
     setOfflinePlanActive(true);
     saveLocalCache();renderAutoPlanDaySelect();renderAutoPlan();renderProgress();scheduleMonthlySync();
-    st.textContent=`Đã nạp tạm ${sheetRows.length} dòng KH. Khi online, bấm Làm mới để đối chiếu nguồn sống.`;st.style.color='var(--success)';
-  }catch(e){st.textContent=`Nạp KH thất bại: ${e.message||e}`;st.style.color='var(--danger)';}
+    st.textContent=`Đã nạp tạm ${sheetRows.length} dòng KH.`;st.style.color='var(--success)';
+  }catch(e){st.textContent=`Nạp KHSX thất bại: ${e.message||e}`;st.style.color='var(--danger)';}
 });
 document.getElementById('importOfflineWarrantyBtn')?.addEventListener('click',async()=>{
   const st=document.getElementById('offlineImportStatus');
@@ -10455,7 +10503,7 @@ async function bootstrap(){
     if(coSession && await loadSupabaseOperationalData()){
       supabasePrimaryActive=true;
       document.documentElement.setAttribute('data-primary-source','supabase');
-      await syncMissingSheetOrdersToSupabase({silent:true});
+      // Da ngat ket noi Sheet cong ty - chi nap KHSX bang file tay (nut Nap file KHSX).
       await fetchBaoHanh({silent:true,force:true});
       await startSupabaseRealtime();
       await flushSupabaseStageOutbox();
