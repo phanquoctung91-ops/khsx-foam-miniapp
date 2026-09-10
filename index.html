@@ -11,6 +11,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="js/khsx-data-core.js?v=125"></script>
+<script src="hotfix-sync.js?v=160"></script>
+<script src="js/khsx-hotfix-runtime.js?v=160"></script>
 <script src="js/khsx-capacity-core.js?v=159"></script>
 <script src="js/khsx-capacity-timing.js?v=159"></script>
 <script src="js/khsx-capacity-details.js?v=159"></script>
@@ -1450,6 +1452,11 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
      ngoài, làm header/logo render sau nội dung, phải cuộn qua hết mới thấy).
      Sửa 2026-09-07 (Phần 3): bỏ khối Xuất báo cáo ra trang riêng (panel-report ở trên). -->
 <div class="panel" id="panel-settings">
+ <div id="hotfixModeControls" hidden style="padding:12px;border:1px solid var(--border);margin-bottom:14px">
+  <strong>Hotfix · Chế độ vận hành</strong><p>Chỉ đọc sẽ tạm ngừng lưu dữ liệu sản xuất trên toàn hệ thống. Thao tác chờ vẫn giữ trên thiết bị.</p>
+  <select id="hotfixMode"><option value="normal">Bình thường</option><option value="reduced">Giảm tải</option><option value="read_only">Chỉ đọc</option></select>
+  <button onclick="hotfixChangeMode()">Áp dụng</button>
+ </div>
   <h3 style="margin:0 0 14px;font-size:17px;">⚙️ Cài đặt hệ thống</h3>
   <div class="card">
     <h3 style="margin:0 0 12px;">💾 Sao lưu &amp; bàn giao</h3>
@@ -1577,6 +1584,13 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 
 </div>
 
+<div id="hotfixStatus" hidden style="padding:10px;border:1px solid var(--border);border-radius:8px;margin:8px 0">
+ <span id="hotfixSummary"></span> <button onclick="showHotfixQueue()">Xem thao tác chờ</button>
+</div>
+<dialog id="hotfixQueueDialog" aria-labelledby="hotfixQueueTitle" style="max-width:780px;width:90%;padding:20px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:12px">
+ <h3 id="hotfixQueueTitle">Trạng thái đồng bộ</h3><p id="hotfixQueueCount"></p><div id="hotfixQueueRows" style="max-height:55vh;overflow:auto"></div>
+ <button onclick="exportHotfixQueue()">Xuất thao tác chờ</button> <button onclick="document.getElementById('hotfixQueueDialog').close()">Đóng</button>
+</dialog>
 <div id="stageChoiceModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="stageChoiceTitle">
   <div class="capacity-dialog" style="max-width:420px;">
     <div class="capacity-head"><h3 id="stageChoiceTitle" style="margin:0;font-size:18px;">Chọn công đoạn cần nhập</h3><button id="closeStageChoiceBtn" class="capacity-quick-btn" type="button">Đóng</button></div>
@@ -1601,7 +1615,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=158"></script>
+<script src="raw-data.js?v=160"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3619,7 +3633,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 159;
+const APP_VERSION = 160;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3947,6 +3961,7 @@ function forceLogout(msg){
   clearLoginSession();
   managerStagePreview = null;
   currentUser = null;
+  if(window.khsxHotfixReady){hotfixBindAccount();hotfixVerifiedVisible=false;renderHotfixStatus();}
   applyRoleUI();
   const ov = document.getElementById('loginOverlay');
   if(ov) ov.style.display = 'flex';
@@ -3981,12 +3996,12 @@ async function revalidateSupabaseSession(){
   supabaseSessionCheckInFlight = true;
   try{
     const {data:{session},error:sessionError}=await supabaseDb.auth.getSession();
-    if(sessionError){ console.warn('Không kiểm tra được phiên Supabase',sessionError); return true; }
+    if(sessionError){ console.warn('Không kiểm tra được phiên Supabase',sessionError); return false; }
     if(!session){ forceLogout('Phiên Supabase đã hết hiệu lực. Vui lòng đăng nhập lại.'); return false; }
     const {data,error}=await supabaseDb.from('khsx_profiles')
       .select('display_name,role,unit_name,active,worker_id')
       .eq('user_id',session.user.id).maybeSingle();
-    if(error){ console.warn('Không đọc được trạng thái hồ sơ Supabase',error); return true; }
+    if(error){ console.warn('Không đọc được trạng thái hồ sơ Supabase',error); return false; }
     if(!data?.active){
       forceLogout('Tài khoản đã bị thu hồi quyền. Màn hình sẽ khóa và yêu cầu đăng nhập lại.');
       return false;
@@ -4060,8 +4075,10 @@ const SUPABASE_TELEGRAM_ACCOUNT_URL = `${SUPABASE_URL}/functions/v1/khsx-telegra
 // ngày 22/08/2026 nên tuyệt đối không được phép đè dữ liệu thật đang đầy đủ.
 const SUPABASE_PRIMARY_TRIAL = SUPABASE_VARIANT;
 let supabasePrimaryActive = false;
+const hotfixTransport=KhsxHotfixRuntime.createTransport({fetch:window.fetch.bind(window),context:()=>({accountId:currentUser?.auth_user_id||'',visible:!document.hidden,online:navigator.onLine}),onState:()=>{if(window.khsxHotfixReady)renderHotfixStatus();}});
 const supabaseDb = !PUBLIC_VIEW_MODE && window.supabase && window.supabase.createClient
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
+      global:{fetch:hotfixTransport.fetch},
       auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false},
       realtime:{params:{eventsPerSecond:8}}
     }) : null;
@@ -4118,8 +4135,14 @@ function supabaseStatus(message, ok=true){
   el.style.color=ok?'var(--success)':'var(--warning)';
 }
 async function loginWithTelegram(){
+ if(document.hidden||!hotfixTransport.available())throw new Error('Máy chủ đang bận hoặc ứng dụng ở nền. Hãy thử lại sau.');
+ if(hotfixLoginPromise)return hotfixLoginPromise;
+ hotfixLoginPromise=performHotfixTelegramLogin();
+ try{return await hotfixLoginPromise;}finally{hotfixLoginPromise=null;}
+}
+async function performHotfixTelegramLogin(){
   if(!supabaseDb || !TELEGRAM_WEBAPP || !TELEGRAM_WEBAPP.initData) return null;
-  const res=await fetch(SUPABASE_TELEGRAM_LOGIN_URL,{
+  const res=await hotfixTransport.fetch(SUPABASE_TELEGRAM_LOGIN_URL,{
     method:'POST',cache:'no-store',
     headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY},
     body:JSON.stringify({init_data:TELEGRAM_WEBAPP.initData})
@@ -4159,7 +4182,7 @@ async function registerTelegramId(){
   if(errEl) errEl.style.display='none';
   setStatus('Đang gửi yêu cầu đăng ký...');
   try{
-    const res=await fetch(SUPABASE_TELEGRAM_REGISTER_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY},body:JSON.stringify({init_data:TELEGRAM_WEBAPP.initData})});
+    const res=await hotfixTransport.fetch(SUPABASE_TELEGRAM_REGISTER_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY},body:JSON.stringify({init_data:TELEGRAM_WEBAPP.initData})});
     const data=await res.json().catch(()=>null);
     if(!res.ok){
       const detail=data?.db_code||data?.error||'';
@@ -4192,7 +4215,7 @@ async function enterWithTelegram(){
   if(btn){btn.disabled=true;btn.textContent='Đang xác thực...';}
   try{
     const telegramUser=await loginWithTelegram();
-    currentUser=telegramUser;
+    currentUser=telegramUser;hotfixVerifiedVisible=true;hotfixBindAccount();
     saveLoginSession(telegramUser);
     try{localStorage.removeItem('khsx_manual_logout');}catch(e){}
     const overlay=document.getElementById('loginOverlay');
@@ -4227,6 +4250,7 @@ async function enterWithTelegram(){
   }
 }
 async function restoreSupabaseSession(){
+  if(document.hidden||!hotfixTransport.available())return false;
   if(!supabaseDb) return false;
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session) return false;
@@ -4259,12 +4283,24 @@ function conTrongHanChoDonXuatHien(item){
   const t=Date.parse(item?.client_updated_at||'');
   return !Number.isFinite(t) || (Date.now()-t<=NGUONG_CHO_DON_CHUA_CO_MS);
 }
-async function loadSupabaseOperationalData({allowPublic=false}={}){
+async function loadSupabaseOperationalData(options={}){
+ if(document.hidden||!hotfixTransport.available()||hotfixLoadBusy)return false;
+ hotfixLoadBusy=true;
+ try{return await loadSupabaseOperationalDataImpl(options);}finally{hotfixLoadBusy=false;}
+}
+async function loadSupabaseOperationalDataImpl({allowPublic=false,tables=null}={}){
   if(!supabaseDb) return false;
-  const loadSeq=++supabaseOperationalLoadSeq;
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session && !allowPublic) return false;
+  hotfixBindAccount();
+  const loadSeq=++supabaseOperationalLoadSeq,loadAccount=currentUser?.auth_user_id||'';
   let results,remoteCancelled=[];
+  const partial=!!arguments[0]?.tables&&hotfixReadAccount===hotfixAccount&&Object.keys(hotfixDataCache).length>0;
+  const wanted=new Set(arguments[0]?.tables||[]);
+  const read=async(table,columns='*',configure=null,key=table)=>{
+    if(partial&&!wanted.has(table)&&hotfixDataCache[key])return {data:hotfixDataCache[key],error:null};
+    return supabaseSelectAll(table,columns,configure);
+  };
   if(allowPublic){
     // Một RPC SECURITY DEFINER chỉ được cấp EXECUTE cho anon. Hàm tự dựng JSON từ
     // danh sách cột cho phép; khách không có SELECT vào bảng/view gốc.
@@ -4275,19 +4311,19 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     results.push({data:[],error:null},{data:[],error:null},{data:[],error:null},{data:[],error:null});
   }else{
     results=await Promise.all([
-      supabaseSelectAll('khsx_orders','*',q=>q.is('deleted_at',null)),
-      supabaseSelectAll('khsx_order_assignments'),
-      supabaseSelectAll('khsx_daily_assignments'),
-      supabaseSelectAll('khsx_stage_progress'),
-      supabaseSelectAll('khsx_day_locks'),
-      supabaseSelectAll('khsx_plan_snapshots'),
-      supabaseSelectAll('khsx_quarter_targets'),
-      supabaseSelectAll('khsx_profiles','user_id,telegram_user_id,display_name,role,unit_name,active,worker_id,approved_by,approved_at,revoked_by,revoked_at'),
-      supabaseSelectAll('khsx_workers','id,display_name,stage,active'),
-      supabaseSelectAll('khsx_stage_credits','order_id,work_date,stage,worker_id,quantity,source'),
-      supabaseSelectAll('khsx_worker_team_assignments','worker_id,team_name'),
+      read('khsx_orders','*',q=>q.is('deleted_at',null)),
+      read('khsx_order_assignments'),
+      read('khsx_daily_assignments'),
+      read('khsx_stage_progress'),
+      read('khsx_day_locks'),
+      read('khsx_plan_snapshots'),
+      read('khsx_quarter_targets'),
+      read('khsx_profiles','user_id,telegram_user_id,display_name,role,unit_name,active,worker_id,approved_by,approved_at,revoked_by,revoked_at'),
+      read('khsx_workers','id,display_name,stage,active'),
+      read('khsx_stage_credits','order_id,work_date,stage,worker_id,quantity,source'),
+      read('khsx_worker_team_assignments','worker_id,team_name'),
       // Gộp vào chung Promise.all thay vì chờ tuần tự sau khi 11 bảng trên đã xong.
-      supabaseSelectAll('khsx_orders','*',q=>q.not('deleted_at','is',null))
+      read('khsx_orders','*',q=>q.not('deleted_at','is',null),'cancelled')
     ]);
   }
   const failed=results.find(x=>x.error);
@@ -4295,8 +4331,12 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   if(!allowPublic && !results[11].error) remoteCancelled=results[11].data||[];
   // Một lượt đọc bắt đầu trước lượt mới hơn không được phép phục hồi dữ liệu
   // cũ lên giao diện sau khi thao tác mới đã hoàn tất.
-  if(loadSeq!==supabaseOperationalLoadSeq) return true;
+  if(loadSeq!==supabaseOperationalLoadSeq||loadAccount!==(currentUser?.auth_user_id||'')) return false;
   const [ord,asg,daily,progress,locks,snaps,targets,profiles,workers,credits,workerTeams]=results.map(x=>x.data||[]);
+  if(!allowPublic){
+    ['khsx_orders','khsx_order_assignments','khsx_daily_assignments','khsx_stage_progress','khsx_day_locks','khsx_plan_snapshots','khsx_quarter_targets','khsx_profiles','khsx_workers','khsx_stage_credits','khsx_worker_team_assignments','cancelled'].forEach((key,i)=>hotfixDataCache[key]=results[i].data||[]);
+    if(!partial)hotfixFullReadAt=Date.now();
+  }
   // Gói phân công của đơn không còn tồn tại có thể là dữ liệu cục bộ hỏng THẬT, nhưng
   // cũng có thể chỉ là đơn vừa được quản lý gán tổ ngay khi vừa từ Sheet vào, chưa kịp
   // đồng bộ ID lên Supabase (race với syncMissingSheetOrdersToSupabase). Cho một khoảng
@@ -4307,24 +4347,24 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   let managementQueueChanged=false;
   const goiBiXoaVìThieuDon=[];
   Object.entries(supabaseManagementOutbox||{}).forEach(([key,item])=>{
-    if(['delete','cancel','restore'].includes(item?.kind)||activeOrderIds.has(String(item?.order_id||''))) return;
+    if(!hotfixPending(item)||['delete','cancel','restore'].includes(item?.kind)||activeOrderIds.has(String(item?.order_id||''))) return;
     if(conTrongHanChoDonXuatHien(item)) return; // còn trong hạn chờ -> giữ nguyên, thử gửi lại bình thường
     goiBiXoaVìThieuDon.push({kind:item?.kind,order_id:item?.order_id,team:item?.current_team||item?.support_team||null});
-    delete supabaseManagementOutbox[key]; managementQueueChanged=true;
+    item.status='failed';item.error_code='ORDER_NOT_FOUND';managementQueueChanged=true;
   });
   if(managementQueueChanged)persistSupabaseManagementOutbox();
   // KHÔNG được im lặng: gói gán tổ/hỗ trợ bị xoá ở đây nghĩa là thao tác của Quản lý
   // KHÔNG BAO GIỜ tới được máy chủ (máy khác + nhân viên sẽ không thấy tổ đã gán),
   // trong khi giao diện máy này vẫn hiện như đã gán -> phải báo ra để biết mà làm lại.
   if(goiBiXoaVìThieuDon.length){
-    console.warn('Bỏ gói thao tác vì đơn chưa có trên Supabase:',goiBiXoaVìThieuDon);
+    console.warn('Giữ gói để đối chiếu vì đơn chưa có trên Supabase:',goiBiXoaVìThieuDon);
     const dsDon=Array.from(new Set(goiBiXoaVìThieuDon.map(x=>x.order_id))).slice(0,3).join(', ');
     supabaseStatus(`⚠ ${goiBiXoaVìThieuDon.length} thao tác gán tổ/hỗ trợ KHÔNG lưu được (đơn chưa có trên máy chủ: ${dsDon}${goiBiXoaVìThieuDon.length>3?'…':''}) · bấm "Làm mới dữ liệu" rồi gán lại`,false);
   }
   // Khi mất mạng, đơn vừa xóa vẫn phải biến mất ngay trên máy này. Chỉ hiển thị
   // lại nếu người dùng chủ động hủy thao tác, không để lượt đọc cũ phục hồi nó.
   const pendingDeleteIds=new Set(Object.values(supabaseManagementOutbox||{})
-    .filter(item=>item?.kind==='delete'||item?.kind==='cancel').map(item=>String(item.order_id)));
+    .filter(item=>hotfixPending(item)&&(item?.kind==='delete'||item?.kind==='cancel')).map(item=>String(item.order_id)));
   const visibleOrd=ord.filter(o=>!pendingDeleteIds.has(String(o.id)));
   supabaseWorkers=workers.filter(x=>x.active!==false);
   supabaseStageCredits=credits;
@@ -4344,6 +4384,7 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   const nextAssignments={};
   asg.forEach(a=>{
     nextAssignments[a.order_id]={
+      server_updated_at:a.updated_at||null,
       to:supabaseUnitToUi(a.current_team), to_goc:supabaseUnitToUi(a.plan_team),
       spinoff_id:a.spinoff_order_id||null, change_note:a.change_note||'', priority:!!a.priority,
       stage_by_date:{}, support_by_date:{}
@@ -4406,6 +4447,11 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     applyVerifiedDataCorrections(overlayPendingAssignments(
       overlayPendingSupabaseManagement(nextAssignments),assignments))
   );
+  Object.values(supabaseStageOutbox).filter(hotfixPending).forEach(item=>{
+    const a=assignments[item.order_id]||(assignments[item.order_id]={stage_by_date:{},support_by_date:{}});
+    const e=a.stage_by_date[item.work_date]||(a.stage_by_date[item.work_date]={});
+    e[item.stage]=item.value;e['_'+item.stage+'_to']=item.kpi_team;
+  });
   lockedPlanDates=locks.filter(x=>x.plan_locked).map(x=>isoToDMY(x.work_date));
   lockedProgressDates=locks.filter(x=>x.progress_locked).map(x=>isoToDMY(x.work_date));
   planSnapshots={}; snaps.forEach(x=>{planSnapshots[isoToDMY(x.work_date)]=x.rows_json||[];});
@@ -4415,7 +4461,9 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   });
   try{localStorage.setItem(QUARTER_CALENDAR_KEY,JSON.stringify(quarterCalendars));}catch(e){}
   if(!allowPublic){
-    const ot=await supabaseSelectAll('khsx_overtime_records');
+    const ot=await read('khsx_overtime_records');
+    if(loadAccount!==(currentUser?.auth_user_id||''))return false;
+    if(!ot.error)hotfixDataCache.khsx_overtime_records=ot.data||[];
     if(!ot.error){overtimeRecords={};(ot.data||[]).forEach(x=>{const day=isoToDMY(x.work_date),team=supabaseUnitToUi(x.team_name),key=overtimeKey(day,team,x.stage,x.worker_id);overtimeRecords[key]={day,team,stage:x.stage,worker:x.worker_id,hours:Number(x.overtime_hours),updatedAt:x.updated_at};});persistOvertime();}
   }
   rebuildOrderEntityStore();
@@ -4435,27 +4483,31 @@ async function refreshFromPrimarySupabase(){
   saveLocalCache();
   return true;
 }
-function scheduleSupabaseReload(){
-  clearTimeout(supabaseReloadTimer);
+function scheduleSupabaseReload(payload){
+  if(payload?.table)KhsxHotfixRuntime.affectedTables(payload.table).forEach(t=>hotfixDirtyTables.add(t));
+  if(supabaseReloadTimer||document.hidden)return;
   supabaseReloadTimer=setTimeout(async()=>{
-    if(Date.now()<localWriteUntil || Object.values(supabaseStageOutbox).some(x=>x.status!=='failed') ||
-       Object.keys(supabaseManagementOutbox).length) return scheduleSupabaseReload();
-    if(await loadSupabaseOperationalData()){
-      renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
-    }
-  },500);
+    supabaseReloadTimer=null;
+    if(document.hidden||!hotfixVerifiedVisible||!hotfixTransport.available())return;
+    if(Date.now()<localWriteUntil||hotfixLoadBusy)return scheduleSupabaseReload();
+    const tables=[...hotfixDirtyTables];hotfixDirtyTables.clear();
+    if(!tables.length)return;
+    if(await loadSupabaseOperationalData({tables})){
+      renderAutoPlanDaySelect();renderAutoPlan();renderProgress();syncOrdersToMonthlyData();
+    }else tables.forEach(t=>hotfixDirtyTables.add(t));
+  },1500);
 }
 function scheduleSupabaseRealtimeReconnect(){
-  if(!SUPABASE_VARIANT || !supabaseDb || supabaseRealtimeRetryTimer || !supabasePrimaryActive) return;
-  const delay=Math.min(30000,1000*Math.pow(2,Math.min(supabaseRealtimeRetryAttempt,5)));
+  if(!SUPABASE_VARIANT || !supabaseDb || document.hidden || !hotfixVerifiedVisible || hotfixMode!=="normal" || supabaseRealtimeRetryTimer || !supabasePrimaryActive) return;
+  const delay=KhsxHotfixSync.retryDelay(supabaseRealtimeRetryAttempt+1);
   supabaseRealtimeRetryAttempt++;
   supabaseRealtimeRetryTimer=setTimeout(()=>{
     supabaseRealtimeRetryTimer=null;
     startSupabaseRealtime();
   },delay);
 }
-function stopSupabaseRealtime(){
-  supabasePrimaryActive=false;
+function stopSupabaseRealtime({suspend=false}={}){
+  if(!suspend)supabasePrimaryActive=false;
   clearTimeout(supabaseRealtimeRetryTimer);
   supabaseRealtimeRetryTimer=null;
   supabaseRealtimeRetryAttempt=0;
@@ -4465,23 +4517,24 @@ function stopSupabaseRealtime(){
   if(channel && supabaseDb){ try{ supabaseDb.removeChannel(channel); }catch(e){} }
 }
 async function startSupabaseRealtime(){
-  if(!supabaseDb || supabaseRealtimeChannel) return;
+  if(!supabaseDb || supabaseRealtimeChannel || document.hidden || !hotfixVerifiedVisible || !hotfixTransport.available() || hotfixMode!=="normal") return;
   const {data:{session}}=await supabaseDb.auth.getSession(); if(!session) return;
+  if(supabaseRealtimeChannel||document.hidden||!hotfixVerifiedVisible||hotfixMode!=="normal")return;
   const channel=supabaseDb.channel('khsx-dashboard-live');
   supabaseRealtimeChannel=channel;
   ['khsx_orders','khsx_order_assignments','khsx_daily_assignments','khsx_day_locks','khsx_stage_credits','khsx_profiles','khsx_workers','khsx_worker_team_assignments'].forEach(table=>{
-    channel.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseReload);
+    channel.on('postgres_changes',{event:'*',schema:'public',table},payload=>{if(!document.hidden&&hotfixVerifiedVisible)scheduleSupabaseReload(payload);});
   });
   // Vừa cập nhật nhanh ô công đoạn, vừa đọc lại toàn bộ bản ghi để đồng bộ
   // KPI/người thực hiện và không phụ thuộc vào thứ tự event giữa các máy.
-  channel.on('postgres_changes',{event:'*',schema:'public',table:'khsx_stage_progress'},applySupabaseProgressEvent);
-  channel.on('postgres_changes',{event:'*',schema:'public',table:'khsx_stage_progress'},scheduleSupabaseReload);
+  channel.on('postgres_changes',{event:'*',schema:'public',table:'khsx_stage_progress'},payload=>{if(document.hidden||!hotfixVerifiedVisible)return;applySupabaseProgressEvent(payload);scheduleSupabaseReload(payload);});
   channel.subscribe(status=>{
+    if(supabaseRealtimeChannel!==channel)return;
     if(status==='SUBSCRIBED'){
       supabaseRealtimeHealthy=true;
       supabaseRealtimeRetryAttempt=0;
       supabaseStatus('Realtime đang hoạt động · tự đồng bộ',true);
-      scheduleSupabaseReload();
+      if(hotfixDirtyTables.size)scheduleSupabaseReload();
       return;
     }
     if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status)){
@@ -4516,23 +4569,23 @@ function applySupabaseProgressEvent(payload){
   const order=getOrderById(row.order_id);if(order)dongBoSoHoanThanhCu(order);
   renderAutoPlan();renderProgress();scheduleMonthlySync();saveLocalCache();
 }
-function persistSupabaseStageOutbox(){
-  try{ localStorage.setItem(SUPABASE_STAGE_OUTBOX_KEY,JSON.stringify(supabaseStageOutbox)); }catch(e){}
-}
+function persistSupabaseStageOutbox(){return hotfixPersist(SUPABASE_STAGE_OUTBOX_KEY,supabaseStageOutbox);}
 function queueStagePatchForSupabase(o,ngay,congDoan,value,team,workerId=null,sendNow=true){
   if(!o || !CONG_DOAN.includes(congDoan)) return;
   const key=[o.id,ngay,congDoan].join('|');
+  hotfixBindAccount();
   supabaseStageOutbox[key]={key,operation_id:makeOperationId(),device_id:getSupabaseDeviceId(),
     order_id:o.id,work_date:ngay,stage:congDoan,
     value:value==null?0:soCongDoan(value),kpi_team:team||toKpiKhiNhapCongDoan(o,ngay,congDoan)||null,
     worker_id:workerId||null,occurred_at:new Date().toISOString(),status:'pending',attempts:0,next_attempt_at:0};
+  supabaseStageOutbox[key]=hotfixBindItem(supabaseStageOutbox[key]);
   markLocalWrite();
   persistSupabaseStageOutbox();
   if(sendNow) flushSupabaseStageOutbox();
 }
 async function sendSupabaseStageItem(item){
   if(!supabaseDb || !item || !CONG_DOAN.includes(item.stage)) return false;
-  const {data:{session}}=await supabaseDb.auth.getSession(); if(!session) return false;
+  const {data:{session}}=await supabaseDb.auth.getSession(); if(!session||session.user.id!==item.owner_account_id)return {error:{code:'SESSION_REQUIRED'}};
   const p=parseDMY(item.work_date); if(!p) return false;
   const workDate=`${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`;
   if(!item.operation_id) item.operation_id=makeOperationId();
@@ -4542,58 +4595,16 @@ async function sendSupabaseStageItem(item){
     p_stage:item.stage,p_quantity:soCongDoan(item.value),p_kpi_team:uiUnitToSupabase(item.kpi_team),
     p_worker_id:item.worker_id||null,p_device_id:item.device_id,p_occurred_at:item.occurred_at||null
   });
-  if(error){
-    const kind=window.KhsxDataCore?.classifyWriteError(error)||{retryable:false,code:error.code||'UNKNOWN'};
-    item.attempts=(item.attempts||0)+1;
-    if(!kind.retryable){
-      item.status='failed'; item.error_code=kind.code; persistSupabaseStageOutbox();
-      console.warn('Supabase từ chối dữ liệu nghiệp vụ',error);
-      supabaseStatus(`Không lưu được (${kind.code}) · cần sửa số vừa nhập`,false);
-      return 'terminal';
-    }
-    item.next_attempt_at=Date.now()+(window.KhsxDataCore?.retryDelay(item.attempts)||3000);
-    persistSupabaseStageOutbox();
-    console.warn('Mất kết nối, hàng đợi cục bộ sẽ gửi lại',error);
-    supabaseStatus('Mất kết nối · dữ liệu đang chờ gửi lại',false); return false;
-  }
+  if(error)return {error};
   const ack=Array.isArray(data)?data[0]:data;
-  if(!ack||String(ack.operation_id)!==String(item.operation_id)){
-    item.attempts=(item.attempts||0)+1;
-    item.next_attempt_at=Date.now()+(window.KhsxDataCore?.retryDelay(item.attempts)||3000);
-    persistSupabaseStageOutbox();
-    supabaseStatus('Máy chủ chưa xác nhận thao tác · đang giữ số vừa nhập',false);
-    return false;
-  }
+  if(!ack||String(ack.operation_id)!==String(item.operation_id))return {error:{code:'ACK_MISSING'}};
   item.confirmed_value=Number(ack.applied_quantity)||0;
-  item.status='confirmed';
-  supabaseStatus('Đã lưu Supabase · các máy đang đồng bộ',true);
-  return true;
+  if(hotfixOwnItem(item)){hotfixDirtyTables.add('khsx_stage_progress');hotfixDirtyTables.add('khsx_stage_credits');scheduleSupabaseReload();}
+  return {status:ack.duplicate?'duplicate':'applied'};
 }
-async function flushSupabaseStageOutbox(){
-  if(!SUPABASE_VARIANT || supabaseOutboxInFlight || !Object.keys(supabaseStageOutbox).length) return;
-  supabaseOutboxInFlight=true;
-  try{
-    for(const [key,item] of Object.entries({...supabaseStageOutbox})){
-      if(item.status==='failed') continue;
-      if(Number(item.next_attempt_at||0)>Date.now()) continue;
-      let ok=false;
-      try{ ok=await sendSupabaseStageItem(item); }catch(e){ console.warn('Supabase outbox sẽ thử lại',e); }
-      if(ok==='terminal') continue;
-      // 1 gói lỗi tạm thời (mất mạng, máy chủ chưa xác nhận...) đã tự có lịch thử lại
-      // riêng (next_attempt_at ở trên) - không được chặn đứng các gói KHÁC ĐƠN phía sau
-      // trong cùng hàng đợi. "break" ở đây từng khiến 1 gói kẹt làm treo toàn bộ hàng đợi.
-      if(!ok) continue;
-      // Nếu người dùng vừa nhập số mới trong lúc gói cũ đang gửi, không được
-      // xóa nhầm gói mới cùng ô. Chỉ xóa đúng operation vừa được xác nhận.
-      if(supabaseStageOutbox[key]?.operation_id === item.operation_id)
-        delete supabaseStageOutbox[key];
-      persistSupabaseStageOutbox();
-    }
-  }finally{ supabaseOutboxInFlight=false; }
-}
-function persistSupabaseManagementOutbox(){
-  try{ localStorage.setItem(SUPABASE_MANAGEMENT_OUTBOX_KEY,JSON.stringify(supabaseManagementOutbox)); }catch(e){}
-}
+async function flushSupabaseStageOutbox(){return hotfixDrain();}
+
+function persistSupabaseManagementOutbox(){return hotfixPersist(SUPABASE_MANAGEMENT_OUTBOX_KEY,supabaseManagementOutbox);}
 function dmyToIso(v){
   const p=parseDMY(v); return p ? `${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}` : null;
 }
@@ -4623,14 +4634,16 @@ function queueSupabaseManagementPatch(kind,o,ngay=null){
   if(!SUPABASE_VARIANT || !o) return;
   const key=`${kind}|${o.id}|${ngay||''}`;
   const a=assignments[o.id]||{};
+  hotfixBindAccount();
   supabaseManagementOutbox[key]={key,kind,order_id:o.id,work_date:ngay,
     revision:makeOperationId(),
-    client_updated_at:new Date().toISOString(),
+    client_updated_at:new Date().toISOString(),expected_updated_at:a.server_updated_at||null,
     plan_team:a.to_goc||null,current_team:a.to||null,spinoff_order_id:a.spinoff_id||null,
     change_note:a.change_note||'',priority:!!a.priority,
     support_team:ngay&&a.support_by_date?a.support_by_date[ngay]||null:null,
     deleted_at:(kind==='delete'||kind==='cancel')?new Date().toISOString():null,
     cancel_reason:cancelledOrderMeta[o.id]?.reason||''};
+  supabaseManagementOutbox[key]=hotfixBindItem(supabaseManagementOutbox[key]);
   persistSupabaseManagementOutbox();
   saveLocalCache();
   markLocalWrite();
@@ -4655,7 +4668,7 @@ function purgeSupabaseOutboxForOrder(orderId){
 function overlayPendingSupabaseManagement(remote){
   const out={...((remote&&typeof remote==='object')?remote:{})};
   Object.values(supabaseManagementOutbox||{}).forEach(item=>{
-    if(!item||!item.order_id||['delete','cancel','restore'].includes(item.kind)) return;
+    if(!hotfixPending(item)||!item.order_id||['delete','cancel','restore'].includes(item.kind)) return;
     const a=out[item.order_id]||(out[item.order_id]={stage_by_date:{},support_by_date:{}});
     if(!a.stage_by_date)a.stage_by_date={};
     if(!a.support_by_date)a.support_by_date={};
@@ -4674,7 +4687,7 @@ function overlayPendingSupabaseManagement(remote){
 }
 async function sendSupabaseManagementItem(item){
   if(!supabaseDb || !item) return false;
-  const {data:{session}}=await supabaseDb.auth.getSession(); if(!session) return false;
+  const {data:{session}}=await supabaseDb.auth.getSession(); if(!session||session.user.id!==item.owner_account_id)return {error:{code:'SESSION_REQUIRED'}};
   let result;
   if(item.kind==='delete'||item.kind==='cancel'){
     result=await supabaseDb.from('khsx_orders')
@@ -4687,11 +4700,11 @@ async function sendSupabaseManagementItem(item){
     result=await supabaseDb.from('khsx_orders').update({deleted_at:null,cancel_reason:null,cancelled_by:null,updated_at:new Date().toISOString()})
       .eq('id',item.order_id).select('id,deleted_at').maybeSingle();
   }else if(item.kind==='owner'){
-    result=await supabaseDb.rpc('khsx_save_order_assignment_v1',{
+    result=await supabaseDb.rpc('khsx_save_order_assignment_v2',{
       p_operation_id:item.revision||makeOperationId(),p_order_id:item.order_id,
       p_plan_team:uiUnitToSupabase(item.plan_team),p_current_team:uiUnitToSupabase(item.current_team),
       p_spinoff_order_id:item.spinoff_order_id||null,p_change_note:item.change_note||'',p_priority:!!item.priority,
-      p_client_updated_at:item.client_updated_at||new Date().toISOString()
+      p_client_updated_at:item.client_updated_at,p_expected_updated_at:item.expected_updated_at||null
     });
   }else{
     const workDate=dmyToIso(item.work_date); if(!workDate) return true;
@@ -4703,68 +4716,27 @@ async function sendSupabaseManagementItem(item){
       : await supabaseDb.from('khsx_daily_assignments').delete().eq('order_id',item.order_id)
           .eq('work_date',workDate).eq('assignment_kind','support');
   }
-  if(result.error){
-    const code=String(result.error.code||'');
-    console.warn('Supabase chưa nhận thao tác quản lý',result.error);
-    if(code==='40001'||String(result.error.message||'').includes('ASSIGNMENT_CONFLICT')){
-      supabaseStatus('Phân công đã đổi trên thiết bị khác · tải lại để xem dữ liệu mới',false);
-      return 'terminal';
+  if(result.error)return {error:{...result.error,status:result.status}};
+  const ack=Array.isArray(result.data)?result.data[0]:result.data;
+  if(item.kind==='owner'){
+    if(ack?.status==='conflict'){
+      hotfixDirtyTables.add('khsx_order_assignments');scheduleSupabaseReload();
+      return {status:'conflict',error:{code:ack.code||'ASSIGNMENT_CONFLICT',message:'Phân công đã thay đổi; đối chiếu máy chủ rồi nhập lại.'}};
     }
-    // Dữ liệu cục bộ cũ có thể chứa đơn chưa từng được tạo trên Supabase — NHƯNG cũng có
-    // thể chỉ là đơn vừa gán tổ ngay lúc từ Sheet vào, chưa kịp đồng bộ ID lên Supabase.
-    // Cho thử lại trong NGUONG_CHO_DON_CHUA_CO_MS trước khi coi là gói hỏng thật, để không
-    // bắt quản lý gán lại tay chỉ vì lệch nhịp đồng bộ vài giây. Sau khi hết hạn chờ mới
-    // loại hẳn (không được bỏ im lặng: phải báo rõ thao tác nào không lưu được, vì giao
-    // diện máy này vẫn hiện như đã gán trong khi máy khác/nhân viên không hề thấy).
-    if(code==='23503'||code==='22P02'){
-      if((item.kind==='owner'||item.kind==='support')&&conTrongHanChoDonXuatHien(item)){
-        supabaseStatus(`⚠ Đơn ${item.order_id} có thể chưa đồng bộ xong · đang thử lại...`,false);
-        return false;
-      }
-      const ten=item.kind==='owner'?'gán tổ phụ trách':(item.kind==='support'?'gán tổ hỗ trợ':`thao tác ${item.kind}`);
-      supabaseStatus(`⚠ Không lưu được ${ten} cho đơn ${item.order_id} (lỗi ${code}) · cần gán lại sau khi bấm "Làm mới dữ liệu"`,false);
-      return 'terminal';
+    if(!ack||!['applied','duplicate'].includes(ack.status)||String(ack.operation_id)!==String(item.revision))return {error:{code:'ACK_MISSING'}};
+    if(hotfixOwnItem(item)){
+      if(assignments[item.order_id])assignments[item.order_id].server_updated_at=ack.updated_at;
+      const newer=supabaseManagementOutbox[item.key];
+      if(newer&&newer.revision!==item.revision&&newer.expected_updated_at===item.expected_updated_at)newer.expected_updated_at=ack.updated_at;
     }
-    // Lỗi nghiệp vụ khác (vd MANAGER_REQUIRED, INVALID_CURRENT_TEAM, PROGRESS_LOCKED):
-    // gói sẽ được thử lại, nhưng vẫn phải cho người dùng biết đang có thao tác chưa lưu.
-    const thongDiep=String(result.error.message||'').slice(0,80);
-    supabaseStatus(`⚠ Chưa lưu được thao tác trên đơn ${item.order_id}${thongDiep?' ('+thongDiep+')':''} · đang thử lại`,false);
-    return false;
   }
-  const resultRow=Array.isArray(result.data)?result.data[0]:result.data;
-  if(item.kind==='owner'&&(!resultRow||
-    supabaseUnitToUi(resultRow.current_team)!==(item.current_team||null))) return false;
-  if(item.kind==='support'&&item.support_team&&(!result.data||
-    supabaseUnitToUi(result.data.team_name)!==item.support_team)) return false;
-  return true;
+  if(hotfixOwnItem(item)){KhsxHotfixRuntime.affectedTables(item.kind==='owner'?'khsx_order_assignments':item.kind==='support'?'khsx_daily_assignments':'khsx_orders').forEach(t=>hotfixDirtyTables.add(t));scheduleSupabaseReload();}
+  return {status:ack?.status||'applied'};
 }
-async function flushSupabaseManagementOutbox(){
-  if(!SUPABASE_VARIANT || supabaseManagementOutboxInFlight || !Object.keys(supabaseManagementOutbox).length) return;
-  supabaseManagementOutboxInFlight=true;
-  try{
-    for(const [key,item] of Object.entries({...supabaseManagementOutbox})){
-      let ok=false; try{ok=await sendSupabaseManagementItem(item);}catch(e){console.warn('Supabase sẽ gửi lại phân công',e);}
-      // Lỗi phát hiện 2026-09-05: gói lỗi (kể cả lỗi tạm thời chưa phải 'terminal') từng
-      // "break" làm treo TOÀN BỘ hàng đợi - 1 đơn gán tổ lỗi chặn luôn mọi đơn khác chưa
-      // kịp gửi phía sau, dù chúng không liên quan gì tới đơn bị lỗi. Đổi sang "continue"
-      // để chỉ đúng gói lỗi đó chờ vòng gửi kế tiếp (5s sau), các gói khác vẫn gửi ngay.
-      if(!ok) continue;
-      // Phân công cũng là last-write-wins: gói cũ thành công không được xóa
-      // thay đổi mới hơn vừa được người quản lý nhập trên cùng thiết bị.
-      if(supabaseManagementOutbox[key] === item ||
-         (item.revision && supabaseManagementOutbox[key]?.revision === item.revision))
-        delete supabaseManagementOutbox[key];
-      persistSupabaseManagementOutbox();
-      if(ok==='terminal') continue;
-      // Xác nhận rõ ràng khi gán tổ đã lưu thật lên máy chủ, để phân biệt được với
-      // trường hợp chỉ đổi trên giao diện mà không tới được máy chủ.
-      if(item.kind==='owner') supabaseStatus(`Đã lưu tổ phụ trách lên máy chủ (đơn ${item.order_id})`,true);
-      else if(item.kind==='support') supabaseStatus(`Đã lưu tổ hỗ trợ lên máy chủ (đơn ${item.order_id})`,true);
-    }
-  }finally{supabaseManagementOutboxInFlight=false;}
-}
+
+async function flushSupabaseManagementOutbox(){return hotfixDrain();}
 window.addEventListener('online',()=>{flushSupabaseStageOutbox();flushSupabaseManagementOutbox();});
-setInterval(()=>{flushSupabaseStageOutbox();flushSupabaseManagementOutbox();},5000);
+setInterval(()=>{if(typeof hotfixScheduler!=="undefined")hotfixDrain();},5000);
 function runSupabaseOutboxSelfTests(){
   const old=supabaseStageOutbox;
   const fake={id:'__queue_test__',date:'21/08/2026'};
@@ -8325,7 +8297,7 @@ const SOURCE_REFRESH_EVERY = 5;      // mỗi phút đọc lại đơn gốc + n
 // lượt tải lại toàn bộ mỗi 10 lượt (~120s) chỉ để làm lưới dự phòng, tránh 2 nguồn tải lại
 // chồng nhau liên tục. Xác thực phiên (bảo mật, thu hồi tài khoản) KHÔNG bị ảnh hưởng —
 // giữ đúng chu kỳ SUPABASE_REVALIDATE_EVERY như cũ.
-const SUPABASE_SAFETY_RELOAD_EVERY = 10;
+const SUPABASE_SAFETY_RELOAD_EVERY = 25; // 5 minutes
 let pollCount = 0;
 let pollInFlight = false;
 let pollingStarted = false;
@@ -8363,7 +8335,8 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
   // vượt xa SLA "thu hồi ≤30s" mà chu kỳ SUPABASE_REVALIDATE_EVERY đặt ra. Nay tách
   // riêng: xác thực phiên vẫn chạy đúng chu kỳ dù tab ẩn, chỉ phần tải lại dữ liệu vận
   // hành (đã có Realtime lo) mới được bỏ qua khi tab ẩn.
-  const taiAn = document.hidden && supabaseRealtimeHealthy;
+  const taiAn = document.hidden;
+  if(SUPABASE_VARIANT&&(taiAn||!hotfixVerifiedVisible||!hotfixTransport.available()))return;
   if(pollInFlight) return;
   pollInFlight = true;
   try{
@@ -8371,7 +8344,7 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
     pollCount++;
     if(!taiAn) checkAppVersion();
     if(supabasePrimaryActive && pollCount % SUPABASE_REVALIDATE_EVERY === 1){
-      await revalidateSupabaseSession();
+      if(!await revalidateSupabaseSession()){hotfixVerifiedVisible=false;stopSupabaseRealtime({suspend:true});return;}
       if(!currentUser) return;
     }else if(!supabasePrimaryActive && pollCount % REVALIDATE_EVERY === 1){
       // Xác thực nền tách khỏi đồng bộ: lỗi mạng tuyệt đối không xoá phiên đăng nhập.
@@ -8379,12 +8352,12 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
       if(!currentUser) return;
     }
     if(taiAn) return; // đã xác thực xong; phần tải lại dữ liệu vận hành để Realtime lo, khỏi tốn mạng nền
-    const refreshSource = forceSourceRefresh || pollCount % SOURCE_REFRESH_EVERY === 1;
+    const refreshSource = forceSourceRefresh || pollCount % (hotfixMode==="normal"?SOURCE_REFRESH_EVERY:25) === 1;
     if(refreshSource){
       const jobs=[fetchBaoHanh({silent:true})];
       // Quản lý đối chiếu Sheet: thêm đơn mới, hủy mềm dòng bị bỏ chưa có
       // tiến độ; máy chủ giữ ngày khóa và đơn cần kiểm tra. QL2/nhân viên chỉ đọc.
-      if(supabasePrimaryActive){if(canManage())jobs.push(syncMissingSheetOrdersToSupabase({silent:true}));}
+      if(supabasePrimaryActive){if(canManage()&&hotfixMode!=="read_only")jobs.push(syncMissingSheetOrdersToSupabase({silent:true}));}
       else jobs.push(fetchAutoPlan(),fetchOrderGroups());
       await Promise.allSettled(jobs);
     }
@@ -8412,7 +8385,8 @@ async function pollForUpdates({forceSourceRefresh=false}={}){
       // thực tế đã bỏ lỡ sự kiện, rất hay gặp trên WebView Telegram chạy nền) và chưa tới
       // đúng chu kỳ an toàn (~120s), máy vẫn KHÔNG tải lại đơn hàng thật dù vừa mở app lại
       // ngay lập tức — đúng nguyên nhân 1 máy khác không thấy đơn/tổ hỗ trợ vừa được gán.
-      const canBoQuaTaiLai = !forceSourceRefresh && supabaseRealtimeHealthy && pollCount % SUPABASE_SAFETY_RELOAD_EVERY !== 1;
+      const canBoQuaTaiLai = !forceSourceRefresh && Date.now()-hotfixFullReadAt < (hotfixMode!=="normal"?600000:supabaseRealtimeHealthy?300000:120000);
+      if(hotfixDirtyTables.size)scheduleSupabaseReload();
       if(canBoQuaTaiLai){ markSyncedOrPending(); return; }
       const ok=await refreshFromPrimarySupabase();
       if(ok) markSyncedOrPending();
@@ -8535,9 +8509,9 @@ function startPolling(){
   setInterval(pollForUpdates, POLL_INTERVAL_MS);
   // quay lại tab (mở app khác rồi mở lại) → kiểm tra ngay, không cần chờ đủ 20s
   document.addEventListener('visibilitychange', ()=>{
-    if(!document.hidden) pollForUpdates({forceSourceRefresh:true});
+    if(!document.hidden&&!SUPABASE_VARIANT)pollForUpdates({forceSourceRefresh:true});
   });
-  window.addEventListener('online',()=>pollForUpdates({forceSourceRefresh:true}));
+  window.addEventListener('online',()=>{if(!SUPABASE_VARIANT)pollForUpdates({forceSourceRefresh:true});});
 }
 
 // Tự mở danh sách đúng 07:00 mà không cần tải lại trang; chỉ vẽ lại khi trạng thái ngày/giờ đổi.
@@ -9383,6 +9357,7 @@ document.getElementById('quarterTargetNam')?.addEventListener('change',renderQua
 // vì gắn vào click nút, xem tab-click-handler và restoreUiState().
 function initSettingsPage(){
   if(!canManage()) return;
+  renderHotfixStatus();refreshHotfixMode();
   const {nam, quy} = quyCuaNgay(new Date());
   document.getElementById('quarterTargetQuy').value = quy;
   document.getElementById('quarterTargetNam').value = nam;
@@ -10304,11 +10279,11 @@ async function readGuestWarranty(){
   }catch(e){console.warn('Khách chưa tải được bảo hành mới; giữ bản gần nhất.');}
 }
 async function refreshGuestDashboard(){
-  if(!PUBLIC_VIEW_MODE||guestDashboardBusy)return false;
+  if(!PUBLIC_VIEW_MODE||guestDashboardBusy||document.hidden||!hotfixTransport.available())return false;
   guestDashboardBusy=true;
   try{
     // RPC chỉ đọc công khai: không dùng phiên quản lý, outbox hay các bản ghi chờ trên máy.
-    if(!guestDashboardClient)guestDashboardClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+    if(!guestDashboardClient)guestDashboardClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{global:{fetch:hotfixTransport.fetch},auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
     const {data:g,error}=await guestDashboardClient.rpc('khsx_guest_dashboard_v116');
     if(error||!g||!Array.isArray(g.orders)||!Array.isArray(g.stage_progress))throw error||new Error('Gói dữ liệu khách không đầy đủ');
     const next={},toUi=supabaseUnitToUi;
@@ -10340,10 +10315,14 @@ async function refreshGuestDashboard(){
 }
 function startGuestDashboardPolling(){
   clearInterval(guestDashboardTimer);
-  guestDashboardTimer=setInterval(()=>{if(!document.hidden)refreshGuestDashboard();},30000);
+  guestDashboardTimer=setInterval(()=>{if(!document.hidden)refreshGuestDashboard();},120000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGuestDashboard();});
 }
 
+window.khsxStartAfterHotfix=()=>new Promise((resolve,reject)=>{
+ const script=document.createElement('script');script.src='js/khsx-hotfix-app.js?v=160';
+ script.onload=()=>bootstrap().then(resolve,reject);script.onerror=()=>reject(new Error('Không tải được Hotfix; hãy làm mới trang.'));document.head.append(script);
+});
 async function bootstrap(){
   // Chờ dọn xong cache trình duyệt/PWA rồi mới dựng dữ liệu. Nếu không, lối tắt
   // điện thoại có thể tiếp tục lấy HTML và dữ liệu của bản cũ trong cùng lượt mở.
@@ -10444,7 +10423,7 @@ async function bootstrap(){
       try{
         const telegramUser=await loginWithTelegram();
         if(telegramUser){
-          currentUser=telegramUser; saveLoginSession(telegramUser); coSession=true;
+          currentUser=telegramUser;hotfixVerifiedVisible=true;hotfixBindAccount(); saveLoginSession(telegramUser); coSession=true;
           document.getElementById('loginOverlay').style.display='none'; applyRoleUI();
         }
       }catch(e){
@@ -10525,7 +10504,7 @@ async function bootstrap(){
   startPolling();
 }
 initCapacityDetails();
-bootstrap().finally(()=>{ window.__khsxBootstrapDone=true; });
+window.khsxStartAfterHotfix().catch(error=>{console.error('Hotfix bootstrap failed',error);supabaseStatus('Chưa tải được bản cập nhật · hãy tải lại trang',false);}).finally(()=>{ window.__khsxBootstrapDone=true; });
 
 // ---- Xử lý xoay màn hình (điện thoại/tablet) ----
 // Một số trình duyệt di động báo kích thước cũ trong khoảnh khắc vừa xoay xong;
@@ -10546,4 +10525,3 @@ if(window.screen && window.screen.orientation){
 </script>
 </body>
 </html>
-

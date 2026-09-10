@@ -16,7 +16,7 @@ const checks = [
   ['Một đơn không bị đổi sang tổ hỗ trợ khác', /assignedSupportTeams\.length[\s\S]{0,220}!assignedSupportTeams\.includes\(val\)/.test(html) && /SUPPORT_TEAM_CONFLICT/.test(schema)],
   ['Tổ hỗ trợ chỉ được ghi nhận cho công đoạn Dán', /function\s+toPhuTrachCongDoanTheoNgay[\s\S]{0,260}congDoan === 'dan'/],
   ['Gán hỗ trợ đi qua RPC giao dịch Supabase', /khsx_assign_support_v1/],
-  ['Gán tổ chính dùng khóa phiên bản máy chủ', /khsx_save_order_assignment_v1/.test(html) && /ASSIGNMENT_CONFLICT/.test(schema)],
+  ['Gán tổ chính dùng khóa phiên bản máy chủ', /khsx_save_order_assignment_v2/.test(html) && /p_expected_updated_at:item.expected_updated_at/.test(html) && /ASSIGNMENT_CONFLICT/.test(schema)],
 ];
 
 let failed = 0;
