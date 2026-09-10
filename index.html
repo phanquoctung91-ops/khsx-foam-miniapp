@@ -4427,6 +4427,12 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
 }
 async function refreshFromPrimarySupabase(){
   if(!supabasePrimaryActive) return false;
+  // Khong duoc tai lai toan bo dung luc mot RPC ghi cong doan/phan cong vua gui con
+  // dang bay - server chua kip co du lieu moi, tai lai se lay ban CU de len man hinh,
+  // trong khi thao tac local (assignments) da hien dung -> nguoi dung thay so vua
+  // nhap "bien mat". Dung chung dieu kien voi scheduleSupabaseReload.
+  if(Date.now()<localWriteUntil || Object.values(supabaseStageOutbox).some(x=>x.status!=='failed') ||
+     Object.keys(supabaseManagementOutbox).length) return true;
   const ok=await loadSupabaseOperationalData();
   if(!ok){
     supabaseStatus('Mất kết nối Supabase · đang giữ dữ liệu hiện tại',false);
