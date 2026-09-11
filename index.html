@@ -1629,7 +1629,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=160"></script>
+<script src="raw-data.js?v=161"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3647,7 +3647,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 160;
+const APP_VERSION = 161;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -9500,10 +9500,12 @@ document.getElementById('quarterTargetNam')?.addEventListener('change',renderQua
 let permCatalog=[], permCatalogLoaded=false, permCurrentUserId='', permCurrentVersion=0;
 
 async function loadPermissionCatalogOnce(){
-  if(permCatalogLoaded||!supabaseDb) return;
+  if(permCatalogLoaded) return true;
+  if(!supabaseDb) return false;
   const {data,error}=await supabaseDb.from('khsx_permissions').select('permission_key,display_name,group_name,description,sort_order').order('sort_order');
-  if(error){ console.warn('Không tải được danh mục quyền',error); return; }
-  permCatalog=data||[]; permCatalogLoaded=true;
+  if(error||!Array.isArray(data)||!data.length){ console.warn('Không tải được danh mục quyền',error); return false; }
+  permCatalog=data; permCatalogLoaded=true;
+  return true;
 }
 
 function renderPermAccountOptions(){
@@ -9549,15 +9551,25 @@ async function onPermAccountChange(){
     return;
   }
   info.textContent='Đang tải...'; info.style.color='var(--text2)'; saveBtn.disabled=true;
-  await loadPermissionCatalogOnce();
-  const {data,error}=await supabaseDb.rpc('khsx_get_account_permissions',{p_target_user_id:uid});
+  const [catalogOk, res]=await Promise.all([
+    loadPermissionCatalogOnce(),
+    supabaseDb.rpc('khsx_get_account_permissions',{p_target_user_id:uid})
+  ]);
+  const {data,error}=res;
   if(error||!data){
-    info.textContent='Chưa tải được quyền hiện có: '+(error?.message||'lỗi không xác định');
+    info.textContent='Chưa tải được quyền hiện có: '+(error?.message||'lỗi không xác định')+' · chưa thể Lưu, thử chọn lại tài khoản.';
     info.style.color='var(--danger)';
-    return;
+    document.getElementById('permGroupsWrap').innerHTML='';
+    return; // saveBtn giu nguyen disabled
   }
   permCurrentVersion=data.version||0;
   const granted=new Set(data.permission_keys||[]);
+  if(!catalogOk || !permCatalog.length){
+    document.getElementById('permGroupsWrap').innerHTML='<div style="color:var(--danger);font-size:12.5px;">Không tải được danh mục quyền để hiển thị ô tích — CHƯA Lưu được lúc này, thử tải lại trang rồi chọn lại tài khoản.</div>';
+    info.textContent=`Đang có ${granted.size} quyền (chưa hiện được ô tích) · phiên bản ${permCurrentVersion}`;
+    info.style.color='var(--danger)';
+    return; // saveBtn giu nguyen disabled - khong duoc cho Luu khi chua chac chan dang hien du
+  }
   renderPermGroups(granted);
   info.textContent=`Đang có ${granted.size} quyền · phiên bản ${permCurrentVersion}`;
   info.style.color='var(--text2)';
@@ -9568,6 +9580,15 @@ async function savePermAccountPermissions(){
   const saveBtn=document.getElementById('permSaveBtn');
   const status=document.getElementById('permSaveStatus');
   if(!permCurrentUserId) return;
+  const allChecks=document.querySelectorAll('.perm-check');
+  // Lop bao ve thu 2: neu man hinh khong co lay 1 o tich nao (danh muc chua tai
+  // duoc du), TUYET DOI khong duoc gui danh sach rong len RPC - se bi hieu la
+  // "bo tick het" va thu hoi that toan bo quyen dang co. (Su co 2026-09-11.)
+  if(!allChecks.length){
+    status.textContent='Màn hình chưa hiện đủ danh sách quyền — KHÔNG lưu để tránh xoá nhầm. Thử chọn lại tài khoản hoặc tải lại trang.';
+    status.style.color='var(--danger)';
+    return;
+  }
   const checked=[...document.querySelectorAll('.perm-check:checked')].map(c=>c.dataset.key);
   saveBtn.disabled=true; status.textContent='Đang lưu...'; status.style.color='var(--text2)';
   const {data,error}=await supabaseDb.rpc('khsx_save_account_permissions',{
