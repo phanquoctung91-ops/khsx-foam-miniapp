@@ -1460,6 +1460,25 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
      Sửa 2026-09-07 (Phần 3): bỏ khối Xuất báo cáo ra trang riêng (panel-report ở trên). -->
 <div class="panel" id="panel-settings">
   <h3 style="margin:0 0 14px;font-size:17px;">⚙️ Cài đặt hệ thống</h3>
+  <div class="card" id="permissionsCard" style="display:none;">
+    <h3 style="margin:0 0 12px;">🔐 Phân quyền tài khoản</h3>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:12px;">
+      Chọn 1 tài khoản đã duyệt, tích quyền cần cấp rồi bấm Lưu. Bỏ tích + Lưu sẽ thu hồi đúng quyền đó ngay từ lượt sau.
+      Quyền tổ/công đoạn của tài khoản giữ nguyên như hiện có, không đổi qua màn hình này.
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+      <label style="font-size:12.5px;color:var(--text2);">Tài khoản:</label>
+      <select id="permAccountSelect" style="min-width:240px;padding:7px 9px;">
+        <option value="">— Chọn tài khoản —</option>
+      </select>
+      <span class="save-status" id="permAccountInfo"></span>
+    </div>
+    <div id="permGroupsWrap" style="margin-top:10px;"></div>
+    <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
+      <button id="permSaveBtn" class="primary-btn" disabled>Lưu quyền</button>
+      <span class="save-status" id="permSaveStatus"></span>
+    </div>
+  </div>
   <div class="card">
     <h3 style="margin:0 0 12px;">💾 Sao lưu &amp; bàn giao</h3>
     <div style="background:#1c1b18;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
@@ -1610,7 +1629,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=158"></script>
+<script src="raw-data.js?v=160"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3628,7 +3647,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 159;
+const APP_VERSION = 160;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3874,8 +3893,14 @@ async function sendUserCommand(payload){
   await loadStaffUsers();
 }
 
+const KHSX_PERMISSION_OWNER_ID='7ebce211-e3b0-4195-9207-ff46506e13d6'; // chu tai khoan, xac minh tren production 2026-09-11
 function applyRoleUI(){
   const role = currentUser ? currentUser.role : 'chi_xem';
+  // Phong khi doi tai khoan giua phien khong tai lai trang: dong khoi Phan quyen
+  // ngay lap tuc voi bat ky ai khong phai chu tai khoan, khong doi den luc mo tab
+  // Cai dat (RPC server van la lop chan that su, day chi la don giao dien).
+  const permCard=document.getElementById('permissionsCard');
+  if(permCard && String(currentUser?.auth_user_id||'')!==KHSX_PERMISSION_OWNER_ID) permCard.style.display='none';
   document.body.classList.remove('role-quan-ly','role-quan-ly-2','role-nhan-vien','role-chi-xem');
   document.body.classList.add('role-' + role.replace(/_/g,'-'));
   document.body.classList.remove('stage-view-dan','stage-view-may','stage-view-dong-goi');
@@ -9467,8 +9492,118 @@ document.getElementById('quarterTargetNam')?.addEventListener('change',renderQua
 // Sửa 2026-09-07 (Việc 9.1): "Cài đặt" không còn nút lối tắt (quarterTargetBtn đã xoá,
 // sidebar đã có sẵn trang riêng data-tab="settings") — khởi tạo trang gọi hàm này thay
 // vì gắn vào click nút, xem tab-click-handler và restoreUiState().
+// ============================================================================
+// Phan quyen tai khoan - chi Tung (chu tai khoan) thay va sua duoc man hinh nay.
+// Enforcement thuc su nam o RPC/RLS server; an nut o day chi la lop giao dien,
+// khong phai bien phap bao mat duy nhat.
+// ============================================================================
+let permCatalog=[], permCatalogLoaded=false, permCurrentUserId='', permCurrentVersion=0;
+
+async function loadPermissionCatalogOnce(){
+  if(permCatalogLoaded||!supabaseDb) return;
+  const {data,error}=await supabaseDb.from('khsx_permissions').select('permission_key,display_name,group_name,description,sort_order').order('sort_order');
+  if(error){ console.warn('Không tải được danh mục quyền',error); return; }
+  permCatalog=data||[]; permCatalogLoaded=true;
+}
+
+function renderPermAccountOptions(){
+  const sel=document.getElementById('permAccountSelect');
+  if(!sel) return;
+  const keep=sel.value;
+  const accounts=(supabaseAdminProfiles||[])
+    .filter(p=>p.active!==false && String(p.user_id)!==KHSX_PERMISSION_OWNER_ID)
+    .sort((a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''),'vi'));
+  sel.innerHTML='<option value="">— Chọn tài khoản —</option>'+accounts.map(p=>{
+    const vai=ROLE_LABELS[p.role]||p.role;
+    const to=p.unit_name?` · ${supabaseUnitToUi(p.unit_name)||p.unit_name}`:'';
+    return `<option value="${p.user_id}">${thoatHtml(p.display_name||p.user_id)} — ${vai}${to}</option>`;
+  }).join('');
+  if(keep && accounts.some(p=>String(p.user_id)===keep)) sel.value=keep;
+}
+
+function renderPermGroups(grantedKeys){
+  const wrap=document.getElementById('permGroupsWrap');
+  if(!wrap) return;
+  const groups={};
+  permCatalog.forEach(p=>{ (groups[p.group_name]=groups[p.group_name]||[]).push(p); });
+  wrap.innerHTML=Object.entries(groups).map(([g,items])=>`
+    <div style="margin-bottom:14px;">
+      <div style="font-weight:700;font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">${thoatHtml(g)}</div>
+      ${items.map(p=>`
+        <label style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer;">
+          <input type="checkbox" class="perm-check" data-key="${p.permission_key}" ${grantedKeys.has(p.permission_key)?'checked':''} style="margin-top:2px;flex:none;">
+          <span><strong>${thoatHtml(p.display_name)}</strong><br><span style="color:var(--text2);font-size:11.5px;">${thoatHtml(p.description)}</span></span>
+        </label>`).join('')}
+    </div>`).join('');
+}
+
+async function onPermAccountChange(){
+  const sel=document.getElementById('permAccountSelect');
+  const info=document.getElementById('permAccountInfo');
+  const saveBtn=document.getElementById('permSaveBtn');
+  const status=document.getElementById('permSaveStatus');
+  const uid=sel.value;
+  permCurrentUserId=uid; status.textContent='';
+  if(!uid){
+    document.getElementById('permGroupsWrap').innerHTML=''; saveBtn.disabled=true; info.textContent='';
+    return;
+  }
+  info.textContent='Đang tải...'; info.style.color='var(--text2)'; saveBtn.disabled=true;
+  await loadPermissionCatalogOnce();
+  const {data,error}=await supabaseDb.rpc('khsx_get_account_permissions',{p_target_user_id:uid});
+  if(error||!data){
+    info.textContent='Chưa tải được quyền hiện có: '+(error?.message||'lỗi không xác định');
+    info.style.color='var(--danger)';
+    return;
+  }
+  permCurrentVersion=data.version||0;
+  const granted=new Set(data.permission_keys||[]);
+  renderPermGroups(granted);
+  info.textContent=`Đang có ${granted.size} quyền · phiên bản ${permCurrentVersion}`;
+  info.style.color='var(--text2)';
+  saveBtn.disabled=false;
+}
+
+async function savePermAccountPermissions(){
+  const saveBtn=document.getElementById('permSaveBtn');
+  const status=document.getElementById('permSaveStatus');
+  if(!permCurrentUserId) return;
+  const checked=[...document.querySelectorAll('.perm-check:checked')].map(c=>c.dataset.key);
+  saveBtn.disabled=true; status.textContent='Đang lưu...'; status.style.color='var(--text2)';
+  const {data,error}=await supabaseDb.rpc('khsx_save_account_permissions',{
+    p_target_user_id:permCurrentUserId, p_permission_keys:checked, p_expected_version:permCurrentVersion
+  });
+  saveBtn.disabled=false;
+  if(error){
+    if(String(error.code)==='PT409'||String(error.message||'').includes('PERMISSION_VERSION_CONFLICT')){
+      status.textContent='⚠ Quyền tài khoản này vừa bị đổi ở nơi khác — chọn lại tài khoản để tải bản mới nhất rồi sửa lại.';
+    }else{
+      status.textContent='Chưa lưu được: '+(error.message||error.code||'lỗi không xác định');
+    }
+    status.style.color='var(--danger)';
+    return;
+  }
+  permCurrentVersion=data.version;
+  status.textContent=`Đã lưu · thêm ${data.added?.length||0}, bỏ ${data.removed?.length||0} quyền.`;
+  status.style.color='var(--success)';
+  document.getElementById('permAccountInfo').textContent=`Đang có ${checked.length} quyền · phiên bản ${permCurrentVersion}`;
+}
+
+async function initPermissionsPanel(){
+  const card=document.getElementById('permissionsCard');
+  if(!card) return;
+  const isOwner=String(currentUser?.auth_user_id||'')===KHSX_PERMISSION_OWNER_ID;
+  card.style.display=isOwner?'block':'none';
+  if(!isOwner) return;
+  if(!supabaseAdminProfiles || !supabaseAdminProfiles.length) await loadSupabaseTelegramAdminData();
+  renderPermAccountOptions();
+}
+document.getElementById('permAccountSelect')?.addEventListener('change', onPermAccountChange);
+document.getElementById('permSaveBtn')?.addEventListener('click', savePermAccountPermissions);
+
 function initSettingsPage(){
   if(!canManage()) return;
+  initPermissionsPanel();
   const {nam, quy} = quyCuaNgay(new Date());
   document.getElementById('quarterTargetQuy').value = quy;
   document.getElementById('quarterTargetNam').value = nam;
