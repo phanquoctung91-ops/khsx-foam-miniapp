@@ -273,8 +273,8 @@
   #autoPlanTable .col-number, #progressTable .col-number{width:80px;min-width:0;max-width:none;text-align:center;}
   #progressTable .col-number[data-stage-col]{width:88px;}
   #autoPlanTable .col-group{width:92px;text-align:center;white-space:normal;}
-  #autoPlanTable .col-team, #progressTable .col-team{width:92px;min-width:0;max-width:none;text-align:center;white-space:normal;}
-  #autoPlanTable .col-support, #progressTable .col-support{width:92px;min-width:0;max-width:none;text-align:center;white-space:normal;}
+  #autoPlanTable .col-team, #progressTable .col-team{width:128px;min-width:0;max-width:none;text-align:center;white-space:normal;}
+  #autoPlanTable .col-support, #progressTable .col-support{width:128px;min-width:0;max-width:none;text-align:center;white-space:normal;}
   #autoPlanTable .col-progress{width:140px;text-align:center;white-space:normal;}
   #autoPlanTable .col-status, #progressTable .col-status{width:180px;white-space:normal;overflow-wrap:break-word;}
   #autoPlanTable .col-action, #progressTable .col-action{width:76px;min-width:0;text-align:center;white-space:normal;}
@@ -435,14 +435,13 @@
   select.to-select{width:100%;min-width:0;max-width:100%;padding-left:7px;padding-right:24px;}
   select.to-select-empty{color:var(--text2);font-style:italic;}
   select.spinoff-to-select, select.support-day-select{width:100%;min-width:0;max-width:100%;font-size:11px;padding:4px 22px 4px 5px;border-radius:6px;}
-  .to-tick-row{display:flex;flex-wrap:wrap;gap:5px;}
+  .to-tick-row{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;}
   button.to-tick-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text2);
-    font-size:11px;font-weight:700;padding:5px 10px 5px 8px;cursor:pointer;white-space:nowrap;
-    display:inline-flex;align-items:center;gap:4px;transition:background .12s,border-color .12s,color .12s;}
-  button.to-tick-btn::before{content:'✓';color:transparent;font-weight:800;}
+    font-size:11px;font-weight:700;padding:4px 8px;cursor:pointer;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:3px;transition:background .12s,border-color .12s,color .12s;}
   button.to-tick-btn:hover{border-color:var(--primary);color:var(--text);}
   button.to-tick-btn.active{background:var(--primary);color:#0c2424;border-color:var(--primary);}
-  button.to-tick-btn.active::before{color:#0c2424;}
+  button.to-tick-btn.active::before{content:'✓';font-weight:800;}
   button.to-tick-btn.to-tick-remove{color:#d9776a;border-color:#5c3230;}
   button.to-tick-btn.to-tick-remove::before{content:none;}
   button.to-tick-btn.to-tick-remove:hover{border-color:#d9776a;}
@@ -3698,7 +3697,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 168;
+const APP_VERSION = 169;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
