@@ -1144,7 +1144,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <button id="addManualOrderBtn" class="primary-btn only-manager" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
       <button id="lockPlanBtn" class="primary-btn only-manager" style="background:var(--text2);">🔒 Chốt đầu vào</button>
-      <button id="phoiBtn" class="primary-btn only-manager" style="background:var(--accent);">🧱 Bảng đặt phôi</button>
+      <button id="phoiBtn" class="primary-btn" style="background:var(--accent);">🧱 Bảng đặt phôi</button>
     </div>
     <div class="day-select-row toolbar-filter-row">
       <label>Ngày:</label>
@@ -1249,7 +1249,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div class="wf-link" data-wf="tdsx">🔗 Workflow hoạt động</div>
     <div class="btn-row">
       <button id="addManualOrderBtnProgress" class="primary-btn only-manager2" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
-      <button id="bulkCompleteBtn" class="primary-btn only-manager2" style="display:none;background:var(--success);">✓ Hoàn thành</button>
+      <button id="bulkCompleteBtn" class="primary-btn" style="display:none;background:var(--success);">✓ Hoàn thành</button>
       <button id="lockProgressBtn" class="primary-btn only-manager2" style="background:var(--text2);">🔒 Chốt tiến độ</button>
       <button id="overtimeBtn" class="primary-btn only-manager2" style="background:var(--warning);">⏱ Ghi nhận OT</button>
       <button id="refreshProgressBtn" class="primary-btn">↻ Làm mới</button>
@@ -3647,7 +3647,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 162;
+const APP_VERSION = 163;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3901,20 +3901,27 @@ const KHSX_PERMISSION_OWNER_ID='7ebce211-e3b0-4195-9207-ff46506e13d6'; // chu ta
 // ============================================================================
 let myPermissionKeys=new Set();
 function hasPerm(key){ return myPermissionKeys.has(key); }
+function hasPermOrOwner(key){ return String(currentUser?.auth_user_id||'')===KHSX_PERMISSION_OWNER_ID || hasPerm(key); }
 const PERM_TAB_RULES={
   monthly:['view_overview'], autoplan:['khsx_view_plan'], capacity:['capacity_view'],
   report:['report_export','report_sign_off'], wage:['payroll_view'], staff:['hr_view'],
   settings:['settings_backup_download','settings_backup_restore','settings_import_khsx_file','settings_edit_targets'],
 };
+// Dot 4.3: nut (khong phai tab) cung an/hien theo permission_key, cung co che.
+const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], bulkCompleteBtn:['progress_bulk_complete'] };
 function applyPermissionTabGates(){
-  const isOwner=String(currentUser?.auth_user_id||'')===KHSX_PERMISSION_OWNER_ID;
   let activeHidden=false;
   Object.entries(PERM_TAB_RULES).forEach(([tab,keys])=>{
     const btn=document.querySelector(`.tab-btn[data-tab="${tab}"]`);
     if(!btn) return;
-    const allowed=isOwner||keys.some(k=>hasPerm(k));
+    const allowed=keys.some(hasPermOrOwner);
     btn.style.setProperty('display', allowed?'':'none', 'important');
     if(!allowed && btn.classList.contains('active')) activeHidden=true;
+  });
+  Object.entries(PERM_BUTTON_RULES).forEach(([id,keys])=>{
+    const btn=document.getElementById(id);
+    if(!btn) return;
+    btn.style.setProperty('display', keys.some(hasPermOrOwner)?'':'none', 'important');
   });
   if(activeHidden){
     const visible=[...document.querySelectorAll('.tab-btn')].find(b=>getComputedStyle(b).display!=='none');
@@ -8335,7 +8342,7 @@ document.querySelector('#progressTable tbody').addEventListener('change', async 
 
 // ---- Nút "Hoàn thành": khép đủ cả ba công đoạn cho đúng ngày đang chọn ----
 document.getElementById('bulkCompleteBtn').addEventListener('click', async ()=>{
-  if(!canManage2()) return;
+  if(!hasPermOrOwner('progress_bulk_complete')) return;
   const ngay = progressDaySelect.value;
   if(ngay === 'all'){
     alert('Vui lòng chọn một ngày cụ thể trước khi điền nhanh Hoàn thành.');
@@ -10255,7 +10262,7 @@ function dungBangDonHang(tu, den, ngan){
 }
 
 function moBangDatPhoi(){
-  if(!canManage2()) return;
+  if(!hasPermOrOwner('phoi_board_use')) return;
   const dates = Array.from(new Set(getOrders().map(o=>o.date)))
     .sort((a,b)=> a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
   const opt = dates.map(d=>`<option value="${d}">${d}</option>`).join('');
