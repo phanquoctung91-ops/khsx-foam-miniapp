@@ -435,6 +435,11 @@
   select.to-select{width:100%;min-width:0;max-width:100%;padding-left:7px;padding-right:24px;}
   select.to-select-empty{color:var(--text2);font-style:italic;}
   select.spinoff-to-select, select.support-day-select{width:100%;min-width:0;max-width:100%;font-size:11px;padding:4px 22px 4px 5px;border-radius:6px;}
+  .to-tick-row{display:flex;flex-wrap:wrap;gap:4px;}
+  button.to-tick-btn{border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text2);
+    font-size:11px;font-weight:700;padding:4px 7px;cursor:pointer;white-space:nowrap;}
+  button.to-tick-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  button.to-tick-btn.active::before{content:'✓ ';}
   input.qty-input{width:100%;min-width:0;max-width:100%;padding:6px 5px;text-align:center;}
   .stage-cell{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-width:0;margin:0 auto;}
   .stage-cell input.qty-input{transition:border-color .15s,box-shadow .15s,background .15s;}
@@ -2630,6 +2635,17 @@ const SHEET_GID = '1960770014';
 const SIMULATED_AUTOPLAN_DATA = [{"date":"27/07/2026","ma":"LUN15-6","dong":"LUNA","ngang":160,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"LUN20-8","dong":"LUNA","ngang":180,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"LUN15-4","dong":"LUNA","ngang":140,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"SORA15-2020","dong":"SORA","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"EZ20-3","dong":"LATEX ENZO","ngang":160,"dai":200,"day":20,"so_luong":41,"trang_thai":"","ghi_chu":"Vải premium cũ, có khoá kéo, đóng bao keo trong"},{"date":"27/07/2026","ma":"EZ20-5","dong":"LATEX ENZO","ngang":200,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":"Làm nệm tròn đường kính 2m, Vải premium cũ, có khoá kéo"},{"date":"27/07/2026","ma":"CLS15-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA10-63","dong":"SORA","ngang":63,"dai":183,"day":10,"so_luong":60,"trang_thai":"","ghi_chu":"Tái 1 con std 90x190x10, (áo standard không đít thêu + thêm tem cty khách)"},{"date":"28/07/2026","ma":"SORA10-6","dong":"SORA","ngang":160,"dai":200,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-6","dong":"SORA","ngang":160,"dai":200,"day":15,"so_luong":27,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA15-8","dong":"SORA","ngang":180,"dai":200,"day":15,"so_luong":27,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-8","dong":"SORA","ngang":180,"dai":200,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":200,"day":10,"so_luong":15,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS15-2022","dong":"CLASSIC","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS15-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS10-6","dong":"CLASSIC","ngang":160,"dai":200,"day":10,"so_luong":15,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"CLS15-8","dong":"CLASSIC","ngang":180,"dai":200,"day":15,"so_luong":9,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE17-8","dong":"3'ZONE","ngang":180,"dai":200,"day":17,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2022","dong":"SORA","ngang":220,"dai":200,"day":10,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"LAGO10-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"LAGO15-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":15,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-2020","dong":"SORA","ngang":200,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"ZONE12-6","dong":"3'ZONE","ngang":160,"dai":200,"day":12,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"ZONE17-6","dong":"3'ZONE","ngang":160,"dai":200,"day":17,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"LAGO10-4","dong":"LATEX GOLD","ngang":140,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"STD20-2020","dong":"STANDARD","ngang":200,"dai":200,"day":20,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"ZONE17-6","dong":"3'ZONE","ngang":160,"dai":200,"day":17,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS10-2022","dong":"CLASSIC","ngang":220,"dai":200,"day":10,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"STD15-2022","dong":"STANDARD","ngang":220,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":180,"day":10,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA10-63","dong":"SORA","ngang":63,"dai":183,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD15-2022","dong":"STANDARD","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD20-2","dong":"STANDARD","ngang":120,"dai":200,"day":20,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD10-2022","dong":"STANDARD","ngang":220,"dai":240,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LAEZ10-2022","dong":"LATEX ENZO","ngang":220,"dai":200,"day":10,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LAEZ15-2022","dong":"LATEX ENZO","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"ZONE17-8","dong":"3'ZONE","ngang":180,"dai":200,"day":17,"so_luong":2,"trang_thai":"","ghi_chu":"Ưu tiên sáng sản xuất"},{"date":"29/07/2026","ma":"PRE15-4","dong":"PREMIUM","ngang":140,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":"Ưu tiên sáng sản xuất"},{"date":"29/07/2026","ma":"STD10-2","dong":"STANDARD","ngang":110,"dai":170,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":"tái chế con std 140x175x10"},{"date":"29/07/2026","ma":"STD10-1","dong":"STANDARD","ngang":90,"dai":180,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":"tái chế con classic 150x190x10"},{"date":"29/07/2026","ma":"STD15-6","dong":"STANDARD","ngang":150,"dai":190,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"EZ20-3","dong":"LATEX ENZO","ngang":160,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":"Vải premium cũ, có khoá kéo, đóng bao keo trong"},{"date":"29/07/2026","ma":"PRE15-2022","dong":"PREMIUM","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"CLS20-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":20,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LUN10-2","dong":"LUNA","ngang":120,"dai":200,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"PRE10-6","dong":"PREMIUM","ngang":150,"dai":197,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":180,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"LAGO15-4","dong":"LATEX GOLD","ngang":140,"dai":190,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE17-2022","dong":"3'ZONE","ngang":220,"dai":200,"day":17,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE12-2020","dong":"3'ZONE","ngang":200,"dai":200,"day":12,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-4","dong":"SORA","ngang":140,"dai":192,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"KH12-4","dong":"KING HOME","ngang":140,"dai":200,"day":12,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"KH12-6","dong":"KING HOME","ngang":160,"dai":200,"day":12,"so_luong":6,"trang_thai":"","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO10-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-2020","dong":"STANDARD","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"SORA10-1","dong":"SORA","ngang":100,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-4","dong":"STANDARD","ngang":140,"dai":200,"day":15,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"SORA10-4","dong":"SORA","ngang":140,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO15-8","dong":"LATEX GOLD","ngang":180,"dai":200,"day":15,"so_luong":9,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO20-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":20,"so_luong":5,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO15-2022","dong":"LATEX GOLD","ngang":220,"dai":200,"day":15,"so_luong":3,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-6","dong":"STANDARD","ngang":160,"dai":200,"day":15,"so_luong":9,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO20-8","dong":"LATEX GOLD","ngang":180,"dai":200,"day":20,"so_luong":5,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO10-2022","dong":"LATEX GOLD","ngang":220,"dai":200,"day":10,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""}];
 
 const TEAM_OPTIONS = ['Tổ 1','Tổ 2','Tổ 3','Tổ 4','Tổ 5'];
+// Dau tick thay dropdown gan to: tick sang to khac -> doi to lam ngay (khong
+// con <select>). cls giu nguyen ten class cu (to-select/support-day-select) de
+// khong phai doi cho bat/su ly su kien, chi doi tu 'change' sang 'click' va
+// doc data-team thay vi .value.
+function toTickRowHtml(cls, dataAttrs, options, selected){
+  const attrs = Object.entries(dataAttrs).map(([k,v])=>`data-${k}="${thoatHtml(String(v))}"`).join(' ');
+  const chips = options.map(t=>
+    `<button type="button" class="${cls} to-tick-btn${t===selected?' active':''}" ${attrs} data-team="${thoatHtml(t)}">${t}</button>`
+  ).join('');
+  return `<div class="to-tick-row">${chips}</div>`;
+}
 const PROCESS_TEAM_STAGE = Object.freeze({
   'Tổ may': 'may',
   'Tổ đóng gói': 'dong_goi'
@@ -3269,6 +3285,20 @@ function soCongDoan(v){
   const n = Number(v);
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
+// Tick nhieu to (Giai doan C/D, phan doc): entry[congDoan] tu nay co the la 1 so
+// (cu, 1 to duy nhat/ngay - van con 100% du lieu hien co) HOAC 1 object
+// {tenTo: so} (nhieu to cung lam 1 ngay). Doc qua 2 ham nay thay vi doc thang
+// entry[congDoan] de tu dong hieu ca 2 dang, khong doi gi cho du lieu cu.
+function mucCongDoanTheoTo(e, congDoan){
+  const v = e && e[congDoan];
+  if(v && typeof v === 'object') return v;
+  const so = soCongDoan(v);
+  if(!so) return {};
+  return {[(e && e[`_${congDoan}_to`]) || '']: so};
+}
+function soCongDoanNgay(e, congDoan){
+  return Object.values(mucCongDoanTheoTo(e, congDoan)).reduce((s,n)=>s+soCongDoan(n),0);
+}
 function khoaNgayDMY(dateStr){
   const p = parseDMY(String(dateStr || ''));
   return p && p.y ? p.y*10000 + p.m*100 + p.d : 0;
@@ -3296,8 +3326,11 @@ function damBaoLichSuCongDoan(o){
 }
 function giaTriCongDoanNgay(o, ngay, congDoan){
   const e = lichSuCongDoanDeDoc(o)[ngay];
-  if(!e || e[congDoan] == null || e[congDoan] === '') return null;
-  return soCongDoan(e[congDoan]);
+  if(!e) return null;
+  const v = e[congDoan];
+  if(v && typeof v === 'object') return Object.keys(v).length ? soCongDoanNgay(e,congDoan) : null;
+  if(v == null || v === '') return null;
+  return soCongDoan(v);
 }
 function tongCongDoanLuyKeDenNgay(o, congDoan, ngay){
   if(!o || !CONG_DOAN.includes(congDoan)) return 0;
@@ -3307,7 +3340,7 @@ function tongCongDoanLuyKeDenNgay(o, congDoan, ngay){
   return truoc + (hienTai == null ? 0 : hienTai);
 }
 function tongCongDoan(o, congDoan){
-  return Object.values(lichSuCongDoanDeDoc(o)).reduce((s,e)=>s+soCongDoan(e && e[congDoan]),0);
+  return Object.values(lichSuCongDoanDeDoc(o)).reduce((s,e)=>s+soCongDoanNgay(e,congDoan),0);
 }
 // Sản lượng THẬT của 1 công đoạn cho đúng 1 ngày (hoặc 'all'), dùng chung bộ đếm cohort
 // với báo cáo lịch sử (taoTichLuyCohort/dangKyTranCohort/congSanLuongCohort/chotCohort,
@@ -3332,7 +3365,7 @@ function tinhSanLuongDonSongTheoNgay(rows, ngay, congDoan='dong_goi'){
 function tongCongDoanTruocNgay(o, congDoan, ngay){
   const moc = khoaNgayDMY(ngay);
   return Object.entries(lichSuCongDoanDeDoc(o)).reduce((s,[d,e])=>{
-    return s + (khoaNgayDMY(d) < moc ? soCongDoan(e && e[congDoan]) : 0);
+    return s + (khoaNgayDMY(d) < moc ? soCongDoanNgay(e,congDoan) : 0);
   },0);
 }
 function dongGoiTheoNgayCuaDon(o){
@@ -3526,10 +3559,10 @@ function spinoffCellHtml(o, ngay, allowTdsxManager2=false){
     if(!managerCanAssignHere || lockedProgressDates.includes(ngay)){
       return support ? `<span style="font-weight:600;">${thoatHtml(support)}</span>` : '<span style="color:var(--text2);">—</span>';
     }
-    return `<select class="support-day-select ${!support?'to-select-empty':''}" data-order-id="${o.id}" data-day="${ngay}">
-      <option value="" ${!support?'selected':''}>Chọn tổ</option>
-      ${TEAM_OPTIONS.filter(t=>(!assignedSupportTeams.length || assignedSupportTeams.includes(t)) && (t!==toPhuTrachTheoNgay(o,ngay) || t===support)).map(t=>`<option value="${t}" ${support===t?'selected':''}>${t}</option>`).join('')}
-    </select>`;
+    const toTuyChon = TEAM_OPTIONS.filter(t=>(!assignedSupportTeams.length || assignedSupportTeams.includes(t)) && (t!==toPhuTrachTheoNgay(o,ngay) || t===support));
+    // Tick lai dung to dang chon -> bo ho tro (thay cho chon "Chon to" o dropdown cu).
+    const boHoTroBtn = support ? `<button type="button" class="support-day-select to-tick-btn" data-order-id="${o.id}" data-day="${ngay}" data-team="">✕ Bỏ</button>` : '';
+    return `<div class="to-tick-row">${boHoTroBtn}${toTuyChon.map(t=>`<button type="button" class="support-day-select to-tick-btn${t===support?' active':''}" data-order-id="${o.id}" data-day="${ngay}" data-team="${t}">${t}</button>`).join('')}</div>`;
   }
   if(ngay === 'all' && a.support_by_date){
     const ds = Array.from(new Set(Object.values(a.support_by_date).filter(Boolean)));
@@ -3647,7 +3680,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 166;
+const APP_VERSION = 167;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4603,7 +4636,7 @@ async function startSupabaseRealtime(){
 function applySupabaseProgressEvent(payload){
   const row=payload?.eventType==='DELETE'?payload.old:payload.new;
   if(!row?.order_id||!row?.work_date||!CONG_DOAN.includes(row.stage)) return;
-  const day=isoToDMY(row.work_date), key=[row.order_id,day,row.stage].join('|');
+  const day=isoToDMY(row.work_date), key=[row.order_id,day,row.stage,supabaseUnitToUi(row.kpi_team)||''].join('|');
   // Thao tác của máy này chưa được RPC xác nhận thì dữ liệu local mới nhất thắng.
   if(supabaseStageOutbox[key]&&supabaseStageOutbox[key].status!=='failed') return;
   const a=assignments[row.order_id]||(assignments[row.order_id]={stage_by_date:{},support_by_date:{}});
@@ -4632,10 +4665,14 @@ function persistSupabaseStageOutbox(){
 }
 function queueStagePatchForSupabase(o,ngay,congDoan,value,team,workerId=null,sendNow=true){
   if(!o || !CONG_DOAN.includes(congDoan)) return;
-  const key=[o.id,ngay,congDoan].join('|');
+  const kpiTeam=team||toKpiKhiNhapCongDoan(o,ngay,congDoan)||null;
+  // Them tổ vào khoá hàng đợi (Dot D): hôm nay mỗi ô vẫn đúng 1 tổ nên khoá
+  // không đổi so với trước; khi có nhiều tổ cùng ngày cùng công đoạn, mỗi tổ
+  // có khoá riêng, không còn đè mất gói của nhau.
+  const key=[o.id,ngay,congDoan,kpiTeam||''].join('|');
   supabaseStageOutbox[key]={key,operation_id:makeOperationId(),device_id:getSupabaseDeviceId(),
     order_id:o.id,work_date:ngay,stage:congDoan,
-    value:value==null?0:soCongDoan(value),kpi_team:team||toKpiKhiNhapCongDoan(o,ngay,congDoan)||null,
+    value:value==null?0:soCongDoan(value),kpi_team:kpiTeam,
     worker_id:workerId||null,occurred_at:new Date().toISOString(),status:'pending',attempts:0,next_attempt_at:0};
   markLocalWrite();
   persistSupabaseStageOutbox();
@@ -6712,10 +6749,7 @@ function renderAutoPlan(){
     } else if(!canManage() || isOrderLocked(r)){
       toCell = assignedTo ? `<span style="font-weight:600;">${assignedTo}</span>` : '<span style="color:var(--text2);">—</span>';
     } else {
-      toCell = `<select class="to-select ${!assignedTo?'to-select-empty':''}" data-order-id="${r.id}">
-          <option value="" ${!assignedTo?'selected':''}>Chọn tổ</option>
-          ${TEAM_OPTIONS.map(t=>`<option value="${t}" ${assignedTo===t?'selected':''}>${t}</option>`).join('')}
-        </select>`;
+      toCell = toTickRowHtml('to-select',{'order-id':r.id},TEAM_OPTIONS,assignedTo);
     }
     const daysLate = (dayVal !== 'all' && dayVal !== r.date && status === 'rot')
       ? daysBetween(new Date(...parseDMYForDate(r.date)), new Date(...parseDMYForDate(dayVal)))
@@ -7307,11 +7341,12 @@ async function handleSupportDayChange(orderId, ngay, val){
   }
 }
 
-document.querySelector('#autoPlanTable tbody').addEventListener('change', async (e)=>{
+// Dau tick thay dropdown: bam la doi ngay (khong con 'change' o day nua).
+document.querySelector('#autoPlanTable tbody').addEventListener('click', async (e)=>{
   if(e.target.classList.contains('to-select')){
-    await handleAssignChange(e.target.dataset.orderId, e.target.value);
+    await handleAssignChange(e.target.dataset.orderId, e.target.dataset.team);
   } else if(e.target.classList.contains('support-day-select')){
-    await handleSupportDayChange(e.target.dataset.orderId, e.target.dataset.day, e.target.value);
+    await handleSupportDayChange(e.target.dataset.orderId, e.target.dataset.day, e.target.dataset.team);
   }
 });
 
@@ -7897,7 +7932,12 @@ function hintCongDoanHtml(o, ngay, congDoan, info){
 }
 function stageSyncBadgeHtml(orderId, ngay, congDoan){
   if(!SUPABASE_VARIANT) return '';
-  const item=supabaseStageOutbox[[orderId,ngay,congDoan].join('|')];
+  // Khoa hang doi tu Dot D co them to (tranh 2 to cung o de mat gui cua nhau),
+  // nhung 1 o nhap hien van chi ung voi 1 to - tim theo tien to (bo qua to)
+  // thay vi doan lai dung to da dung luc ghi, tranh sai lech tinh toan 2 noi.
+  const prefix=[orderId,ngay,congDoan,''].join('|');
+  const key=Object.keys(supabaseStageOutbox).find(k=>k===prefix||k.startsWith(prefix));
+  const item=key?supabaseStageOutbox[key]:null;
   if(!item) return '';
   if(item.status==='failed')
     return `<span class="stage-sync-badge sync-error" title="Chưa lưu được lên máy chủ${item.error_code?' ('+thoatHtml(item.error_code)+')':''} · sửa lại số để gửi lại">⚠</span>`;
@@ -8243,10 +8283,7 @@ function renderProgress(){
     // Quản lý 2 không được đổi sau khi ngày có tiến độ đã chốt.
     const assignmentEditable = canAssignOrderInProgress(r);
     const toCell = assignmentEditable
-      ? `<select class="to-select ${!a.to?'to-select-empty':''}" data-order-id="${r.id}">
-          <option value="" ${!a.to?'selected':''}>Chọn tổ</option>
-          ${TEAM_OPTIONS.map(t=>`<option value="${t}" ${a.to===t?'selected':''}>${t}</option>`).join('')}
-        </select>`
+      ? toTickRowHtml('to-select',{'order-id':r.id},TEAM_OPTIONS,a.to)
       : `<span style="font-weight:600;">${a.to||'—'}</span>${isProgressLocked(r)?' <span title="Ngày đã chốt tiến độ" style="color:var(--text2);">🔒</span>':''}`;
     const stageMobileConfig = congDoanNhanVien ? {
       dan:{refLabel:'Kế hoạch',refValue:keHoachTrongNgay(r,dayVal),waiting:'Chờ sản xuất',done:'Dán hoàn thành'},
@@ -8351,15 +8388,19 @@ document.querySelector('#progressTable tbody').addEventListener('keydown', (e)=>
   }
 });
 document.querySelector('#progressTable tbody').addEventListener('change', async (e)=>{
-  if(e.target.classList.contains('to-select')){
-    await handleAssignChange(e.target.dataset.orderId, e.target.value);
-  } else if(e.target.classList.contains('stage-qty-input')){
+  if(e.target.classList.contains('stage-qty-input')){
     await handleStageQtyChange(e.target.dataset.orderId, e.target.dataset.day, e.target.dataset.stage, e.target.value);
   } else if(e.target.classList.contains('spinoff-to-select')){
     // Khi đang mở khoá sửa đổi, chọn giá trị rỗng nghĩa là bỏ tổ hỗ trợ — vẫn phải xử lý.
     await handleAssignChange(e.target.dataset.spinoffId, e.target.value);
+  }
+});
+// Dau tick thay dropdown: bam la doi ngay (khong con 'change' o day nua).
+document.querySelector('#progressTable tbody').addEventListener('click', async (e)=>{
+  if(e.target.classList.contains('to-select')){
+    await handleAssignChange(e.target.dataset.orderId, e.target.dataset.team);
   } else if(e.target.classList.contains('support-day-select')){
-    await handleSupportDayChange(e.target.dataset.orderId, e.target.dataset.day, e.target.value);
+    await handleSupportDayChange(e.target.dataset.orderId, e.target.dataset.day, e.target.dataset.team);
   }
 });
 

@@ -39,7 +39,7 @@ const sdk=`window.supabase={createClient:(url,key,options)=>({
    // Gia lap: nguoi dung vua nhap 5 vao cong doan 'dan' cho ORDER_A ngay 11/09/2026,
    // RPC con dang bay (chua duoc server xac nhan) - dung dung shape ma
    // queueStagePatchForSupabase tao ra.
-   const key='ORDER_A|11/09/2026|dan';
+   const key='ORDER_A|11/09/2026|dan|'; // Dot D: khoa co them tổ (rong = chua ro to)
    supabaseStageOutbox[key]={key,operation_id:'op-test-1',device_id:'DEV1',order_id:'ORDER_A',work_date:'11/09/2026',stage:'dan',
      value:5,kpi_team:null,worker_id:null,occurred_at:new Date().toISOString(),status:'pending',attempts:0,next_attempt_at:0};
    assignments['ORDER_A']=assignments['ORDER_A']||{stage_by_date:{}};

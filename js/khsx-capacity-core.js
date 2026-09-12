@@ -40,18 +40,25 @@
       const root=rootOf(o),rootTeam=owner(root),a=assignments[o.id]||{},ra=assignments[root.id]||{};
       let remaining=qty(o.so_luong);
       Object.entries(history(o)).sort((a,b)=>dayKey(a[0])-dayKey(b[0])).forEach(([date,e])=>{
-        const d=dayKey(date),n=Math.min(remaining,qty(e?.dan)); remaining-=n;
-        if(!n||d>today)return;
-        const team=e._dan_to||e._to||a.support_by_date?.[date]||owner(o);
-        const row=rows[team];if(!row)return;
-        const linkedSupport=root.id!==o.id&&Object.entries(ra.support_by_date||{}).some(([sd,t])=>t===team&&dayKey(sd)<=d);
-        const directSupport=root.id===o.id&&ra.support_by_date?.[date]===team;
-        const support=!!rootTeam&&team!==rootTeam&&(linkedSupport||directSupport);
-        if(inRange(d,totalsFrom,totalsTo)){
-          row.sanLuongTong+=n;
-        }
-        if(support&&inRange(d,from,to)){row.hoTro+=n;row.hoTroTheoTo[rootTeam]=(row.hoTroTheoTo[rootTeam]||0)+n;}
-        if(team===rootTeam&&!support&&inRange(d,from,to))ownByRoot.set(root.id,(ownByRoot.get(root.id)||0)+n);
+        const d=dayKey(date);
+        if(d>today)return;
+        // Tick nhieu to: e.dan co the la 1 so (cu, 1 to) hoac {tenTo:so} (nhieu
+        // to cung ngay) - gop ve 1 dang duy nhat truoc khi tinh tung to.
+        const danTheoTo=(e&&e.dan&&typeof e.dan==='object')?e.dan:{[(e&&(e._dan_to||e._to))||'']:e&&e.dan};
+        Object.entries(danTheoTo).forEach(([teamTag,val])=>{
+          const n=Math.min(remaining,qty(val)); remaining-=n;
+          if(!n)return;
+          const team=teamTag||a.support_by_date?.[date]||owner(o);
+          const row=rows[team];if(!row)return;
+          const linkedSupport=root.id!==o.id&&Object.entries(ra.support_by_date||{}).some(([sd,t])=>t===team&&dayKey(sd)<=d);
+          const directSupport=root.id===o.id&&ra.support_by_date?.[date]===team;
+          const support=!!rootTeam&&team!==rootTeam&&(linkedSupport||directSupport);
+          if(inRange(d,totalsFrom,totalsTo)){
+            row.sanLuongTong+=n;
+          }
+          if(support&&inRange(d,from,to)){row.hoTro+=n;row.hoTroTheoTo[rootTeam]=(row.hoTroTheoTo[rootTeam]||0)+n;}
+          if(team===rootTeam&&!support&&inRange(d,from,to))ownByRoot.set(root.id,(ownByRoot.get(root.id)||0)+n);
+        });
       });
     });
     orders.filter(o=>!o.is_manual&&!o.is_drop&&!o.is_ghost&&!o.is_warranty).forEach(o=>{
