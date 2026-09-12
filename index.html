@@ -446,6 +446,7 @@
   button.to-tick-btn.to-tick-remove{color:#d9776a;border-color:#5c3230;}
   button.to-tick-btn.to-tick-remove::before{content:none;}
   button.to-tick-btn.to-tick-remove:hover{border-color:#d9776a;}
+  button.to-tick-btn:disabled{cursor:default;opacity:1;}
   input.qty-input{width:100%;min-width:0;max-width:100%;padding:6px 5px;text-align:center;}
   .stage-cell{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-width:0;margin:0 auto;}
   .stage-cell input.qty-input{transition:border-color .15s,box-shadow .15s,background .15s;}
@@ -2645,10 +2646,19 @@ const TEAM_OPTIONS = ['Tổ 1','Tổ 2','Tổ 3','Tổ 4','Tổ 5'];
 // con <select>). cls giu nguyen ten class cu (to-select/support-day-select) de
 // khong phai doi cho bat/su ly su kien, chi doi tu 'change' sang 'click' va
 // doc data-team thay vi .value.
+// Da chon roi thi chi con 2 o (xoa do + to dang chon) cho gon trong cot hep,
+// khong de 5 nut xep hang doc gay xau/mat can doi. Doi to: bam xoa truoc roi
+// tick to khac trong danh sach hien lai.
 function toTickRowHtml(cls, dataAttrs, options, selected){
   const attrs = Object.entries(dataAttrs).map(([k,v])=>`data-${k}="${thoatHtml(String(v))}"`).join(' ');
+  if(selected){
+    return `<div class="to-tick-row">`
+      + `<button type="button" class="${cls} to-tick-btn to-tick-remove" ${attrs} data-team="" title="Bỏ chọn">✕</button>`
+      + `<button type="button" class="${cls} to-tick-btn active" ${attrs} data-team="${thoatHtml(selected)}">${thoatHtml(selected)}</button>`
+      + `</div>`;
+  }
   const chips = options.map(t=>
-    `<button type="button" class="${cls} to-tick-btn${t===selected?' active':''}" ${attrs} data-team="${thoatHtml(t)}">${t}</button>`
+    `<button type="button" class="${cls} to-tick-btn" ${attrs} data-team="${thoatHtml(t)}">${t}</button>`
   ).join('');
   return `<div class="to-tick-row">${chips}</div>`;
 }
@@ -3562,13 +3572,15 @@ function spinoffCellHtml(o, ngay, allowTdsxManager2=false){
   }
   if(ngayCoTheGanHoTro){
     const support = toHoTroTheoNgay(o,ngay) || '';
-    if(!managerCanAssignHere || lockedProgressDates.includes(ngay)){
+    // Chi cho tick gan/doi to ho tro khi to dan CHUA dien so cho ngay do (=0).
+    // Da co so dan > 0: khoa lai, chi con hien ten to ho tro da gan (neu co).
+    const daDanNgay = soCongDoan(giaTriCongDoanNgay(o,ngay,'dan'));
+    if(!managerCanAssignHere || lockedProgressDates.includes(ngay) || daDanNgay>0){
       return support ? `<span style="font-weight:600;">${thoatHtml(support)}</span>` : '<span style="color:var(--text2);">—</span>';
     }
     const toTuyChon = TEAM_OPTIONS.filter(t=>(!assignedSupportTeams.length || assignedSupportTeams.includes(t)) && (t!==toPhuTrachTheoNgay(o,ngay) || t===support));
-    // Tick lai dung to dang chon -> bo ho tro (thay cho chon "Chon to" o dropdown cu).
-    const boHoTroBtn = support ? `<button type="button" class="support-day-select to-tick-btn to-tick-remove" data-order-id="${o.id}" data-day="${ngay}" data-team="">✕ Bỏ</button>` : '';
-    return `<div class="to-tick-row">${boHoTroBtn}${toTuyChon.map(t=>`<button type="button" class="support-day-select to-tick-btn${t===support?' active':''}" data-order-id="${o.id}" data-day="${ngay}" data-team="${t}">${t}</button>`).join('')}</div>`;
+    // Cung kieu tick gon (xoa + to dang chon) nhu o KHSX.
+    return toTickRowHtml('support-day-select', {'order-id':o.id, day:ngay}, toTuyChon, support);
   }
   if(ngay === 'all' && a.support_by_date){
     const ds = Array.from(new Set(Object.values(a.support_by_date).filter(Boolean)));
@@ -3686,7 +3698,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 167;
+const APP_VERSION = 168;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -8285,12 +8297,11 @@ function renderProgress(){
     const ngayDong = dayVal === 'all' ? r.date : dayVal;
     const ngayGocHtml = ngayDong !== r.date ? `<span style="display:block;color:var(--text2);font-size:10.5px;">Gốc ${r.date}</span>` : '';
 
-    // TDSX là nơi duy nhất Quản lý/Quản lý 2 gán hoặc đổi tổ phụ trách.
-    // Quản lý 2 không được đổi sau khi ngày có tiến độ đã chốt.
-    const assignmentEditable = canAssignOrderInProgress(r);
-    const toCell = assignmentEditable
-      ? toTickRowHtml('to-select',{'order-id':r.id},TEAM_OPTIONS,a.to)
-      : `<span style="font-weight:600;">${a.to||'—'}</span>${isProgressLocked(r)?' <span title="Ngày đã chốt tiến độ" style="color:var(--text2);">🔒</span>':''}`;
+    // TDSX chi hien to da gan (1 tick tinh, khong bam duoc) — gan/doi to lam o KHSX (bang Ke hoach tuan).
+    const toCell = (a.to
+      ? `<div class="to-tick-row"><button type="button" class="to-select to-tick-btn active" disabled>${thoatHtml(a.to)}</button></div>`
+      : '<span style="color:var(--text2);">—</span>')
+      + (isProgressLocked(r)?' <span title="Ngày đã chốt tiến độ" style="color:var(--text2);">🔒</span>':'');
     const stageMobileConfig = congDoanNhanVien ? {
       dan:{refLabel:'Kế hoạch',refValue:keHoachTrongNgay(r,dayVal),waiting:'Chờ sản xuất',done:'Dán hoàn thành'},
       may:{refLabel:'Đã dán',refValue:dayVal==='all'?tongCongDoan(r,'dan'):soCongDoan(giaTriCongDoanNgay(r,dayVal,'dan')),waiting:'Chờ may',done:'May hoàn thành'},
@@ -8401,11 +8412,9 @@ document.querySelector('#progressTable tbody').addEventListener('change', async 
     await handleAssignChange(e.target.dataset.spinoffId, e.target.value);
   }
 });
-// Dau tick thay dropdown: bam la doi ngay (khong con 'change' o day nua).
+// TDSX chi con dau tick cho to ho tro theo ngay; gan/doi to lam gio o KHSX.
 document.querySelector('#progressTable tbody').addEventListener('click', async (e)=>{
-  if(e.target.classList.contains('to-select')){
-    await handleAssignChange(e.target.dataset.orderId, e.target.dataset.team);
-  } else if(e.target.classList.contains('support-day-select')){
+  if(e.target.classList.contains('support-day-select')){
     await handleSupportDayChange(e.target.dataset.orderId, e.target.dataset.day, e.target.dataset.team);
   }
 });
