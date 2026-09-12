@@ -3647,7 +3647,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 164;
+const APP_VERSION = 165;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3914,7 +3914,9 @@ function applyPermissionTabGates(){
   Object.entries(PERM_TAB_RULES).forEach(([tab,keys])=>{
     const btn=document.querySelector(`.tab-btn[data-tab="${tab}"]`);
     if(!btn) return;
-    const allowed=keys.some(hasPermOrOwner);
+    // Khach (link ?view=guest) khong co auth_user_id, khong phu thuoc bang
+    // quyen that - chi cho xem dung 2 tab Tong thong ke + KHSX (hardcode).
+    const allowed=PUBLIC_VIEW_MODE?(tab==='monthly'||tab==='autoplan'):keys.some(hasPermOrOwner);
     btn.style.setProperty('display', allowed?'':'none', 'important');
     if(!allowed && btn.classList.contains('active')) activeHidden=true;
   });
