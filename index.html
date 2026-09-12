@@ -3647,7 +3647,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 163;
+const APP_VERSION = 164;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6925,6 +6925,12 @@ function resetCapacityWeek(){
   document.getElementById('capacityToDate').value=to;
   renderCapacityStats();
 }
+// Vao tab: giu dung khoang ngay da chon truoc do, chi ve mac dinh "tuan nay"
+// lan dau chua tung chon (input con trong) - tranh xoa mat filter khi doi tab.
+function enterCapacityTab(){
+  if(document.getElementById('capacityFromDate').value) renderCapacityStats();
+  else resetCapacityWeek();
+}
 async function exportCapacityStats(){ return exportCapacityWorkbook(false); }
 
 function isoCuaNgay(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -6967,6 +6973,8 @@ document.getElementById('capacityQuickThisMonth').addEventListener('click',()=>{
 document.getElementById('capacityQuickLastWeek').addEventListener('click',()=>{ const a=thuHaiCuaTuan(new Date()),b=new Date(a),c=new Date(a); b.setDate(b.getDate()-7); c.setDate(c.getDate()-1); datCapacityRange(b,c); });
 document.getElementById('capacityQuickLastMonth').addEventListener('click',()=>{ const n=new Date(); datCapacityRange(new Date(n.getFullYear(),n.getMonth()-1,1),new Date(n.getFullYear(),n.getMonth(),0)); });
 document.getElementById('refreshCapacityStatsBtn').addEventListener('click',renderCapacityStats);
+document.getElementById('capacityFromDate').addEventListener('change',renderCapacityStats);
+document.getElementById('capacityToDate').addEventListener('change',renderCapacityStats);
 document.getElementById('exportCapacityStatsBtn').addEventListener('click',exportCapacityStats);
 document.getElementById('autoPlanDaySelect').addEventListener('change', renderAutoPlan);
 function syncSearchClearButton(input){
@@ -7600,6 +7608,7 @@ function refreshOperationalTabsForHeader(){
   renderAutoPlanDaySelect();
   renderAutoPlan();
   renderProgress();
+  if(document.getElementById('capacityFromDate').value) renderCapacityStats();
 }
 function resetOperationalToday(tab){
   if(tab!=='autoplan'&&tab!=='progress')return;
@@ -7661,7 +7670,7 @@ function restoreUiState(){
         if(st.tab==='staff') initStaffPage();
         if(st.tab==='settings') initSettingsPage();
         if(st.tab==='wage') initWagePage();
-        if(st.tab==='capacity') resetCapacityWeek();
+        if(st.tab==='capacity') enterCapacityTab();
         resetOperationalToday(st.tab);
       }
     }
@@ -7681,7 +7690,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(btn.dataset.tab==='staff') initStaffPage();
     if(btn.dataset.tab==='settings') initSettingsPage();
     if(btn.dataset.tab==='wage') initWagePage();
-    if(btn.dataset.tab==='capacity') resetCapacityWeek();
+    if(btn.dataset.tab==='capacity') enterCapacityTab();
     resetOperationalToday(btn.dataset.tab);
     capNhatHienThiKpiRow();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
