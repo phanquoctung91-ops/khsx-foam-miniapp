@@ -435,11 +435,17 @@
   select.to-select{width:100%;min-width:0;max-width:100%;padding-left:7px;padding-right:24px;}
   select.to-select-empty{color:var(--text2);font-style:italic;}
   select.spinoff-to-select, select.support-day-select{width:100%;min-width:0;max-width:100%;font-size:11px;padding:4px 22px 4px 5px;border-radius:6px;}
-  .to-tick-row{display:flex;flex-wrap:wrap;gap:4px;}
-  button.to-tick-btn{border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text2);
-    font-size:11px;font-weight:700;padding:4px 7px;cursor:pointer;white-space:nowrap;}
-  button.to-tick-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-  button.to-tick-btn.active::before{content:'✓ ';}
+  .to-tick-row{display:flex;flex-wrap:wrap;gap:5px;}
+  button.to-tick-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text2);
+    font-size:11px;font-weight:700;padding:5px 10px 5px 8px;cursor:pointer;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:4px;transition:background .12s,border-color .12s,color .12s;}
+  button.to-tick-btn::before{content:'✓';color:transparent;font-weight:800;}
+  button.to-tick-btn:hover{border-color:var(--primary);color:var(--text);}
+  button.to-tick-btn.active{background:var(--primary);color:#0c2424;border-color:var(--primary);}
+  button.to-tick-btn.active::before{color:#0c2424;}
+  button.to-tick-btn.to-tick-remove{color:#d9776a;border-color:#5c3230;}
+  button.to-tick-btn.to-tick-remove::before{content:none;}
+  button.to-tick-btn.to-tick-remove:hover{border-color:#d9776a;}
   input.qty-input{width:100%;min-width:0;max-width:100%;padding:6px 5px;text-align:center;}
   .stage-cell{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-width:0;margin:0 auto;}
   .stage-cell input.qty-input{transition:border-color .15s,box-shadow .15s,background .15s;}
@@ -3561,7 +3567,7 @@ function spinoffCellHtml(o, ngay, allowTdsxManager2=false){
     }
     const toTuyChon = TEAM_OPTIONS.filter(t=>(!assignedSupportTeams.length || assignedSupportTeams.includes(t)) && (t!==toPhuTrachTheoNgay(o,ngay) || t===support));
     // Tick lai dung to dang chon -> bo ho tro (thay cho chon "Chon to" o dropdown cu).
-    const boHoTroBtn = support ? `<button type="button" class="support-day-select to-tick-btn" data-order-id="${o.id}" data-day="${ngay}" data-team="">✕ Bỏ</button>` : '';
+    const boHoTroBtn = support ? `<button type="button" class="support-day-select to-tick-btn to-tick-remove" data-order-id="${o.id}" data-day="${ngay}" data-team="">✕ Bỏ</button>` : '';
     return `<div class="to-tick-row">${boHoTroBtn}${toTuyChon.map(t=>`<button type="button" class="support-day-select to-tick-btn${t===support?' active':''}" data-order-id="${o.id}" data-day="${ngay}" data-team="${t}">${t}</button>`).join('')}</div>`;
   }
   if(ngay === 'all' && a.support_by_date){
