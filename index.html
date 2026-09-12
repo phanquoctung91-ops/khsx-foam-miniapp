@@ -3647,7 +3647,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 165;
+const APP_VERSION = 166;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4287,6 +4287,7 @@ async function enterWithTelegram(){
       await startSupabaseRealtime();
       await flushSupabaseStageOutbox();
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
+      renderMonthly(); if(document.getElementById('capacityFromDate').value) renderCapacityStats();
       saveLocalCache(); startPolling();
     }
     return true;
@@ -4512,6 +4513,12 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     if(!ot.error){overtimeRecords={};(ot.data||[]).forEach(x=>{const day=isoToDMY(x.work_date),team=supabaseUnitToUi(x.team_name),key=overtimeKey(day,team,x.stage,x.worker_id);overtimeRecords[key]={day,team,stage:x.stage,worker:x.worker_id,hours:Number(x.overtime_hours),updatedAt:x.updated_at};});persistOvertime();}
   }
   rebuildOrderEntityStore();
+  // Tai lai toan bo dung xay dung lai stage_by_date tu dau nhung KHONG tinh lai
+  // so_luong_da_dan/may/ngay_hoan_thanh - don ron ("da roi") hoan thanh o ngay khac
+  // ngay goc bi mat dong ngay hoan thanh (chi con hien o ngay goc, thieu ca so may/
+  // dong goi da nhap o ngay sau). dongBoSoHoanThanhCu da tinh dung tu stage_by_date,
+  // chi thieu duoc goi lai sau moi lan tai toan bo nhu the nay.
+  getOrders().forEach(dongBoSoHoanThanhCu);
   autoPlanLoaded=true;
   saveLocalCache();
   supabaseStatus(`Supabase đã đồng bộ · ${visibleOrd.length} đơn`,true);
@@ -4541,6 +4548,7 @@ function scheduleSupabaseReload(){
        Object.keys(supabaseManagementOutbox).length) return scheduleSupabaseReload();
     if(await loadSupabaseOperationalData()){
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
+      renderMonthly(); if(document.getElementById('capacityFromDate').value) renderCapacityStats();
     }
   },500);
 }
@@ -4614,6 +4622,10 @@ function applySupabaseProgressEvent(payload){
   if(!CONG_DOAN.some(stage=>entry[stage]!=null))delete a.stage_by_date[day];
   const order=getOrderById(row.order_id);if(order)dongBoSoHoanThanhCu(order);
   renderAutoPlan();renderProgress();scheduleMonthlySync();saveLocalCache();
+  // Tab Tong thong ke/Nang luc khong nam trong chuoi render tren - neu dang mo,
+  // so tren man se dung im du du lieu goc da cap nhat that, phai ve lai rieng.
+  renderMonthly();
+  if(document.getElementById('capacityFromDate').value) renderCapacityStats();
 }
 function persistSupabaseStageOutbox(){
   try{ localStorage.setItem(SUPABASE_STAGE_OUTBOX_KEY,JSON.stringify(supabaseStageOutbox)); }catch(e){}
@@ -10759,6 +10771,7 @@ async function bootstrap(){
       await startSupabaseRealtime();
       await flushSupabaseStageOutbox();
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
+      renderMonthly(); if(document.getElementById('capacityFromDate').value) renderCapacityStats();
       saveLocalCache(); startPolling();
       return;
     }
