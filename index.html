@@ -3697,7 +3697,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 171;
+const APP_VERSION = 172;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -9375,7 +9375,7 @@ Xem thống kê: không cần mã, chỉ xem, không sửa được gì
 }
 
 async function taiGoiSaoLuu(){
-  if(!canManage()) return;
+  if(!(canManage()||hasPermOrOwner('settings_backup_download'))) return;
   const st = document.getElementById('backupStatus');
   st.textContent = 'Đang lấy dữ liệu mới nhất...';
   st.style.color = 'var(--text2)';
@@ -9464,7 +9464,7 @@ async function napLaiPhanCongTheoThang_(assignObj, dynamicList){
 }
 
 async function napLaiTuGoi(){
-  if(!canManage()) return;
+  if(!(canManage()||hasPermOrOwner('settings_backup_restore'))) return;
   const fileEl = document.getElementById('restoreFileInput');
   const st = document.getElementById('restoreStatus');
   const setErr = m => { st.textContent = m; st.style.color = 'var(--danger)'; };
@@ -9747,7 +9747,7 @@ document.getElementById('permAccountSelect')?.addEventListener('change', onPermA
 document.getElementById('permSaveBtn')?.addEventListener('click', savePermAccountPermissions);
 
 function initSettingsPage(){
-  if(!canManage()) return;
+  if(!(canManage()||PERM_TAB_RULES.settings.some(hasPermOrOwner))) return;
   initPermissionsPanel();
   const {nam, quy} = quyCuaNgay(new Date());
   document.getElementById('quarterTargetQuy').value = quy;
@@ -9853,7 +9853,7 @@ document.getElementById('wageQuickLastMonth').addEventListener('click',()=>{ con
 document.getElementById('wageQuickThisQuarter').addEventListener('click',()=>{ const n=new Date(); const {nam,quy}=quyCuaNgay(n); datWageRange(new Date(nam,(quy-1)*3,1), n); });
 document.getElementById('wageRefreshBtn').addEventListener('click', renderWagePage);
 document.getElementById('doSaveQuarterTargetBtn').addEventListener('click', async ()=>{
-  if(!canManage()) return;
+  if(!(canManage()||hasPermOrOwner('settings_edit_targets'))) return;
   const quy = parseInt(document.getElementById('quarterTargetQuy').value, 10);
   const nam = parseInt(document.getElementById('quarterTargetNam').value, 10);
   const soLuong = parseInt(document.getElementById('quarterTargetSoLuong').value, 10);
