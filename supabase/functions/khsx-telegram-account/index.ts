@@ -394,6 +394,23 @@ Deno.serve(async (req) => {
       telegramNumber,
     );
   }
+  if (action === "approve" && role === "nhan_vien") {
+    // Quy uoc dang dung (xem 20260911063755_..._phase3_backfill.sql): moi nhan
+    // vien duoc cap dung 1 quyen nhap cong doan theo to dang gan. Duyet tai
+    // khoan moi truoc gio khong tu cap quyen nay, phai cho chu tai khoan tick
+    // tay tung nguoi moi nhap duoc - tu cap luon theo to de khoi lam lai.
+    const STAGE_BY_UNIT: Record<string, string> = {
+      "To may": "progress_enter_may",
+      "To dong goi": "progress_enter_dong_goi",
+    };
+    const defaultPermission = STAGE_BY_UNIT[unit] ?? "progress_enter_dan";
+    const { error: permError } = await admin.from("khsx_account_permissions")
+      .upsert(
+        { user_id: authUserId, permission_key: defaultPermission, granted_by: callerAuth.user.id },
+        { onConflict: "user_id,permission_key", ignoreDuplicates: true },
+      );
+    if (permError) console.error("DEFAULT_PERMISSION_GRANT_FAILED", permError);
+  }
   await audit(admin, {
     telegram_user_id: telegramNumber,
     auth_user_id: authUserId,
