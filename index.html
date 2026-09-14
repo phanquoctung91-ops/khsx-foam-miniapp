@@ -3697,7 +3697,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 175;
+const APP_VERSION = 176;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -10353,12 +10353,16 @@ function dungBangDonHang(tu, den, ngan){
 
 function moBangDatPhoi(){
   if(!hasPermOrOwner('phoi_board_use')) return;
+  // Chi liet ke ngay trong thang dang chon o header (giong cac bo loc ngay
+  // khac trong app) - danh sach gon, cuon them chi ra cac ngay khac trong
+  // CUNG thang, khong lan sang thang khac. Mac dinh chon 7 ngay gan nhat.
   const dates = Array.from(new Set(getOrders().map(o=>o.date)))
+    .filter(ngayThuocThangHeader)
     .sort((a,b)=> a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
   const opt = dates.map(d=>`<option value="${d}">${d}</option>`).join('');
   const tu = document.getElementById('phoiTuNgay'), den = document.getElementById('phoiDenNgay');
   tu.innerHTML = opt; den.innerHTML = opt;
-  if(dates.length){ tu.value = dates[0]; den.value = dates[dates.length-1]; }
+  if(dates.length){ tu.value = dates[Math.max(0, dates.length-7)]; den.value = dates[dates.length-1]; }
   document.getElementById('phoiStatus').textContent = '';
   document.getElementById('phoiModal').style.display = 'block';
   veBangDatPhoi();
