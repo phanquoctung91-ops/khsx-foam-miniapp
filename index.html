@@ -991,7 +991,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-<div id="phoiModal" class="only-manager" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
+<div id="phoiModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
   <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:720px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
       <h3 style="margin:0;font-size:17px;">🧱 Bảng đặt phôi</h3>
@@ -1079,7 +1079,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div class="management-tools-menu" id="managementToolsMenu">
         <button id="logoutBtn" title="Đăng xuất và nhập mã khác">↪ Đổi người dùng</button>
         <button id="telegramFullscreenBtn" type="button" style="display:none;" title="Mở rộng MiniApp trên Telegram Desktop">⛶ Mở rộng cửa sổ</button>
-        <button id="customerViewLinkBtn" class="only-manager" type="button" title="Sao chép link chỉ xem cho khách">🔗 Link khách xem</button>
+        <button id="customerViewLinkBtn" type="button" title="Sao chép link chỉ xem cho khách">🔗 Link khách xem</button>
       </div>
     </div>
   </div>
@@ -1151,10 +1151,10 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div class="wf-link" data-wf="khsx">🔗 Workflow hoạt động</div>
     <div class="btn-row">
       <input type="file" id="offlinePlanFile" accept=".xlsx,.xls,.csv" style="display:none;">
-      <button id="importOfflinePlanBtn" class="primary-btn only-manager">📂 Nạp file KHSX</button>
+      <button id="importOfflinePlanBtn" class="primary-btn">📂 Nạp file KHSX</button>
       <button id="addManualOrderBtn" class="primary-btn only-manager" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
-      <button id="lockPlanBtn" class="primary-btn only-manager" style="background:var(--text2);">🔒 Chốt đầu vào</button>
+      <button id="lockPlanBtn" class="primary-btn" style="background:var(--text2);">🔒 Chốt đầu vào</button>
       <button id="phoiBtn" class="primary-btn" style="background:var(--accent);">🧱 Bảng đặt phôi</button>
     </div>
     <div class="day-select-row toolbar-filter-row">
@@ -3697,7 +3697,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 169;
+const APP_VERSION = 171;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -3958,7 +3958,7 @@ const PERM_TAB_RULES={
   settings:['settings_backup_download','settings_backup_restore','settings_import_khsx_file','settings_edit_targets'],
 };
 // Dot 4.3: nut (khong phai tab) cung an/hien theo permission_key, cung co che.
-const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], bulkCompleteBtn:['progress_bulk_complete'] };
+const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'] };
 function applyPermissionTabGates(){
   let activeHidden=false;
   Object.entries(PERM_TAB_RULES).forEach(([tab,keys])=>{
@@ -6097,7 +6097,7 @@ async function taoDonTachNguon(oldOrder,history,reason){
 }
 const sourceChangeInFlight = new Set(); // chặn bấm đúp "Xác nhận nguồn"/"Tách rồi xác nhận" cùng 1 đơn
 async function xuLyThayDoiNguon(orderId){
-  if(!canManage())return;
+  if(!(canManage()||hasPermOrOwner('khsx_sync_source')||hasPermOrOwner('settings_import_khsx_file')))return;
   if(sourceChangeInFlight.has(orderId))return; // lượt trước chưa xong, bỏ qua bấm đúp
   const change=pendingSheetChanges[orderId]; if(!change)return;
   sourceChangeInFlight.add(orderId);
@@ -6347,7 +6347,7 @@ let sheetPlanSyncInFlight=false;
 // RPC giao dich duy nhat, de gan to/thua ke san luong giua cac cong doan hoat dong
 // binh thuong nhu don den tu Sheet, va moi may/tai khoan deu thay ngay.
 async function reconcileSourceRowsToSupabase(rows,{silent=false}={}){
-  if(!SUPABASE_VARIANT||!supabaseDb||!canManage()||sheetPlanSyncInFlight)return {ok:false,skipped:true,inserted:0};
+  if(!SUPABASE_VARIANT||!supabaseDb||!(canManage()||hasPermOrOwner('khsx_sync_source')||hasPermOrOwner('settings_import_khsx_file'))||sheetPlanSyncInFlight)return {ok:false,skipped:true,inserted:0};
   sheetPlanSyncInFlight=true;
   try{
     const sourceReadAt=new Date().toISOString();
@@ -6380,7 +6380,7 @@ async function reconcileSourceRowsToSupabase(rows,{silent=false}={}){
 // Giữ lại nguyên vẹn (không còn nơi nào tự động gọi từ 2026-09-10, đã ngắt Sheet
 // công ty theo yêu cầu) — chỉ để tương thích nếu cần bật lại đồng bộ sống sau này.
 async function syncMissingSheetOrdersToSupabase({silent=false}={}){
-  if(!SUPABASE_VARIANT||!supabaseDb||!canManage()||sheetPlanSyncInFlight)return {ok:false,skipped:true,inserted:0};
+  if(!SUPABASE_VARIANT||!supabaseDb||!(canManage()||hasPermOrOwner('khsx_sync_source')||hasPermOrOwner('settings_import_khsx_file'))||sheetPlanSyncInFlight)return {ok:false,skipped:true,inserted:0};
   try{
     const source=await readSheetPlanSource();
     const result=await reconcileSourceRowsToSupabase(source.rows,{silent});
@@ -6763,7 +6763,7 @@ function renderAutoPlan(){
     if(r.is_warranty){
       // Tổ và số lượng lấy thẳng từ từng dòng Sheet bảo hành; không chọn lại thủ công.
       toCell = warrantyTeamHtml(r);
-    } else if(!canManage() || isOrderLocked(r)){
+    } else if(!(canManage()||hasPermOrOwner('assign_team')) || isOrderLocked(r)){
       toCell = assignedTo ? `<span style="font-weight:600;">${assignedTo}</span>` : '<span style="color:var(--text2);">—</span>';
     } else {
       toCell = toTickRowHtml('to-select',{'order-id':r.id},TEAM_OPTIONS,assignedTo);
@@ -6785,8 +6785,8 @@ function renderAutoPlan(){
       <td class="col-status">${r.is_warranty
         ? `<span class="badge badge-baohanh">🛠 Đã ghi nhận</span>${warrantyDetailButtonHtml(r)}`
         : `${statusBadgeHtml(r)}${daysLate>0?` <span class="badge badge-rot">Trễ ${daysLate} ngày</span>`:''}${nhanUuTien(r)}${r.ghi_chu?`<br><span class="note" style="font-size:11px;">${r.ghi_chu}</span>`:''}${changeNoteHtml(r)}`}</td>
-      <td class="col-action only-manager">${r.is_warranty ? '' : `<input type="checkbox" class="uutien-tick" data-order-id="${r.id}" ${laUuTien(r.id)?'checked':''} title="Ưu tiên kế hoạch tuần">`}</td>
-      <td class="col-action only-manager">${pendingSheetChanges[r.id]
+      <td class="col-action">${(!r.is_warranty && (canManage()||hasPermOrOwner('khsx_priority'))) ? `<input type="checkbox" class="uutien-tick" data-order-id="${r.id}" ${laUuTien(r.id)?'checked':''} title="Ưu tiên kế hoạch tuần">` : ''}</td>
+      <td class="col-action only-manager2">${pendingSheetChanges[r.id]
         ? `<button class="source-action-btn" data-source-change-id="${r.id}">${coTienDoDon(pendingSheetChanges[r.id].old)?'Tách rồi xác nhận':'Xác nhận'}</button>`
         : `<button class="trash-btn" data-order-id="${r.id}" title="${coTienDoDon(r)?'Tách tiến độ rồi xóa đơn':'Xóa đơn'}">${r.source_removed?(coTienDoDon(r)?'Tách rồi hủy':'Xác nhận hủy'):(r.is_ghost&&coTienDoDon(r)?'Tách đơn':'Xóa')}</button>`}</td>
     </tr>`;
@@ -7367,11 +7367,11 @@ document.querySelector('#autoPlanTable tbody').addEventListener('click', async (
   }
 });
 
-// ---- Tick ưu tiên kế hoạch tuần (chỉ Quản lý) ----
+// ---- Tick ưu tiên kế hoạch tuần (Quản lý hoặc ai có quyền khsx_priority) ----
 document.querySelector('#autoPlanTable tbody').addEventListener('change', async (e)=>{
   const box = e.target.closest('.uutien-tick');
   if(!box) return;
-  if(!canManage()){ box.checked = laUuTien(box.dataset.orderId); return; }
+  if(!(canManage()||hasPermOrOwner('khsx_priority'))){ box.checked = laUuTien(box.dataset.orderId); return; }
   const id = box.dataset.orderId;
   if(box.checked){
     if(!laUuTien(id)) priorityOrderIds.push(id);
@@ -8800,11 +8800,11 @@ document.getElementById('lockPlanBtn').addEventListener('click', ()=>{
   const panel = document.getElementById('lockPlanPanel');
   const show = panel.style.display === 'none';
   panel.style.display = show ? 'block' : 'none';
-  if(show) renderLockDateList('lockPlanDates', allOrderDatesSorted(), lockedPlanDates);
+  if(show) renderLockDateList('lockPlanDates', allOrderDatesSorted(), lockedPlanDates, canManage()||hasPermOrOwner('khsx_unlock_plan'));
 });
 
 document.getElementById('saveLockPlanBtn').addEventListener('click', async ()=>{
-  if(!canManage()) return;
+  if(!(canManage()||hasPermOrOwner('khsx_lock_plan')||hasPermOrOwner('khsx_unlock_plan'))) return;
   const picked = Array.from(document.querySelectorAll('#lockPlanDates input:checked')).map(i=>i.value);
   const statusEl = document.getElementById('lockPlanStatus');
   statusEl.textContent = 'Đang lưu...';
@@ -8869,7 +8869,7 @@ document.getElementById('lockProgressBtn').addEventListener('click', ()=>{
   const panel = document.getElementById('lockProgressPanel');
   const show = panel.style.display === 'none';
   panel.style.display = show ? 'block' : 'none';
-  if(show) renderLockDateList('lockProgressDates', assignedOrderDatesSorted(), lockedProgressDates, canManage());
+  if(show) renderLockDateList('lockProgressDates', assignedOrderDatesSorted(), lockedProgressDates, canManage()||hasPermOrOwner('progress_unlock'));
 });
 
 document.getElementById('saveLockProgressBtn').addEventListener('click', async ()=>{
@@ -8879,10 +8879,11 @@ document.getElementById('saveLockProgressBtn').addEventListener('click', async (
   statusEl.textContent = 'Đang lưu...';
   statusEl.style.color = 'var(--text2)';
   const oldLockedProgressDates=[...lockedProgressDates];
-  // Quản lý 2 chỉ được thêm ngày chốt, không được bỏ chốt ngày đã khóa.
-  if(!canManage()) lockedProgressDates = Array.from(new Set([...lockedProgressDates,...picked]));
+  // Quản lý 2 chỉ được thêm ngày chốt, không được bỏ chốt ngày đã khóa - TRỪ KHI được tick progress_unlock.
+  const canUnlockProgress = canManage()||hasPermOrOwner('progress_unlock');
+  if(!canUnlockProgress) lockedProgressDates = Array.from(new Set([...lockedProgressDates,...picked]));
   let savedOk=false;
-  const datesToSave = canManage() ? picked : lockedProgressDates;
+  const datesToSave = canUnlockProgress ? picked : lockedProgressDates;
   if(SUPABASE_VARIANT) savedOk=(await saveSupabaseDayLocks('progress',datesToSave,assignedOrderDatesSorted())).ok;
   else savedOk=await storageSet(LOCKED_PROGRESS_KEY,datesToSave);
   lockedProgressDates=savedOk?datesToSave:oldLockedProgressDates;
@@ -9554,7 +9555,7 @@ document.getElementById('offlinePlanFile')?.addEventListener('change',async()=>{
       // 2026-09-10: nạp file KHSX giờ ghi thẳng lên Supabase qua đúng RPC đối chiếu
       // dùng chung với Sheet công ty (đã ngắt) — mọi tài khoản/thiết bị đều thấy ngay,
       // gán tổ/kế thừa sản lượng giữa các công đoạn hoạt động y hệt đơn từ Sheet.
-      if(!canManage()){st.textContent='Chỉ Quản lý được nạp KHSX.';st.style.color='var(--danger)';return;}
+      if(!(canManage()||hasPermOrOwner('khsx_sync_source')||hasPermOrOwner('settings_import_khsx_file'))){st.textContent='Bạn chưa được cấp quyền nạp file KHSX.';st.style.color='var(--danger)';return;}
       st.textContent='Đang nạp lên hệ thống...';st.style.color='var(--text2)';
       const result=await reconcileSourceRowsToSupabase(finalRows,{silent:false});
       if(!result.ok){
@@ -10542,7 +10543,7 @@ document.getElementById('telegramFullscreenBtn').addEventListener('click',()=>{
 })();
 
 document.getElementById('customerViewLinkBtn')?.addEventListener('click', async ()=>{
-  if(!canManage()) return;
+  if(!hasPermOrOwner('settings_guest_link')) return;
   const url=getCustomerViewUrl();
   try{
     await navigator.clipboard.writeText(url);
