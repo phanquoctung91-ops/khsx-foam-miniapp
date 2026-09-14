@@ -3697,7 +3697,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 172;
+const APP_VERSION = 174;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7393,7 +7393,7 @@ document.querySelector('#autoPlanTable tbody').addEventListener('click', async (
   if(sourceBtn){ await xuLyThayDoiNguon(sourceBtn.dataset.sourceChangeId); return; }
   const btn = e.target.closest('.trash-btn');
   if(!btn) return;
-  if(!canManage()) return;
+  if(!(canManage()||hasPermOrOwner('order_cancel'))) return;
   const id = btn.dataset.orderId;
   if(trashActionInFlight.has(id)) return; // lượt trước chưa xong, bỏ qua bấm đúp
   const o = getOrderById(id);
@@ -9013,7 +9013,7 @@ async function luuGanToCoXacNhan(userCode, toGan){
     // Vô hiệu hóa mọi lượt đọc đang bay trước khi ghi, tránh response cũ
     // chạy về sau rồi kéo select phân tổ trở lại giá trị trước đó.
     supabaseOperationalLoadSeq++;
-    if(!supabaseDb || !canManage() || !maChuan) return false;
+    if(!supabaseDb || !(canManage()||hasPermOrOwner('hr_edit_profile')) || !maChuan) return false;
     markLocalWrite();
     const worker = supabaseWorkers.find(x=>chuanMaNguoiDung(x.id)===chuanMaNguoiDung(maChuan));
     const {data:{session}} = await supabaseDb.auth.getSession();
@@ -9070,7 +9070,7 @@ function renderStaffUsersList(){
     };
     const accountRows=(items,isRevoked)=>items.length?items.map(profile=>{
       const telegramId=String(profile.telegram_user_id);
-      const editable=canManage();
+      const editable=canManage()||hasPermOrOwner('hr_edit_profile')||hasPermOrOwner('hr_revoke_restore');
       const nameCell=editable
         ? `<input class="telegram-account-name" type="text" maxlength="80" value="${thoatHtml(profile.display_name||'')}" style="min-width:170px;padding:7px 9px;"><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(telegramId)}</span>`
         : `<strong>${thoatHtml(profile.display_name||'Chưa có tên')}</strong><br><span style="font-size:10.5px;color:var(--text2);">ID ${thoatHtml(telegramId)}</span>`;
@@ -9203,7 +9203,7 @@ document.getElementById('staffUsersList').addEventListener('change', async (e)=>
     return;
   }
   const sel = e.target.closest('.staff-team-select');
-  if(!sel || !canManage()) return;
+  if(!sel || !(canManage()||hasPermOrOwner('hr_edit_profile'))) return;
   const ma = sel.dataset.code;
   const toCu = toGanTheoMa(ma);
   const toMoi = sel.value;
@@ -9227,14 +9227,19 @@ document.getElementById('staffUsersList').addEventListener('change', async (e)=>
 document.getElementById('staffUsersList').addEventListener('click', async (e)=>{
   const accountBtn=e.target.closest('.save-telegram-account-btn,.revoke-telegram-account-btn,.restore-telegram-account-btn');
   if(accountBtn){
-    if(!SUPABASE_VARIANT||!canManage()) return;
+    if(!SUPABASE_VARIANT) return;
+    const action=accountBtn.classList.contains('revoke-telegram-account-btn')?'revoke'
+      :accountBtn.classList.contains('restore-telegram-account-btn')?'restore':'update';
+    // Luu ten/vai/to can hr_edit_profile; thu hoi/khoi phuc tai khoan can hr_revoke_restore.
+    const canDoAction = action==='update'
+      ? (canManage()||hasPermOrOwner('hr_edit_profile'))
+      : (canManage()||hasPermOrOwner('hr_revoke_restore'));
+    if(!canDoAction) return;
     const row=accountBtn.closest('tr');
     const telegramId=String(accountBtn.dataset.telegramId||'');
     const displayName=row?.querySelector('.telegram-account-name')?.value.trim()||'';
     const role=row?.querySelector('.telegram-account-role')?.value||'';
     const unit=row?.querySelector('.telegram-account-unit')?.value||'';
-    const action=accountBtn.classList.contains('revoke-telegram-account-btn')?'revoke'
-      :accountBtn.classList.contains('restore-telegram-account-btn')?'restore':'update';
     if(action==='update'&&!displayName){ setAdminTelegramStatus('Tên hiển thị không được để trống.'); return; }
     if(action==='update'&&role==='nhan_vien'&&!unit){ setAdminTelegramStatus('Nhân viên phải chọn tổ/công đoạn.'); return; }
     if(action==='revoke'&&!confirm(`Thu hồi quyền Telegram ID ${telegramId}?\n\nTài khoản sẽ khóa ngay và bị đẩy khỏi dashboard trong vòng 30 giây.`)) return;
@@ -9590,7 +9595,7 @@ function renderCancelledOrders(){
 }
 document.getElementById('showCancelledOrdersBtn')?.addEventListener('click',renderCancelledOrders);
 document.getElementById('cancelledOrdersList')?.addEventListener('click',async e=>{
-  const btn=e.target.closest('.restore-order-btn'); if(!btn||!canManage())return;
+  const btn=e.target.closest('.restore-order-btn'); if(!btn||!(canManage()||hasPermOrOwner('order_restore')))return;
   const id=btn.dataset.restoreOrderId,meta=cancelledOrderMeta[id]; if(!meta?.order)return;
   if(!confirm(`Khôi phục đơn ${meta.order.ma||meta.order.dong||id}?`))return;
   deletedOrderIds=deletedOrderIds.filter(x=>x!==id);
