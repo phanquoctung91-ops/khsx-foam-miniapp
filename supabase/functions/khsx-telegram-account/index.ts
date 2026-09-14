@@ -42,6 +42,26 @@ async function audit(
   if (result.error) console.error("ACCOUNT_AUDIT_FAILED", result.error.code);
 }
 
+// Phan quyen tai khoan Dot 4.6: quan_ly_2 duoc mo rong theo permission_key
+// (khsx_has_permission_public, chi service_role goi duoc) thay vi chan cung
+// theo role. Loi tra ve giu nguyen ma cu (MANAGER2_EMPLOYEE_ONLY /
+// MANAGER2_NEW_EMPLOYEE_ONLY) de khong phai doi client.
+async function hasPermission(
+  admin: ReturnType<typeof adminClient>,
+  userId: string,
+  key: string,
+) {
+  const { data, error } = await admin.rpc("khsx_has_permission_public", {
+    p_key: key,
+    p_user_id: userId,
+  });
+  if (error) {
+    console.error("HAS_PERMISSION_CHECK_FAILED", key, error.code);
+    return false;
+  }
+  return data === true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors(req, true) });
@@ -120,10 +140,10 @@ Deno.serve(async (req) => {
   if (!manager?.active || !["quan_ly", "quan_ly_2"].includes(callerRole)) {
     return json(req, { error: "MANAGER_REQUIRED" }, 403, true);
   }
-  if (
-    callerRole === "quan_ly_2" && (action !== "approve" || role !== "nhan_vien")
-  ) {
-    return json(req, { error: "MANAGER2_EMPLOYEE_ONLY" }, 403, true);
+  if (callerRole === "quan_ly_2" && action === "approve" && role !== "nhan_vien") {
+    if (!(await hasPermission(admin, callerAuth.user.id, "hr_approve_new"))) {
+      return json(req, { error: "MANAGER2_EMPLOYEE_ONLY" }, 403, true);
+    }
   }
 
   const telegramNumber = Number(telegramId);
@@ -143,8 +163,11 @@ Deno.serve(async (req) => {
       true,
     );
   }
-  if (callerRole === "quan_ly_2" && existing) {
-    return json(req, { error: "MANAGER2_NEW_EMPLOYEE_ONLY" }, 403, true);
+  if (callerRole === "quan_ly_2" && existing && action !== "approve") {
+    const neededKey = action === "update" ? "hr_edit_profile" : "hr_revoke_restore";
+    if (!(await hasPermission(admin, callerAuth.user.id, neededKey))) {
+      return json(req, { error: "MANAGER2_NEW_EMPLOYEE_ONLY" }, 403, true);
+    }
   }
   if (action === "approve") {
     if (existing) {
