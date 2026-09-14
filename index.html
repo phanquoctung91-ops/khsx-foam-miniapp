@@ -3697,7 +3697,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 174;
+const APP_VERSION = 175;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7761,8 +7761,14 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     capNhatHienThiKpiRow();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
     // Chọn xong thì tự thu gọn drawer "☰ Thêm" trên điện thoại, không để mở lì.
-    document.getElementById('mainTabs')?.classList.remove('show-extra');
-    document.getElementById('tabsMoreToggle')?.setAttribute('aria-expanded','false');
+    // TRỪ tab đang mở lại chính là mục trong drawer (vd Nhân sự/Cài đặt/Lương) —
+    // thu gọn lúc này sẽ ẩn luôn nút tab đang active (class .tab-extra dùng
+    // chung display:none với chính nó), khiến lượt kiểm tra phiên định kỳ (24s)
+    // tưởng tab đang mở đã bị ẩn rồi tự đẩy về tab đầu tiên (Tổng thống kê).
+    if(!btn.classList.contains('tab-extra')){
+      document.getElementById('mainTabs')?.classList.remove('show-extra');
+      document.getElementById('tabsMoreToggle')?.setAttribute('aria-expanded','false');
+    }
   });
 });
 document.getElementById('tabsMoreToggle')?.addEventListener('click', ()=>{
