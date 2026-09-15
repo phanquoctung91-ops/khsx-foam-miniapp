@@ -3700,7 +3700,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 184;
+const APP_VERSION = 185;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4872,12 +4872,13 @@ async function sendSupabaseManagementItem(item){
   }else{
     const workDate=dmyToIso(item.work_date); if(!workDate) return true;
     const team=item.support_team;
-    result=team
-      ? await supabaseDb.from('khsx_daily_assignments').upsert({order_id:item.order_id,work_date:workDate,
-          team_name:uiUnitToSupabase(team),assignment_kind:'support',assigned_by:session.user.id},
-          {onConflict:'order_id,work_date,assignment_kind'}).select('order_id,work_date,team_name,assignment_kind').maybeSingle()
-      : await supabaseDb.from('khsx_daily_assignments').delete().eq('order_id',item.order_id)
-          .eq('work_date',workDate).eq('assignment_kind','support');
+    // Truoc day upsert/delete thang qua PostgREST, khong khoa dong/khong kiem
+    // tra xung dot - cung loi nhu Huy/Khoi phuc don truoc khi sua. Doi sang RPC
+    // co khoa dong + kiem tra updated_at nhu duong gan to chinh.
+    result=await supabaseDb.rpc('khsx_set_support_team_v1',{
+      p_order_id:item.order_id,p_work_date:workDate,p_team:team?uiUnitToSupabase(team):null,
+      p_client_updated_at:item.client_updated_at||new Date().toISOString()
+    });
   }
   if(result.error){
     const code=String(result.error.code||'');
@@ -4888,6 +4889,10 @@ async function sendSupabaseManagementItem(item){
     }
     if(String(result.error.message||'').includes('ORDER_CANCEL_CONFLICT')){
       supabaseStatus(`Đơn ${item.order_id} vừa bị đổi trên thiết bị khác · tải lại để xem dữ liệu mới`,false);
+      return 'terminal';
+    }
+    if(String(result.error.message||'').includes('SUPPORT_TEAM_CONFLICT')){
+      supabaseStatus(`Tổ hỗ trợ đơn ${item.order_id} vừa bị đổi trên thiết bị khác · tải lại để xem dữ liệu mới`,false);
       return 'terminal';
     }
     // Dữ liệu cục bộ cũ có thể chứa đơn chưa từng được tạo trên Supabase — NHƯNG cũng có
@@ -4924,8 +4929,8 @@ async function sendSupabaseManagementItem(item){
   const resultRow=Array.isArray(result.data)?result.data[0]:result.data;
   if(item.kind==='owner'&&(!resultRow||
     supabaseUnitToUi(resultRow.current_team)!==(item.current_team||null))) return false;
-  if(item.kind==='support'&&item.support_team&&(!result.data||
-    supabaseUnitToUi(result.data.team_name)!==item.support_team)) return false;
+  if(item.kind==='support'&&item.support_team&&(!resultRow||
+    supabaseUnitToUi(resultRow.out_team_name)!==item.support_team)) return false;
   return true;
 }
 async function flushSupabaseManagementOutbox(){
