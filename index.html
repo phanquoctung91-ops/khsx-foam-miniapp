@@ -3700,7 +3700,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 182;
+const APP_VERSION = 183;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6127,10 +6127,23 @@ async function xuLyThayDoiNguon(orderId){
       const manual=await taoDonTachNguon(old,split.thua,`Tách phần vượt kế hoạch mới. ${desc}`);
       if(!manual){alert('Không tạo được đơn phát sinh cho phần vượt nên chưa áp dụng số lượng mới. Hãy kiểm tra kết nối rồi thử lại.');return;}
       assignments[next.id]={...a,stage_by_date:split.giu,change_note:`Đã xác nhận nguồn: ${desc}`};
+      // Sua 2026-09-15: phan GIU LAI truoc day chi gan cuc bo (assignments[next.id]),
+      // khong ghi vao khsx_stage_progress that cua next.id - don CU sau do bi xoa mem
+      // nen tien do that bien mat khoi dashboard (chi con tren bao cao/Sheet da chup
+      // truoc do), du con so van "nhin thay" tren man hinh nguoi vua bam Xac nhan cho
+      // toi lan tai lai ke tiep. Ghi that qua RPC nhu taoDonTachNguon da lam.
+      Object.entries(split.giu||{}).forEach(([day,e])=>CONG_DOAN.forEach(stage=>{
+        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null);
+      }));
       dongBoSoHoanThanhCu(next);
     }else{
       assignments[next.id]={...a,change_note:`Đã xác nhận nguồn: ${desc}`};
       if(!onlyQty){ assignments[next.id].to=null; assignments[next.id].to_goc=null; }
+      // Sua 2026-09-15: cung loi nhu nhanh tren - ghi that toan bo tien do cu vao
+      // next.id thay vi chi gan cuc bo, tranh mat tien do khi don cu bi xoa mem.
+      Object.entries(a.stage_by_date||{}).forEach(([day,e])=>CONG_DOAN.forEach(stage=>{
+        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null);
+      }));
       dongBoSoHoanThanhCu(next);
     }
     delete assignments[old.id];
