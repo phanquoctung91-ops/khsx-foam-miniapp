@@ -70,8 +70,7 @@
      [style*="background:#f8f9fb"] phía trên không còn khớp được nữa -> nền vẫn sáng trong khi
      chữ đã đổi màu sáng theo dark mode, gần như vô hình. Chốt luật riêng theo ID, không phụ
      thuộc chuỗi mã màu trong style nữa. */
-  body.dark-mode #lockPlanPanel,body.dark-mode #lockProgressPanel,
-  body.dark-mode #manualOrderForm,body.dark-mode #manualOrderFormProgress{background:#201f1b!important;color:var(--text)!important;}
+  body.dark-mode #lockPlanPanel,body.dark-mode #lockProgressPanel{background:#201f1b!important;color:var(--text)!important;}
   body.dark-mode #unlockEditNotice{background:var(--danger-l)!important;color:var(--danger)!important;}
   /* Nút "Đăng ký Telegram ID" ở màn đăng nhập dùng màu #eef8fc/#1e6f96 — không nằm trong
      danh sách hex được dò bên dưới nên trước giờ luôn sáng bất kể chế độ tối. */
@@ -1018,6 +1017,32 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<div id="manualOrderModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
+  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:900px;margin:40px auto;padding:22px 24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+      <h3 style="margin:0;font-size:17px;">+ Thêm đơn phát sinh</h3>
+      <button id="closeManualOrderModalBtn" type="button" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
+    </div>
+    <div class="day-select-row" style="margin-bottom:14px;">
+      <label>Ngày:</label>
+      <input type="date" id="manualOrderModalDate">
+    </div>
+    <div class="table-scroll">
+      <table id="manualOrderModalTable" style="table-layout:fixed;">
+        <thead>
+          <tr><th style="width:110px;">Mã</th><th style="width:130px;">Dòng</th><th style="width:140px;">Kích thước</th><th style="width:80px;">Số lượng</th><th style="width:128px;">Tổ phụ trách</th><th>Ghi chú</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button id="manualOrderAddRowBtn" type="button" class="primary-btn" style="background:var(--text2);">+ Thêm dòng</button>
+      <button id="saveManualOrderModalBtn" class="primary-btn">Lưu đơn hàng</button>
+      <span class="save-status" id="manualOrderModalStatus"></span>
+    </div>
+  </div>
+</div>
+
 <div id="productDetailModal" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(18,20,26,.55);padding:18px;overflow:auto;">
   <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.28);max-width:820px;margin:36px auto;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
@@ -1183,26 +1208,6 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div id="unlockEditNotice" style="display:none;background:#fdecea;border:1px solid var(--danger);color:var(--danger);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;">
       <strong>Đang mở khoá sửa đổi.</strong> Bạn có thể đổi tổ phụ trách, sửa/xoá số lượng hoàn thành và bỏ tổ hỗ trợ của các đơn đã chốt. Nhớ bấm lại nút đỏ để khoá khi xong.
     </div>
-    <div id="manualOrderForm" style="display:none;background:#f8f9fb;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
-      <div class="day-select-row" style="margin-bottom:10px;">
-        <label>Ngày:</label>
-        <input type="date" id="manualOrderDate">
-        <label>Mã hàng:</label>
-        <input type="text" id="manualOrderCode" placeholder="VD: SORA10-6" style="min-width:120px;">
-        <label>Tên sản phẩm:</label>
-        <input type="text" id="manualOrderName" placeholder="VD: Sora" style="min-width:140px;">
-        <label>Kích thước:</label>
-        <input type="text" id="manualOrderSize" placeholder="VD: 160x200x15" style="min-width:150px;">
-        <label>Số lượng:</label>
-        <input type="number" id="manualOrderQty" min="1" style="width:90px;">
-      </div>
-      <div class="day-select-row" style="margin-bottom:0;">
-        <label>Ghi chú:</label>
-        <input type="text" id="manualOrderNote" placeholder="Ghi chú (tuỳ chọn)" style="flex:1;">
-        <button id="saveManualOrderBtn" class="primary-btn">Lưu đơn hàng</button>
-        <span class="save-status" id="manualOrderStatus"></span>
-      </div>
-    </div>
     <div class="kpis" id="autoPlanKpis" style="margin-bottom:16px;"></div>
     <div class="team-ring-row" id="autoPlanTeamRings" style="margin-bottom:16px;"></div>
     <div class="table-scroll">
@@ -1292,35 +1297,6 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div id="lockProgressDates" style="margin-bottom:10px;"></div>
       <button id="saveLockProgressBtn" class="primary-btn">Lưu</button>
       <span class="save-status" id="lockProgressStatus"></span>
-    </div>
-    <div id="manualOrderFormProgress" style="display:none;background:#f8f9fb;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
-      <div class="day-select-row" style="margin-bottom:10px;">
-        <label>Ngày:</label>
-        <input type="date" id="manualOrderDateProgress">
-        <label>Mã hàng:</label>
-        <input type="text" id="manualOrderCodeProgress" placeholder="VD: SORA10-6" style="min-width:120px;">
-        <label>Tên sản phẩm:</label>
-        <input type="text" id="manualOrderNameProgress" placeholder="VD: Sora" style="min-width:140px;">
-        <label>Kích thước:</label>
-        <input type="text" id="manualOrderSizeProgress" placeholder="VD: 160x200x15" style="min-width:150px;">
-        <label>Số lượng:</label>
-        <input type="number" id="manualOrderQtyProgress" min="1" style="width:90px;">
-      </div>
-      <div class="day-select-row" style="margin-bottom:0;">
-        <label>Tổ phụ trách:</label>
-        <select id="manualOrderTeamProgress">
-          <option value="">Chọn tổ...</option>
-          <option value="Tổ 1">Tổ 1</option>
-          <option value="Tổ 2">Tổ 2</option>
-          <option value="Tổ 3">Tổ 3</option>
-          <option value="Tổ 4">Tổ 4</option>
-          <option value="Tổ 5">Tổ 5</option>
-        </select>
-        <label>Ghi chú:</label>
-        <input type="text" id="manualOrderNoteProgress" placeholder="Ghi chú (tuỳ chọn)" style="flex:1;">
-        <button id="saveManualOrderBtnProgress" class="primary-btn">Lưu đơn hàng</button>
-        <span class="save-status" id="manualOrderStatusProgress"></span>
-      </div>
     </div>
     <div class="kpis" id="progressKpis" style="margin-bottom:16px;"></div>
     <div class="team-ring-row" id="progressTeamRings" style="margin-bottom:16px;"></div>
@@ -3697,7 +3673,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 176;
+const APP_VERSION = 178;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7129,74 +7105,92 @@ async function createManualOrder({dateVal, name, size, qty, note, team, code}){
   return newOrder;
 }
 
-function wireManualOrderForm({btnId, formId, dateId, codeId, nameId, sizeId, qtyId, teamId, noteId, saveId, statusId}){
-  const btn = document.getElementById(btnId);
-  const form = document.getElementById(formId);
-  const dateEl = document.getElementById(dateId);
-  const codeEl = codeId ? document.getElementById(codeId) : null;
-  const nameEl = document.getElementById(nameId);
-  const sizeEl = document.getElementById(sizeId);
-  const qtyEl = document.getElementById(qtyId);
-  const teamEl = teamId ? document.getElementById(teamId) : null;
-  const noteEl = document.getElementById(noteId);
-  const statusEl = document.getElementById(statusId);
-
-  btn.addEventListener('click', ()=>{
-    const showing = form.style.display !== 'none';
-    form.style.display = showing ? 'none' : 'block';
-    if(!showing && !dateEl.value){
-      dateEl.value = new Date().toISOString().slice(0,10);
-    }
-  });
-
-  const saveBtn = document.getElementById(saveId);
-  saveBtn.addEventListener('click', async ()=>{
-    const dateVal = dateEl.value;
-    const name = nameEl.value.trim();
-    const size = sizeEl.value.trim();
-    const qty = parseFloat(qtyEl.value);
-    const team = teamEl ? teamEl.value : null;
-    if(!dateVal || !name || !qty || qty<=0){
-      statusEl.textContent = 'Vui lòng nhập đủ Ngày, Tên sản phẩm và Số lượng.';
-      statusEl.style.color = 'var(--danger)';
-      return;
-    }
-    if(teamEl && !team){
-      statusEl.textContent = 'Vui lòng chọn Tổ phụ trách.';
-      statusEl.style.color = 'var(--danger)';
-      return;
-    }
-    if(currentUser?.role === 'quan_ly_2' && progressLockBlocksManager2({date:isoToDMY(dateVal)})){
-      statusEl.textContent = 'Ngày đã chốt tiến độ; Quản lý 2 không được thêm đơn vào ngày này.';
-      statusEl.style.color = 'var(--danger)';
-      return;
-    }
-    saveBtn.disabled = true; // chặn bấm nhiều lần liên tiếp tạo trùng đơn
-    statusEl.textContent = 'Đang lưu...';
-    statusEl.style.color = 'var(--text2)';
-    const created=await createManualOrder({dateVal, name, size, qty, note: noteEl.value.trim(), team, code: codeEl ? codeEl.value.trim() : ''});
-    if(!created){
-      statusEl.textContent = 'Chưa lưu được đơn. Dữ liệu không bị tạo dở, hãy kiểm tra kết nối rồi thử lại.';
-      statusEl.style.color = 'var(--danger)';
-      saveBtn.disabled = false;
-      return;
-    }
-    statusEl.textContent = 'Đã thêm đơn hàng ✓';
-    statusEl.style.color = 'var(--success)';
-    if(codeEl) codeEl.value = ''; nameEl.value = ''; sizeEl.value = ''; qtyEl.value = ''; noteEl.value = ''; if(teamEl) teamEl.value = '';
-    saveBtn.disabled = false;
-  });
+// Popup thêm đơn phát sinh dùng chung cho ca 2 nut (KHSX + Tien do). Nhieu dong
+// cung luc, 1 ngay chung cho ca popup, to phu trach tick nhu bang KHSX (tuy chon,
+// bo trong thi gan to sau tu bang chinh nhu truoc gio).
+function manualOrderRowHtml(rowId){
+  return `<tr data-row-id="${rowId}">`
+    + `<td><input type="text" class="mo-ma" placeholder="VD: SORA10-6" style="width:100%;box-sizing:border-box;"></td>`
+    + `<td><input type="text" class="mo-dong" placeholder="VD: Sora" style="width:100%;box-sizing:border-box;"></td>`
+    + `<td><input type="text" class="mo-size" placeholder="VD: 160x200x15" style="width:100%;box-sizing:border-box;"></td>`
+    + `<td><input type="number" class="mo-qty" min="1" style="width:100%;box-sizing:border-box;"></td>`
+    + `<td class="mo-team-cell" style="text-align:center;white-space:normal;">${toTickRowHtml('mo-team-tick',{'row-id':rowId},TEAM_OPTIONS,'')}</td>`
+    + `<td><input type="text" class="mo-note" placeholder="Ghi chú (tuỳ chọn)" style="width:100%;box-sizing:border-box;"></td>`
+    + `</tr>`;
 }
-
-wireManualOrderForm({
-  btnId:'addManualOrderBtn', formId:'manualOrderForm', dateId:'manualOrderDate', codeId:'manualOrderCode',
-  nameId:'manualOrderName', sizeId:'manualOrderSize', qtyId:'manualOrderQty',
-  teamId:null, noteId:'manualOrderNote', saveId:'saveManualOrderBtn', statusId:'manualOrderStatus'
+let manualOrderRowSeq = 0;
+function addManualOrderRow(){
+  document.querySelector('#manualOrderModalTable tbody').insertAdjacentHTML('beforeend', manualOrderRowHtml('mor'+(++manualOrderRowSeq)));
+}
+function openManualOrderModal(){
+  document.getElementById('manualOrderModalDate').value = new Date().toISOString().slice(0,10);
+  document.querySelector('#manualOrderModalTable tbody').innerHTML = '';
+  addManualOrderRow();
+  const statusEl = document.getElementById('manualOrderModalStatus');
+  statusEl.textContent = ''; statusEl.style.color = 'var(--text2)';
+  document.getElementById('manualOrderModal').style.display = 'block';
+}
+document.getElementById('addManualOrderBtn').addEventListener('click', openManualOrderModal);
+document.getElementById('addManualOrderBtnProgress').addEventListener('click', openManualOrderModal);
+document.getElementById('manualOrderAddRowBtn').addEventListener('click', addManualOrderRow);
+document.getElementById('closeManualOrderModalBtn').addEventListener('click', ()=>{
+  document.getElementById('manualOrderModal').style.display = 'none';
 });
-wireManualOrderForm({
-  btnId:'addManualOrderBtnProgress', formId:'manualOrderFormProgress', dateId:'manualOrderDateProgress', codeId:'manualOrderCodeProgress',
-  nameId:'manualOrderNameProgress', sizeId:'manualOrderSizeProgress', qtyId:'manualOrderQtyProgress',
-  teamId:'manualOrderTeamProgress', noteId:'manualOrderNoteProgress', saveId:'saveManualOrderBtnProgress', statusId:'manualOrderStatusProgress'
+document.getElementById('manualOrderModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'manualOrderModal') e.target.style.display = 'none';
+});
+document.querySelector('#manualOrderModalTable tbody').addEventListener('click', (e)=>{
+  if(!e.target.classList.contains('mo-team-tick')) return;
+  const td = e.target.closest('.mo-team-cell');
+  const rowId = e.target.dataset.rowId;
+  td.innerHTML = toTickRowHtml('mo-team-tick',{'row-id':rowId}, TEAM_OPTIONS, e.target.dataset.team || '');
+});
+document.getElementById('saveManualOrderModalBtn').addEventListener('click', async ()=>{
+  const statusEl = document.getElementById('manualOrderModalStatus');
+  const saveBtn = document.getElementById('saveManualOrderModalBtn');
+  const dateVal = document.getElementById('manualOrderModalDate').value;
+  if(!dateVal){
+    statusEl.textContent = 'Vui lòng chọn Ngày.'; statusEl.style.color = 'var(--danger)'; return;
+  }
+  if(currentUser?.role === 'quan_ly_2' && progressLockBlocksManager2({date:isoToDMY(dateVal)})){
+    statusEl.textContent = 'Ngày đã chốt tiến độ; Quản lý 2 không được thêm đơn vào ngày này.';
+    statusEl.style.color = 'var(--danger)';
+    return;
+  }
+  const drafts = [...document.querySelectorAll('#manualOrderModalTable tbody tr')].map(tr=>({
+    tr,
+    code: tr.querySelector('.mo-ma').value.trim(),
+    name: tr.querySelector('.mo-dong').value.trim(),
+    size: tr.querySelector('.mo-size').value.trim(),
+    qty: parseFloat(tr.querySelector('.mo-qty').value),
+    team: tr.querySelector('.mo-team-tick.active')?.dataset.team || null,
+    note: tr.querySelector('.mo-note').value.trim(),
+  })).filter(d=>d.name || d.size || d.code || d.note || !Number.isNaN(d.qty));
+  if(!drafts.length){
+    statusEl.textContent = 'Vui lòng nhập ít nhất 1 dòng.'; statusEl.style.color = 'var(--danger)'; return;
+  }
+  if(drafts.some(d=>!d.name || !d.qty || d.qty<=0)){
+    statusEl.textContent = 'Mỗi dòng đã nhập cần đủ Dòng sản phẩm và Số lượng.';
+    statusEl.style.color = 'var(--danger)';
+    return;
+  }
+  saveBtn.disabled = true; // chặn bấm nhiều lần liên tiếp tạo trùng đơn
+  statusEl.textContent = 'Đang lưu...';
+  statusEl.style.color = 'var(--text2)';
+  let okCount = 0;
+  for(const d of drafts){
+    const created = await createManualOrder({dateVal, name:d.name, size:d.size, qty:d.qty, note:d.note, team:d.team, code:d.code});
+    if(created){ okCount++; d.tr.remove(); }
+  }
+  saveBtn.disabled = false;
+  if(!document.querySelectorAll('#manualOrderModalTable tbody tr').length) addManualOrderRow();
+  if(okCount === drafts.length){
+    statusEl.textContent = `Đã thêm ${okCount} đơn hàng ✓`;
+    statusEl.style.color = 'var(--success)';
+  }else{
+    statusEl.textContent = `Đã thêm ${okCount}/${drafts.length} đơn — dòng còn lại chưa lưu được, kiểm tra kết nối rồi thử lại.`;
+    statusEl.style.color = 'var(--danger)';
+  }
 });
 
 
@@ -9785,7 +9779,7 @@ function danhSachNgayTrongKhoang(fromIso,toIso){
 function nhanNgayNgan(iso){ const d=new Date(iso+'T00:00:00'); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
 
 function initWagePage(){
-  if(!canManage2()) return;
+  if(!(canManage2()||hasPermOrOwner('payroll_view'))) return;
   if(!document.getElementById('wageFromDate').value){
     const n=new Date();
     datWageRange(new Date(n.getFullYear(),n.getMonth(),1), n);
@@ -9794,7 +9788,7 @@ function initWagePage(){
   }
 }
 async function renderWagePage(){
-  if(!canManage2()) return;
+  if(!(canManage2()||hasPermOrOwner('payroll_view'))) return;
   const fromIso=document.getElementById('wageFromDate').value, toIso=document.getElementById('wageToDate').value;
   const danBox=document.getElementById('wageDanTable'), workerBox=document.getElementById('wageWorkerTable'), status=document.getElementById('wageStatus');
   if(!fromIso||!toIso){ danBox.innerHTML=''; workerBox.innerHTML=''; return; }
@@ -9804,14 +9798,12 @@ async function renderWagePage(){
   if(days.length>92){ status.textContent='Khoảng ngày quá dài (tối đa ~1 quý) — thu hẹp lại để bảng dễ đọc.'; status.style.color='var(--warning)'; return; }
   status.textContent='Đang tải...'; status.style.color='var(--text2)';
   try{
-    const [danRes,workersRes,creditsRes]=await Promise.all([
-      supabaseDb.from('khsx_stage_progress').select('kpi_team,work_date,quantity').eq('stage','dan').gte('work_date',fromIso).lte('work_date',toIso),
-      supabaseDb.from('khsx_workers').select('id,display_name,stage').eq('active',true),
-      supabaseDb.from('khsx_stage_credits').select('worker_id,work_date,quantity,stage').in('stage',['may','dong_goi']).gte('work_date',fromIso).lte('work_date',toIso)
-    ]);
-    if(danRes.error) throw danRes.error;
-    if(workersRes.error) throw workersRes.error;
-    if(creditsRes.error) throw creditsRes.error;
+    // Dot 4.7: doc qua 1 RPC duy nhat (co kiem tra payroll_view) thay vi doc
+    // thang 3 bang - 2 trong 3 bang do dang mo cho moi tai khoan active vi con
+    // dung chung cho KPI/tien do, khong sua RLS goc duoc.
+    const {data:wageData,error:wageError}=await supabaseDb.rpc('khsx_wage_report',{p_from:fromIso,p_to:toIso});
+    if(wageError) throw wageError;
+    const danRes={data:wageData?.dan||[]}, workersRes={data:wageData?.workers||[]}, creditsRes={data:wageData?.credits||[]};
 
     const danMap={};
     (danRes.data||[]).forEach(r=>{
