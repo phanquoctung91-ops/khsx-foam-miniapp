@@ -8,7 +8,7 @@ const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');l
  server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!file.startsWith(root+path.sep))return res.end();try{res.setHeader('Content-Type',file.endsWith('.html')?'text/html; charset=utf-8':'application/javascript; charset=utf-8');res.end(fs.readFileSync(file))}catch{res.statusCode=404;res.end()}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
  browser=await chromium.launch({headless:true,executablePath:process.env.KHSX_BROWSER_PATH||require('node:path').join('C:','Program Files','Google','Chrome','Application','chrome.exe')});
- const page=await browser.newPage(),errors=[];
+ const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',async route=>{
    const u=new URL(route.request().url());if(u.origin===base)return route.continue();
@@ -32,6 +32,18 @@ const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');l
    const modalVisibleAfterKhsx = document.getElementById('manualOrderModal').style.display;
    const dateAfterOpen1 = document.getElementById('manualOrderModalDate').value;
    const rowCountAfterOpen1 = document.querySelectorAll('#manualOrderModalTable tbody tr').length;
+
+   // Do that khoang cach giua cac o nhap (2026-09-15 bug that: input[type="text"]
+   // toan app co min-width:220px, lon hon cot bang nay sau padding -> input bi ep
+   // rong tran de cot ke ben, do getBoundingClientRect ra khoang cach AM). Yeu cau
+   // anh Tung: khoang cach toi thieu 1cm (~37.8px o 96dpi).
+   const rowForGap=document.querySelector('#manualOrderModalTable tbody tr');
+   const gapInputs=[...rowForGap.querySelectorAll('input')];
+   const inputGaps=[];
+   for(let i=0;i<gapInputs.length-1;i++){
+     const a=gapInputs[i].getBoundingClientRect(), b=gapInputs[i+1].getBoundingClientRect();
+     inputGaps.push(+(b.left-a.right).toFixed(1));
+   }
 
    // Doi ngay sang 1 ngay khac roi dong popup
    document.getElementById('manualOrderModalDate').value = '2020-01-01';
@@ -71,7 +83,7 @@ const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');l
    const rowCountAfterSave = document.querySelectorAll('#manualOrderModalTable tbody tr').length;
 
    return {
-     modalVisibleAfterKhsx, dateAfterOpen1, todayIso, rowCountAfterOpen1,
+     modalVisibleAfterKhsx, dateAfterOpen1, todayIso, rowCountAfterOpen1, inputGaps,
      modalHiddenAfterClose, modalVisibleAfterProgress, dateResetOnReopen, rowCountAfterOpen2,
      rowCountAfterAdd, activeTeamRow1, calls, statusText, rowCountAfterSave
    };
@@ -83,6 +95,7 @@ const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');l
  assert.equal(result.modalVisibleAfterKhsx, 'block', 'Bam nut KHSX phai mo popup');
  assert.equal(result.dateAfterOpen1, result.todayIso, 'Mo popup lan dau phai mac dinh ngay hien tai');
  assert.equal(result.rowCountAfterOpen1, 1, 'Mo popup mac dinh phai co dung 1 dong trong');
+ assert.ok(result.inputGaps.every(g=>g>=37.8), `Khoang cach giua cac o nhap phai >= 1cm (37.8px), do duoc: ${JSON.stringify(result.inputGaps)} - am hoac qua nho nghia la o dang de len nhau`);
  assert.equal(result.modalHiddenAfterClose, 'none', 'Bam Dong phai an popup');
  assert.equal(result.modalVisibleAfterProgress, 'block', 'Bam nut o tab Tien do phai mo DUNG popup dung chung');
  assert.equal(result.dateResetOnReopen, result.todayIso, 'Moi lan mo popup ngay phai VE LAI hien tai, khong giu ngay lan truoc');

@@ -266,6 +266,15 @@
   #progressTable{min-width:1270px;table-layout:fixed;}
   #autoPlanTable tbody td, #progressTable tbody td{vertical-align:top;}
   #manualOrderModalTable tbody td{vertical-align:top;}
+  /* Khoang cach toi thieu 1cm (~38px man hinh 96dpi) giua 2 o nhap canh nhau:
+     padding trai/phai 20px moi ben -> 2 o ke nhau cach nhau 40px. box-sizing
+     border-box de width tren <th> da tinh luon padding, khong bi cong them. */
+  #manualOrderModalTable th, #manualOrderModalTable td{box-sizing:border-box;padding:9px 20px;}
+  /* input[type="text"] toan app co min-width:220px (dong 252) - lon hon het cac
+     cot bang nay sau padding, khien input bi ep rong tran de cot ke ben (do that
+     bang getBoundingClientRect ra am, tuc chong thuc su, khong phai chi nhin roi
+     mat). Go rieng cho bang nay. */
+  #manualOrderModalTable input[type="text"]{min-width:0;width:100%;}
   #autoPlanTable .col-date, #progressTable .col-date{width:96px;white-space:normal;vertical-align:top;}
   #autoPlanTable .col-code, #progressTable .col-code{width:80px;text-align:center;white-space:normal;overflow-wrap:break-word;}
   #autoPlanTable .col-product, #progressTable .col-product{width:74px;text-align:center;white-space:normal;}
@@ -1036,7 +1045,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 </div>
 
 <div id="manualOrderModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
-  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:900px;margin:40px auto;padding:22px 24px;">
+  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:1020px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
       <h3 style="margin:0;font-size:17px;">+ Thêm đơn phát sinh</h3>
       <button id="closeManualOrderModalBtn" type="button" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
@@ -1046,9 +1055,9 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <input type="date" id="manualOrderModalDate">
     </div>
     <div class="table-scroll">
-      <table id="manualOrderModalTable" style="table-layout:fixed;">
+      <table id="manualOrderModalTable" style="table-layout:fixed;min-width:960px;">
         <thead>
-          <tr><th style="width:110px;">Mã</th><th style="width:130px;">Dòng</th><th style="width:140px;">Kích thước</th><th style="width:80px;">Số lượng</th><th style="width:128px;">Tổ phụ trách</th><th>Ghi chú</th></tr>
+          <tr><th style="width:150px;">Mã</th><th style="width:170px;">Dòng</th><th style="width:180px;">Kích thước</th><th style="width:120px;">Số lượng</th><th style="width:170px;">Tổ phụ trách</th><th style="width:170px;">Ghi chú</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -3691,7 +3700,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 181;
+const APP_VERSION = 182;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
