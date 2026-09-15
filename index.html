@@ -3700,7 +3700,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 183;
+const APP_VERSION = 184;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4847,15 +4847,21 @@ async function sendSupabaseManagementItem(item){
   const {data:{session}}=await supabaseDb.auth.getSession(); if(!session) return false;
   let result;
   if(item.kind==='delete'||item.kind==='cancel'){
-    result=await supabaseDb.from('khsx_orders')
-      .update({deleted_at:item.deleted_at||new Date().toISOString(),updated_at:new Date().toISOString(),
-        cancel_reason:item.cancel_reason||'',cancelled_by:session.user.id})
-      .eq('id',item.order_id).select('id,deleted_at').maybeSingle();
+    // Truoc day update thang qua PostgREST, khong khoa dong/khong kiem tra xung
+    // dot - 2 nguoi bam Huy va Khoi phuc dung 1 don cung luc thi ai gui sau cung
+    // thang, khong bao xung dot. Doi sang RPC co khoa dong + kiem tra updated_at
+    // nhu duong gan to (khsx_save_order_assignment_impl) da lam dung.
+    result=await supabaseDb.rpc('khsx_cancel_restore_order_v1',{
+      p_order_id:item.order_id,p_action:'cancel',p_cancel_reason:item.cancel_reason||'',
+      p_client_updated_at:item.client_updated_at||new Date().toISOString()
+    });
     // Đã bị máy khác xóa trước cũng là kết quả đúng.
-    if(!result.error&&!result.data) return true;
+    if(result.error && String(result.error.message||'').includes('ORDER_NOT_FOUND')) return true;
   }else if(item.kind==='restore'){
-    result=await supabaseDb.from('khsx_orders').update({deleted_at:null,cancel_reason:null,cancelled_by:null,updated_at:new Date().toISOString()})
-      .eq('id',item.order_id).select('id,deleted_at').maybeSingle();
+    result=await supabaseDb.rpc('khsx_cancel_restore_order_v1',{
+      p_order_id:item.order_id,p_action:'restore',
+      p_client_updated_at:item.client_updated_at||new Date().toISOString()
+    });
   }else if(item.kind==='owner'){
     result=await supabaseDb.rpc('khsx_save_order_assignment_v1',{
       p_operation_id:item.revision||makeOperationId(),p_order_id:item.order_id,
@@ -4878,6 +4884,10 @@ async function sendSupabaseManagementItem(item){
     console.warn('Supabase chưa nhận thao tác quản lý',result.error);
     if(code==='40001'||String(result.error.message||'').includes('ASSIGNMENT_CONFLICT')){
       supabaseStatus('Phân công đã đổi trên thiết bị khác · tải lại để xem dữ liệu mới',false);
+      return 'terminal';
+    }
+    if(String(result.error.message||'').includes('ORDER_CANCEL_CONFLICT')){
+      supabaseStatus(`Đơn ${item.order_id} vừa bị đổi trên thiết bị khác · tải lại để xem dữ liệu mới`,false);
       return 'terminal';
     }
     // Dữ liệu cục bộ cũ có thể chứa đơn chưa từng được tạo trên Supabase — NHƯNG cũng có
