@@ -695,6 +695,23 @@
     #autoPlanTable tbody .col-action::before, #progressTable tbody .col-action::before{content:'Thao tác';}
     .table-scroll{overflow-x:hidden;}
 
+    /* Popup Thêm đơn phát sinh: mỗi dòng thành 1 thẻ, các ô xếp dọc cho dễ gõ
+       trên điện thoại thay vì bảng ngang bị cắt cột (đồng bộ kiểu thẻ như
+       #autoPlanTable/#progressTable ở trên). */
+    #manualOrderModal > div{padding:16px;max-height:calc(100vh - 40px);overflow-y:auto;}
+    #manualOrderModalTable thead{display:none;}
+    #manualOrderModalTable tbody{display:block;}
+    #manualOrderModalTable tbody tr{display:block;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;padding:10px;}
+    #manualOrderModalTable tbody td{display:block;width:auto!important;min-width:0!important;padding:6px 0;border:0;white-space:normal;text-align:left!important;}
+    #manualOrderModalTable tbody td::before{display:block;margin-bottom:4px;color:var(--text2);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.15px;}
+    #manualOrderModalTable tbody td:nth-child(1)::before{content:'Mã';}
+    #manualOrderModalTable tbody td:nth-child(2)::before{content:'Dòng';}
+    #manualOrderModalTable tbody td:nth-child(3)::before{content:'Kích thước';}
+    #manualOrderModalTable tbody td:nth-child(4)::before{content:'Số lượng';}
+    #manualOrderModalTable tbody td:nth-child(5)::before{content:'Tổ phụ trách';}
+    #manualOrderModalTable tbody td:nth-child(6)::before{content:'Ghi chú';}
+    #manualOrderModalTable .to-tick-row{justify-content:flex-start;}
+
     /* Thẻ TĐSX riêng cho nhân viên: chỉ giữ thông tin cần cho đúng công đoạn đang làm. */
     #progressTable.employee-stage-view tbody .col-date,
     #progressTable.employee-stage-view tbody .col-code,
@@ -3673,7 +3690,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 178;
+const APP_VERSION = 180;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4868,8 +4885,18 @@ async function sendSupabaseManagementItem(item){
       supabaseStatus(`⚠ Không lưu được ${ten} cho đơn ${item.order_id} (lỗi ${code}) · cần gán lại sau khi nạp lại KHSX`,false);
       return 'terminal';
     }
-    // Lỗi nghiệp vụ khác (vd MANAGER_REQUIRED, INVALID_CURRENT_TEAM, PROGRESS_LOCKED):
-    // gói sẽ được thử lại, nhưng vẫn phải cho người dùng biết đang có thao tác chưa lưu.
+    // 42501 = thiếu quyền/không đủ điều kiện (vd ASSIGN_TEAM_FORBIDDEN, MANAGER_REQUIRED,
+    // KHSX_PRIORITY_FORBIDDEN, PROGRESS_LOCKED...) — thử lại KHÔNG BAO GIỜ tự hết, vì
+    // nguyên nhân không tự mất theo thời gian. Coi nhầm là "thử lại" từng khiến gói kẹt
+    // vĩnh viễn trong hàng đợi, chặn luôn mọi lượt tải lại dữ liệu của CHÍNH máy đó
+    // (kể cả sau khi mở lại app, vì hàng đợi lưu localStorage) cho tới khi ai đó xoá tay.
+    if(code==='42501'){
+      const thongDiep=String(result.error.message||'').slice(0,80);
+      supabaseStatus(`⚠ Không lưu được thao tác trên đơn ${item.order_id} (thiếu quyền${thongDiep?': '+thongDiep:''}) · cần cấp quyền rồi làm lại`,false);
+      return 'terminal';
+    }
+    // Lỗi nghiệp vụ khác (vd INVALID_CURRENT_TEAM): gói sẽ được thử lại, nhưng vẫn
+    // phải cho người dùng biết đang có thao tác chưa lưu.
     const thongDiep=String(result.error.message||'').slice(0,80);
     supabaseStatus(`⚠ Chưa lưu được thao tác trên đơn ${item.order_id}${thongDiep?' ('+thongDiep+')':''} · đang thử lại`,false);
     return false;
