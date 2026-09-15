@@ -265,6 +265,7 @@
   #autoPlanTable{min-width:1160px;table-layout:fixed;}
   #progressTable{min-width:1270px;table-layout:fixed;}
   #autoPlanTable tbody td, #progressTable tbody td{vertical-align:top;}
+  #manualOrderModalTable tbody td{vertical-align:top;}
   #autoPlanTable .col-date, #progressTable .col-date{width:96px;white-space:normal;vertical-align:top;}
   #autoPlanTable .col-code, #progressTable .col-code{width:80px;text-align:center;white-space:normal;overflow-wrap:break-word;}
   #autoPlanTable .col-product, #progressTable .col-product{width:74px;text-align:center;white-space:normal;}
@@ -3690,7 +3691,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 180;
+const APP_VERSION = 181;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
