@@ -394,22 +394,33 @@ Deno.serve(async (req) => {
       telegramNumber,
     );
   }
-  if (action === "approve" && role === "nhan_vien") {
+  if (role === "nhan_vien" && (action === "approve" || action === "update")) {
     // Quy uoc dang dung (xem 20260911063755_..._phase3_backfill.sql): moi nhan
-    // vien duoc cap dung 1 quyen nhap cong doan theo to dang gan. Duyet tai
-    // khoan moi truoc gio khong tu cap quyen nay, phai cho chu tai khoan tick
-    // tay tung nguoi moi nhap duoc - tu cap luon theo to de khoi lam lai.
+    // vien duoc cap dung 1 quyen nhap cong doan theo to dang gan. Ap dung ca khi
+    // duyet moi (approve) lan doi to cho nhan vien dang hoat dong (update doi
+    // unit_name) - truoc day chi xu ly approve, doi to xong nguoi cu van giu
+    // quyen theo to CU, khong nhap duoc cong doan cua to MOI cho toi khi tick tay.
     const STAGE_BY_UNIT: Record<string, string> = {
       "To may": "progress_enter_may",
       "To dong goi": "progress_enter_dong_goi",
     };
-    const defaultPermission = STAGE_BY_UNIT[unit] ?? "progress_enter_dan";
+    const stagePermissionFor = (u: string) => STAGE_BY_UNIT[u] ?? "progress_enter_dan";
+    const newPermission = stagePermissionFor(unit);
     const { error: permError } = await admin.from("khsx_account_permissions")
       .upsert(
-        { user_id: authUserId, permission_key: defaultPermission, granted_by: callerAuth.user.id },
+        { user_id: authUserId, permission_key: newPermission, granted_by: callerAuth.user.id },
         { onConflict: "user_id,permission_key", ignoreDuplicates: true },
       );
     if (permError) console.error("DEFAULT_PERMISSION_GRANT_FAILED", permError);
+
+    if (action === "update" && existing?.role === "nhan_vien") {
+      const oldPermission = stagePermissionFor(existing.unit_name ?? "");
+      if (oldPermission !== newPermission) {
+        const { error: delError } = await admin.from("khsx_account_permissions")
+          .delete().eq("user_id", authUserId).eq("permission_key", oldPermission);
+        if (delError) console.error("STALE_STAGE_PERMISSION_REMOVE_FAILED", delError);
+      }
+    }
   }
   await audit(admin, {
     telegram_user_id: telegramNumber,
