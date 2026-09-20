@@ -3253,11 +3253,16 @@ function saiChuoiCongDoan(o){
 }
 function ganNguoiHoanThanhCongDoan(entry,congDoan,actor){
   if(!entry || !CONG_DOAN_TINH_KPI_CA_NHAN.includes(congDoan) || actor===undefined) return;
-  ['code','name','at'].forEach(loai=>delete entry[truongNguoiHoanThanh(congDoan,loai)]);
+  ['code','name','at','worker_id'].forEach(loai=>delete entry[truongNguoiHoanThanh(congDoan,loai)]);
   if(actor){
     entry[truongNguoiHoanThanh(congDoan,'code')]=String(actor.code||'').trim();
     entry[truongNguoiHoanThanh(congDoan,'name')]=String(actor.name||actor.code||'').trim();
     entry[truongNguoiHoanThanh(congDoan,'at')]=actor.at||new Date().toISOString();
+    // Việc #: worker_id (UUID) phải lưu lại cùng lịch sử - trước đây chỉ giữ
+    // code/name/at nên khi đơn đổi nguồn phải "chuyển" lịch sử sang ID mới
+    // (xuLyThayDoiNguon/taoDonTachNguon) không có gì để truyền lại cho RPC,
+    // ghi worker_id=null đè mất người đã ghi đúng trước đó.
+    entry[truongNguoiHoanThanh(congDoan,'worker_id')]=String(actor.worker_id||actor.code||'').trim()||null;
   }
 }
 async function chonNguoiHoanThanhCongDoan(congDoan,o,ngay){
@@ -6094,7 +6099,7 @@ function tachLichSuTheoTran(history,tran){
       const e=history[day]||{},qty=soCongDoan(e[stage]);
       if(!qty)return;
       const keep=Math.min(qty,con),extra=qty-keep; con-=keep;
-      const copyMeta=dest=>['to','by_code','by_name','by_at'].forEach(suffix=>{const k=`_${stage}_${suffix}`;if(e[k]!=null)dest[k]=e[k];});
+      const copyMeta=dest=>['to','by_code','by_name','by_at','by_worker_id'].forEach(suffix=>{const k=`_${stage}_${suffix}`;if(e[k]!=null)dest[k]=e[k];});
       if(keep){const dest=giu[day]||(giu[day]={});dest[stage]=keep;copyMeta(dest);}
       if(extra){const dest=thua[day]||(thua[day]={});dest[stage]=extra;copyMeta(dest);}
     });
@@ -6118,7 +6123,7 @@ async function taoDonTachNguon(oldOrder,history,reason){
   const a=assignments[manual.id]||(assignments[manual.id]={to:assignments[oldOrder.id]?.to||null,stage_by_date:{},support_by_date:{}});
   a.stage_by_date=history; a.change_note=note; a.source_order_id=oldOrder.id;
   Object.entries(history||{}).forEach(([day,e])=>CONG_DOAN.forEach(stage=>{
-    if(e&&e[stage]!=null)recordStagePatch(manual,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null);
+    if(e&&e[stage]!=null)recordStagePatch(manual,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,e[`_${stage}_by_worker_id`]||null);
   }));
   dongBoSoHoanThanhCu(manual); queueSupabaseManagementPatch('owner',manual);
   return manual;
@@ -6148,7 +6153,7 @@ async function xuLyThayDoiNguon(orderId){
       // truoc do), du con so van "nhin thay" tren man hinh nguoi vua bam Xac nhan cho
       // toi lan tai lai ke tiep. Ghi that qua RPC nhu taoDonTachNguon da lam.
       Object.entries(split.giu||{}).forEach(([day,e])=>CONG_DOAN.forEach(stage=>{
-        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null);
+        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,e[`_${stage}_by_worker_id`]||null);
       }));
       dongBoSoHoanThanhCu(next);
     }else{
@@ -6157,7 +6162,7 @@ async function xuLyThayDoiNguon(orderId){
       // Sua 2026-09-15: cung loi nhu nhanh tren - ghi that toan bo tien do cu vao
       // next.id thay vi chi gan cuc bo, tranh mat tien do khi don cu bi xoa mem.
       Object.entries(a.stage_by_date||{}).forEach(([day,e])=>CONG_DOAN.forEach(stage=>{
-        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null);
+        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,e[`_${stage}_by_worker_id`]||null);
       }));
       dongBoSoHoanThanhCu(next);
     }
