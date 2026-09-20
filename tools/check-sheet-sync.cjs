@@ -108,10 +108,11 @@ async function row(id){return (await q('select * from public.khsx_orders where i
  await seed('r_recent',1,'2026-09-05',{updated_at:'2099-01-01T00:00:00Z'});
  await seed('r_clone',1,'2026-09-05',{source_payload:{clone_run:'LOCAL'}});
  result=await sync([source('r_keep'),source('r_deleted')]);
- assert.equal(result.cancelled,1);assert.equal(result.skipped_recent,1);
- assert.ok((await row('r_clone')).deleted_at);assert.ok((await row('r_deleted')).deleted_at);
+ assert.equal(result.cancelled,1);assert.equal(result.skipped_recent,1);assert.equal(result.inserted,1);
+ assert.ok((await row('r_clone')).deleted_at);
+ assert.equal((await row('r_deleted')).deleted_at,null);assert.equal((await row('r_deleted')).cancel_reason,null);
  for(const id of ['r_history','r_is_manual','r_is_drop','r_is_ghost','r_is_warranty','r_unknown','r_recent'])assert.equal((await row(id)).deleted_at,null,id);
- pass('no whole-day historical cleanup; preserve dynamic/unknown/recent rows; never restore tombstones');
+ pass('no whole-day historical cleanup; preserve dynamic/unknown/recent rows; revive a soft-deleted row whose id reappears in a fresh import');
 
  // Force an error after the insertion to prove the entire batch rolls back.
  await reset();await seed('r_z');

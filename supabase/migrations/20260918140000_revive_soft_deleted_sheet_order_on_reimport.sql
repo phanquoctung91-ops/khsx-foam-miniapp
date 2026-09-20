@@ -1,5 +1,20 @@
--- Reconcile only dates present in a complete, freshly read Sheet response.
--- Preserve cancelled IDs, locked days and all recorded/pending production.
+-- Bug: khsx_reconcile_sheet_plan_impl only handled two states for an id that
+-- already exists in khsx_orders — insert-if-missing, or clear the review flag
+-- if active. A soft-deleted order (deleted_at set, e.g. auto-cancelled once
+-- because the sheet source temporarily dropped it) had no matching branch and
+-- fell through to `continue`, so re-importing the exact same row later could
+-- never bring it back — it was lost permanently and silently (no error, no
+-- review entry). Reported 2026-09-18: KHSX file import for 19/9/2026 showed
+-- 125/134 tấm, missing SORA15-8 (9 tấm) because that exact order had been
+-- auto-cancelled on 16/9 and the sheet later listed it again.
+--
+-- Fix: add a revive branch. An id is a primary key derived from
+-- date+product_code+dims+qty, so it can never collide with an unrelated
+-- order — if the row exists and is soft-deleted, restore it in place with the
+-- freshly imported field values instead of leaving it lost. Applies whether
+-- the row was auto-cancelled by this same sync or manually cancelled by a
+-- manager via khsx_cancel_restore_order_v1 — a reappearing id is always the
+-- same order.
 create or replace function private.khsx_reconcile_sheet_plan_impl(
   p_source_orders jsonb,
   p_source_read_at timestamptz,
@@ -163,17 +178,3 @@ begin
     'changed',v_inserted+v_cancelled+v_review_updated>0);
 end;
 $function$;
-revoke all on function private.khsx_reconcile_sheet_plan_impl(jsonb,timestamptz,text[]) from public,anon,authenticated,service_role;
-grant execute on function private.khsx_reconcile_sheet_plan_impl(jsonb,timestamptz,text[]) to authenticated;
-
--- Public API wrapper follows the existing stage-progress RPC pattern.
-create or replace function public.khsx_reconcile_sheet_plan(
-  p_source_orders jsonb,
-  p_source_read_at timestamptz,
-  p_pending_order_ids text[] default '{}'::text[]
-) returns jsonb language sql security invoker set search_path = ''
-as $function$
-  select private.khsx_reconcile_sheet_plan_impl(p_source_orders,p_source_read_at,p_pending_order_ids);
-$function$;
-revoke all on function public.khsx_reconcile_sheet_plan(jsonb,timestamptz,text[]) from public,anon,authenticated,service_role;
-grant execute on function public.khsx_reconcile_sheet_plan(jsonb,timestamptz,text[]) to authenticated;
