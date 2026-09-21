@@ -8324,6 +8324,12 @@ function renderProgress(){
   // Phần thiếu đã tách ra nhưng CHƯA được giao tổ hỗ trợ — đếm trên toàn bộ dữ liệu,
   // không lọc theo ngày, để quản lý không bỏ sót đơn nào.
   const thieuChuaGiao = getOrders().filter(o => o.is_drop && !assignments[o.id]?.to).length;
+  // Việc 21/9: đơn rớt (chưa xong, quá ngày kế hoạch) tự trôi sang ngày sau
+  // theo thiết kế - nhân viên tự thấy cảnh báo trong ngày họ đang xem, nhưng
+  // Quản lý không có chỉ báo tính trên TOÀN BỘ dữ liệu nên đơn tồn đọng âm
+  // thầm cho tới khi nhân viên báo lại (sự cố PRE15-6/PRE15-8/LAEZ.../ZONE12-6
+  // ngày 21/9 - không phải bug đồng bộ, chỉ là quản lý không biết mà xoá).
+  const donRotTonDong = getOrders().filter(o => getOrderStatus(o)==='rot').length;
 
   if(congDoanNhanVien){
     const tenCongDoan = congDoanNhanVien === 'dan' ? 'dán' : (congDoanNhanVien === 'may' ? 'may' : 'đóng gói');
@@ -8347,6 +8353,11 @@ function renderProgress(){
         <div class="label">Phần thiếu chưa giao tổ</div>
         <div class="value" style="color:${thieuChuaGiao>0?'var(--danger)':'var(--text2)'}">${thieuChuaGiao}</div>
         ${thieuChuaGiao>0 ? `<div class="kpi-phu" style="color:var(--danger);font-weight:700;">Cần ghi nhận tổ đã hỗ trợ</div>` : ''}
+      </div>` : ''}
+      ${canManage2() ? `<div class="kpi" style="border-top-color:${donRotTonDong>0?'var(--danger)':'var(--border)'};">
+        <div class="label">Đơn rớt tồn đọng</div>
+        <div class="value" style="color:${donRotTonDong>0?'var(--danger)':'var(--text2)'}">${donRotTonDong}</div>
+        ${donRotTonDong>0 ? `<div class="kpi-phu" style="color:var(--danger);font-weight:700;">Chưa xong, đang trôi sang ngày sau</div>` : ''}
       </div>` : ''}
       ${dayVal==='all' ? '<div class="kpi" style="border-top-color:#4aa3df;"><div class="label">Nhập công đoạn</div><div class="kpi-phu" style="color:#2475a9;font-weight:700;">Chọn một ngày để nhập số</div></div>' : ''}
     `;
