@@ -548,7 +548,8 @@
   .speed-detail-formula{background:var(--accent-l);border:1px solid var(--border);color:var(--text);}
   .speed-detail-source{color:var(--text2);border:1px dashed var(--border);}
   .speed-detail-warning{background:var(--warning-l);border:1px solid var(--warning);color:var(--text);}
-  .speed-detail-result{background:var(--success-l);border:1px solid var(--success);color:var(--text);font-weight:700;}
+  /* Câu báo cáo tuần xuống 4 dòng — giữ nguyên chỗ ngắt dòng của chuỗi, không dồn thành một khối. */
+  .speed-detail-result{background:var(--success-l);border:1px solid var(--success);color:var(--text);font-weight:700;white-space:pre-line;}
   body.dark-mode .speed-detail-lead{background:#132b2b!important;border-color:var(--border)!important;}
   body.dark-mode .speed-detail-row{background:#181714!important;border-color:var(--border)!important;}
   body.dark-mode .speed-detail-formula{background:#241f30!important;border-color:var(--border)!important;}
@@ -1643,7 +1644,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=189"></script>
+<script src="raw-data.js?v=190"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2022,19 +2023,6 @@ function taoCauBaoCaoKrTuan(nam,thang,hienTai=new Date()){
   const weekOutput=tongKpiTuRowsTheoKeys(keysBetween(weekFromIso,cutoffIso)).throughput;
   const weekTarget=dailyRate*weekWorkdays.length;
   const weekPct=weekTarget>0?weekOutput/weekTarget*100:null;
-  let quarterState='';
-  if(quarterGap<0&&previousGap<0){
-    const currentLate=Math.abs(quarterGap),previousLate=Math.abs(previousGap);
-    if(currentLate>previousLate+.04)quarterState=`mức chậm ${currentLate-previousLate<=2?'tăng nhẹ':'tăng'} từ ${dinhDangPhanTramBaoCao(previousLate)}% lên ${dinhDangPhanTramBaoCao(currentLate)}%`;
-    else if(currentLate<previousLate-.04)quarterState=`mức chậm giảm từ ${dinhDangPhanTramBaoCao(previousLate)}% còn ${dinhDangPhanTramBaoCao(currentLate)}%`;
-    else quarterState=`mức chậm giữ ở ${dinhDangPhanTramBaoCao(currentLate)}%`;
-  }else if(quarterGap>=0&&previousGap<0){
-    quarterState=`đã bù phần chậm của tuần trước và hiện vượt ${dinhDangPhanTramBaoCao(quarterGap)}%`;
-  }else if(quarterGap>=0&&previousGap>=0){
-    quarterState=`đang vượt ${dinhDangPhanTramBaoCao(quarterGap)}%`;
-  }else{
-    quarterState=`hiện đang chậm ${dinhDangPhanTramBaoCao(quarterGap)}%`;
-  }
   // Sửa 2026-09-08 (Việc 12): câu gồm đúng 3 phần đã chốt với anh Tùng — tuần (so với mục
   // tiêu tuần, cùng dailyRate nên % này cũng chính là % vượt/chậm tiến độ đều của tháng),
   // tháng (lũy kế so với mục tiêu tháng = dailyRate*số ngày đăng ký cả tháng), quý (giữ
@@ -2048,11 +2036,39 @@ function taoCauBaoCaoKrTuan(nam,thang,hienTai=new Date()){
   const weekRangeLabel=weekFirstIso.slice(0,7)===weekLastIso.slice(0,7)
     ? `${weekFromDMY.slice(0,2)}-${cutoffDMY.slice(0,5)}`
     : `${weekFromDMY} - ${cutoffDMY}`;
-  const weekPaceText=weekPct==null?'chưa xác định (không có ngày làm việc trong tuần)':
-    `${dinhDangPhanTramBaoCao(weekPct)}% mục tiêu tuần (${Math.round(weekTarget).toLocaleString('vi-VN')} tấm), tức đang ${weekPct>=100?'vượt':'chậm'} tiến độ đều của tháng ${dinhDangPhanTramBaoCao(Math.abs(weekPct-100))}%`;
-  const monthPaceText=`${monthGap>=0?'vượt':'chậm'} tiến độ đều (${dinhDangPhanTramBaoCao(monthSchedule)}% thời gian đã qua) ${dinhDangPhanTramBaoCao(Math.abs(monthGap))} điểm`;
+  // Sửa 2026-09-22 (anh Tùng chốt mẫu): câu báo cáo tuần viết lại thành 4 dòng, mỗi dòng
+  // một mốc, CÙNG một khuôn "làm được / cần làm — dư hay hụt bao nhiêu tấm (bao nhiêu %)".
+  // Bản cũ nói cùng một con số hai lần ("đạt 89,8% mục tiêu tuần" và "chậm 10,2%"), lại
+  // lấy % của tuần trên mục tiêu tuần nhưng % của tháng/quý trên mục tiêu CẢ kỳ nên ba
+  // dòng không so được với nhau. Nay cả ba đều lấy mục tiêu TÍNH ĐẾN HÔM NAY làm gốc.
+  const soTam=n=>Math.round(n).toLocaleString('vi-VN');
+  const phanTramLech=(chenh,goc)=>goc>0?`${chenh>=0?'+':'−'}${dinhDangPhanTramBaoCao(Math.abs(chenh/goc*100))}%`:'—';
+  const cauLech=(chenh,goc)=>`${chenh>=0?'dư':'hụt'} ${soTam(Math.abs(chenh))} tấm (${phanTramLech(chenh,goc)})`;
+  const monthTargetDenNay=dailyRate*monthElapsedDates.length;
+  const quarterTargetDenNay=dailyRate*quarterElapsed;
+  const quarterLech=quarterOutput-quarterTargetDenNay;
+  const previousLech=previousOutput-dailyRate*previousElapsed;
+  const doiTrongTuan=quarterLech-previousLech;
+  // Tuần rồi kéo quý đi lên hay đi xuống — nói thẳng bằng tấm để khỏi phải tự trừ hai số.
+  const xuHuongQuy=Math.abs(doiTrongTuan)<1?'tuần rồi giữ nguyên'
+    :doiTrongTuan<0?`tuần rồi ${quarterLech<0?'hụt thêm':'giảm'} ${soTam(-doiTrongTuan)}`
+    :`tuần rồi ${quarterLech<0?'bớt hụt':'tăng thêm'} ${soTam(doiTrongTuan)}`;
+  const soNgayConLai=registered.length-quarterElapsed;
+  const canMoiNgay=soNgayConLai>0?(target-quarterOutput)/soNgayConLai:null;
+  const tocDoHienTai=quarterElapsed>0?quarterOutput/quarterElapsed:0;
+  const duBaoCuoiQuy=quarterOutput+tocDoHienTai*soNgayConLai;
+  const lechDuBao=duBaoCuoiQuy-target;
+  const dongTuan=weekPct==null
+    ? `Tuần ${weekRangeLabel}: không có ngày làm việc nào.`
+    : `Tuần ${weekRangeLabel} (${weekWorkdays.length} ngày làm): ${soTam(weekOutput)}/${soTam(weekTarget)} tấm — ${cauLech(weekOutput-weekTarget,weekTarget)}.`;
+  const dongThang=`Tháng ${thang} (${monthElapsedDates.length}/${monthDates.length} ngày): ${soTam(monthOutput)}/${soTam(monthTargetDenNay)} tấm — ${cauLech(monthOutput-monthTargetDenNay,monthTargetDenNay)}.`;
+  const dongQuy=`Quý ${quy} (${quarterElapsed}/${registered.length} ngày): ${soTam(quarterOutput)}/${soTam(quarterTargetDenNay)} tấm — ${cauLech(quarterLech,quarterTargetDenNay)}, ${xuHuongQuy}.`
+    +(canMoiNgay!=null?` Còn ${soNgayConLai} ngày, cần ${soTam(canMoiNgay)} tấm/ngày.`:' Quý đã hết ngày làm.');
+  const dongDuBao=soNgayConLai>0
+    ? `Dự báo cuối quý: ${soTam(duBaoCuoiQuy)}/${soTam(target)} tấm (${dinhDangPhanTramBaoCao(duBaoCuoiQuy/target*100)}%) — ${lechDuBao>=0?'dư':'thiếu'} ${soTam(Math.abs(lechDuBao))} tấm nếu giữ tốc độ ${soTam(tocDoHienTai)} tấm/ngày.`
+    : `Chốt quý: ${soTam(quarterOutput)}/${soTam(target)} tấm (${dinhDangPhanTramBaoCao(quarterOutput/target*100)}%).`;
   return {
-    text:`Tuần này (${weekRangeLabel}, ${weekWorkdays.length} ngày làm việc) hoàn thành ${Math.round(weekOutput).toLocaleString('vi-VN')} tấm — đạt ${weekPaceText}. Lũy kế tháng ${thang} đạt ${dinhDangPhanTramBaoCao(monthActual)}% mục tiêu tháng (${Math.round(monthOutput).toLocaleString('vi-VN')}/${Math.round(monthTarget).toLocaleString('vi-VN')} tấm) — ${monthPaceText}. Lũy kế quý đến nay đạt ${dinhDangPhanTramBaoCao(quarterOutput/target*100)}% (${Math.round(quarterOutput).toLocaleString('vi-VN')}/${target.toLocaleString('vi-VN')} tấm) — ${quarterState}.`,
+    text:`${dongTuan}\n${dongThang}\n${dongQuy}\n${dongDuBao}`,
     cutoffIso,monthActual,monthSchedule,monthGap,quarterGap,previousGap,weekPct,
     // Việc 14: dữ liệu thô để popup "Bấm xem báo cáo tuần" dựng bảng thông số, không cần
     // tính lại — mọi biến bên dưới đều đã có sẵn ở trên, chỉ gom lại để trả ra ngoài.
@@ -3726,7 +3742,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 189;
+const APP_VERSION = 190;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;

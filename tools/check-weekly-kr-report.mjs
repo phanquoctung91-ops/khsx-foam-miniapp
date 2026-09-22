@@ -1,3 +1,6 @@
+// Cau bao cao tuan (nut "Bam xem bao cao tuan") - mau anh Tung chot 22/09/2026:
+// 4 dong, moi dong mot moc, cung khuon "lam duoc / can lam den hom nay
+// - du hay hut bao nhieu tam (bao nhieu %)". Phan tram am mang dau tru.
 import fs from 'node:fs';
 import vm from 'node:vm';
 
@@ -45,10 +48,26 @@ function assert(ok,message){if(!ok)throw new Error(message);}
 
 const report=context.taoCauBaoCaoKrTuan(2026,8,new Date(2026,8,3));
 assert(report.cutoffIso==='2026-08-29','Tháng cũ phải chốt ở Thứ 7 cuối cùng');
-assert(report.monthActual===85&&report.monthSchedule===80,'Tiến độ tháng phải là 85% so với 80%');
-assert(Math.round(report.previousGap*10)/10===-4&&Math.round(report.quarterGap*10)/10===-3,'Mức chậm quý phải giảm từ 4% còn 3%');
-assert(report.text==='Đến hết tuần cuối tháng 8/2026, tiến độ hoàn thành KR đạt 85,0%, đang vượt 5,0% so với tiến độ tháng. So với tiến độ chung của quý, mức chậm giảm từ 4,0% còn 3,0%.','Câu báo cáo không đúng giọng đã chốt');
-console.log('PASS  weekly KR report uses natural month and quarter wording');
+
+const dong=report.text.split('\n');
+assert(dong.length===4,'Câu báo cáo phải có đúng 4 dòng');
+assert(dong[0]==='Tuần 24-25/08 (2 ngày làm): 42/40 tấm — dư 2 tấm (+5,0%).','Dòng tuần sai mẫu');
+assert(dong[1]==='Tháng 8 (4/5 ngày): 85/80 tấm — dư 5 tấm (+6,3%).','Dòng tháng sai mẫu');
+assert(dong[3]==='Dự báo cuối quý: 193/200 tấm (96,7%) — thiếu 7 tấm nếu giữ tốc độ 19 tấm/ngày.','Dòng dự báo sai mẫu');
+console.log('PASS  câu báo cáo tuần đúng mẫu 4 dòng đã chốt');
+
+// Ba dong tuan/thang/quy phai lay muc tieu TINH DEN HOM NAY lam goc, khong lay
+// muc tieu ca ky - neu khac goc thi ba dong khong so duoc voi nhau.
+assert(dong[1].includes('85/80 tấm'),'Dòng tháng phải so với mục tiêu tính đến hôm nay (80), không phải mục tiêu cả tháng');
+assert(dong[2].startsWith('Quý 3 (9/10 ngày): 174/180 tấm'),'Dòng quý phải so với mục tiêu tính đến hôm nay (180), không phải 200 của cả quý');
+console.log('PASS  cả ba mốc dùng chung gốc "mục tiêu tính đến hôm nay"');
+
+assert(dong[2].includes('hụt 6 tấm (−3,3%)'),'Phần trăm âm phải mang dấu trừ');
+console.log('PASS  phần trăm âm hiện dấu trừ');
+
+assert(dong[2].includes('tuần rồi bớt hụt 2'),'Dòng quý phải nói thẳng tuần rồi đổi bao nhiêu tấm, không bắt người đọc tự trừ');
+assert(dong[2].includes('Còn 1 ngày, cần 26 tấm/ngày.'),'Dòng quý phải nói còn mấy ngày và cần bao nhiêu mỗi ngày');
+console.log('PASS  dòng quý nói rõ xu hướng và việc phải làm');
 
 context.workDatesForQuarter=()=>['2026-08-24','2026-08-25','2026-08-26','2026-08-27','2026-08-28','2026-08-29','2026-08-30'];
 const sundayCutoff=context.mocKetThucTuan(new Date(2026,7,31),new Set(context.workDatesForQuarter()));
