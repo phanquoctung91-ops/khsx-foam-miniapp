@@ -671,7 +671,7 @@
   /* Bộ lọc Tháng / Năm về cùng một hàng, không để "Năm:" rớt xuống */
   body.mobile-view .day-select-row{gap:6px;flex-wrap:nowrap;align-items:center;}
   body.mobile-view .day-select-row label{font-size:12px;white-space:nowrap;}
-  body.mobile-view .day-select-row select{flex:1 1 0;min-width:0;font-size:13px;padding:9px 8px;}
+  body.mobile-view .day-select-row select{flex:1 1 auto;min-width:96px;font-size:13px;padding:9px 8px;}
   body.mobile-view #monthRangeLabel{display:block;width:100%;margin-top:6px;font-size:11.5px;}
 
   /* Thanh điều hướng dưới đáy: ngón cái với tới, thay cho hàng tab ngang */
@@ -689,12 +689,19 @@
     border:none!important;border-radius:9px;text-align:center;white-space:normal;
   }
   body.mobile-view #mainTabs .tab-btn .tab-svg{width:19px;height:19px;}
+  body.mobile-view #mainTabs .nhan-dai{display:none;}
+  body.mobile-view #mainTabs .nhan-ngan{display:inline;}
+  .nhan-ngan{display:none;}
   body.mobile-view #mainTabs .tab-btn.active{background:var(--primary-l)!important;color:var(--primary)!important;}
   /* Nút "Thêm" nằm chung trong thanh dưới cho khỏi lạc chỗ */
+  body.mobile-view #mainTabs{padding-right:64px;}
   body.mobile-view .tabs-more-toggle{
-    position:fixed;right:8px;bottom:calc(72px + env(safe-area-inset-bottom, 0px));z-index:9001;
-    border-radius:999px;padding:9px 14px;font-size:12px;min-height:40px;
-    background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);
+    position:fixed;right:0;bottom:0;z-index:9001;width:64px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:6px 2px calc(6px + env(safe-area-inset-bottom, 0px));
+    font-size:10.5px;font-weight:700;line-height:1.15;
+    background:var(--card);border:none;border-top:1px solid var(--border);border-radius:0;
+    box-shadow:0 -2px 12px rgba(0,0,0,.08);color:var(--text2);
   }
   /* Bật "Thêm" thì các mục phụ hiện luôn trong thanh dưới, cho cuộn ngang */
   body.mobile-view #mainTabs.show-extra{justify-content:flex-start;}
@@ -728,6 +735,8 @@
 
   /* Điện thoại gộp KHSX và TDSX làm một: ẩn mục Tiến độ ở thanh dưới, nhập số ngay trên thẻ tổ. */
   body.mobile-view #mainTabs .tab-btn[data-tab="progress"]{display:none;}
+  /* Năng lực là mục chính trên điện thoại, không để luật tab-extra của màn hẹp nuốt mất */
+  body.mobile-view #mainTabs .tab-btn[data-tab="capacity"]{display:inline-flex;}
 
   /* Thẻ tổ thu gọn: mỗi tổ chiếm trọn chiều ngang, vòng tròn nhỏ lại */
   body.mobile-view .team-ring-row{grid-template-columns:minmax(0,1fr);gap:9px;}
@@ -791,6 +800,13 @@
     border:1px solid var(--border);background:var(--card);color:var(--text2);
   }
   body.mobile-view #chipLocTo button.dang-chon{background:var(--primary);border-color:var(--primary);color:var(--on-primary);}
+
+  /* Tên hàng: dòng chứa đủ thì hiện đủ, chật quá mới rút về viết tắt (class .chat gắn bằng JS) */
+  .ten-day-du{display:none;}
+  body.mobile-view .ten-gon{display:none;}
+  body.mobile-view .ten-day-du{display:inline;}
+  body.mobile-view .t.chat .ten-day-du{display:none;}
+  body.mobile-view .t.chat .ten-gon{display:inline;}
 
   /* Ghi chú của đơn hiện ngay dưới tên, khỏi phải mở bảng KHSX mới đọc được */
   .ghi-chu-don{display:none;}
@@ -1861,7 +1877,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=193"></script>
+<script src="raw-data.js?v=194"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3972,7 +3988,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 193;
+const APP_VERSION = 194;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6920,7 +6936,7 @@ function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nul
         const clickCls=coTheBam?' team-ring-clickable':'';
         const chuGhi=r.ghiChu&&r.ghiChu.length?`<em class="ghi-chu-don">${thoatHtml(r.ghiChu.join(' · '))}</em>`:'';
         const sao=(canManage()||hasPermOrOwner('khsx_priority'))?`<button type="button" class="sao-uu-tien${r.uuTien?' dang-uu-tien':''}" data-ids="${r.ids.join('|')}" title="Ưu tiên kế hoạch tuần">★</button>`:'';
-        return `<span class="t${uuTienClass}${clickCls}"${dataAttr} title="${thoatHtml(r.ten)}${coTheBam?' — bấm để nhập số':''}">${sao}${thoatHtml(r.tenGon)}${r.hoTro?` <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}${chuGhi}</span>`
+        return `<span class="t${uuTienClass}${clickCls}"${dataAttr} title="${thoatHtml(r.ten)}${coTheBam?' — bấm để nhập số':''}">${sao}<span class="ten-gon">${thoatHtml(r.tenGon)}</span><span class="ten-day-du">${thoatHtml(r.ten)}</span>${r.hoTro?` <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}${chuGhi}</span>`
              + `<span class="k${uuTienClass}${clickCls}"${dataAttr}>${r.kt}:</span><b class="${uuTienClass.trim()}${clickCls}"${dataAttr}>${r.sl}${tickXong}</b>`
              + oCongDoanMini(r,ngay,coTheBam);
       }).join('')
@@ -7087,7 +7103,8 @@ function renderAutoPlan(){
     <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="autoPlan" aria-label="Xem cách tính Tốc độ theo bộ lọc" style="border-top-color:${mauTocDo(tocDoLoc.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoLoc.trangThai)};">${tocDoLoc.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoLoc.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div><div class="kpi-phu" style="color:${mauTocDo(tocDoLoc.trangThai)};font-weight:700;line-height:1.35;">${tocDoLoc.danhGia}</div><button type="button" class="kpi-chi-tiet">Chi tiết</button><span class="speed-kpi-hint">Bấm để xem cách tính</span></div>
   `;
   renderTeamRings('autoPlanTeamRings', filtered, dayVal !== 'all', false, dayVal);
-  veChipLocTo(); apDungLocTo();   // ve lai chip va ap dung loc sau moi lan ve lai the to   // 'Tất cả ngày' -> chỉ hiện vòng tròn %
+  veChipLocTo(); apDungLocTo();   // ve lai chip va ap dung loc sau moi lan ve lai the to
+  doTenVuaKhung();                // ten nao khong du cho thi moi rut ve viet tat   // 'Tất cả ngày' -> chỉ hiện vòng tròn %
   canhBaoAnhChupRong();
   const tbody = document.querySelector('#autoPlanTable tbody');
   tbody.innerHTML = sortOrdersForDisplay(filtered, dayVal === 'all').map(r=>{
@@ -7234,10 +7251,22 @@ document.getElementById('autoPlanTeamRings')?.addEventListener('click',e=>{
   if(!document.body.classList.contains('mobile-view')) return;
   // Bấm dòng tóm tắt thì gập/xổ tổ đó, bấm vào đơn thì mở popup nhập số.
   const tom=e.target.closest('.to-tom-tat');
-  if(tom){ tom.closest('.team-ring-card')?.classList.toggle('to-gap'); return; }
+  if(tom){ tom.closest('.team-ring-card')?.classList.toggle('to-gap'); doTenVuaKhung(); return; }
   bamDonTrenTheTo(e);
 });
 
+// Tên hàng trên thẻ tổ: để tên đầy đủ trước, đo xem có tràn dòng không — tràn mới rút về
+// viết tắt. Không mặc định viết tắt như bảng trên máy tính, vì dòng ở đây thường đủ rộng.
+function doTenVuaKhung(){
+  if(!document.body.classList.contains('mobile-view')) return;
+  document.querySelectorAll('#autoPlanTeamRings .t').forEach(o=>{
+    const day=o.querySelector('.ten-day-du'); if(!day) return;
+    // Thẻ đang gập thì chưa đo được (rộng 0) — để nguyên tên đầy đủ, đo lại lúc xổ ra.
+    if(o.clientWidth<=0) return;
+    o.classList.remove('chat');
+    if(day.scrollWidth > o.clientWidth - 8) o.classList.add('chat');
+  });
+}
 // Chip lọc tổ: chọn một tổ thì chỉ hiện tổ đó, đỡ phải cuộn qua tổ không liên quan.
 let toDangLoc='all';
 function veChipLocTo(){
@@ -11048,7 +11077,28 @@ document.body.classList.add('dark-mode');
   // Nền sáng hay tối do người dùng chọn, nhớ riêng từng máy.
 // Màn dọc hẹp dùng bố cục riêng: thanh điều hướng dưới đáy, đầu trang gọn, thẻ số liệu gom lại.
 const MAN_HEP=window.matchMedia('(max-width:640px) and (orientation:portrait)');
-function apDungManHep(){ document.body.classList.toggle('mobile-view',MAN_HEP.matches); }
+// Thanh dưới chỉ đủ chỗ cho tên ngắn — "Tổng Thống kê sản xuất" dài quá, đẩy mục khác ra khỏi màn.
+const TEN_TAB_NGAN={monthly:'Thống kê',autoplan:'KHSX',progress:'Tiến độ',capacity:'Năng lực',
+  report:'Báo cáo',wage:'Lương',staff:'Nhân sự',settings:'Cài đặt'};
+function datTenTabNgan(){
+  document.querySelectorAll('#mainTabs .tab-btn').forEach(b=>{
+    if(b.querySelector('.nhan-ngan')) return;
+    const ngan=TEN_TAB_NGAN[b.dataset.tab]; if(!ngan) return;
+    b.childNodes.forEach(nut=>{
+      if(nut.nodeType===3 && nut.textContent.trim()){
+        const bocDai=document.createElement('span');
+        bocDai.className='nhan-dai'; bocDai.textContent=nut.textContent;
+        nut.replaceWith(bocDai);
+      }
+    });
+    const bocNgan=document.createElement('span');
+    bocNgan.className='nhan-ngan'; bocNgan.textContent=ngan;
+    b.appendChild(bocNgan);
+  });
+  const them=document.getElementById('tabsMoreToggle');
+  if(them && !them.dataset.daDoiNhan){ them.textContent='☰ Thêm'; them.dataset.daDoiNhan='1'; }
+}
+function apDungManHep(){ document.body.classList.toggle('mobile-view',MAN_HEP.matches); datTenTabNgan(); }
 MAN_HEP.addEventListener('change',apDungManHep);
 apDungManHep();
 
