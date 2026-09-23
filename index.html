@@ -669,10 +669,10 @@
   body.mobile-view .management-tools{justify-content:flex-start;margin-top:8px;}
 
   /* Bộ lọc Tháng / Năm về cùng một hàng, không để "Năm:" rớt xuống */
-  body.mobile-view .day-select-row{gap:6px;flex-wrap:nowrap;align-items:center;}
+  body.mobile-view .day-select-row{gap:6px;flex-wrap:wrap;align-items:center;}
   body.mobile-view .day-select-row label{font-size:12px;white-space:nowrap;}
   body.mobile-view .day-select-row select{flex:1 1 auto;min-width:96px;font-size:13px;padding:9px 8px;}
-  body.mobile-view #monthRangeLabel{display:block;width:100%;margin-top:6px;font-size:11.5px;}
+  body.mobile-view #monthRangeLabel{flex:1 0 100%;width:100%;margin-top:6px;font-size:11.5px;line-height:1.35;}
 
   /* Thanh điều hướng dưới đáy: ngón cái với tới, thay cho hàng tab ngang */
   body.mobile-view #mainTabs{
@@ -683,10 +683,11 @@
     box-shadow:0 -2px 12px rgba(0,0,0,.08);overflow-x:auto;
   }
   body.mobile-view #mainTabs .tab-group-label{display:none;}
+  body.mobile-view #mainTabs{align-items:stretch;}
   body.mobile-view #mainTabs .tab-btn{
-    flex:1 1 0;min-width:64px;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    padding:6px 2px;min-height:52px;font-size:10.5px;font-weight:700;line-height:1.15;
-    border:none!important;border-radius:9px;text-align:center;white-space:normal;
+    flex:1 1 0;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    padding:6px 2px;height:52px;font-size:10px;font-weight:700;line-height:1.1;
+    border:none!important;border-radius:9px;text-align:center;white-space:nowrap;overflow:hidden;
   }
   body.mobile-view #mainTabs .tab-btn .tab-svg{width:19px;height:19px;}
   body.mobile-view #mainTabs .nhan-dai{display:none;}
@@ -697,11 +698,12 @@
   body.mobile-view #mainTabs{padding-right:64px;}
   body.mobile-view .tabs-more-toggle{
     position:fixed;right:0;bottom:0;z-index:9001;width:64px;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    padding:6px 2px calc(6px + env(safe-area-inset-bottom, 0px));
-    font-size:10.5px;font-weight:700;line-height:1.15;
-    background:var(--card);border:none;border-top:1px solid var(--border);border-radius:0;
-    box-shadow:0 -2px 12px rgba(0,0,0,.08);color:var(--text2);
+    display:flex;align-items:center;justify-content:center;
+    height:calc(64px + env(safe-area-inset-bottom, 0px));
+    padding:0 0 env(safe-area-inset-bottom, 0px);margin:0;
+    font-size:10px;font-weight:700;line-height:1.1;white-space:nowrap;
+    background:var(--card)!important;border:none!important;border-top:1px solid var(--border)!important;
+    border-radius:0!important;box-shadow:none!important;color:var(--text2)!important;
   }
   /* Bật "Thêm" thì các mục phụ hiện luôn trong thanh dưới, cho cuộn ngang */
   body.mobile-view #mainTabs.show-extra{justify-content:flex-start;}
@@ -1877,7 +1879,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=194"></script>
+<script src="raw-data.js?v=195"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3988,7 +3990,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 194;
+const APP_VERSION = 195;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
