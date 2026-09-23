@@ -831,6 +831,38 @@
   }
   body.mobile-view .ct-nhap:focus{outline:2px solid var(--primary);outline-offset:-2px;border-radius:6px;}
 
+  /* Nút Gán tổ / Giao hỗ trợ ngay trên dòng đơn */
+  .giao-to-mini{display:none;}
+  body.mobile-view .giao-to-mini{display:block;grid-column:1/-1;padding:0 4px 8px;}
+  body.mobile-view .giao-to-nut{
+    width:100%;min-height:38px;border-radius:8px;cursor:pointer;
+    font-family:inherit;font-size:12px;font-weight:700;
+    border:1px dashed var(--primary);background:var(--primary-l);color:var(--primary);
+  }
+  .chon-to-luoi{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+  .chon-to-luoi .chon-to-nut{
+    min-height:52px;border-radius:10px;cursor:pointer;
+    font-family:inherit;font-size:15px;font-weight:800;
+    border:1px solid var(--border);background:var(--card);color:var(--text);
+  }
+  .chon-to-luoi .chon-to-nut:hover{border-color:var(--primary);color:var(--primary);}
+
+  /* Hàng chip lọc tổ + nút mở tìm kiếm/bộ lọc */
+  body.mobile-view .hang-loc-mobile{display:flex;align-items:center;gap:8px;}
+  body.mobile-view .hang-loc-mobile #chipLocTo{flex:1 1 auto;min-width:0;}
+  .nut-loc-mobile{display:none;}
+  body.mobile-view .nut-loc-mobile{
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+    width:38px;height:38px;margin-bottom:8px;border-radius:9px;cursor:pointer;
+    font-size:16px;border:1px solid var(--border);background:var(--card);color:var(--text2);
+  }
+  /* Ô tìm kiếm và bộ lọc phân công: giấu sau nút ⚙, cần mới mở */
+  body.mobile-view #panel-autoplan .toolbar-filter-row .search-with-clear,
+  body.mobile-view #panel-autoplan .toolbar-filter-row label[for],
+  body.mobile-view #panel-autoplan #autoPlanAssignFilter{display:none;}
+  body.mobile-view #panel-autoplan.hien-bo-loc .toolbar-filter-row .search-with-clear,
+  body.mobile-view #panel-autoplan.hien-bo-loc #autoPlanAssignFilter{display:block;}
+
   /* Bảng KHSX dạng thẻ dọc lặp lại đúng nội dung thẻ tổ — trên điện thoại ẩn hẳn cho đỡ cuộn */
   body.mobile-view #autoPlanTable,
   body.mobile-view #autoPlanTableWrap{display:none;}
@@ -1460,8 +1492,10 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div id="unlockEditNotice" style="display:none;background:#fdecea;border:1px solid var(--danger);color:var(--danger);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;">
       <strong>Đang mở khoá sửa đổi.</strong> Bạn có thể đổi tổ phụ trách, sửa/xoá số lượng hoàn thành và bỏ tổ hỗ trợ của các đơn đã chốt. Nhớ bấm lại nút đỏ để khoá khi xong.
     </div>
+    <button id="moSoLieuKhsxBtn" type="button" class="mobile-only-btn">Chi tiết số liệu</button>
+    <div id="neoKpiKhsx"></div>
     <div class="kpis" id="autoPlanKpis" style="margin-bottom:16px;"></div>
-    <div id="chipLocTo"></div>
+    <div class="hang-loc-mobile"><div id="chipLocTo"></div><button id="nutLocKhsx" type="button" class="nut-loc-mobile" title="Tìm kiếm và bộ lọc">⚙</button></div>
     <div class="team-ring-row" id="autoPlanTeamRings" style="margin-bottom:16px;"></div>
     <div class="table-scroll" id="autoPlanTableWrap">
       <table id="autoPlanTable">
@@ -1856,6 +1890,16 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<div id="chonToModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="chonToTitle">
+  <div class="capacity-dialog" style="max-width:340px;">
+    <div class="capacity-head">
+      <h3 id="chonToTitle" style="margin:0;font-size:17px;">Chọn tổ</h3>
+      <button id="dongChonToBtn" class="capacity-quick-btn" type="button">Đóng</button>
+    </div>
+    <div id="chonToBody" class="chon-to-luoi"></div>
+  </div>
+</div>
+
 <div id="thongKeModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="thongKeModalTitle">
   <div class="capacity-dialog">
     <div class="capacity-head">
@@ -1879,7 +1923,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=195"></script>
+<script src="raw-data.js?v=196"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2908,6 +2952,7 @@ const SHEET_GID = '1960770014';
 const SIMULATED_AUTOPLAN_DATA = [{"date":"27/07/2026","ma":"LUN15-6","dong":"LUNA","ngang":160,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"LUN20-8","dong":"LUNA","ngang":180,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"LUN15-4","dong":"LUNA","ngang":140,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"SORA15-2020","dong":"SORA","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"EZ20-3","dong":"LATEX ENZO","ngang":160,"dai":200,"day":20,"so_luong":41,"trang_thai":"","ghi_chu":"Vải premium cũ, có khoá kéo, đóng bao keo trong"},{"date":"27/07/2026","ma":"EZ20-5","dong":"LATEX ENZO","ngang":200,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":"Làm nệm tròn đường kính 2m, Vải premium cũ, có khoá kéo"},{"date":"27/07/2026","ma":"CLS15-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA10-63","dong":"SORA","ngang":63,"dai":183,"day":10,"so_luong":60,"trang_thai":"","ghi_chu":"Tái 1 con std 90x190x10, (áo standard không đít thêu + thêm tem cty khách)"},{"date":"28/07/2026","ma":"SORA10-6","dong":"SORA","ngang":160,"dai":200,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-6","dong":"SORA","ngang":160,"dai":200,"day":15,"so_luong":27,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA15-8","dong":"SORA","ngang":180,"dai":200,"day":15,"so_luong":27,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-8","dong":"SORA","ngang":180,"dai":200,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":200,"day":10,"so_luong":15,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS15-2022","dong":"CLASSIC","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS15-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS10-6","dong":"CLASSIC","ngang":160,"dai":200,"day":10,"so_luong":15,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"CLS15-8","dong":"CLASSIC","ngang":180,"dai":200,"day":15,"so_luong":9,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE17-8","dong":"3'ZONE","ngang":180,"dai":200,"day":17,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2022","dong":"SORA","ngang":220,"dai":200,"day":10,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"LAGO10-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"LAGO15-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":15,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-2020","dong":"SORA","ngang":200,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"ZONE12-6","dong":"3'ZONE","ngang":160,"dai":200,"day":12,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"ZONE17-6","dong":"3'ZONE","ngang":160,"dai":200,"day":17,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"LAGO10-4","dong":"LATEX GOLD","ngang":140,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"STD20-2020","dong":"STANDARD","ngang":200,"dai":200,"day":20,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"ZONE17-6","dong":"3'ZONE","ngang":160,"dai":200,"day":17,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS10-2022","dong":"CLASSIC","ngang":220,"dai":200,"day":10,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"STD15-2022","dong":"STANDARD","ngang":220,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":180,"day":10,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA10-63","dong":"SORA","ngang":63,"dai":183,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD15-2022","dong":"STANDARD","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD20-2","dong":"STANDARD","ngang":120,"dai":200,"day":20,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD10-2022","dong":"STANDARD","ngang":220,"dai":240,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LAEZ10-2022","dong":"LATEX ENZO","ngang":220,"dai":200,"day":10,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LAEZ15-2022","dong":"LATEX ENZO","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"ZONE17-8","dong":"3'ZONE","ngang":180,"dai":200,"day":17,"so_luong":2,"trang_thai":"","ghi_chu":"Ưu tiên sáng sản xuất"},{"date":"29/07/2026","ma":"PRE15-4","dong":"PREMIUM","ngang":140,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":"Ưu tiên sáng sản xuất"},{"date":"29/07/2026","ma":"STD10-2","dong":"STANDARD","ngang":110,"dai":170,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":"tái chế con std 140x175x10"},{"date":"29/07/2026","ma":"STD10-1","dong":"STANDARD","ngang":90,"dai":180,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":"tái chế con classic 150x190x10"},{"date":"29/07/2026","ma":"STD15-6","dong":"STANDARD","ngang":150,"dai":190,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"EZ20-3","dong":"LATEX ENZO","ngang":160,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":"Vải premium cũ, có khoá kéo, đóng bao keo trong"},{"date":"29/07/2026","ma":"PRE15-2022","dong":"PREMIUM","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"CLS20-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":20,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LUN10-2","dong":"LUNA","ngang":120,"dai":200,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"PRE10-6","dong":"PREMIUM","ngang":150,"dai":197,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":180,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"LAGO15-4","dong":"LATEX GOLD","ngang":140,"dai":190,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE17-2022","dong":"3'ZONE","ngang":220,"dai":200,"day":17,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE12-2020","dong":"3'ZONE","ngang":200,"dai":200,"day":12,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-4","dong":"SORA","ngang":140,"dai":192,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"KH12-4","dong":"KING HOME","ngang":140,"dai":200,"day":12,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"KH12-6","dong":"KING HOME","ngang":160,"dai":200,"day":12,"so_luong":6,"trang_thai":"","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO10-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-2020","dong":"STANDARD","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"SORA10-1","dong":"SORA","ngang":100,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-4","dong":"STANDARD","ngang":140,"dai":200,"day":15,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"SORA10-4","dong":"SORA","ngang":140,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO15-8","dong":"LATEX GOLD","ngang":180,"dai":200,"day":15,"so_luong":9,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO20-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":20,"so_luong":5,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO15-2022","dong":"LATEX GOLD","ngang":220,"dai":200,"day":15,"so_luong":3,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-6","dong":"STANDARD","ngang":160,"dai":200,"day":15,"so_luong":9,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO20-8","dong":"LATEX GOLD","ngang":180,"dai":200,"day":20,"so_luong":5,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO10-2022","dong":"LATEX GOLD","ngang":220,"dai":200,"day":10,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""}];
 
 const TEAM_OPTIONS = ['Tổ 1','Tổ 2','Tổ 3','Tổ 4','Tổ 5'];
+const TO_CHUA_GAN = 'Chưa gán tổ';
 // Dau tick thay dropdown gan to: tick sang to khac -> doi to lam ngay (khong
 // con <select>). cls giu nguyen ten class cu (to-select/support-day-select) de
 // khong phai doi cho bat/su ly su kien, chi doi tu 'change' sang 'click' va
@@ -3990,7 +4035,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 195;
+const APP_VERSION = 196;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6910,6 +6955,15 @@ function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nu
     .sort((a,b)=> (a.day - b.day) || (a.ngang - b.ngang) || a.ten.localeCompare(b.ten,'vi'));
 }
 
+// Đơn chưa có tổ thì cho gán tổ ngay; đơn rớt thì cho giao tổ hỗ trợ ngay — khỏi mở máy tính.
+function nutGiaoToMini(r,ngay,team){
+  if(!canManage2()||!ngay||ngay==='all') return '';
+  const chuaGan = team===TO_CHUA_GAN;
+  if(!chuaGan && !r.rot) return '';
+  const nhan = chuaGan ? 'Gán tổ' : 'Giao hỗ trợ';
+  const viec = chuaGan ? 'gan' : 'hotro';
+  return `<span class="giao-to-mini"><button type="button" class="giao-to-nut" data-viec="${viec}" data-ids="${r.ids.join('|')}" data-ngay="${ngay}">${nhan}</button></span>`;
+}
 // Ba ô D/M/Đ dưới mỗi đơn — chỉ hiện trên điện thoại, bấm ô nào nhập thẳng công đoạn đó.
 function oCongDoanMini(r,ngay,coTheBam){
   if(!ngay||ngay==='all') return '';
@@ -6921,7 +6975,7 @@ function oCongDoanMini(r,ngay,coTheBam){
       +`<span class="ct-ten">${ten[s]}</span><span class="ct-so">${lam}</span></button>`;
   }).join('')+`</span>`;
 }
-function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=null){
+function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=null, team=null){
   const ds = danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan, ngay);
   if(!ds.length){
     return anDongDaXong ? `<div class="team-ring-list-xong">✓ Đã xong hết</div>` : '';
@@ -6940,7 +6994,8 @@ function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nul
         const sao=(canManage()||hasPermOrOwner('khsx_priority'))?`<button type="button" class="sao-uu-tien${r.uuTien?' dang-uu-tien':''}" data-ids="${r.ids.join('|')}" title="Ưu tiên kế hoạch tuần">★</button>`:'';
         return `<span class="t${uuTienClass}${clickCls}"${dataAttr} title="${thoatHtml(r.ten)}${coTheBam?' — bấm để nhập số':''}">${sao}<span class="ten-gon">${thoatHtml(r.tenGon)}</span><span class="ten-day-du">${thoatHtml(r.ten)}</span>${r.hoTro?` <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}${chuGhi}</span>`
              + `<span class="k${uuTienClass}${clickCls}"${dataAttr}>${r.kt}:</span><b class="${uuTienClass.trim()}${clickCls}"${dataAttr}>${r.sl}${tickXong}</b>`
-             + oCongDoanMini(r,ngay,coTheBam);
+             + oCongDoanMini(r,ngay,coTheBam)
+             + nutGiaoToMini(r,ngay,team);
       }).join('')
     + `</div>`;
 }
@@ -6948,22 +7003,27 @@ function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nul
 function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDangXem='all', congDoan='dong_goi', chiTo=null, anTyLe=false){
   const container = document.getElementById(containerId);
   if(!container) return;
-  const dsHtml = hienDanhSach ? (dh => htmlDanhSachDon(dh, anDongDaXong, congDoan, ngayDangXem)) : (()=> '');
+  const dsHtml = hienDanhSach ? ((dh,team) => htmlDanhSachDon(dh, anDongDaXong, congDoan, ngayDangXem, team)) : (()=> '');
   const motNgay = !!ngayDangXem && ngayDangXem !== 'all';
   const cacNgayDangXem = motNgay ? [ngayDangXem] : Array.from(new Set(orders.map(o=>o.date)));
   const toMinh = toCuaToi();
   const toSanXuat = TEAM_OPTIONS.includes(toMinh) ? toMinh : null;
-  const cacTo = toSanXuat ? TEAM_OPTIONS.filter(t=>t === toSanXuat) : (TEAM_OPTIONS.includes(chiTo) ? [chiTo] : TEAM_OPTIONS);
+  let cacTo = toSanXuat ? TEAM_OPTIONS.filter(t=>t === toSanXuat) : (TEAM_OPTIONS.includes(chiTo) ? [chiTo] : TEAM_OPTIONS);
+  // Đơn chưa có tổ không thuộc thẻ nào nên trước đây biến mất hẳn trên điện thoại
+  // (máy tính còn thấy trong bảng KHSX). Cho hẳn một thẻ riêng, xếp lên đầu.
+  if(!toSanXuat && !TEAM_OPTIONS.includes(chiTo) && orders.some(o=>!toTheToCuaDon(o) && !o.is_warranty))
+    cacTo = [TO_CHUA_GAN, ...cacTo];
   container.classList.toggle('mot-the', cacTo.length === 1);
   // Điện thoại: mở sẵn đúng tổ đầu tiên còn việc, các tổ khác gập — mở app là thấy hết trong một màn.
   let daMoMot=false;
   container.innerHTML = cacTo.map(team=>{
     // Viec 18: loc theo TO DUOC GIAO. Truoc day to ho tro de len to phu trach nen don
     // goc bien mat khoi the to phu trach — to do rot hang ma the van sach tron.
-    const teamOrders = orders.filter(o=> toTheToCuaDon(o) === team);
+    const teamOrders = team===TO_CHUA_GAN ? orders.filter(o=> !toTheToCuaDon(o) && !o.is_warranty)
+                                          : orders.filter(o=> toTheToCuaDon(o) === team);
     if(anTyLe){
       const slBaoHanh=baoHanhCuaTo(team,cacNgayDangXem);
-      return `<div class="team-ring-card team-ring-card-simple"><div class="team-ring-label">${team}</div>${slBaoHanh>0?`<div class="team-ring-bh">🛠 Bảo hành: ${slBaoHanh}</div>`:''}${dsHtml(teamOrders)}</div>`;
+      return `<div class="team-ring-card team-ring-card-simple" data-to="${team}"><div class="team-ring-label">${team}</div>${slBaoHanh>0?`<div class="team-ring-bh">🛠 Bảo hành: ${slBaoHanh}</div>`:''}${dsHtml(teamOrders,team)}</div>`;
     }
     // KH chỉ thuộc ngày gốc và tổ được phân công ban đầu. HT chỉ lấy số Đóng gói
     // thực nhập trong ngày đang xem, đồng thời ghi cho đúng tổ thực hiện ngày đó.
@@ -6978,14 +7038,14 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
       const coHoTro = hoanThanh > 0;
       const slBaoHanh = baoHanhCuaTo(team, cacNgayDangXem);
       return `
-      <div class="team-ring-card">
+      <div class="team-ring-card" data-to="${team}">
         <div class="team-ring" style="background:${coHoTro ? 'var(--success)' : '#e4e7ed'};">
           <div class="team-ring-inner" style="font-size:13px;color:${coHoTro?'var(--success)':'var(--text2)'};font-weight:800;">—</div>
         </div>
         <div class="team-ring-label">${team}</div>
         <div class="team-ring-detail">${coHoTro ? 'Hỗ trợ ' + hoanThanh.toLocaleString() + ' tấm' : 'Không có đơn'}</div>
         ${slBaoHanh>0 ? `<div class="team-ring-bh">🛠 Bảo hành: ${slBaoHanh}</div>` : ''}
-        ${dsHtml(teamOrders)}
+        ${dsHtml(teamOrders,team)}
       </div>`;
     }
     const extra = Math.max(0, hoanThanh - keHoach);
@@ -7019,7 +7079,7 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
       ${slBaoHanh>0 ? `<div class="team-ring-bh">🛠 Bảo hành: ${slBaoHanh}</div>` : ''}
       ${duoiChuan ? `<div class="team-ring-canhbao">⚠ Dưới 60% kế hoạch</div>` : ''}
       ${extra>0 ? `<div class="team-ring-extra">+${extra.toLocaleString()} vượt KH</div>` : ''}
-      ${dsHtml(teamOrders)}
+      ${dsHtml(teamOrders,team)}
       </div>
     </div>`;
   }).join('');
@@ -7241,6 +7301,9 @@ function bamDonTrenTheTo(e){
   if(nutSao){ doiUuTienTrenTheTo(nutSao); return; }
   const o=e.target.closest('.ct-o[data-stage]');
   if(o){ goSoTrongO(o); return; }
+  // Điện thoại đã có 3 ô D/M/Đ nên bấm tên đơn không mở popup nhập nữa — tránh hai
+  // kiểu bấm cho cùng một việc, và tránh hộp prompt mà Telegram hay chặn.
+  if(document.body.classList.contains('mobile-view')) return;
   const t=e.target.closest('.team-ring-clickable'); if(!t)return;
   const ids=(t.dataset.ids||'').split('|').filter(Boolean);
   if(!ids.length||!t.dataset.ngay)return;
@@ -7252,11 +7315,34 @@ document.getElementById('progressTeamRings').addEventListener('click',bamDonTren
 document.getElementById('autoPlanTeamRings')?.addEventListener('click',e=>{
   if(!document.body.classList.contains('mobile-view')) return;
   // Bấm dòng tóm tắt thì gập/xổ tổ đó, bấm vào đơn thì mở popup nhập số.
+  const giao=e.target.closest('.giao-to-nut');
+  if(giao){ moChonTo(giao); return; }
   const tom=e.target.closest('.to-tom-tat');
   if(tom){ tom.closest('.team-ring-card')?.classList.toggle('to-gap'); doTenVuaKhung(); return; }
   bamDonTrenTheTo(e);
 });
 
+// Bấm "Gán tổ" / "Giao hỗ trợ" trên thẻ tổ: hiện đúng 5 tổ để chọn, chọn xong ghi luôn.
+let viecGiaoTo=null;
+function moChonTo(nut){
+  viecGiaoTo={viec:nut.dataset.viec, ids:(nut.dataset.ids||'').split('|').filter(Boolean), ngay:nut.dataset.ngay};
+  const hop=document.getElementById('chonToModal');
+  document.getElementById('chonToTitle').textContent = viecGiaoTo.viec==='gan' ? 'Gán tổ phụ trách' : 'Giao tổ hỗ trợ';
+  document.getElementById('chonToBody').innerHTML = TEAM_OPTIONS
+    .map(t=>`<button type="button" class="chon-to-nut" data-to="${t}">${t}</button>`).join('');
+  hop.style.display='block';
+}
+function dongChonTo(){ viecGiaoTo=null; const m=document.getElementById('chonToModal'); if(m) m.style.display='none'; }
+document.getElementById('chonToModal')?.addEventListener('click',async e=>{
+  if(e.target.id==='chonToModal'||e.target.id==='dongChonToBtn'){ dongChonTo(); return; }
+  const nut=e.target.closest('.chon-to-nut'); if(!nut||!viecGiaoTo) return;
+  const {viec,ids,ngay}=viecGiaoTo, to=nut.dataset.to;
+  dongChonTo();
+  for(const id of ids){
+    if(viec==='gan') await handleAssignChange(id,to);
+    else await handleSupportDayChange(id,ngay,to);
+  }
+});
 // Tên hàng trên thẻ tổ: để tên đầy đủ trước, đo xem có tràn dòng không — tràn mới rút về
 // viết tắt. Không mặc định viết tắt như bảng trên máy tính, vì dòng ở đây thường đủ rộng.
 function doTenVuaKhung(){
@@ -7274,7 +7360,8 @@ let toDangLoc='all';
 function veChipLocTo(){
   const hop=document.getElementById('chipLocTo');
   if(!hop) return;
-  const cac=['all',...TEAM_OPTIONS];
+  const coChuaGan=!!document.querySelector('#autoPlanTeamRings .team-ring-card[data-to="'+TO_CHUA_GAN+'"]');
+  const cac=['all',...(coChuaGan?[TO_CHUA_GAN]:[]),...TEAM_OPTIONS];
   hop.innerHTML=cac.map(t=>`<button type="button" data-to="${t}"${t===toDangLoc?' class="dang-chon"':''}>${t==='all'?'Tất cả':t}</button>`).join('');
 }
 function apDungLocTo(){
@@ -11117,11 +11204,26 @@ function moThongKe(){
 function dongThongKe(){
   const modal=document.getElementById('thongKeModal'), neo=document.getElementById('neoThongKe'), neoChung=document.getElementById('neoKpiChung');
   if(!modal) return;
-  const the=document.getElementById('monthlyKpis'), chung=document.getElementById('kpiRow');
+  const the=document.getElementById('monthlyKpis'), chung=document.getElementById('kpiRow'),
+        khsx=document.getElementById('autoPlanKpis'), neoKhsx=document.getElementById('neoKpiKhsx');
   if(neo&&the) neo.after(the);
   if(neoChung&&chung) neoChung.after(chung);
+  if(neoKhsx&&khsx) neoKhsx.after(khsx);
+  document.getElementById('thongKeModalTitle').textContent='Chi tiết thống kê';
   modal.classList.remove('dang-mo'); modal.style.display='none';
 }
+// Tab KHSX cũng có 5 thẻ số liệu lặp lại đúng thông tin thẻ tổ — gom vào cùng một popup.
+function moSoLieuKhsx(){
+  const modal=document.getElementById('thongKeModal'), than=document.getElementById('thongKeModalBody'), the=document.getElementById('autoPlanKpis');
+  if(!modal||!than||!the) return;
+  document.getElementById('thongKeModalTitle').textContent='Chi tiết số liệu';
+  than.appendChild(the); modal.classList.add('dang-mo'); modal.style.display='block';
+}
+document.getElementById('moSoLieuKhsxBtn')?.addEventListener('click',moSoLieuKhsx);
+// Gom ô tìm kiếm và bộ lọc phân công vào một nút — trên điện thoại ít khi dùng tới.
+document.getElementById('nutLocKhsx')?.addEventListener('click',()=>{
+  document.getElementById('panel-autoplan')?.classList.toggle('hien-bo-loc');
+});
 document.getElementById('moThongKeBtn')?.addEventListener('click',moThongKe);
 document.getElementById('dongThongKeBtn')?.addEventListener('click',dongThongKe);
 document.getElementById('thongKeModal')?.addEventListener('click',e=>{ if(e.target.id==='thongKeModal') dongThongKe(); });
