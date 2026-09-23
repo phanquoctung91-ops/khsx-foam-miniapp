@@ -614,6 +614,14 @@
     border:1px solid var(--primary);background:var(--primary);color:#fff;white-space:nowrap;
     box-shadow:0 1px 3px rgba(29,78,216,.18);
   }
+  /* Nút đổi nền: chỉ một hình, cao bằng nút Công cụ, hoà vào thanh chứ không chen ngang. */
+  #themeBtn{
+    display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;
+    border-radius:9px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);
+    box-shadow:none;flex:0 0 auto;
+  }
+  #themeBtn svg{width:17px;height:17px;display:block;}
+  #themeBtn:hover{border-color:var(--primary);color:var(--primary);}
   #managementToolsBtn:hover{background:var(--primary-dark);}
   #managerStageViewBtn{
     font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 11px;border-radius:9px;cursor:pointer;
@@ -818,7 +826,8 @@
     #userBarName{font-size:13px;}
     #userBarRole{font-size:11.5px;}
     .management-tools{margin-top:6px;}
-    #managementToolsBtn,#managerStageViewBtn,#themeBtn{padding:7px 9px;font-size:11.5px;}
+    #managementToolsBtn,#managerStageViewBtn{padding:7px 9px;font-size:11.5px;}
+    #themeBtn{width:31px;height:31px;}
 
     .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4px;width:100%;overflow:visible;}
     .tab-btn{min-width:0;padding:8px 6px;overflow:hidden;text-overflow:ellipsis;}
@@ -1152,7 +1161,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div><strong id="userBarName"></strong></div>
     <div id="userBarRole"></div>
     <div class="management-tools" id="managementTools">
-      <button id="themeBtn" type="button" title="Đổi giữa nền sáng và nền tối" aria-pressed="false">🌙 Nền tối</button>
+      <button id="themeBtn" type="button" title="Chuyển nền tối" aria-label="Chuyển nền tối" aria-pressed="false"></button>
       <button id="managementToolsBtn" type="button" aria-expanded="false">⚙️ Công cụ</button>
       <button id="managerStageViewBtn" class="only-manager2" type="button" title="Xem và nhập như tài khoản công đoạn">👷 Vào công đoạn</button>
       <div class="management-tools-menu" id="managementToolsMenu">
@@ -1670,7 +1679,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=191"></script>
+<script src="raw-data.js?v=192"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3781,7 +3790,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 191;
+const APP_VERSION = 192;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -10749,12 +10758,19 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 document.body.classList.add('dark-mode');
   // Nền sáng hay tối do người dùng chọn, nhớ riêng từng máy.
 const KHOA_NEN='khsx_nen_giao_dien';
+const HINH_TRANG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg>';
+const HINH_MAT_TROI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="5.3" y1="5.3" x2="7" y2="7"/><line x1="17" y1="17" x2="18.7" y2="18.7"/><line x1="5.3" y1="18.7" x2="7" y2="17"/><line x1="17" y1="7" x2="18.7" y2="5.3"/></svg>';
 function dangDungNenToi(){ return document.documentElement.getAttribute('data-theme')==='dark'; }
 function apDungNen(nen){
   document.documentElement.setAttribute('data-theme',nen==='dark'?'dark':'light');
   document.body.classList.toggle('dark-mode',nen==='dark');
   const nut=document.getElementById('themeBtn');
-  if(nut){ nut.textContent=nen==='dark'?'☀️ Nền sáng':'🌙 Nền tối'; nut.setAttribute('aria-pressed',nen==='dark'?'true':'false'); }
+  if(nut){
+    nut.innerHTML=nen==='dark'?HINH_MAT_TROI:HINH_TRANG;
+    const nhan=nen==='dark'?'Chuyển nền sáng':'Chuyển nền tối';
+    nut.title=nhan; nut.setAttribute('aria-label',nhan);
+    nut.setAttribute('aria-pressed',nen==='dark'?'true':'false');
+  }
   apDungMauChuBieuDo();
 }
 try{ apDungNen(localStorage.getItem(KHOA_NEN)==='dark'?'dark':'light'); }catch(e){ apDungNen('light'); }
