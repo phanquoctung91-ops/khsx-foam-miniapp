@@ -649,6 +649,174 @@
   @media(max-width:900px){ .btn-row{grid-template-columns:repeat(3,1fr);} }
   @media(max-width:560px){ .btn-row{grid-template-columns:repeat(2,1fr);} }
 
+
+  /* ============================================================
+     GIAO DIỆN ĐIỆN THOẠI (màn dọc hẹp) — đợt 1: khung
+     Bật bằng class body.mobile-view, gắn từ matchMedia trong JS.
+     Mọi luật ở đây đều nằm trong phạm vi class đó, máy tính không đổi gì.
+     ============================================================ */
+  body.mobile-view{padding-bottom:calc(66px + env(safe-area-inset-bottom, 0px));}
+
+  /* Đầu trang gọn lại: logo nhỏ, tên công ty 1 dòng, bỏ căn phải cho tiêu đề */
+  body.mobile-view header{margin-bottom:12px;}
+  body.mobile-view .brand{gap:9px;}
+  body.mobile-view .brand-logo{width:42px;}
+  body.mobile-view .brand-name{font-size:13px;line-height:1.25;}
+  body.mobile-view .brand-sub{display:none;}
+  body.mobile-view #userBar{width:100%;max-width:100%;margin-left:0;text-align:left !important;align-self:stretch;}
+  body.mobile-view .page-title{font-size:15px;margin-bottom:4px;text-align:left;}
+  body.mobile-view #userBarName,body.mobile-view #userBarRole{text-align:left;}
+  body.mobile-view .management-tools{justify-content:flex-start;margin-top:8px;}
+
+  /* Bộ lọc Tháng / Năm về cùng một hàng, không để "Năm:" rớt xuống */
+  body.mobile-view .day-select-row{gap:6px;flex-wrap:nowrap;align-items:center;}
+  body.mobile-view .day-select-row label{font-size:12px;white-space:nowrap;}
+  body.mobile-view .day-select-row select{flex:1 1 0;min-width:0;font-size:13px;padding:9px 8px;}
+  body.mobile-view #monthRangeLabel{display:block;width:100%;margin-top:6px;font-size:11.5px;}
+
+  /* Thanh điều hướng dưới đáy: ngón cái với tới, thay cho hàng tab ngang */
+  body.mobile-view #mainTabs{
+    position:fixed;left:0;right:0;bottom:0;z-index:9000;
+    display:flex;gap:0;width:auto;max-width:none;margin:0;border-radius:0;
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    background:var(--card);border-top:1px solid var(--border);
+    box-shadow:0 -2px 12px rgba(0,0,0,.08);overflow-x:auto;
+  }
+  body.mobile-view #mainTabs .tab-group-label{display:none;}
+  body.mobile-view #mainTabs .tab-btn{
+    flex:1 1 0;min-width:64px;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:6px 2px;min-height:52px;font-size:10.5px;font-weight:700;line-height:1.15;
+    border:none!important;border-radius:9px;text-align:center;white-space:normal;
+  }
+  body.mobile-view #mainTabs .tab-btn .tab-svg{width:19px;height:19px;}
+  body.mobile-view #mainTabs .tab-btn.active{background:var(--primary-l)!important;color:var(--primary)!important;}
+  /* Nút "Thêm" nằm chung trong thanh dưới cho khỏi lạc chỗ */
+  body.mobile-view .tabs-more-toggle{
+    position:fixed;right:8px;bottom:calc(72px + env(safe-area-inset-bottom, 0px));z-index:9001;
+    border-radius:999px;padding:9px 14px;font-size:12px;min-height:40px;
+    background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);
+  }
+  /* Bật "Thêm" thì các mục phụ hiện luôn trong thanh dưới, cho cuộn ngang */
+  body.mobile-view #mainTabs.show-extra{justify-content:flex-start;}
+  body.mobile-view #mainTabs.show-extra .tab-btn{flex:0 0 74px;}
+
+  /* 7 thẻ số liệu chiếm gần hết màn điện thoại — thu thành một dòng, bấm mới mở xem. */
+  .mobile-only-btn{display:none;}
+  body.mobile-view .mobile-only-btn{
+    display:block;width:100%;margin-bottom:14px;min-height:46px;
+    font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
+    border:1px solid var(--border);border-radius:11px;background:var(--card);color:var(--primary);
+    box-shadow:var(--shadow);
+  }
+  body.mobile-view #monthlyKpis,body.mobile-view #kpiRow{display:none;}
+  body.mobile-view #thongKeModal.dang-mo #monthlyKpis,
+  body.mobile-view #thongKeModal.dang-mo #kpiRow{display:grid;margin-bottom:0;}
+
+  /* Thẻ tốc độ có mấy dòng mô tả dài — trên điện thoại gom lại sau chữ "Chi tiết". */
+  .kpi-chi-tiet{display:none;}
+  body.mobile-view .kpi-chi-tiet{
+    display:inline-flex;align-items:center;gap:4px;margin-top:7px;min-height:32px;
+    font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
+    border:none;background:none;padding:0;color:var(--accent);
+  }
+  body.mobile-view .kpi-chi-tiet::after{content:'▾';font-size:10px;}
+  body.mobile-view .kpi.xo-chi-tiet .kpi-chi-tiet::after{content:'▴';}
+  body.mobile-view .speed-kpi-card .kpi-phu,
+  body.mobile-view .speed-kpi-card .speed-kpi-hint{display:none;}
+  body.mobile-view .speed-kpi-card.xo-chi-tiet .kpi-phu,
+  body.mobile-view .speed-kpi-card.xo-chi-tiet .speed-kpi-hint{display:block;}
+
+  /* Điện thoại gộp KHSX và TDSX làm một: ẩn mục Tiến độ ở thanh dưới, nhập số ngay trên thẻ tổ. */
+  body.mobile-view #mainTabs .tab-btn[data-tab="progress"]{display:none;}
+
+  /* Thẻ tổ thu gọn: mỗi tổ chiếm trọn chiều ngang, vòng tròn nhỏ lại */
+  body.mobile-view .team-ring-row{grid-template-columns:minmax(0,1fr);gap:9px;}
+  body.mobile-view .team-ring-card{padding:11px 10px;}
+  body.mobile-view .team-ring{width:52px;height:52px;margin-bottom:5px;}
+  body.mobile-view .team-ring-inner{width:38px;height:38px;font-size:11px;}
+  body.mobile-view .team-ring-list{max-width:none;font-size:12px;}
+  body.mobile-view .team-ring-list > *{padding-top:6px;padding-bottom:6px;}
+
+  /* Ba ô D / M / Đ: chiếm trọn dòng dưới mỗi đơn, cao đủ để bấm bằng ngón tay */
+  .ct-mini{display:none;}
+  body.mobile-view .ct-mini{
+    display:grid;grid-column:1/-1;grid-template-columns:repeat(3,1fr);gap:6px;
+    padding:6px 4px 9px;border-bottom:1px dotted var(--border);
+  }
+  body.mobile-view .ct-o{
+    display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;
+    font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+    border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text2);
+  }
+  body.mobile-view .ct-o[disabled]{cursor:default;opacity:.65;}
+  body.mobile-view .ct-o .ct-ten{font-size:10.5px;opacity:.75;}
+  body.mobile-view .ct-o .ct-so{font-size:14px;color:var(--text);}
+  body.mobile-view .ct-o.ct-du{border-color:var(--success);color:var(--success);}
+  body.mobile-view .ct-o.ct-du .ct-so{color:var(--success);}
+
+  /* Thẻ tổ gập lại: mặc định chỉ một dòng tóm tắt, bấm mới xổ danh sách đơn */
+  .to-tom-tat{display:none;}
+  body.mobile-view .to-tom-tat{
+    display:grid;grid-template-columns:36px 1fr auto auto;align-items:center;gap:9px;
+    width:100%;min-height:50px;padding:6px 2px;
+    font-family:inherit;cursor:pointer;border:none;background:none;text-align:left;
+  }
+  body.mobile-view .to-tom-tat-vong{
+    width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  }
+  body.mobile-view .to-tom-tat-vong > span{
+    width:25px;height:25px;border-radius:50%;background:var(--card);
+    display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text);
+  }
+  body.mobile-view .to-tom-tat-ten{font-size:14px;font-weight:800;color:var(--text);}
+  body.mobile-view .to-tom-tat-so{font-size:12.5px;font-weight:700;color:var(--text2);font-variant-numeric:tabular-nums;}
+  body.mobile-view .to-tom-tat-con{font-size:11.5px;font-weight:700;color:var(--warning);white-space:nowrap;}
+  body.mobile-view .team-ring-card.to-gap .to-tom-tat-con{color:var(--success);}
+  body.mobile-view .to-tom-tat::after{content:'▾';margin-left:2px;font-size:11px;color:var(--text2);}
+  body.mobile-view .team-ring-card.to-gap .to-tom-tat::after{content:'▸';}
+  body.mobile-view .team-ring-card.to-gap .to-than{display:none;}
+  /* Trong thân đã xổ thì bỏ vòng tròn lớn và tên tổ — dòng tóm tắt phía trên đã nói rồi */
+  body.mobile-view .to-than > .team-ring,
+  body.mobile-view .to-than > .team-ring-label,
+  body.mobile-view .to-than > .team-ring-detail{display:none;}
+
+  /* Chip lọc tổ: chọn một tổ thì chỉ hiện tổ đó */
+  #chipLocTo{display:none;}
+  body.mobile-view #chipLocTo{
+    display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;
+  }
+  body.mobile-view #chipLocTo button{
+    flex:0 0 auto;min-height:36px;padding:7px 13px;border-radius:999px;
+    font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+    border:1px solid var(--border);background:var(--card);color:var(--text2);
+  }
+  body.mobile-view #chipLocTo button.dang-chon{background:var(--primary);border-color:var(--primary);color:var(--on-primary);}
+
+  /* Ghi chú của đơn hiện ngay dưới tên, khỏi phải mở bảng KHSX mới đọc được */
+  .ghi-chu-don{display:none;}
+  body.mobile-view .ghi-chu-don{
+    display:block;font-style:normal;font-size:10.5px;font-weight:600;color:var(--warning);
+    line-height:1.3;margin-top:2px;
+  }
+  /* Sao ưu tiên: bấm ngay trên thẻ tổ, khỏi vào bảng KHSX */
+  .sao-uu-tien{display:none;}
+  body.mobile-view .sao-uu-tien{
+    display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+    margin-right:4px;vertical-align:middle;font-size:14px;line-height:1;cursor:pointer;
+    border:none;background:none;padding:0;color:var(--border);
+  }
+  body.mobile-view .sao-uu-tien.dang-uu-tien{color:var(--warning);}
+  /* Ô gõ số trong ô công đoạn */
+  body.mobile-view .ct-nhap{
+    width:100%;height:100%;min-height:34px;border:none;background:none;text-align:center;
+    font-family:inherit;font-size:15px;font-weight:800;color:var(--text);padding:0;
+  }
+  body.mobile-view .ct-nhap:focus{outline:2px solid var(--primary);outline-offset:-2px;border-radius:6px;}
+
+  /* Bảng KHSX dạng thẻ dọc lặp lại đúng nội dung thẻ tổ — trên điện thoại ẩn hẳn cho đỡ cuộn */
+  body.mobile-view #autoPlanTable,
+  body.mobile-view #autoPlanTableWrap{display:none;}
+
   /* ---- Header: logo + tên công ty bên trái, tiêu đề + người dùng bên phải ---- */
   .brand{display:flex;align-items:center;gap:16px;}
   .brand-logo{width:92px;height:auto;flex:0 0 auto;}
@@ -1176,6 +1344,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <div id="emptyState" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;text-align:center;color:var(--text2);font-size:14px;box-shadow:var(--shadow);"></div>
 
 <div id="mainContent">
+<div id="neoKpiChung"></div>
 <div class="kpis" id="kpiRow"></div>
 
 <div class="tabs" id="mainTabs">
@@ -1207,6 +1376,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <span id="monthRangeNote" class="save-status"></span>
     </div>
   </div>
+  <button id="moThongKeBtn" type="button" class="mobile-only-btn">Chi tiết thống kê</button>
+  <div id="neoThongKe"></div>
   <div class="kpis" id="monthlyKpis" style="margin-bottom:18px;"></div>
   <div class="grid2">
     <div class="card">
@@ -1272,8 +1443,9 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <strong>Đang mở khoá sửa đổi.</strong> Bạn có thể đổi tổ phụ trách, sửa/xoá số lượng hoàn thành và bỏ tổ hỗ trợ của các đơn đã chốt. Nhớ bấm lại nút đỏ để khoá khi xong.
     </div>
     <div class="kpis" id="autoPlanKpis" style="margin-bottom:16px;"></div>
+    <div id="chipLocTo"></div>
     <div class="team-ring-row" id="autoPlanTeamRings" style="margin-bottom:16px;"></div>
-    <div class="table-scroll">
+    <div class="table-scroll" id="autoPlanTableWrap">
       <table id="autoPlanTable">
         <thead>
           <tr><th class="col-date">Ngày</th><th class="col-code">Mã</th><th class="col-product">Dòng</th><th class="col-size">Kích thước</th><th class="col-number">Kế hoạch</th><th class="col-group">Nhóm đơn hàng</th><th class="col-team">Tổ phụ trách</th><th class="col-support">Tổ hỗ trợ</th><th class="col-progress">Tiến độ</th><th class="col-status">Trạng thái</th><th class="col-action only-manager" title="Ưu tiên kế hoạch tuần">Ưu tiên</th><th class="col-action only-manager">Xóa</th></tr>
@@ -1666,6 +1838,16 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<div id="thongKeModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="thongKeModalTitle">
+  <div class="capacity-dialog">
+    <div class="capacity-head">
+      <h3 id="thongKeModalTitle" style="margin:0;font-size:17px;">Chi tiết thống kê</h3>
+      <button id="dongThongKeBtn" class="capacity-quick-btn" type="button">Đóng</button>
+    </div>
+    <div id="thongKeModalBody"></div>
+  </div>
+</div>
+
 <div id="speedDetailModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="speedDetailTitle">
   <div class="capacity-dialog speed-detail-dialog">
     <div class="capacity-head">
@@ -1679,7 +1861,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=192"></script>
+<script src="raw-data.js?v=193"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2154,7 +2336,7 @@ function computeAndRenderKpis(){
   weeklyKrDetail = baoCaoKr.text ? baoCaoKr : null;
   speedDetailStore.quarter = tocDoQuy;
   const tocDoQuyHtml = tocDoQuy.mucTieu>0
-    ? `<div class="kpi-phu">Mục tiêu <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b>/ngày · ${tocDoQuy.chenhlech>=0?'nhanh hơn':'chậm hơn'} <b>${formatTocDo(Math.abs(tocDoQuy.chenhlech||0))}</b>/ngày</div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;">Dự báo cuối quý: ${Math.round(tocDoQuy.duBao||0).toLocaleString('vi-VN')} tấm</div><span class="speed-kpi-hint">Bấm xem cách tính</span>`
+    ? `<div class="kpi-phu">Mục tiêu <b>${formatTocDo(tocDoQuy.mucTieuNgay)}</b>/ngày · ${tocDoQuy.chenhlech>=0?'nhanh hơn':'chậm hơn'} <b>${formatTocDo(Math.abs(tocDoQuy.chenhlech||0))}</b>/ngày</div><div class="kpi-phu" style="color:${mauTocDo(tocDoQuy.trangThai)};font-weight:700;">Dự báo cuối quý: ${Math.round(tocDoQuy.duBao||0).toLocaleString('vi-VN')} tấm</div><button type="button" class="kpi-chi-tiet">Chi tiết</button><span class="speed-kpi-hint">Bấm xem cách tính</span>`
     : '<div class="kpi-phu">Chưa nhập mục tiêu quý để tính tốc độ.</div>';
 
   kpiRow.innerHTML = `
@@ -2565,7 +2747,7 @@ function renderMonthly(){
       <div class="value" style="color:${mauTocDo(tocDoKy.trangThai)};">${tocDoKy.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div>
       <div class="kpi-phu">${tocDoKy.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div>
       <div class="kpi-phu" style="color:${mauTocDo(tocDoKy.trangThai)};font-weight:700;line-height:1.35;">${tocDoKy.danhGia}</div>
-      <span class="speed-kpi-hint">Bấm để xem cách tính</span>
+      <button type="button" class="kpi-chi-tiet">Chi tiết</button><span class="speed-kpi-hint">Bấm để xem cách tính</span>
     </div>
   `;
 
@@ -3790,7 +3972,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 192;
+const APP_VERSION = 193;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6690,9 +6872,12 @@ function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nu
     const kt = formatKichThuoc(o);
     const hoTro = toDuocHoTro(o);
     const k = ten + '|' + kt + '|' + (hoTro || '');
-    if(!gom[k]) gom[k] = {ten, tenGon:tenGonTrenTheTo(o), kt, sl:0, hoTro, uuTien:false, xong:true, rot:false, day: parseFloat(o.day) || 0, ngang: parseFloat(o.ngang) || 0, ids:[]};
+    if(!gom[k]) gom[k] = {ten, tenGon:tenGonTrenTheTo(o), kt, sl:0, hoTro, uuTien:false, xong:true, rot:false, day: parseFloat(o.day) || 0, ngang: parseFloat(o.ngang) || 0, ids:[], cd:{dan:0,may:0,dong_goi:0}, ghiChu:[]};
+    { const gc=String(o.ghi_chu||'').trim(); if(gc && !gom[k].ghiChu.includes(gc)) gom[k].ghiChu.push(gc); }
     gom[k].sl += Number(o.so_luong) || 0;
     gom[k].ids.push(o.id);
+    // Số đã làm từng công đoạn trong đúng ngày đang xem — dùng cho 3 ô D/M/Đ trên điện thoại.
+    if(ngay && ngay!=='all') CONG_DOAN.forEach(s=>{ gom[k].cd[s] += Number(giaTriCongDoanNgay(o,ngay,s))||0; });
     if(laUuTien(o.id)) gom[k].uuTien = true;
     // Tick chỉ có khi Đóng gói đã đủ toàn bộ kế hoạch. Không dùng trạng thái
     // "còn chờ = 0" vì công đoạn trước chưa có đầu vào cũng có thể trả về 0.
@@ -6707,6 +6892,17 @@ function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nu
     .sort((a,b)=> (a.day - b.day) || (a.ngang - b.ngang) || a.ten.localeCompare(b.ten,'vi'));
 }
 
+// Ba ô D/M/Đ dưới mỗi đơn — chỉ hiện trên điện thoại, bấm ô nào nhập thẳng công đoạn đó.
+function oCongDoanMini(r,ngay,coTheBam){
+  if(!ngay||ngay==='all') return '';
+  const ten={dan:'D',may:'M',dong_goi:'Đ'};
+  return `<span class="ct-mini">`+CONG_DOAN.map(s=>{
+    const lam=Number(r.cd?.[s])||0, du=lam>=r.sl&&r.sl>0;
+    const bam=coTheBam&&coQuyenNhapCongDoan(s);
+    return `<button type="button" class="ct-o${du?' ct-du':''}"${bam?` data-ids="${r.ids.join('|')}" data-ngay="${ngay}" data-stage="${s}" data-ke-hoach="${r.sl}"`:' disabled'}>`
+      +`<span class="ct-ten">${ten[s]}</span><span class="ct-so">${lam}</span></button>`;
+  }).join('')+`</span>`;
+}
 function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=null){
   const ds = danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan, ngay);
   if(!ds.length){
@@ -6722,8 +6918,11 @@ function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nul
           : '';
         const dataAttr=coTheBam?` data-ids="${r.ids.join('|')}" data-ngay="${ngay}" data-stage="${congDoan}"`:'';
         const clickCls=coTheBam?' team-ring-clickable':'';
-        return `<span class="t${uuTienClass}${clickCls}"${dataAttr} title="${thoatHtml(r.ten)}${coTheBam?' — bấm để nhập số':''}">${thoatHtml(r.tenGon)}${r.hoTro?` <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}</span>`
-             + `<span class="k${uuTienClass}${clickCls}"${dataAttr}>${r.kt}:</span><b class="${uuTienClass.trim()}${clickCls}"${dataAttr}>${r.sl}${tickXong}</b>`;
+        const chuGhi=r.ghiChu&&r.ghiChu.length?`<em class="ghi-chu-don">${thoatHtml(r.ghiChu.join(' · '))}</em>`:'';
+        const sao=(canManage()||hasPermOrOwner('khsx_priority'))?`<button type="button" class="sao-uu-tien${r.uuTien?' dang-uu-tien':''}" data-ids="${r.ids.join('|')}" title="Ưu tiên kế hoạch tuần">★</button>`:'';
+        return `<span class="t${uuTienClass}${clickCls}"${dataAttr} title="${thoatHtml(r.ten)}${coTheBam?' — bấm để nhập số':''}">${sao}${thoatHtml(r.tenGon)}${r.hoTro?` <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}${chuGhi}</span>`
+             + `<span class="k${uuTienClass}${clickCls}"${dataAttr}>${r.kt}:</span><b class="${uuTienClass.trim()}${clickCls}"${dataAttr}>${r.sl}${tickXong}</b>`
+             + oCongDoanMini(r,ngay,coTheBam);
       }).join('')
     + `</div>`;
 }
@@ -6738,6 +6937,8 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
   const toSanXuat = TEAM_OPTIONS.includes(toMinh) ? toMinh : null;
   const cacTo = toSanXuat ? TEAM_OPTIONS.filter(t=>t === toSanXuat) : (TEAM_OPTIONS.includes(chiTo) ? [chiTo] : TEAM_OPTIONS);
   container.classList.toggle('mot-the', cacTo.length === 1);
+  // Điện thoại: mở sẵn đúng tổ đầu tiên còn việc, các tổ khác gập — mở app là thấy hết trong một màn.
+  let daMoMot=false;
   container.innerHTML = cacTo.map(team=>{
     // Viec 18: loc theo TO DUOC GIAO. Truoc day to ho tro de len to phu trach nen don
     // goc bien mat khoi the to phu trach — to do rot hang ma the van sach tron.
@@ -6779,8 +6980,19 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
     const color = pctThat >= 95 ? 'var(--success)'
                 : pctThat >= 85 ? 'var(--warning)'
                 : pctThat >= 60 ? 'var(--danger)' : '#c9ced8';
+    // Điện thoại: tổ nào làm xong hết thì gập lại, tổ còn việc mở sẵn — đỡ cuộn lê thê.
+    const con = Math.max(0, keHoach - hoanThanh);
+    const gapSan = con<=0 || daMoMot;
+    if(!gapSan) daMoMot=true;
     return `
-    <div class="team-ring-card">
+    <div class="team-ring-card${gapSan?' to-gap':''}" data-to="${team}">
+      <button type="button" class="to-tom-tat">
+        <span class="to-tom-tat-vong" style="background:conic-gradient(${color} 0% ${pct}%, #e4e7ed ${pct}% 100%);"><span>${pct}%</span></span>
+        <span class="to-tom-tat-ten">${team}</span>
+        <span class="to-tom-tat-so">${hoanThanh.toLocaleString()} / ${keHoach.toLocaleString()}</span>
+        <span class="to-tom-tat-con">${con>0?`còn ${con.toLocaleString()}`:'xong'}</span>
+      </button>
+      <div class="to-than">
       <div class="team-ring${duoiChuan ? ' ring-canh-bao' : ''}${extra>0 ? ' ring-vuot-kh' : ''}" style="background:conic-gradient(${color} 0% ${pct}%, #e4e7ed ${pct}% 100%);">
         <div class="team-ring-inner"${duoiChuan ? ' style="color:var(--danger);font-weight:800;"' : ''}>${pct}%</div>
       </div>
@@ -6790,6 +7002,7 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
       ${duoiChuan ? `<div class="team-ring-canhbao">⚠ Dưới 60% kế hoạch</div>` : ''}
       ${extra>0 ? `<div class="team-ring-extra">+${extra.toLocaleString()} vượt KH</div>` : ''}
       ${dsHtml(teamOrders)}
+      </div>
     </div>`;
   }).join('');
 }
@@ -6871,9 +7084,10 @@ function renderAutoPlan(){
     <div class="kpi k-success"><div class="label">Hoàn thành</div><div class="value">${hoanThanh.toLocaleString()}</div></div>
     <div class="kpi k-warning"><div class="label">Đang sản xuất</div><div class="value">${dangSXCount}</div></div>
     <div class="kpi" style="border-top-color:var(--danger);"><div class="label">Đơn rớt chưa sản xuất</div><div class="value" style="color:var(--danger);">${rotCount}</div></div>
-    <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="autoPlan" aria-label="Xem cách tính Tốc độ theo bộ lọc" style="border-top-color:${mauTocDo(tocDoLoc.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoLoc.trangThai)};">${tocDoLoc.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoLoc.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div><div class="kpi-phu" style="color:${mauTocDo(tocDoLoc.trangThai)};font-weight:700;line-height:1.35;">${tocDoLoc.danhGia}</div><span class="speed-kpi-hint">Bấm để xem cách tính</span></div>
+    <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="autoPlan" aria-label="Xem cách tính Tốc độ theo bộ lọc" style="border-top-color:${mauTocDo(tocDoLoc.trangThai)};"><div class="label">Tốc độ theo bộ lọc</div><div class="value" style="color:${mauTocDo(tocDoLoc.trangThai)};">${tocDoLoc.thucTe.toLocaleString('vi-VN',{maximumFractionDigits:1})}<span style="font-size:12px;color:var(--text2);"> tấm/ngày</span></div><div class="kpi-phu">${tocDoLoc.totalWorkdays} ngày làm việc trong khoảng đã chọn · không dự báo quý</div><div class="kpi-phu" style="color:${mauTocDo(tocDoLoc.trangThai)};font-weight:700;line-height:1.35;">${tocDoLoc.danhGia}</div><button type="button" class="kpi-chi-tiet">Chi tiết</button><span class="speed-kpi-hint">Bấm để xem cách tính</span></div>
   `;
-  renderTeamRings('autoPlanTeamRings', filtered, dayVal !== 'all', false, dayVal);   // 'Tất cả ngày' -> chỉ hiện vòng tròn %
+  renderTeamRings('autoPlanTeamRings', filtered, dayVal !== 'all', false, dayVal);
+  veChipLocTo(); apDungLocTo();   // ve lai chip va ap dung loc sau moi lan ve lai the to   // 'Tất cả ngày' -> chỉ hiện vòng tròn %
   canhBaoAnhChupRong();
   const tbody = document.querySelector('#autoPlanTable tbody');
   tbody.innerHTML = sortOrdersForDisplay(filtered, dayVal === 'all').map(r=>{
@@ -6959,12 +7173,87 @@ function dongPopupChonCongDoan(){
   pendingStageChoice=null;
   const modal=document.getElementById('stageChoiceModal'); if(modal) modal.style.display='none';
 }
-document.getElementById('progressTeamRings').addEventListener('click',e=>{
+// Bấm vào đơn trên thẻ tổ để nhập số. Bấm thẳng ô D/M/Đ thì vào đúng công đoạn đó luôn,
+// bấm vào tên đơn thì Quản lý phải chọn công đoạn trước.
+// Sao ưu tiên ngay trên thẻ tổ — dùng lại đúng đường ghi của ô tick trong bảng KHSX.
+async function doiUuTienTrenTheTo(nut){
+  if(!(canManage()||hasPermOrOwner('khsx_priority'))) return;
+  const ids=(nut.dataset.ids||'').split('|').filter(Boolean);
+  if(!ids.length) return;
+  const bat=!laUuTien(ids[0]);
+  ids.forEach(id=>{
+    if(bat){ if(!laUuTien(id)) priorityOrderIds.push(id); }
+    else priorityOrderIds=priorityOrderIds.filter(x=>x!==id);
+    const a=assignments[id]||(assignments[id]={stage_by_date:{},support_by_date:{}});
+    a.priority=bat;
+    if(SUPABASE_VARIANT) queueSupabaseManagementPatch('owner',getOrderById(id));
+  });
+  if(!SUPABASE_VARIANT) queueSave('priority','assignments');
+  renderAutoPlan(); renderProgress();
+}
+// Gõ số ngay trong ô D/M/Đ — bàn phím số bật sẵn, khỏi hộp prompt của trình duyệt
+// (Telegram Mini App chặn prompt, bấm vào là mất luôn lượt nhập).
+function goSoTrongO(nut){
+  if(nut.querySelector('input')) return;
+  const ids=(nut.dataset.ids||'').split('|').filter(Boolean);
+  const ngay=nut.dataset.ngay, congDoan=nut.dataset.stage;
+  const id=ids.find(i=>soLuongConChoCongDoan(getOrderById(i),congDoan)>0)||ids[0];
+  if(!id||!ngay) return;
+  const cu=nut.querySelector('.ct-so')?.textContent||'';
+  const goc=nut.innerHTML;
+  nut.innerHTML=`<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${nut.dataset.keHoach||''}" value="${cu}" class="ct-nhap" aria-label="Nhập số đã làm">`;
+  const o=nut.querySelector('input');
+  o.focus(); o.select();
+  let xong=false;
+  const luu=async(ghi)=>{
+    if(xong) return; xong=true;
+    const val=o.value;
+    nut.innerHTML=goc;
+    if(ghi && val!==cu) await handleStageQtyChange(id,ngay,congDoan,val);
+  };
+  o.addEventListener('keydown',ev=>{
+    if(ev.key==='Enter'){ ev.preventDefault(); luu(true); }
+    else if(ev.key==='Escape'){ ev.preventDefault(); luu(false); }
+  });
+  o.addEventListener('blur',()=>luu(true));
+}
+function bamDonTrenTheTo(e){
+  const nutSao=e.target.closest('.sao-uu-tien');
+  if(nutSao){ doiUuTienTrenTheTo(nutSao); return; }
+  const o=e.target.closest('.ct-o[data-stage]');
+  if(o){ goSoTrongO(o); return; }
   const t=e.target.closest('.team-ring-clickable'); if(!t)return;
   const ids=(t.dataset.ids||'').split('|').filter(Boolean);
   if(!ids.length||!t.dataset.ngay)return;
   if(canManage2()) moPopupChonCongDoan(ids,t.dataset.ngay);
   else if(t.dataset.stage) moPopupNhapNhanhCongDoan(ids,t.dataset.ngay,t.dataset.stage);
+}
+document.getElementById('progressTeamRings').addEventListener('click',bamDonTrenTheTo);
+// Trên điện thoại KHSX gánh luôn việc của tab Tiến độ; máy tính giữ nguyên như cũ.
+document.getElementById('autoPlanTeamRings')?.addEventListener('click',e=>{
+  if(!document.body.classList.contains('mobile-view')) return;
+  // Bấm dòng tóm tắt thì gập/xổ tổ đó, bấm vào đơn thì mở popup nhập số.
+  const tom=e.target.closest('.to-tom-tat');
+  if(tom){ tom.closest('.team-ring-card')?.classList.toggle('to-gap'); return; }
+  bamDonTrenTheTo(e);
+});
+
+// Chip lọc tổ: chọn một tổ thì chỉ hiện tổ đó, đỡ phải cuộn qua tổ không liên quan.
+let toDangLoc='all';
+function veChipLocTo(){
+  const hop=document.getElementById('chipLocTo');
+  if(!hop) return;
+  const cac=['all',...TEAM_OPTIONS];
+  hop.innerHTML=cac.map(t=>`<button type="button" data-to="${t}"${t===toDangLoc?' class="dang-chon"':''}>${t==='all'?'Tất cả':t}</button>`).join('');
+}
+function apDungLocTo(){
+  document.querySelectorAll('#autoPlanTeamRings .team-ring-card').forEach(c=>{
+    c.style.display=(toDangLoc==='all'||c.dataset.to===toDangLoc)?'':'none';
+  });
+}
+document.getElementById('chipLocTo')?.addEventListener('click',e=>{
+  const nut=e.target.closest('button[data-to]'); if(!nut) return;
+  toDangLoc=nut.dataset.to; veChipLocTo(); apDungLocTo();
 });
 document.getElementById('closeStageChoiceBtn').addEventListener('click',dongPopupChonCongDoan);
 document.getElementById('stageChoiceModal').addEventListener('click',async e=>{
@@ -10757,6 +11046,41 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 // đã bỏ nút chuyển đổi sáng/tối và cơ chế nhớ lựa chọn cũ trong localStorage.
 document.body.classList.add('dark-mode');
   // Nền sáng hay tối do người dùng chọn, nhớ riêng từng máy.
+// Màn dọc hẹp dùng bố cục riêng: thanh điều hướng dưới đáy, đầu trang gọn, thẻ số liệu gom lại.
+const MAN_HEP=window.matchMedia('(max-width:640px) and (orientation:portrait)');
+function apDungManHep(){ document.body.classList.toggle('mobile-view',MAN_HEP.matches); }
+MAN_HEP.addEventListener('change',apDungManHep);
+apDungManHep();
+
+// "Chi tiết thống kê": mượn luôn khối thẻ đang có, mở ra xem rồi trả về chỗ cũ —
+// không nhân bản để renderMonthly() vẫn ghi đúng vào một khối duy nhất.
+function moThongKe(){
+  const modal=document.getElementById('thongKeModal'), than=document.getElementById('thongKeModalBody');
+  if(!modal||!than) return;
+  // Hai dải thẻ (dải chung #kpiRow và dải của tab Thống kê) cùng vào một popup — nhưng
+  // bỏ qua dải mà app đã tự ẩn cho tab đang mở, không thì popup hiện số trùng hai lần.
+  ['kpiRow','monthlyKpis'].forEach(id=>{ const e=document.getElementById(id); if(e&&e.style.display!=='none') than.appendChild(e); });
+  modal.classList.add('dang-mo'); modal.style.display='block';
+}
+function dongThongKe(){
+  const modal=document.getElementById('thongKeModal'), neo=document.getElementById('neoThongKe'), neoChung=document.getElementById('neoKpiChung');
+  if(!modal) return;
+  const the=document.getElementById('monthlyKpis'), chung=document.getElementById('kpiRow');
+  if(neo&&the) neo.after(the);
+  if(neoChung&&chung) neoChung.after(chung);
+  modal.classList.remove('dang-mo'); modal.style.display='none';
+}
+document.getElementById('moThongKeBtn')?.addEventListener('click',moThongKe);
+document.getElementById('dongThongKeBtn')?.addEventListener('click',dongThongKe);
+document.getElementById('thongKeModal')?.addEventListener('click',e=>{ if(e.target.id==='thongKeModal') dongThongKe(); });
+// Nút "Chi tiết" trong thẻ tốc độ: xổ mấy dòng mô tả ngay tại chỗ, không mở popup cách tính.
+document.addEventListener('click',e=>{
+  const nut=e.target.closest?.('.kpi-chi-tiet');
+  if(!nut) return;
+  e.stopPropagation();
+  nut.closest('.kpi')?.classList.toggle('xo-chi-tiet');
+});
+
 const KHOA_NEN='khsx_nen_giao_dien';
 const HINH_TRANG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg>';
 const HINH_MAT_TROI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="5.3" y1="5.3" x2="7" y2="7"/><line x1="17" y1="17" x2="18.7" y2="18.7"/><line x1="5.3" y1="18.7" x2="7" y2="17"/><line x1="17" y1="7" x2="18.7" y2="5.3"/></svg>';
