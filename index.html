@@ -1923,7 +1923,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=196"></script>
+<script src="raw-data.js?v=197"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2433,7 +2433,7 @@ function computeAndRenderKpis(){
     <div class="kpi" style="border-top-color:#8a5cd0;">
       <div class="label" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">Hàng bảo hành <button id="refreshWarrantyKpiBtn" class="kpi-refresh-btn only-manager" title="Nạp lại dữ liệu bảo hành">↻</button></div>
       <div class="value" style="color:#8a5cd0;" data-dem="${totalBaoHanh}">${totalBaoHanh.toLocaleString()}</div>
-      <div class="kpi-phu">${totalBaoHanh>0 ? 'Ngoài kế hoạch, không tính vào tỷ lệ' : 'Tháng này chưa có hàng bảo hành'}</div>
+      <div class="kpi-phu">${totalBaoHanh>0 ? 'Ngoài kế hoạch, không tính vào tỷ lệ' : (daTaiBaoHanh() ? 'Tháng này chưa có hàng bảo hành' : 'Đang tải số liệu bảo hành…')}</div>
     </div>
     <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="quarter" aria-label="Xem cách tính Tốc độ quý" style="border-top-color:${mauTocDo(tocDoQuy.trangThai)};">
       <div class="label">Tốc độ quý ${tocDoQuy.quy}/${tocDoQuy.nam}</div>
@@ -4035,7 +4035,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 196;
+const APP_VERSION = 197;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4798,6 +4798,8 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   const visibleOrd=ord.filter(o=>!pendingDeleteIds.has(String(o.id)));
   supabaseWorkers=workers.filter(x=>x.active!==false);
   supabaseStageCredits=credits;
+  // Bảng công vừa về: nếu đang mở tab Năng lực thì vẽ lại ngay, đổi "Đang tải…" thành số thật.
+  if(document.querySelector('.tab-btn.active')?.dataset.tab==='capacity' && typeof renderCapacityStats==='function') setTimeout(renderCapacityStats,0);
   supabaseAdminProfiles=profiles;
   supabaseWorkerTeamById={};
   workerTeams.forEach(x=>{ const team=supabaseUnitToUi(x.team_name); if(x.worker_id && team) supabaseWorkerTeamById[chuanMaNguoiDung(x.worker_id)]=team; });
@@ -6563,6 +6565,8 @@ if(LOCAL_PREVIEW_MODE&&new URLSearchParams(location.search).get('kpi_test')==='1
 // ============================================================================
 let baoHanhTheoNgay = {};   // { 'dd/mm/yyyy': {tong, theoTo:{}, chiTiet:[]} }
 let lastWarrantyFetchAt = 0;
+// Bảo hành về từ Apps Script, chậm hơn phần còn lại. Chưa về thì chưa được nói "không có".
+function daTaiBaoHanh(){ return lastWarrantyFetchAt>0 || Object.keys(baoHanhTheoNgay||{}).length>0; }
 let warrantyDaQuetNgay = null;
 const WARRANTY_REFRESH_MS = 60*60*1000;
 let warrantyPayloadCoverage = {today:false,yesterday:false};
@@ -7406,6 +7410,11 @@ function tinhNangLucCaNhan(congDoan,tuKhoa,denKhoa){
   // bỏ luôn khối "Bảo hành theo ngày" phía dưới nên cột Bảo hành ở nhánh này luôn = 0.
   // Nay dùng chung theoNguoi/cong() cho cả 2 nhánh, và khối Bảo hành theo ngày (nguồn
   // Sheet riêng, không phụ thuộc SUPABASE_VARIANT) luôn chạy sau, cho cả 2 nhánh.
+  // Sửa 2026-09-23: đang chạy Supabase mà bảng công chưa có trong bộ nhớ (mới mở app, đang
+  // tải dở, hoặc lượt đọc lỗi) thì KHÔNG được rơi xuống nhánh dự phòng. Nhánh đó chỉ cộng được
+  // dòng mang sẵn tên người + dữ liệu cũ gán cứng theo tổ, nên ra con số nửa đúng nửa sai mà
+  // nhìn như thật — đã tái hiện đúng từng chữ số: May kỳ 0, lịch sử 2.682 (thật: 1.842 / 4.846).
+  if(SUPABASE_VARIANT && !supabaseStageCredits.length) return {rows:[],chuaCoDuLieu:true};
   if(SUPABASE_VARIANT && supabaseStageCredits.length){
     supabaseStageCredits.filter(x=>x.stage===congDoan).forEach(x=>{
       const ngay=isoToDMY(x.work_date); if(!namTrongKhoangNangLuc(ngay,tuKhoa,denKhoa))return;
@@ -7494,6 +7503,7 @@ function tinhNangLucToDan(tuKhoa,denKhoa,{xuat=false}={}){
 function duLieuNangLucCaNhan(congDoan,tu,den,{xuat=false}={}){
   const period=tinhNangLucCaNhan(congDoan,tu,Math.min(den,Number(KhsxCapacityCore.vietnamToday().replaceAll('-',''))));
   const all=xuat?period:tinhNangLucCaNhan(congDoan,0,Number(KhsxCapacityCore.vietnamToday().replaceAll('-','')));
+  if(period.chuaCoDuLieu||all.chuaCoDuLieu) return {rows:[],chuaCoDuLieu:true};
   const key=r=>normHeaderText(r.name||r.code),current=new Map(period.rows.map(r=>[key(r),r]));
   const rows=all.rows.map(total=>{
     const r=current.get(key(total))||{name:total.name,code:total.code,soLuong:0,soDon:0,trungBinh:0,ngayCao:'—',slNgayCao:0,tyLeDung:null};
@@ -7512,8 +7522,11 @@ function renderCapacityStats(){
   rangeEl.textContent=`${tu} → ${den}`;rangeEl.style.color='var(--text2)';
   const dan=tinhNangLucToDan(tuKhoa,denKhoa),may=duLieuNangLucCaNhan('may',tuKhoa,denKhoa),pack=duLieuNangLucCaNhan('dong_goi',tuKhoa,denKhoa);
   const sum=(rows,k)=>rows.reduce((n,r)=>n+(r[k]||0),0);
-  const cards=[['Kế hoạch Dán · trong kỳ',sum(dan,'keHoach')],['Tự hoàn thành Dán · trong kỳ',sum(dan,'daDan')],['May · trong kỳ',sum(may.rows,'soLuong')],['Đóng gói · trong kỳ',sum(pack.rows,'soLuong')],['KPI tổng Dán · toàn bộ lịch sử',sum(dan,'tong')],['KPI tổng May · toàn bộ lịch sử',sum(may.rows,'tong')],['KPI tổng Đóng gói · toàn bộ lịch sử',sum(pack.rows,'tong')]];
-  document.getElementById('capacityStatsSummary').innerHTML=cards.map(([name,n])=>`<div class="kpi k-accent"><div class="label">${name}</div><div class="value">${n.toLocaleString('vi-VN')}</div></div>`).join('');
+  // Chưa có bảng công thì ghi rõ "đang tải" — không được hiện 0, người xem sẽ tưởng là số thật.
+  const choCong=may.chuaCoDuLieu||pack.chuaCoDuLieu, DANG_TAI='Đang tải…';
+  const soCong=(data,k)=>choCong?DANG_TAI:sum(data.rows,k);
+  const cards=[['Kế hoạch Dán · trong kỳ',sum(dan,'keHoach')],['Tự hoàn thành Dán · trong kỳ',sum(dan,'daDan')],['May · trong kỳ',soCong(may,'soLuong')],['Đóng gói · trong kỳ',soCong(pack,'soLuong')],['KPI tổng Dán · toàn bộ lịch sử',sum(dan,'tong')],['KPI tổng May · toàn bộ lịch sử',soCong(may,'tong')],['KPI tổng Đóng gói · toàn bộ lịch sử',soCong(pack,'tong')]];
+  document.getElementById('capacityStatsSummary').innerHTML=cards.map(([name,n])=>`<div class="kpi k-accent"><div class="label">${name}</div><div class="value"${n===DANG_TAI?' style="color:var(--text2);font-size:15px;"':''}>${typeof n==='number'?n.toLocaleString('vi-VN'):n}</div></div>`).join('');
   document.getElementById('capacityDanBody').innerHTML=dan.map(r=>{
     const support=Object.entries(r.hoTroTheoTo).map(([team,n])=>`${n} giúp ${thoatHtml(team)}`).join(' · ');
     const pending=r.choHomNay?`<br><small>Chưa xong hôm nay: ${r.choHomNay} (tạm tính)</small>`:'';
