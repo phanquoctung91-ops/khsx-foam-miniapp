@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "khsx-miniapp-preview",
+      "name": "khsx-preview",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8934"],
-      "port": 8934
+      "runtimeArgs": ["-m", "http.server", "8877"],
+      "port": 8877
     }
   ]
 }
