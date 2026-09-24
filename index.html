@@ -1980,7 +1980,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=200"></script>
+<script src="raw-data.js?v=201"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4093,7 +4093,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 200;
+const APP_VERSION = 201;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4767,6 +4767,26 @@ async function restoreSupabaseSession(){
   await loadMyPermissions();
   return true;
 }
+// Đọc đơn gọn (2026-09-24): source_payload chiếm ~43% dung lượng bảng đơn vì mang nguyên dòng
+// file gốc (live_row), mà app chỉ dùng vài khoá. Chỉ lấy đúng các khoá đó rồi dựng lại
+// source_payload cùng dạng cũ, để mọi chỗ đọc o.source_payload... không phải đổi.
+const COT_DON_GON='id,production_date,product_code,product_name,width_mm,length_mm,thickness_mm,plan_qty,note,order_group,'
+  +'source_order_id,is_manual,is_drop,is_ghost,is_warranty,is_lot,lot_label,deleted_at,created_at,updated_at,cancel_reason,cancelled_by,'
+  +'p_source:source_payload->>source,p_review:source_payload->sheet_sync_review,p_edit:source_payload->manual_edit,'
+  +'p_bh_to:source_payload->live_row->bh_theo_to,p_bh_ct:source_payload->live_row->bh_chi_tiet';
+function ghepPayloadDon({p_source,p_review,p_edit,p_bh_to,p_bh_ct,...o}){
+  const p={source:p_source||''};
+  if(p_review) p.sheet_sync_review=p_review;
+  if(p_edit) p.manual_edit=p_edit;
+  if(p_bh_to||p_bh_ct) p.live_row={...(p_bh_to?{bh_theo_to:p_bh_to}:{}),...(p_bh_ct?{bh_chi_tiet:p_bh_ct}:{})};
+  return {...o,source_payload:p};
+}
+async function docDonGon(configure){
+  const kq=await supabaseSelectAll('khsx_orders',COT_DON_GON,configure);
+  if(!kq.error) return {data:kq.data.map(ghepPayloadDon),error:null};
+  console.warn('Đọc đơn gọn lỗi, đọc đủ như cũ',kq.error);   // phòng cú pháp chọn cột bị máy chủ từ chối
+  return supabaseSelectAll('khsx_orders','*',configure);
+}
 async function supabaseSelectAll(table,columns='*',configure=null){
   const pageSize=1000,all=[];
   for(let from=0;;from+=pageSize){
@@ -4803,7 +4823,7 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     results.push({data:[],error:null},{data:[],error:null},{data:[],error:null},{data:[],error:null});
   }else{
     results=await Promise.all([
-      supabaseSelectAll('khsx_orders','*',q=>q.is('deleted_at',null)),
+      docDonGon(q=>q.is('deleted_at',null)),
       supabaseSelectAll('khsx_order_assignments'),
       supabaseSelectAll('khsx_daily_assignments'),
       supabaseSelectAll('khsx_stage_progress'),
@@ -4815,7 +4835,7 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
       supabaseSelectAll('khsx_stage_credits','order_id,work_date,stage,worker_id,quantity,source'),
       supabaseSelectAll('khsx_worker_team_assignments','worker_id,team_name'),
       // Gộp vào chung Promise.all thay vì chờ tuần tự sau khi 11 bảng trên đã xong.
-      supabaseSelectAll('khsx_orders','*',q=>q.not('deleted_at','is',null))
+      docDonGon(q=>q.not('deleted_at','is',null))
     ]);
   }
   const failed=results.find(x=>x.error);
@@ -4995,16 +5015,27 @@ async function refreshFromPrimarySupabase(){
   saveLocalCache();
   return true;
 }
-function scheduleSupabaseReload(){
+// Gom lần đọc (2026-09-24): 24h có 645 lần đọc lại cả sổ (~2,5 MB/lần) — mỗi lần ai nhập
+// số là mọi máy đọc lại. Nay hẹn giờ KHÔNG dời theo từng sự kiện mới (dời thì nhập liên tục
+// sẽ không bao giờ đọc), chỉ rút ngắn khi có sự kiện cần gấp hơn. Số công đoạn vừa nhập vẫn
+// hiện ngay nhờ applySupabaseProgressEvent; lượt đọc cả sổ chỉ để đồng bộ phần còn lại.
+const CHO_DOC_LAI_CONG_DOAN_MS=20000; // tiến độ + công từng người
+const CHO_DOC_LAI_MS=3000;            // đơn, gán tổ, chốt ngày, tài khoản
+let supabaseReloadDue=0;
+function scheduleSupabaseReload(cho=CHO_DOC_LAI_MS){
+  const han=Date.now()+cho;
+  if(supabaseReloadTimer && supabaseReloadDue<=han) return; // đã hẹn đọc sớm hơn, gom chung
   clearTimeout(supabaseReloadTimer);
+  supabaseReloadDue=han;
   supabaseReloadTimer=setTimeout(async()=>{
+    supabaseReloadTimer=null;
     if(Date.now()<localWriteUntil || Object.values(supabaseStageOutbox).some(x=>x.status!=='failed') ||
-       Object.keys(supabaseManagementOutbox).length) return scheduleSupabaseReload();
+       Object.keys(supabaseManagementOutbox).length) return scheduleSupabaseReload(cho);
     if(await loadSupabaseOperationalData()){
       renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); syncOrdersToMonthlyData();
       renderMonthly(); if(document.getElementById('capacityFromDate').value) renderCapacityStats();
     }
-  },500);
+  },cho);
 }
 function scheduleSupabaseRealtimeReconnect(){
   if(!SUPABASE_VARIANT || !supabaseDb || supabaseRealtimeRetryTimer || !supabasePrimaryActive) return;
@@ -5030,13 +5061,14 @@ async function startSupabaseRealtime(){
   const {data:{session}}=await supabaseDb.auth.getSession(); if(!session) return;
   const channel=supabaseDb.channel('khsx-dashboard-live');
   supabaseRealtimeChannel=channel;
-  ['khsx_orders','khsx_order_assignments','khsx_daily_assignments','khsx_day_locks','khsx_stage_credits','khsx_profiles','khsx_workers','khsx_worker_team_assignments'].forEach(table=>{
-    channel.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseReload);
+  ['khsx_orders','khsx_order_assignments','khsx_daily_assignments','khsx_day_locks','khsx_profiles','khsx_workers','khsx_worker_team_assignments'].forEach(table=>{
+    channel.on('postgres_changes',{event:'*',schema:'public',table},()=>scheduleSupabaseReload(CHO_DOC_LAI_MS));
   });
+  channel.on('postgres_changes',{event:'*',schema:'public',table:'khsx_stage_credits'},()=>scheduleSupabaseReload(CHO_DOC_LAI_CONG_DOAN_MS));
   // Vừa cập nhật nhanh ô công đoạn, vừa đọc lại toàn bộ bản ghi để đồng bộ
   // KPI/người thực hiện và không phụ thuộc vào thứ tự event giữa các máy.
   channel.on('postgres_changes',{event:'*',schema:'public',table:'khsx_stage_progress'},applySupabaseProgressEvent);
-  channel.on('postgres_changes',{event:'*',schema:'public',table:'khsx_stage_progress'},scheduleSupabaseReload);
+  channel.on('postgres_changes',{event:'*',schema:'public',table:'khsx_stage_progress'},()=>scheduleSupabaseReload(CHO_DOC_LAI_CONG_DOAN_MS));
   channel.subscribe(status=>{
     if(status==='SUBSCRIBED'){
       supabaseRealtimeHealthy=true;
@@ -11641,7 +11673,7 @@ async function revalidateSessionBackground(){
   }catch(e){ console.warn('Kiểm tra session nền thất bại, giữ phiên local',e); }
 }
 
-let guestDashboardClient=null,guestDashboardTimer=null,guestDashboardBusy=false,guestWarrantyReadAt=0;
+let guestDashboardClient=null,guestDashboardTimer=null,guestDashboardBusy=false,guestWarrantyReadAt=0,guestDauDaTai=null;
 async function readGuestWarranty(){
   if(guestWarrantyReadAt&&Date.now()-guestWarrantyReadAt<WARRANTY_REFRESH_MS)return;
   try{
@@ -11658,6 +11690,14 @@ async function refreshGuestDashboard(){
   try{
     // RPC chỉ đọc công khai: không dùng phiên quản lý, outbox hay các bản ghi chờ trên máy.
     if(!guestDashboardClient)guestDashboardClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+    // Hỏi nhẹ "có gì mới không" trước (2026-09-24): không đổi thì khỏi tải gói ~1,4 MB.
+    // Hỏi lỗi (máy chủ chưa có hàm) thì tải đủ như cũ.
+    const {data:dauMoi,error:loiDau}=await guestDashboardClient.rpc('khsx_guest_version_v1');
+    if(!loiDau && dauMoi && dauMoi===guestDauDaTai){
+      const truoc=guestWarrantyReadAt; await readGuestWarranty();
+      if(guestWarrantyReadAt!==truoc){ syncOrdersToMonthlyData(); renderAutoPlanDaySelect(); renderAutoPlan(); saveLocalCache(); }
+      return true;
+    }
     const {data:g,error}=await guestDashboardClient.rpc('khsx_guest_dashboard_v116');
     if(error||!g||!Array.isArray(g.orders)||!Array.isArray(g.stage_progress))throw error||new Error('Gói dữ liệu khách không đầy đủ');
     const next={},toUi=supabaseUnitToUi;
@@ -11686,6 +11726,7 @@ async function refreshGuestDashboard(){
     document.documentElement.setAttribute('data-primary-source','supabase-public');
     syncOrdersToMonthlyData();renderAutoPlanDaySelect();renderAutoPlan();
     saveLocalCache();supabaseStatus(`Dữ liệu khách cập nhật lúc ${new Date().toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}`,true);
+    guestDauDaTai=loiDau?null:dauMoi;
     return true;
   }catch(e){supabaseStatus('Chưa tải được dữ liệu khách mới nhất · đang giữ bản gần nhất',false);return false;}
   finally{guestDashboardBusy=false;}
