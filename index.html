@@ -1927,7 +1927,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=198"></script>
+<script src="raw-data.js?v=199"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4039,7 +4039,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 198;
+const APP_VERSION = 199;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -9406,6 +9406,13 @@ function assignedOrderDatesSorted(){
   });
 }
 
+// Ngày phải chụp lại khi bấm Lưu chốt đầu vào: ngày MỚI chốt, kể cả khi máy còn giữ ảnh của
+// lần chốt trước (ảnh đó đã cũ — lỗi 24/09: chốt, mở, nạp mới, chốt lại lại ra số cũ), và
+// ngày đang chốt mà ảnh rỗng.
+function ngayCanChupLai(picked, dangChot, anhChup){
+  return picked.filter(d=>!dangChot.includes(d) || !Array.isArray(anhChup[d]) || !anhChup[d].length);
+}
+
 document.getElementById('lockPlanBtn').addEventListener('click', ()=>{
   const panel = document.getElementById('lockPlanPanel');
   const show = panel.style.display === 'none';
@@ -9425,7 +9432,7 @@ document.getElementById('saveLockPlanBtn').addEventListener('click', async ()=>{
   // Ngày mới được chốt -> chụp lại danh sách đơn hiện tại của ngày đó và lưu lên Google.
   // Sửa lỗi snapshot rỗng cũ: ngày đã chốt nhưng ảnh chụp rỗng cũng phải
   // được chụp lại khi bấm Lưu, không chỉ ngày mới chốt.
-  const needsSnapshot = picked.filter(d=>!Array.isArray(planSnapshots[d]) || !planSnapshots[d].length);
+  const needsSnapshot = ngayCanChupLai(picked, lockedPlanDates, planSnapshots);
   const removed = lockedPlanDates.filter(d=>!picked.includes(d));
 
   // Chụp từ ĐÚNG NHỮNG GÌ ĐANG HIỆN cho ngày đó, kể cả dữ liệu lớp dự phòng khi sheet
@@ -9451,7 +9458,10 @@ document.getElementById('saveLockPlanBtn').addEventListener('click', async ()=>{
   removed.forEach(d=>{ delete planSnapshots[d]; });
   let savedOk=false;
   if(SUPABASE_VARIANT){
-    savedOk=(await saveSupabaseDayLocks('plan',picked,allOrderDatesSorted(),planSnapshots)).ok;
+    // Chỉ gửi ngày đổi trạng thái và ảnh vừa chụp. Gửi cả danh sách thì máy nào chưa kịp tải
+    // bản mới sẽ mở nhầm ngày máy khác vừa chốt và đè ảnh chụp mới bằng ảnh cũ.
+    savedOk=(await saveSupabaseDayLocks('plan',picked,[...needsSnapshot,...removed],
+      Object.fromEntries(needsSnapshot.map(d=>[d,planSnapshots[d]])))).ok;
   }else{
     lockedPlanDates = picked;
     savedOk = await storageSet(LOCKED_PLAN_KEY, lockedPlanDates);
@@ -9466,9 +9476,13 @@ document.getElementById('saveLockPlanBtn').addEventListener('click', async ()=>{
   else { lockedPlanDates=oldLockedPlanDates; planSnapshots=oldPlanSnapshots; }
   saveLocalCache();
 
-  statusEl.textContent = savedOk ? `Đã chốt đầu vào ${picked.length} ngày.` : 'Chưa lưu được, bảng vẫn mở để thử lại.';
-  statusEl.style.color = savedOk ? 'var(--success)' : 'var(--danger)';
-  if(savedOk) document.getElementById('lockPlanPanel').style.display='none';
+  // Máy chủ bỏ qua ngày còn chốt tiến độ khi nạp KHSX — mở chốt đầu vào thôi là chưa đủ.
+  const conChotTienDo = savedOk ? removed.filter(d=>lockedProgressDates.includes(d)) : [];
+  statusEl.textContent = !savedOk ? 'Chưa lưu được, bảng vẫn mở để thử lại.'
+    : `Đã chốt đầu vào ${picked.length} ngày.` + (conChotTienDo.length
+      ? ` Ngày ${conChotTienDo.join(', ')} vẫn còn chốt tiến độ, nạp KHSX sẽ không đổi được. Muốn cập nhật thì mở chốt tiến độ ngày đó trước.` : '');
+  statusEl.style.color = !savedOk ? 'var(--danger)' : (conChotTienDo.length ? 'var(--warning)' : 'var(--success)');
+  if(savedOk && !conChotTienDo.length) document.getElementById('lockPlanPanel').style.display='none';
   renderAutoPlanDaySelect();
   renderAutoPlan();
   renderProgress();
@@ -10177,7 +10191,7 @@ document.getElementById('offlinePlanFile')?.addEventListener('change',async()=>{
         st.textContent=`Nạp KHSX thất bại: ${result.error?.message||result.error?.code||(result.skipped?'đang đồng bộ dở, thử lại sau':'lỗi không xác định')}`;
         st.style.color='var(--danger)';return;
       }
-      st.textContent=`Đã nạp ${finalRows.length} dòng KHSX lên hệ thống: thêm ${result.inserted} đơn · hủy mềm ${result.cancelled} đơn chưa có tiến độ${result.review_count?` · ${result.review_count} đơn cần quản lý kiểm tra`:''}.`;
+      st.textContent=`Đã nạp ${finalRows.length} dòng KHSX lên hệ thống: thêm ${result.inserted} đơn · hủy mềm ${result.cancelled} đơn chưa có tiến độ${result.review_count?` · ${result.review_count} đơn cần quản lý kiểm tra`:''}${result.skipped_locked?` · ${result.skipped_locked} đơn giữ nguyên vì ngày đó đang chốt (chốt đầu vào hoặc chốt tiến độ)`:''}.`;
       st.style.color='var(--success)';
       return;
     }
