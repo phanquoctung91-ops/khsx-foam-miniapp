@@ -550,6 +550,24 @@
   .capacity-modal{display:none;position:fixed;inset:0;z-index:9350;background:rgba(18,20,26,.48);padding:16px;overflow:auto;}
   .capacity-dialog{background:var(--card);border-radius:16px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:1120px;margin:24px auto;padding:20px;}
   .capacity-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  /* ---- Sửa tay đơn + Đơn cần kiểm tra ---- */
+  .sua-don-luoi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  .sua-don-luoi label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--text2);min-width:0;}
+  .sua-don-luoi label.rong{grid-column:1/-1;}
+  .sua-don-luoi input{width:100%;box-sizing:border-box;font-size:14px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);}
+  .sua-don-luoi input:disabled{opacity:.55;}
+  .sua-don-nhac{margin-top:10px;font-size:12px;color:var(--text2);line-height:1.5;}
+  .sua-don-btn{border:1px solid var(--border);background:var(--card);border-radius:7px;padding:2px 6px;cursor:pointer;font-size:13px;}
+  .sua-tay-badge{border:0;cursor:pointer;background:var(--warning-l);color:var(--warning);font-size:10.5px;margin-left:4px;}
+  .kt-cap{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;}
+  .kt-hai{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .kt-don{font-size:13px;line-height:1.55;background:var(--bg);border-radius:9px;padding:9px 10px;min-width:0;}
+  .kt-nhan{font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:2px;}
+  .kt-lam{color:var(--text2);font-size:12px;}
+  .kt-nut{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center;}
+  .kt-giai{margin-top:6px;font-size:11.5px;color:var(--text2);}
+  @media (max-width:640px){ .kt-hai{grid-template-columns:1fr;} }
+  #autoPlanTable tr.kt-nhay td{background:var(--warning-l) !important;transition:background .3s;}
   .capacity-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:11px;margin-bottom:14px;}
   .capacity-filters label{display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;}
   .capacity-summary{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
@@ -1465,6 +1483,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div class="btn-row">
       <input type="file" id="offlinePlanFile" accept=".xlsx,.xls,.csv" style="display:none;">
       <button id="importOfflinePlanBtn" class="primary-btn">📂 Nạp file KHSX</button>
+      <button id="nutDonCanKiemTra" class="primary-btn only-manager" type="button" style="display:none;background:var(--warning-l);color:var(--warning);border:1px solid var(--warning);">⚠ Đơn cần kiểm tra</button>
       <button id="addManualOrderBtn" class="primary-btn only-manager" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
       <button id="lockPlanBtn" class="primary-btn" style="background:var(--text2);">🔒 Chốt đầu vào</button>
@@ -1904,6 +1923,40 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<div id="suaDonModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="suaDonTitle">
+  <div class="capacity-dialog" style="max-width:480px;">
+    <div class="capacity-head">
+      <h3 id="suaDonTitle" style="margin:0;font-size:17px;">Sửa đơn</h3>
+      <button id="dongSuaDonBtn" class="capacity-quick-btn" type="button">Đóng</button>
+    </div>
+    <div class="sua-don-luoi">
+      <label>Ngày<input type="date" id="suaDonNgay"></label>
+      <label>Mã hàng<input type="text" id="suaDonMa" autocomplete="off"></label>
+      <label>Số lượng<input type="number" id="suaDonSoLuong" min="0" step="1" inputmode="numeric"></label>
+      <label class="rong">Tên (dòng)<input type="text" id="suaDonTen" autocomplete="off"></label>
+      <label>Ngang<input type="number" id="suaDonNgang" step="any" inputmode="decimal"></label>
+      <label>Dài<input type="number" id="suaDonDai" step="any" inputmode="decimal"></label>
+      <label>Dày<input type="number" id="suaDonDay" step="any" inputmode="decimal"></label>
+      <label class="rong">Ghi chú<input type="text" id="suaDonGhiChu" autocomplete="off"></label>
+    </div>
+    <div id="suaDonNhac" class="sua-don-nhac"></div>
+    <div class="btn-row" style="margin-top:12px;align-items:center;">
+      <button id="luuSuaDonBtn" class="primary-btn" type="button">Lưu</button>
+      <span id="suaDonStatus" class="save-status"></span>
+    </div>
+  </div>
+</div>
+
+<div id="donKiemTraModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="donKiemTraTitle">
+  <div class="capacity-dialog" style="max-width:760px;">
+    <div class="capacity-head">
+      <h3 id="donKiemTraTitle" style="margin:0;font-size:17px;">Đơn cần kiểm tra</h3>
+      <button id="dongDonKiemTraBtn" class="capacity-quick-btn" type="button">Đóng</button>
+    </div>
+    <div id="donKiemTraBody"></div>
+  </div>
+</div>
+
 <div id="thongKeModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="thongKeModalTitle">
   <div class="capacity-dialog">
     <div class="capacity-head">
@@ -1927,7 +1980,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=199"></script>
+<script src="raw-data.js?v=200"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3489,6 +3542,7 @@ function lockBadgeHtml(date){
 
 let sheetRows = [];      // rows pulled fresh from the company sheet each fetch: {id, date, ma, dong, ngang, dai, day, so_luong, ghi_chu}
 let orderGroupRows = []; // rows từ sheet đơn đặt: {date, dong, kich_thuoc, so_luong, nhom}
+let thongTinNguonById = {}; // {id: {sua_tay, bo_luc, tao_luc}} — đọc từ khsx_orders mỗi lượt tải
 let dynamicOrders = [];  // rows Claude/dashboard spins off when an order falls short (persisted)
 let assignments = {};    // { [orderId]: { to: string|null, so_luong_hoan_thanh: number|null, spinoff_id: string|null } }
 let autoPlanLoaded = false;
@@ -4039,7 +4093,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 199;
+const APP_VERSION = 200;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4849,8 +4903,14 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     ngang:o.width_mm==null?'':String(o.width_mm),dai:o.length_mm==null?'':String(o.length_mm),
     day:o.thickness_mm==null?'':String(o.thickness_mm),so_luong:Number(o.plan_qty)||0,
     ghi_chu:o.note||'',nhom_don_hang:o.order_group||'',is_lot:!!o.is_lot,lot_label:o.lot_label||'',
-    source_removed:o.source_payload?.sheet_sync_review?.removed===true
+    source_removed:o.source_payload?.sheet_sync_review?.removed===true,
+    ly_do_bo:o.source_payload?.sheet_sync_review?.reason||''
   }));
+  // Thông tin nguồn theo id, lấy thẳng từ máy chủ — ngày đã chốt hiện dòng từ ảnh chụp nên
+  // không mang theo được: đơn sửa tay (giá trị lúc nạp), lúc bị file bỏ, lúc tạo đơn.
+  thongTinNguonById={};
+  visibleOrd.forEach(o=>{ thongTinNguonById[o.id]={sua_tay:o.source_payload?.manual_edit||null,
+    bo_luc:o.source_payload?.sheet_sync_review?.observed_at||'',tao_luc:o.created_at||''}; });
   sheetRows=remotePlanRows;
   dynamicOrders=visibleOrd.filter(o=>o.is_manual||o.is_drop||o.is_ghost||o.is_warranty).map(o=>{
     const liveRow=o.source_payload&&o.source_payload.live_row||{};
@@ -5995,7 +6055,9 @@ const PENDING_SHEET_CHANGES_KEY='khsx_pending_sheet_changes_v118';
 let pendingSheetChanges = (()=>{try{return JSON.parse(localStorage.getItem(PENDING_SHEET_CHANGES_KEY)||'{}')}catch(e){return {}}})();
 function persistPendingSheetChanges(){try{localStorage.setItem(PENDING_SHEET_CHANGES_KEY,JSON.stringify(pendingSheetChanges));}catch(e){}}
 function changeNoteHtml(o){
-  if(o.source_removed)return '<br><span class="note" style="font-size:11px;font-weight:600;">⚠ Sheet đã bỏ dòng này. Giữ lại vì có tiến độ, đơn liên kết hoặc thao tác chờ gửi; quản lý kiểm tra trước khi hủy.</span>';
+  if(o.source_removed)return o.ly_do_bo==='manual_edit'
+    ? '<br><span class="note" style="font-size:11px;font-weight:600;">⚠ File mới không còn dòng này. Giữ lại vì anh đã sửa tay đơn này; xử lý ở nút "⚠ Đơn cần kiểm tra".</span>'
+    : '<br><span class="note" style="font-size:11px;font-weight:600;">⚠ Sheet đã bỏ dòng này. Giữ lại vì có tiến độ, đơn liên kết hoặc thao tác chờ gửi; quản lý kiểm tra trước khi hủy.</span>';
   const a = assignments[o.id];
   const txt = (a && a.change_note) || changeNotes[o.id] || (o.is_ghost ? o.change_note : '');
   if(!txt) return '';
@@ -6513,6 +6575,193 @@ async function xuLyThayDoiNguon(orderId){
     sourceChangeInFlight.delete(orderId);
   }
 }
+// ============ Sửa tay đơn kế hoạch + "Đơn cần kiểm tra" (2026-09-24, anh Tùng duyệt) ============
+// Sửa đơn giữ nguyên id (id sinh từ nội dung dòng lúc nạp) -> tổ/tiến độ/công không đổi, nạp
+// lại file cũ không đè bản sửa (máy chủ khsx_edit_order_v1 + đối chiếu bỏ qua đơn đã có).
+const kyTuAnToan=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function duocSuaDon(r){
+  return !!(SUPABASE_VARIANT && supabaseDb && !PUBLIC_VIEW_MODE && canManage() && r && isPlannedOrder(r)
+    && !r.source_order_id && !pendingSheetChanges[r.id]);
+}
+function suaTayBadgeHtml(r){
+  if(!thongTinNguonById[r.id]?.sua_tay) return '';
+  return ` <button type="button" class="badge sua-tay-badge" data-order-id="${r.id}" title="Bấm xem giá trị lúc nạp">✎ sửa tay</button>`;
+}
+function xemTruocKhiSua(id){
+  const s=thongTinNguonById[id]?.sua_tay; if(!s) return;
+  const b=s.before||{}, luc=s.at?new Date(s.at).toLocaleString('vi-VN'):'';
+  alert(`Lúc nạp file, đơn này ghi:\n\nNgày: ${b.date||''}\nMã: ${b.ma||''}\nTên: ${b.dong||''}\nKích thước: ${b.ngang||''}x${b.dai||''}x${b.day||''}\nSố lượng: ${b.so_luong??''}\nGhi chú: ${b.ghi_chu||''}\n\nĐã sửa ${s.count||1} lần${luc?`, lần cuối ${luc}`:''}.`);
+}
+function cacLoCungDon(o){
+  const goc=String(o.id).replace(/__lo\d+$/,'');
+  if(goc===String(o.id)) return [];
+  return getOrders().filter(x=>x.id!==o.id && String(x.id).startsWith(goc+'__lo') && duocSuaDon(x));
+}
+function loiSuaDon(e){
+  const m=String(e?.message||e||'');
+  if(m.includes('PLAN_BELOW_PROGRESS')) return `Số lượng không được nhỏ hơn số đã làm${e?.details?` (${e.details} tấm)`:''}.`;
+  if(m.includes('ORDER_HAS_PROGRESS')) return 'Đơn đã làm rồi nên không đổi ngày được.';
+  if(m.includes('INVALID_ORDER_EDIT')) return 'Mã và tên không được để trống, số lượng phải là số.';
+  if(m.includes('ORDER_NOT_EDITABLE')) return 'Đơn này không sửa ở đây.';
+  if(m.includes('ORDER_NOT_FOUND')) return 'Không thấy đơn, có thể vừa bị huỷ. Tải lại trang rồi thử lại.';
+  if(m.includes('FULL_MANAGER_REQUIRED')) return 'Chỉ quản lý chính được sửa đơn.';
+  if(m.includes('SYSTEM_READ_ONLY')) return 'Hệ thống đang tạm khoá ghi, thử lại sau.';
+  return `Chưa lưu được: ${m||'lỗi không rõ'}`;
+}
+async function goiSuaDon(edits){
+  if(!supabaseDb) return {ok:false,loi:'Chưa kết nối máy chủ.'};
+  const {data,error}=await supabaseDb.rpc('khsx_edit_order_v1',{p_edits:edits});
+  if(error) return {ok:false,loi:loiSuaDon(error)};
+  return data?.ok ? {ok:true} : {ok:false,loi:'Máy chủ chưa xác nhận, thử lại.'};
+}
+async function veLaiSauKhiSua(){
+  await loadSupabaseOperationalData();
+  renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress();
+}
+
+let donDangSua=null;
+const O_SUA_DON={date:'suaDonNgay',ma:'suaDonMa',dong:'suaDonTen',ngang:'suaDonNgang',dai:'suaDonDai',day:'suaDonDay',so_luong:'suaDonSoLuong',ghi_chu:'suaDonGhiChu'};
+const giaTriDonDeSua=o=>({date:dmyToIso(o.date),ma:String(o.ma||''),dong:String(o.dong||''),ngang:String(o.ngang??''),
+  dai:String(o.dai??''),day:String(o.day??''),so_luong:String(Number(o.so_luong)||0),ghi_chu:String(o.ghi_chu||'')});
+function moSuaDon(id){
+  const o=getOrderById(id); if(!o||!duocSuaDon(o)) return;
+  donDangSua=id;
+  const g=giaTriDonDeSua(o);
+  Object.entries(O_SUA_DON).forEach(([k,elId])=>{document.getElementById(elId).value=g[k];});
+  const daLam=CONG_DOAN.reduce((m,s)=>Math.max(m,tongCongDoan(o,s)),0), lo=cacLoCungDon(o);
+  document.getElementById('suaDonNgay').disabled=daLam>0;
+  document.getElementById('suaDonSoLuong').min=String(daLam);
+  document.getElementById('suaDonNhac').innerHTML=[
+    daLam>0?`Đơn đã làm ${daLam} tấm: không đổi ngày được, số lượng không nhỏ hơn ${daLam}.`:'',
+    lo.length?`Đơn chia ${lo.length+1} lô: mã, tên, kích thước đổi cho cả ${lo.length+1} lô. Ngày, số lượng, ghi chú chỉ đổi lô này.`:'',
+    isPlanLocked(o.date)?'Ngày này đã chốt đầu vào: sửa xong app cập nhật luôn bản chụp, không cần mở chốt.':''
+  ].filter(Boolean).map(x=>`<div>• ${x}</div>`).join('');
+  const st=document.getElementById('suaDonStatus'); st.textContent=''; st.style.color='';
+  document.getElementById('suaDonTitle').textContent=`Sửa đơn ${o.ma||''} ${formatKichThuoc(o)}`;
+  document.getElementById('suaDonModal').style.display='block';
+}
+function dongSuaDon(){ donDangSua=null; document.getElementById('suaDonModal').style.display='none'; }
+async function luuSuaDon(){
+  const st=document.getElementById('suaDonStatus'), nut=document.getElementById('luuSuaDonBtn');
+  const o=getOrderById(donDangSua); if(!o||nut.disabled) return;
+  const moi={}; Object.entries(O_SUA_DON).forEach(([k,elId])=>{moi[k]=String(document.getElementById(elId).value||'').trim();});
+  const bao=(t,mau='var(--danger)')=>{st.textContent=t;st.style.color=mau;};
+  if(!moi.ma||!moi.dong) return bao('Mã và tên không được để trống.');
+  if(!moi.date) return bao('Chọn ngày sản xuất.');
+  if(!/^\d+$/.test(moi.so_luong)) return bao('Số lượng phải là số nguyên, không âm.');
+  const cu=giaTriDonDeSua(o), doi=Object.keys(moi).filter(k=>moi[k]!==cu[k]);
+  if(!doi.length) return bao('Chưa đổi gì.','var(--text2)');
+  const lay=keys=>Object.fromEntries(keys.map(k=>[k,k==='so_luong'?Number(moi[k]):moi[k]]));
+  const edits=[{id:o.id,...lay(doi)}];
+  const chung=['ma','dong','ngang','dai','day'].filter(k=>doi.includes(k));
+  if(chung.length) cacLoCungDon(o).forEach(l=>edits.push({id:l.id,...lay(chung)}));
+  nut.disabled=true; bao('Đang lưu...','var(--text2)');
+  try{
+    const kq=await goiSuaDon(edits);
+    if(!kq.ok) return bao(kq.loi);
+    dongSuaDon();
+    await veLaiSauKhiSua();
+  }finally{ nut.disabled=false; }
+}
+
+// Đơn file mới không còn (source_removed) ghép với dòng mới cùng ngày trong file — dùng lại
+// đúng luật ghép matchScore của detectSheetChanges. Dòng mới phải xuất hiện sau lúc đơn cũ
+// bị bỏ, để không ghép nhầm với đơn đã có sẵn từ trước.
+function timDonCanKiemTra(){
+  const ds=getOrders().filter(o=>isPlannedOrder(o)&&!o.source_order_id);
+  const bo=ds.filter(o=>o.source_removed), conLai=ds.filter(o=>!o.source_removed);
+  const lo=id=>(String(id).match(/__lo(\d+)$/)||[])[1]||'';
+  const luc=s=>Date.parse(s||'')||0, daDung=new Set(), cap=[], le=[];
+  bo.forEach(a=>{
+    const nguon=thongTinNguonById[a.id]||{}, goc=nguon.sua_tay?.before||a, boLuc=luc(nguon.bo_luc);
+    const diem=b=>Math.max(matchScore(goc,b),matchScore(a,b));
+    const ung=conLai.filter(b=>!daDung.has(b.id) && b.date===a.date && lo(b.id)===lo(a.id)
+        && luc(thongTinNguonById[b.id]?.tao_luc)>=boLuc-20*60000 && diem(b)>=MATCH_THRESHOLD)
+      .sort((x,y)=>diem(y)-diem(x) || matchDistance(goc,x)-matchDistance(goc,y));
+    if(ung.length){ daDung.add(ung[0].id); cap.push({a,b:ung[0]}); } else le.push(a);
+  });
+  return {cap,le};
+}
+function capNhatNutDonKiemTra(){
+  const nut=document.getElementById('nutDonCanKiemTra'); if(!nut) return;
+  if(PUBLIC_VIEW_MODE||!canManage()||!SUPABASE_VARIANT){ nut.style.display='none'; return; }
+  const {cap,le}=timDonCanKiemTra(), n=cap.length+le.length;
+  nut.style.display=n?'':'none';
+  nut.textContent=`⚠ ${n} đơn cần kiểm tra`;
+}
+function theDonKiemTra(o,nhan){
+  const daLam=coTienDoDon(o)?`Đã làm: Dán ${tongCongDoan(o,'dan')} · May ${tongCongDoan(o,'may')} · Đóng gói ${tongCongDoan(o,'dong_goi')}`:'Chưa làm';
+  return `<div class="kt-don"><div class="kt-nhan">${nhan}</div>
+    <div><b>${kyTuAnToan(o.ma||'-')}</b> · ${kyTuAnToan(o.dong||'')} · ${kyTuAnToan(formatKichThuoc(o))}</div>
+    <div>${o.date} · <b>${Number(o.so_luong)||0}</b> tấm · ${kyTuAnToan(assignments[o.id]?.to||'chưa gán tổ')}</div>
+    <div class="kt-lam">${daLam}</div></div>`;
+}
+function moDonKiemTra(){
+  const {cap,le}=timDonCanKiemTra(), than=document.getElementById('donKiemTraBody');
+  if(!cap.length&&!le.length){ than.innerHTML='<div style="color:var(--text2);">Không còn đơn nào cần kiểm tra.</div>'; }
+  else than.innerHTML=cap.map(({a,b})=>{
+    const suaTay=!!thongTinNguonById[a.id]?.sua_tay;
+    return `<div class="kt-cap">
+      <div class="kt-hai">${theDonKiemTra(a,suaTay?'Đơn cũ (anh đã sửa tay)':'Đơn cũ (file mới không còn)')}${theDonKiemTra(b,'Dòng mới trong file')}</div>
+      <div class="kt-nut">
+        <button type="button" class="primary-btn" data-kt="hopnhat" data-a="${a.id}" data-b="${b.id}">Hợp nhất</button>
+        ${suaTay?`<button type="button" class="primary-btn" style="background:var(--text2);" data-kt="theofile" data-a="${a.id}" data-b="${b.id}">Theo file mới</button>`:''}
+        <button type="button" class="capacity-quick-btn" data-kt="desau">Để sau</button>
+      </div>
+      <div class="kt-giai">${suaTay
+        ?'Hợp nhất: giữ mã anh đã sửa, lấy số lượng và kích thước theo file mới. Theo file mới: dùng đúng dòng trong file, bỏ mã anh đã sửa.'
+        :'Hợp nhất: dùng dòng mới trong file.'} Tổ và phần đã làm chuyển sang, làm vượt thì tách thành đơn phát sinh.</div>
+    </div>`;}).join('')
+    + le.map(a=>`<div class="kt-cap">${theDonKiemTra(a,'File mới không còn dòng này, không thấy dòng thay thế')}
+      <div class="kt-nut"><button type="button" class="primary-btn" data-kt="toidong" data-a="${a.id}">Xem trong bảng</button>
+      <button type="button" class="capacity-quick-btn" data-kt="desau">Để sau</button></div>
+      <div class="kt-giai">Trong bảng có nút huỷ hoặc tách cho đơn này.</div></div>`).join('');
+  document.getElementById('donKiemTraModal').style.display='block';
+}
+function dongDonKiemTra(){ document.getElementById('donKiemTraModal').style.display='none'; }
+const capDonDangXuLy=new Set();
+async function xuLyCapDon(aId,bId,giuMaSua){
+  const a=getOrderById(aId), b=getOrderById(bId);
+  if(!a||!b||capDonDangXuLy.has(bId)) return;
+  capDonDangXuLy.add(bId);
+  try{
+    // Cùng kích thước thì là cùng một tấm (mã chỉ ghi sai) -> chuyển tổ và phần đã làm sang.
+    const cungTam=['day','ngang','dai'].every(k=>sameVal(a[k],b[k]));
+    const doiMa=giuMaSua && (!sameVal(a.ma,b.ma)||!sameVal(a.dong,b.dong));
+    const desc=`${a.ma} ${formatKichThuoc(a)} ${a.so_luong} tấm → file mới ${b.ma} ${formatKichThuoc(b)} ${b.so_luong} tấm${doiMa?` (giữ mã ${a.ma})`:''}`;
+    pendingSheetChanges[b.id]={old:a,next:b,desc,onlyQty:cungTam,oldAssignment:assignments[a.id]||null,detectedAt:new Date().toISOString()};
+    await xuLyThayDoiNguon(b.id);
+    if(pendingSheetChanges[b.id]){ delete pendingSheetChanges[b.id]; persistPendingSheetChanges(); return; } // anh bấm huỷ hoặc chưa làm được
+    if(doiMa){
+      const kq=await goiSuaDon([{id:b.id,ma:a.ma,dong:a.dong}]);
+      if(!kq.ok) alert(`Đã chuyển tổ và tiến độ sang dòng mới, nhưng chưa đổi được mã: ${kq.loi}\nBấm ✏️ ở dòng đó để sửa mã lại.`);
+    }
+    await veLaiSauKhiSua();
+    moDonKiemTra();
+  }finally{ capDonDangXuLy.delete(bId); }
+}
+function toiDongDon(id){
+  const o=getOrderById(id); dongDonKiemTra(); if(!o) return;
+  const sel=document.getElementById('autoPlanDaySelect');
+  if([...sel.options].some(x=>x.value===o.date)) sel.value=o.date;
+  renderAutoPlan();
+  const tr=document.querySelector(`#autoPlanTable tr[data-order-id="${CSS.escape(id)}"]`);
+  if(tr){ tr.scrollIntoView({block:'center'}); tr.classList.add('kt-nhay'); setTimeout(()=>tr.classList.remove('kt-nhay'),2400); }
+}
+document.getElementById('nutDonCanKiemTra')?.addEventListener('click',moDonKiemTra);
+document.getElementById('donKiemTraModal')?.addEventListener('click',async e=>{
+  if(e.target.id==='donKiemTraModal'||e.target.id==='dongDonKiemTraBtn'){ dongDonKiemTra(); return; }
+  const nut=e.target.closest('[data-kt]'); if(!nut) return;
+  const viec=nut.dataset.kt;
+  if(viec==='desau'){ nut.closest('.kt-cap')?.remove(); return; }
+  if(viec==='toidong'){ toiDongDon(nut.dataset.a); return; }
+  if(viec==='hopnhat'||viec==='theofile') await xuLyCapDon(nut.dataset.a,nut.dataset.b,viec==='hopnhat');
+});
+document.getElementById('suaDonModal')?.addEventListener('click',e=>{
+  if(e.target.id==='suaDonModal'||e.target.id==='dongSuaDonBtn') dongSuaDon();
+});
+document.getElementById('luuSuaDonBtn')?.addEventListener('click',luuSuaDon);
+
 function runV118BusinessSelfTests(){
   const split=tachLichSuTheoTran({'27/08/2026':{dan:8,may:4,dong_goi:2},'28/08/2026':{may:3,dong_goi:3}},6);
   const work=defaultQuarterWorkDates(2026,3);
@@ -7135,6 +7384,7 @@ function canhBaoAnhChupRong(){
 }
 
 function renderAutoPlan(){
+  capNhatNutDonKiemTra();
   const dayVal = document.getElementById('autoPlanDaySelect').value;
   const q = document.getElementById('autoPlanSearchBox').value.trim().toLowerCase();
   const assignFilter = document.getElementById('autoPlanAssignFilter').value;
@@ -7207,7 +7457,7 @@ function renderAutoPlan(){
     return `
     <tr class="${rowClass}" data-order-id="${r.id}">
       <td class="col-date"><span class="date-main">${r.date}${lockBadgeHtml(r.date)}</span>${backupBadgeHtml(r)}${madeUpNoteHtml(r)}</td>
-      <td class="col-code">${r.ma || (r.is_manual ? '<span class="badge" style="background:var(--accent-l);color:var(--accent);">Phát sinh</span>' : '-')}${lotBadgeHtml(r)}</td>
+      <td class="col-code">${r.ma || (r.is_manual ? '<span class="badge" style="background:var(--accent-l);color:var(--accent);">Phát sinh</span>' : '-')}${lotBadgeHtml(r)}${suaTayBadgeHtml(r)}</td>
       <td class="col-product">${r.dong||'-'}</td>
       <td class="col-size">${kichThuocHtml(r)}</td>
       <td class="col-number">${isPlannedOrder(r)?(r.so_luong||'-'):'—'}</td>
@@ -7219,7 +7469,7 @@ function renderAutoPlan(){
         ? `<span class="badge badge-baohanh">🛠 Đã ghi nhận</span>${warrantyDetailButtonHtml(r)}`
         : `${statusBadgeHtml(r)}${daysLate>0?` <span class="badge badge-rot">Trễ ${daysLate} ngày</span>`:''}${nhanUuTien(r)}${r.ghi_chu?`<br><span class="note" style="font-size:11px;">${r.ghi_chu}</span>`:''}${changeNoteHtml(r)}`}</td>
       <td class="col-action">${(!r.is_warranty && (canManage()||hasPermOrOwner('khsx_priority'))) ? `<input type="checkbox" class="uutien-tick" data-order-id="${r.id}" ${laUuTien(r.id)?'checked':''} title="Ưu tiên kế hoạch tuần">` : ''}</td>
-      <td class="col-action only-manager2">${pendingSheetChanges[r.id]
+      <td class="col-action only-manager2">${duocSuaDon(r)?`<button class="sua-don-btn" data-order-id="${r.id}" title="Sửa đơn (mã, tên, kích thước, số lượng, ngày, ghi chú)">✏️</button> `:''}${pendingSheetChanges[r.id]
         ? `<button class="source-action-btn" data-source-change-id="${r.id}">${coTienDoDon(pendingSheetChanges[r.id].old)?'Tách rồi xác nhận':'Xác nhận'}</button>`
         : `<button class="trash-btn" data-order-id="${r.id}" title="${coTienDoDon(r)?'Tách tiến độ rồi xóa đơn':'Xóa đơn'}">${r.source_removed?(coTienDoDon(r)?'Tách rồi hủy':'Xác nhận hủy'):(r.is_ghost&&coTienDoDon(r)?'Tách đơn':'Xóa')}</button>`}</td>
     </tr>`;
@@ -7969,6 +8219,10 @@ document.querySelector('#autoPlanTable tbody').addEventListener('change', async 
 // ---- Xác nhận thay đổi nguồn / hủy mềm đơn (kể cả "Tách đơn" cho đơn công ty đã bỏ) ----
 const trashActionInFlight = new Set(); // chặn bấm đúp Xóa/Tách đơn cùng 1 đơn
 document.querySelector('#autoPlanTable tbody').addEventListener('click', async (e)=>{
+  const suaBtn=e.target.closest('.sua-don-btn');
+  if(suaBtn){ moSuaDon(suaBtn.dataset.orderId); return; }
+  const suaTay=e.target.closest('.sua-tay-badge');
+  if(suaTay){ xemTruocKhiSua(suaTay.dataset.orderId); return; }
   const sourceBtn=e.target.closest('.source-action-btn');
   if(sourceBtn){ await xuLyThayDoiNguon(sourceBtn.dataset.sourceChangeId); return; }
   const btn = e.target.closest('.trash-btn');
@@ -10191,7 +10445,7 @@ document.getElementById('offlinePlanFile')?.addEventListener('change',async()=>{
         st.textContent=`Nạp KHSX thất bại: ${result.error?.message||result.error?.code||(result.skipped?'đang đồng bộ dở, thử lại sau':'lỗi không xác định')}`;
         st.style.color='var(--danger)';return;
       }
-      st.textContent=`Đã nạp ${finalRows.length} dòng KHSX lên hệ thống: thêm ${result.inserted} đơn · hủy mềm ${result.cancelled} đơn chưa có tiến độ${result.review_count?` · ${result.review_count} đơn cần quản lý kiểm tra`:''}${result.skipped_locked?` · ${result.skipped_locked} đơn giữ nguyên vì ngày đó đang chốt (chốt đầu vào hoặc chốt tiến độ)`:''}.`;
+      st.textContent=`Đã nạp ${finalRows.length} dòng KHSX lên hệ thống: thêm ${result.inserted} đơn · hủy mềm ${result.cancelled} đơn chưa có tiến độ${result.review_count?` · ${result.review_count} đơn cần kiểm tra (bấm nút ⚠ ở đầu trang)`:''}${result.skipped_locked?` · ${result.skipped_locked} đơn giữ nguyên vì ngày đó đang chốt (chốt đầu vào hoặc chốt tiến độ)`:''}.`;
       st.style.color='var(--success)';
       return;
     }
