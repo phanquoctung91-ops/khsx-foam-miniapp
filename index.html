@@ -34,6 +34,7 @@
     --shadow:0 1px 2px rgba(32,58,118,.05), 0 6px 18px rgba(32,58,118,.06);
     /* Màu chữ đặt trên nền xanh chủ đạo: nền sáng dùng chữ trắng, nền tối dùng chữ đậm. */
     --on-primary:#ffffff;
+    --bao-hanh:#8a5cd0;
   }
   :root[data-theme="dark"]{
     --bg:#0e1522; --card:#16202f; --border:#26313f; --text:#e4e9f1; --text2:#94a1b5;
@@ -46,6 +47,7 @@
     --accent:#63c4e3; --accent-l:#102a36;
     --shadow:0 1px 0 rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.28);
     --on-primary:#0e1522;
+    --bao-hanh:#b18cf0;
   }
   body.dark-mode{background:var(--bg);color:var(--text);}
   /* Mau nhom san pham: ban goc la nen sang, ban toi khoi phuc dung mau cu. */
@@ -149,6 +151,8 @@
   .kpi{transition:transform .15s ease, box-shadow .15s ease;}
   .kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(16,24,40,.10);}
   .kpi-phu{font-size:11.5px;color:var(--text2);margin-top:5px;}
+  /* Dòng nhỏ báo số đã gồm bảo hành — cùng màu tím bảo hành đang dùng ở các tab */
+  .kpi-bao-hanh{font-size:11.5px;font-weight:700;color:var(--bao-hanh);margin-top:5px;}
   .kpi-phu b{color:var(--text);}
   .weekly-kr-copy{margin-top:7px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--primary-dark);padding:5px 9px;font-size:10.5px;font-weight:700;cursor:pointer;}
   .weekly-kr-copy:hover{border-color:var(--primary);}
@@ -1923,7 +1927,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=197"></script>
+<script src="raw-data.js?v=198"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4035,7 +4039,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 197;
+const APP_VERSION = 198;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7015,7 +7019,8 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
   let cacTo = toSanXuat ? TEAM_OPTIONS.filter(t=>t === toSanXuat) : (TEAM_OPTIONS.includes(chiTo) ? [chiTo] : TEAM_OPTIONS);
   // Đơn chưa có tổ không thuộc thẻ nào nên trước đây biến mất hẳn trên điện thoại
   // (máy tính còn thấy trong bảng KHSX). Cho hẳn một thẻ riêng, xếp lên đầu.
-  if(!toSanXuat && !TEAM_OPTIONS.includes(chiTo) && orders.some(o=>!toTheToCuaDon(o) && !o.is_warranty))
+  // Chỉ trên điện thoại (máy tính đã có bảng KHSX để xem đơn chưa gán tổ).
+  if(document.body.classList.contains('mobile-view') && !toSanXuat && !TEAM_OPTIONS.includes(chiTo) && orders.some(o=>!toTheToCuaDon(o) && !o.is_warranty))
     cacTo = [TO_CHUA_GAN, ...cacTo];
   container.classList.toggle('mot-the', cacTo.length === 1);
   // Điện thoại: mở sẵn đúng tổ đầu tiên còn việc, các tổ khác gập — mở app là thấy hết trong một màn.
@@ -7504,12 +7509,13 @@ function duLieuNangLucCaNhan(congDoan,tu,den,{xuat=false}={}){
   const period=tinhNangLucCaNhan(congDoan,tu,Math.min(den,Number(KhsxCapacityCore.vietnamToday().replaceAll('-',''))));
   const all=xuat?period:tinhNangLucCaNhan(congDoan,0,Number(KhsxCapacityCore.vietnamToday().replaceAll('-','')));
   if(period.chuaCoDuLieu||all.chuaCoDuLieu) return {rows:[],chuaCoDuLieu:true};
+  const baoHanhLichSu=all.rows.reduce((n,r)=>n+(Number(r.baoHanh)||0),0);
   const key=r=>normHeaderText(r.name||r.code),current=new Map(period.rows.map(r=>[key(r),r]));
   const rows=all.rows.map(total=>{
     const r=current.get(key(total))||{name:total.name,code:total.code,soLuong:0,soDon:0,trungBinh:0,ngayCao:'—',slNgayCao:0,tyLeDung:null};
     return {...r,baoHanh:r.baoHanh||0,details:r.details||[],tong:total.soLuong+(total.baoHanh||0)};
   });
-  return {rows};
+  return {rows,baoHanhLichSu};
 }
 function htmlDongNangLucCaNhan(data,stage){
   const rows=data.rows.map(r=>`<tr><td><strong>${thoatHtml(r.name||r.code)}</strong></td><td>${r.soLuong.toLocaleString('vi-VN')}</td><td>${r.soDon}</td><td>${r.trungBinh.toLocaleString('vi-VN',{maximumFractionDigits:1})}</td><td>${r.ngayCao==='—'?'—':`${r.ngayCao} · ${r.slNgayCao}`}</td><td>${r.tyLeDung==null?'—':r.tyLeDung+'%'}</td><td>${r.baoHanh.toLocaleString('vi-VN')}</td><td>${r.tong.toLocaleString('vi-VN')}</td><td>${capacityDetailButton(stage,r.name||r.code)}</td></tr>`);
@@ -7526,7 +7532,12 @@ function renderCapacityStats(){
   const choCong=may.chuaCoDuLieu||pack.chuaCoDuLieu, DANG_TAI='Đang tải…';
   const soCong=(data,k)=>choCong?DANG_TAI:sum(data.rows,k);
   const cards=[['Kế hoạch Dán · trong kỳ',sum(dan,'keHoach')],['Tự hoàn thành Dán · trong kỳ',sum(dan,'daDan')],['May · trong kỳ',soCong(may,'soLuong')],['Đóng gói · trong kỳ',soCong(pack,'soLuong')],['KPI tổng Dán · toàn bộ lịch sử',sum(dan,'tong')],['KPI tổng May · toàn bộ lịch sử',soCong(may,'tong')],['KPI tổng Đóng gói · toàn bộ lịch sử',soCong(pack,'tong')]];
-  document.getElementById('capacityStatsSummary').innerHTML=cards.map(([name,n])=>`<div class="kpi k-accent"><div class="label">${name}</div><div class="value"${n===DANG_TAI?' style="color:var(--text2);font-size:15px;"':''}>${typeof n==='number'?n.toLocaleString('vi-VN'):n}</div></div>`).join('');
+  // Hàng "toàn bộ lịch sử" cộng cả bảo hành, hàng "trong kỳ" thì không — ghi rõ bằng một dòng tím.
+  const bhLichSu={'KPI tổng Dán · toàn bộ lịch sử':sum(dan,'baoHanhTong'),
+    'KPI tổng May · toàn bộ lịch sử':choCong?0:(may.baoHanhLichSu||0),
+    'KPI tổng Đóng gói · toàn bộ lịch sử':choCong?0:(pack.baoHanhLichSu||0)};
+  const dongBh=name=>bhLichSu[name]>0?`<div class="kpi-bao-hanh">Bao gồm ${bhLichSu[name].toLocaleString('vi-VN')} tấm bảo hành</div>`:'';
+  document.getElementById('capacityStatsSummary').innerHTML=cards.map(([name,n])=>`<div class="kpi k-accent"><div class="label">${name}</div><div class="value"${n===DANG_TAI?' style="color:var(--text2);font-size:15px;"':''}>${typeof n==='number'?n.toLocaleString('vi-VN'):n}</div>${dongBh(name)}</div>`).join('');
   document.getElementById('capacityDanBody').innerHTML=dan.map(r=>{
     const support=Object.entries(r.hoTroTheoTo).map(([team,n])=>`${n} giúp ${thoatHtml(team)}`).join(' · ');
     const pending=r.choHomNay?`<br><small>Chưa xong hôm nay: ${r.choHomNay} (tạm tính)</small>`:'';
@@ -11201,7 +11212,11 @@ function datTenTabNgan(){
   if(them && !them.dataset.daDoiNhan){ them.textContent='☰ Thêm'; them.dataset.daDoiNhan='1'; }
 }
 function apDungManHep(){ document.body.classList.toggle('mobile-view',MAN_HEP.matches); datTenTabNgan(); }
-MAN_HEP.addEventListener('change',apDungManHep);
+// Xoay máy đổi qua lại dọc/ngang thì vẽ lại thẻ tổ, để thẻ "Chưa gán tổ" chỉ có ở màn dọc.
+MAN_HEP.addEventListener('change',()=>{
+  apDungManHep();
+  try{ if(typeof renderAutoPlan==='function') renderAutoPlan(); if(typeof renderProgress==='function') renderProgress(); }catch(e){}
+});
 apDungManHep();
 
 // "Chi tiết thống kê": mượn luôn khối thẻ đang có, mở ra xem rồi trả về chỗ cũ —
@@ -11395,6 +11410,9 @@ async function refreshGuestDashboard(){
     lockedProgressDates=(g.day_locks||[]).filter(x=>x.progress_locked).map(x=>isoToDMY(x.work_date));
     quarterTargets={};(g.quarter_targets||[]).forEach(x=>{const k=`${x.year}_Q${x.quarter}`;quarterTargets[k]=Number(x.target_qty)||0;if(x.work_dates?.length)quarterCalendars[k]=x.work_dates.map(String);});
     rows.filter(o=>o.is_warranty).forEach(o=>{if(!baoHanhTheoNgay[o.date])baoHanhTheoNgay[o.date]={tong:o.so_luong,theoTo:o.bh_theo_to,chiTiet:o.bh_chi_tiet};});
+    // Anh Tùng duyệt 23/09/2026: khách xem được công từng người ở tab Năng lực.
+    supabaseStageCredits=Array.isArray(g.stage_credits)?g.stage_credits:[];
+    supabaseWorkers=(Array.isArray(g.workers)?g.workers:[]).filter(w=>w.active!==false);
     await readGuestWarranty();
     rebuildOrderEntityStore();autoPlanLoaded=true;
     document.documentElement.setAttribute('data-primary-source','supabase-public');
