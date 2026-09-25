@@ -1,3 +1,6 @@
 supabase/.temp/
 .hotfix-test/
 node_modules/
+
+# Du lieu xem thu local (BOM lay tu ERP) - khong day len Pages
+*.local.json
