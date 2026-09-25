@@ -581,6 +581,11 @@
   .bom-bang input{width:90px;box-sizing:border-box;font-size:13px;padding:5px 7px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);text-align:right;}
   .bom-bang input.chu{width:100%;min-width:90px;text-align:left;}
   .bom-bang tr.bom-lech td{background:var(--warning-l);}
+  .bom-bang tr.bom-xoa td{opacity:.45;text-decoration:line-through;}
+  .bom-bang tr.bom-xoa td:last-child{opacity:1;text-decoration:none;}
+  .bom-bang .bom-thay{font-size:10.5px;color:var(--warning);margin-top:2px;}
+  .bom-bang .bom-ma{max-width:150px;}
+  .bom-xoa-btn{border:1px solid var(--border);background:var(--card);border-radius:7px;padding:3px 7px;cursor:pointer;font-size:13px;}
   .bom-nhan{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .bom-nhan.cho{background:var(--warning-l);color:var(--warning);}
   .bom-nhan.da{background:var(--success-l);color:var(--success);}
@@ -2002,7 +2007,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     </div>
     <div class="bom-bang-khung">
       <table class="bom-bang bom-bang-vt">
-        <thead><tr><th>Mã vật tư</th><th>Tên vật tư</th><th>ĐVT</th><th class="so">Định mức 1 tấm</th><th class="so">Theo BOM</th><th class="so">Thực dùng</th></tr></thead>
+        <thead><tr><th>Mã vật tư</th><th>ĐVT</th><th class="so">Định mức 1 tấm</th><th class="so">Theo BOM</th><th class="so">Thực dùng</th><th></th></tr></thead>
         <tbody id="bomChiTietBang"></tbody>
       </table>
     </div>
@@ -2051,7 +2056,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=202"></script>
+<script src="raw-data.js?v=203"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4164,7 +4169,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 202;
+const APP_VERSION = 203;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7063,8 +7068,7 @@ function moChiTietBom(id){
   document.getElementById('bomChiTietTitle').textContent=`${o.ma||''} · ${o.dong||''} · ${formatKichThuoc(o)}`;
   document.getElementById('bomChiTietPhu').textContent=`${o.lot_label?o.lot_label+' · ':''}${lo.soTam} tấm · đóng gói xong ${lo.ngayXong||''}`
     +(xn?` · ${xn.trang_thai==='co_thay_doi'?'Đã xác nhận có thay đổi':'Đã xác nhận đúng BOM'}${xn.xac_nhan_ten?' bởi '+xn.xac_nhan_ten:''} lúc ${new Date(xn.xac_nhan_luc).toLocaleString('vi-VN')}`:'');
-  const dong=xn?(xn.dong||[]).map(d=>({...d,theo_bom:chuan.find(c=>c.ma_vt===d.ma_vt)?.theo_bom??0,dinh_muc:chuan.find(c=>c.ma_vt===d.ma_vt)?.dinh_muc??null,them:!chuan.some(c=>c.ma_vt===d.ma_vt)}))
-    :chuan.map(c=>({...c,thuc_dung:c.theo_bom,them:false}));
+  const dong=xn?dongHienThiDaXacNhanBom(xn,chuan):chuan.map(c=>({...c,goc:c.ma_vt,thuc_dung:c.theo_bom}));
   const khoa=!!xn||!duocXacNhanBom();
   document.getElementById('bomChiTietBang').innerHTML=dong.map(d=>dongVatTuBomHtml(d,khoa)).join('')
     ||'<tr><td colspan="6" style="color:var(--danger);">Mã hàng này chưa có BOM trên ERP. Bấm "+ Thêm vật tư" để ghi vật tư đã dùng.</td></tr>';
@@ -7078,29 +7082,57 @@ function moChiTietBom(id){
   danhDauLechBom();
   document.getElementById('bomChiTietModal').style.display='block';
 }
+// Lô đã xác nhận: dựng lại bảng từ BOM chuẩn + dòng đã lưu — dòng giữ nguyên, dòng đổi mã
+// (thay_cho), dòng đã bỏ (gạch ngang), dòng thêm.
+function dongHienThiDaXacNhanBom(xn, chuan){
+  const dong=xn?.dong||[], out=[];
+  chuan.forEach(c=>{
+    const cung=dong.find(d=>d.ma_vt===c.ma_vt&&!d.thay_cho), thay=dong.find(d=>d.thay_cho===c.ma_vt);
+    if(cung) out.push({...c,goc:c.ma_vt,thuc_dung:cung.thuc_dung});
+    else if(thay) out.push({...c,goc:c.ma_vt,ma_vt:thay.ma_vt,thuc_dung:thay.thuc_dung});
+    else out.push({...c,goc:c.ma_vt,thuc_dung:0,xoa:true});
+  });
+  dong.filter(d=>!(d.thay_cho&&chuan.some(c=>c.ma_vt===d.thay_cho)) && !(!d.thay_cho&&chuan.some(c=>c.ma_vt===d.ma_vt)))
+    .forEach(d=>out.push({...d,goc:'',them:true,dinh_muc:null,theo_bom:0}));
+  return out;
+}
+// Tra tên/ĐVT của một mã vật tư gõ tay trong các BOM đã tải (để file Excel có tên).
+function thongTinVatTuBom(ma){
+  for(const ds of Object.values(bomTheoMa)){ const x=(ds||[]).find(b=>b.ma_vt===ma); if(x) return x; }
+  return null;
+}
 function dongVatTuBomHtml(d,khoa){
-  const o=(cls,val,ph='')=>khoa?kyTuAnToan(val):`<input class="${cls}" value="${kyTuAnToan(val)}" placeholder="${ph}">`;
-  return `<tr data-them="${d.them?1:0}" data-theo-bom="${Number(d.theo_bom)||0}">
-    <td>${d.them?o('chu bom-ma','' + (d.ma_vt||''),'Mã vật tư'):kyTuAnToan(d.ma_vt)}</td>
-    <td>${d.them?o('chu bom-ten',d.ten_vt||'','Tên (nếu biết)'):kyTuAnToan(d.ten_vt)}</td>
-    <td>${d.them?o('chu bom-dvt',d.dvt||'','ĐVT'):kyTuAnToan(d.dvt)}</td>
-    <td class="so">${d.dinh_muc==null?'':d.dinh_muc}</td>
-    <td class="so">${d.them?'':(Number(d.theo_bom)||0)}</td>
-    <td class="so">${khoa?(Number(d.thuc_dung)||0):`<input class="bom-sl" type="number" min="0" step="any" inputmode="decimal" value="${Number(d.thuc_dung)||0}">`}</td></tr>`;
+  const goc=d.goc||'', doiTu=goc&&d.ma_vt!==goc?goc:'';
+  const nhanDoi=`<div class="bom-thay"${doiTu?'':' hidden'}>${doiTu?'đổi từ '+kyTuAnToan(doiTu):''}</div>`;
+  const ma=khoa?`${kyTuAnToan(d.ma_vt)}${nhanDoi}`
+    :`<input class="chu bom-ma" value="${kyTuAnToan(d.ma_vt||'')}" placeholder="Mã vật tư" autocomplete="off"${d.xoa?' disabled':''}>${nhanDoi}`;
+  const sl=khoa?(d.xoa?0:(Number(d.thuc_dung)||0))
+    :`<input class="bom-sl" type="number" min="0" step="any" inputmode="decimal" value="${Number(d.thuc_dung)||0}"${d.xoa?' disabled':''}>`;
+  return `<tr class="${d.xoa?'bom-xoa':''}" data-them="${d.them?1:0}" data-goc="${kyTuAnToan(goc)}" data-theo-bom="${Number(d.theo_bom)||0}" data-dm="${d.dinh_muc??''}" data-dvt="${kyTuAnToan(d.dvt||'')}">
+    <td>${ma}</td><td>${kyTuAnToan(d.dvt||'')}</td>
+    <td class="so">${d.dinh_muc??''}</td><td class="so">${d.them?'':(Number(d.theo_bom)||0)}</td>
+    <td class="so">${sl}</td>
+    <td class="so">${khoa?'':`<button type="button" class="bom-xoa-btn" title="${d.xoa?'Lấy lại dòng này':'Bỏ dòng này'}">${d.xoa?'↩':'🗑'}</button>`}</td></tr>`;
 }
 function docDongVatTuBom(){
-  return [...document.querySelectorAll('#bomChiTietBang tr[data-them]')].map(tr=>{
-    const them=tr.dataset.them==='1', cell=i=>tr.children[i];
-    const lay=(sel,i)=>them?String(tr.querySelector(sel)?.value||'').trim():cell(i).textContent.trim();
-    return {ma_vt:lay('.bom-ma',0),ten_vt:lay('.bom-ten',1),dvt:lay('.bom-dvt',2),
-      dinh_muc:cell(3).textContent.trim()===''?null:Number(cell(3).textContent),
-      theo_bom:Number(tr.dataset.theoBom)||0,thuc_dung:lamTronBom(tr.querySelector('.bom-sl')?.value),them};
+  return [...document.querySelectorAll('#bomChiTietBang tr[data-them]')].filter(tr=>!tr.classList.contains('bom-xoa')).map(tr=>{
+    const ma=String(tr.querySelector('.bom-ma')?.value||'').trim(), goc=tr.dataset.goc||'', cung=!!goc&&ma===goc;
+    const tt=cung?null:thongTinVatTuBom(ma);
+    const d={ma_vt:ma, ten_vt:cung?(thongTinVatTuBom(goc)?.ten_vt||''):(tt?.ten_vt||''),
+      dvt:cung||goc?tr.dataset.dvt:(tt?.dvt||''),
+      dinh_muc:cung&&tr.dataset.dm!==''?Number(tr.dataset.dm):null,
+      theo_bom:cung?(Number(tr.dataset.theoBom)||0):0,
+      thuc_dung:lamTronBom(tr.querySelector('.bom-sl')?.value), them:tr.dataset.them==='1'};
+    if(goc&&!cung) d.thay_cho=goc;
+    return d;
   });
 }
 function danhDauLechBom(){
   document.querySelectorAll('#bomChiTietBang tr[data-them]').forEach(tr=>{
-    const sl=tr.querySelector('.bom-sl'); if(!sl) return;
-    tr.classList.toggle('bom-lech', tr.dataset.them==='1' || lamTronBom(sl.value)!==lamTronBom(tr.dataset.theoBom));
+    const sl=tr.querySelector('.bom-sl'), ma=tr.querySelector('.bom-ma'); if(!sl||!ma) return;
+    const goc=tr.dataset.goc||'', doi=!!goc&&ma.value.trim()!==goc;
+    const nhan=tr.querySelector('.bom-thay'); if(nhan){ nhan.hidden=!doi; nhan.textContent=doi?`đổi từ ${goc}`:''; }
+    tr.classList.toggle('bom-lech', !tr.classList.contains('bom-xoa') && (tr.dataset.them==='1'||doi||lamTronBom(sl.value)!==lamTronBom(tr.dataset.theoBom)));
   });
 }
 async function luuChiTietBom(kieu){
@@ -7111,10 +7143,13 @@ async function luuChiTietBom(kieu){
   let dong, trangThai, lyDo=String(document.getElementById('bomLyDo').value||'').trim();
   if(kieu==='dung'){ dong=chuan.map(c=>({ma_vt:c.ma_vt,ten_vt:c.ten_vt,dvt:c.dvt,dinh_muc:c.dinh_muc,theo_bom:c.theo_bom,thuc_dung:c.theo_bom})); trangThai='dung_bom'; lyDo=''; }
   else{
+    const coXoa=!!document.querySelector('#bomChiTietBang tr.bom-xoa');
     dong=docDongVatTuBom().filter(d=>d.ma_vt||d.thuc_dung);
-    if(dong.some(d=>!d.ma_vt)) return bao('Dòng vật tư thêm vào phải có mã.');
+    if(dong.some(d=>!d.ma_vt)) return bao('Dòng vật tư phải có mã.');
     if(dong.some(d=>!(d.thuc_dung>=0))) return bao('Số thực dùng phải là số, không âm.');
-    const giongBom=!dong.some(d=>d.them) && dong.length===chuan.length && dong.every(d=>d.thuc_dung===d.theo_bom);
+    const trung=dong.map(d=>d.ma_vt).find((m,i,a)=>a.indexOf(m)!==i);
+    if(trung) return bao(`Mã ${trung} bị trùng 2 dòng, gộp lại một dòng.`);
+    const giongBom=!coXoa && !dong.some(d=>d.them||d.thay_cho) && dong.length===chuan.length && dong.every(d=>d.thuc_dung===d.theo_bom);
     trangThai=giongBom?'dung_bom':'co_thay_doi';
     if(trangThai==='co_thay_doi'&&!lyDo) return bao('Có thay đổi thì ghi lý do.');
     dong=dong.map(({them,...d})=>d);
@@ -7174,10 +7209,21 @@ document.getElementById('bomNhanhThangNay')?.addEventListener('click',()=>{ cons
 document.getElementById('bomXuatExcel')?.addEventListener('click',xuatExcelBom);
 document.getElementById('bomChiTietModal')?.addEventListener('click',e=>{ if(e.target.id==='bomChiTietModal'||e.target.id==='dongBomChiTietBtn') e.currentTarget.style.display='none'; });
 document.getElementById('bomChiTietBang')?.addEventListener('input',danhDauLechBom);
+document.getElementById('bomChiTietBang')?.addEventListener('click',e=>{
+  const nut=e.target.closest('.bom-xoa-btn'); if(!nut) return;
+  const tr=nut.closest('tr');
+  if(tr.dataset.them==='1'){ tr.remove(); danhDauLechBom(); return; }   // dòng mới thêm: xoá hẳn
+  const xoa=!tr.classList.contains('bom-xoa');
+  tr.classList.toggle('bom-xoa',xoa);
+  tr.querySelectorAll('input').forEach(i=>{i.disabled=xoa;});
+  nut.textContent=xoa?'↩':'🗑'; nut.title=xoa?'Lấy lại dòng này':'Bỏ dòng này';
+  danhDauLechBom();
+});
 document.getElementById('bomThemVatTuBtn')?.addEventListener('click',()=>{
   const than=document.getElementById('bomChiTietBang');
   if(!than.querySelector('tr[data-them]')) than.innerHTML='';
-  than.insertAdjacentHTML('beforeend',dongVatTuBomHtml({them:true,ma_vt:'',ten_vt:'',dvt:'',dinh_muc:null,theo_bom:0,thuc_dung:0},false));
+  than.insertAdjacentHTML('beforeend',dongVatTuBomHtml({them:true,goc:'',ma_vt:'',dvt:'',dinh_muc:null,theo_bom:0,thuc_dung:0},false));
+  than.querySelector('tr[data-them="1"]:last-child .bom-ma')?.focus();
   danhDauLechBom();
 });
 document.getElementById('bomDungBtn')?.addEventListener('click',()=>luuChiTietBom('dung'));

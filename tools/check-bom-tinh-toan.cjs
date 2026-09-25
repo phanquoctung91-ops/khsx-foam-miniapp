@@ -21,7 +21,7 @@ ctx.getOrders=()=>ctx.don;
 ctx.dongGoiTheoNgayCuaDon=o=>ctx.dongGoi[o.id]||{};
 vm.createContext(ctx);
 vm.runInContext([layConst('maHangBom'),layConst('lamTronBom'),layConst('BOM_NGAY_BAT_DAU'),layConst('canXacNhanBom'),
-  ...['laDonCanBom','thongTinLoBom','dongBomChuan','chenhLechXacNhanBom','duLieuXuatBom','chuanHoaTenSP','chuanHoaMaBaoCao','chuanBiDongBaoCao'].map(lay),
+  ...['laDonCanBom','thongTinLoBom','dongBomChuan','chenhLechXacNhanBom','duLieuXuatBom','chuanHoaTenSP','chuanHoaMaBaoCao','chuanBiDongBaoCao','dongHienThiDaXacNhanBom'].map(lay),
   layConst('nhanTrangThaiNhomBom')].join('\n'),ctx);
 
 const BOM=[{stt:1,ma_vt:'MTS716',ten_vt:'Mút ép 7cm-1m6',dinh_muc:1,dvt:'Tấm'},{stt:2,ma_vt:'MD18K-163',ten_vt:'Mút xốp',dinh_muc:0.13,dvt:'Tấm'},{stt:3,ma_vt:'ANSORA10-6',ten_vt:'Áo nệm',dinh_muc:1,dvt:'Cái'}];
@@ -88,3 +88,13 @@ assert.equal(dl.theoNgay['23/09/2026'][0].vt.MTS716.theo_bom,7);
 assert.equal(ctx.nhanTrangThaiNhomBom(new Set(['truoc'])),'Trước 24/09, không cần xác nhận');
 assert.equal(ctx.nhanTrangThaiNhomBom(dl.theoNgay['23/09/2026'][0].tt),'Chưa xác nhận hết');
 console.log('PASS  lô xong trước ngày bắt đầu không cần xác nhận, vẫn tính vật tư; lô vắt qua ngày bắt đầu vẫn phải xác nhận');
+
+// Đổi mã một dòng (MTS716 -> MTS715) và bỏ hẳn một dòng (MD18K-163)
+const luu={dong:[{ma_vt:'MTS715',thay_cho:'MTS716',thuc_dung:15},{ma_vt:'ANSORA10-6',thuc_dung:15}]};
+const ch2=ctx.chenhLechXacNhanBom(luu,BOM,15);
+assert.equal(ch2.MTS716.chenh,-15); assert.equal(ch2.MTS715.chenh,15); assert.equal(ch2['MD18K-163'].chenh,-1.95);
+const hien=ctx.dongHienThiDaXacNhanBom(luu,ctx.dongBomChuan(BOM,15));
+assert.equal(hien.length,3,'Bảng đã xác nhận phải hiện đủ 3 dòng BOM (không nhân đôi dòng đổi mã)');
+assert.equal(hien[0].ma_vt,'MTS715'); assert.equal(hien[0].goc,'MTS716');
+assert.equal(hien[1].xoa,true,'Dòng đã bỏ phải hiện gạch ngang');
+console.log('PASS  đổi mã và bỏ dòng: tính chênh đúng, bảng đã xác nhận hiện đúng');
