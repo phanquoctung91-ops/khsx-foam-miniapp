@@ -585,6 +585,12 @@
   .bom-bang tr.bom-xoa td:last-child{opacity:1;text-decoration:none;}
   .bom-bang .bom-thay{font-size:10.5px;color:var(--warning);margin-top:2px;}
   .bom-bang .bom-ma{max-width:150px;}
+  .bom-la{font-size:10.5px;color:var(--danger);margin-top:2px;}
+  .bom-goi-y{display:none;position:fixed;z-index:9500;max-height:280px;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 30px rgba(16,24,40,.22);}
+  .bom-goi-y-dong{padding:8px 10px;font-size:12.5px;cursor:pointer;border-top:1px solid var(--border);}
+  .bom-goi-y-dong:first-child{border-top:0;}
+  .bom-goi-y-dong span{color:var(--text2);}
+  .bom-goi-y-dong:hover,.bom-goi-y-dong.dang-chon{background:var(--bg);}
   .bom-xoa-btn{border:1px solid var(--border);background:var(--card);border-radius:7px;padding:3px 7px;cursor:pointer;font-size:13px;}
   .bom-nhan{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .bom-nhan.cho{background:var(--warning-l);color:var(--warning);}
@@ -2023,6 +2029,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<div id="bomGoiY" class="bom-goi-y" role="listbox"></div>
+
 <div id="donKiemTraModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="donKiemTraTitle">
   <div class="capacity-dialog" style="max-width:760px;">
     <div class="capacity-head">
@@ -2056,7 +2064,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=203"></script>
+<script src="raw-data.js?v=204"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4169,7 +4177,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 203;
+const APP_VERSION = 204;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7081,6 +7089,7 @@ function moChiTietBom(id){
   const st=document.getElementById('bomChiTietStatus'); st.textContent=''; st.style.color='';
   danhDauLechBom();
   document.getElementById('bomChiTietModal').style.display='block';
+  if(!khoa) taiDanhMucVatTuBom().then(danhDauLechBom).catch(()=>{});
 }
 // Lô đã xác nhận: dựng lại bảng từ BOM chuẩn + dòng đã lưu — dòng giữ nguyên, dòng đổi mã
 // (thay_cho), dòng đã bỏ (gạch ngang), dòng thêm.
@@ -7099,13 +7108,66 @@ function dongHienThiDaXacNhanBom(xn, chuan){
 // Tra tên/ĐVT của một mã vật tư gõ tay trong các BOM đã tải (để file Excel có tên).
 function thongTinVatTuBom(ma){
   for(const ds of Object.values(bomTheoMa)){ const x=(ds||[]).find(b=>b.ma_vt===ma); if(x) return x; }
-  return null;
+  return danhMucVatTuBom?.find(x=>x.ma_vt===ma)||null;
 }
+// ---- Gợi ý mã vật tư khi gõ (2026-09-25): tìm theo mã hoặc tên, không phân biệt dấu ----
+let danhMucVatTuBom=null;   // [{ma_vt,ten_vt,dvt,tim}] — đọc một lần khi mở bảng vật tư
+const boDauBom=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/gi,'d').toLowerCase();
+async function taiDanhMucVatTuBom(){
+  if(danhMucVatTuBom) return danhMucVatTuBom;
+  let ds=[];
+  if(XEM_THU_BOM){
+    if(!window.__bomXemThu){ const r=await fetch('bom-xem-thu.local.json',{cache:'no-store'}); window.__bomXemThu=(await r.json()).dong||[]; }
+    ds=window.__bomXemThu;
+  }else{
+    let kq=await supabaseSelectAll('khsx_bom_vat_tu','ma_vt,ten_vt,dvt');
+    if(kq.error) kq=await supabaseSelectAll('khsx_bom_lines','ma_vt,ten_vt,dvt');   // máy chủ chưa có danh sách gọn
+    if(kq.error) return null;
+    ds=kq.data;
+  }
+  const theoMa=new Map(); ds.forEach(x=>{ if(x.ma_vt&&!theoMa.has(x.ma_vt)) theoMa.set(x.ma_vt,{ma_vt:x.ma_vt,ten_vt:x.ten_vt||'',dvt:x.dvt||''}); });
+  danhMucVatTuBom=[...theoMa.values()].map(x=>({...x,tim:boDauBom(x.ma_vt+' '+x.ten_vt)})).sort((a,b)=>a.ma_vt.localeCompare(b.ma_vt));
+  return danhMucVatTuBom;
+}
+function goiYVatTuBom(chu, goc){
+  if(!danhMucVatTuBom) return [];
+  const q=boDauBom(chu).trim(), tu=q.split(/\s+/).filter(Boolean);
+  const dauGoc=boDauBom(String(goc||'').replace(/[\d\-.]+$/,''));   // MTS716 -> "mts": ưu tiên vật tư cùng loại
+  // Điểm: mã bắt đầu bằng chữ gõ > từng chữ gõ khớp ĐẦU một từ ("7" khớp "7cm", không khớp "17cm") > cùng loại với mã cũ.
+  const khopDauTu=(x,t)=>x.tim.split(/[^a-z0-9]+/).some(w=>w.startsWith(t));
+  return danhMucVatTuBom.filter(x=>tu.every(t=>x.tim.includes(t)))
+    .map(x=>({x,diem:(boDauBom(x.ma_vt).startsWith(q)?4:0)+tu.filter(t=>khopDauTu(x,t)).length*2+(dauGoc&&boDauBom(x.ma_vt).startsWith(dauGoc)?1:0)}))
+    .sort((a,b)=>b.diem-a.diem||a.x.ma_vt.localeCompare(b.x.ma_vt)).slice(0,8).map(y=>y.x);
+}
+// Gõ đúng mã nhưng sai hoa/thường (decal / Decal) vẫn nhận, lúc lưu tự đổi về đúng cách viết.
+const maVatTuChuan=ma=>danhMucVatTuBom?.find(x=>x.ma_vt.toLowerCase()===String(ma||'').trim().toLowerCase())?.ma_vt||String(ma||'').trim();
+const laMaVatTuDaBiet=ma=>!danhMucVatTuBom||!ma||danhMucVatTuBom.some(x=>x.ma_vt.toLowerCase()===String(ma).toLowerCase());
+let oGoiYDangMo=null, goiYDangChon=-1;
+function hienGoiYVatTu(input){
+  const hop=document.getElementById('bomGoiY');
+  const ds=goiYVatTuBom(input.value, input.closest('tr')?.dataset.goc);
+  if(!ds.length || !input.value.trim() && !input.closest('tr')?.dataset.goc){ anGoiYVatTu(); return; }
+  oGoiYDangMo=input; goiYDangChon=-1;
+  hop.innerHTML=ds.map((x,i)=>`<div class="bom-goi-y-dong" data-i="${i}" data-ma="${kyTuAnToan(x.ma_vt)}"><b>${kyTuAnToan(x.ma_vt)}</b> <span>— ${kyTuAnToan(x.ten_vt)}</span></div>`).join('');
+  const r=input.getBoundingClientRect();
+  hop.style.left=Math.max(8,Math.min(r.left,innerWidth-Math.min(420,innerWidth-16)-8))+'px';
+  hop.style.top=(r.bottom+4)+'px';
+  hop.style.width=Math.min(420,innerWidth-16)+'px';
+  hop.style.display='block';
+}
+function anGoiYVatTu(){ const hop=document.getElementById('bomGoiY'); if(hop) hop.style.display='none'; oGoiYDangMo=null; goiYDangChon=-1; }
+function chonGoiYVatTu(ma){
+  if(!oGoiYDangMo) return;
+  oGoiYDangMo.value=ma;
+  oGoiYDangMo.dispatchEvent(new Event('input',{bubbles:true}));
+  anGoiYVatTu();
+}
+
 function dongVatTuBomHtml(d,khoa){
   const goc=d.goc||'', doiTu=goc&&d.ma_vt!==goc?goc:'';
   const nhanDoi=`<div class="bom-thay"${doiTu?'':' hidden'}>${doiTu?'đổi từ '+kyTuAnToan(doiTu):''}</div>`;
   const ma=khoa?`${kyTuAnToan(d.ma_vt)}${nhanDoi}`
-    :`<input class="chu bom-ma" value="${kyTuAnToan(d.ma_vt||'')}" placeholder="Mã vật tư" autocomplete="off"${d.xoa?' disabled':''}>${nhanDoi}`;
+    :`<input class="chu bom-ma" value="${kyTuAnToan(d.ma_vt||'')}" placeholder="Gõ mã hoặc tên" autocomplete="off"${d.xoa?' disabled':''}>${nhanDoi}<div class="bom-la" hidden>Mã này chưa có trong BOM nào, kiểm tra lại</div>`;
   const sl=khoa?(d.xoa?0:(Number(d.thuc_dung)||0))
     :`<input class="bom-sl" type="number" min="0" step="any" inputmode="decimal" value="${Number(d.thuc_dung)||0}"${d.xoa?' disabled':''}>`;
   return `<tr class="${d.xoa?'bom-xoa':''}" data-them="${d.them?1:0}" data-goc="${kyTuAnToan(goc)}" data-theo-bom="${Number(d.theo_bom)||0}" data-dm="${d.dinh_muc??''}" data-dvt="${kyTuAnToan(d.dvt||'')}">
@@ -7116,10 +7178,10 @@ function dongVatTuBomHtml(d,khoa){
 }
 function docDongVatTuBom(){
   return [...document.querySelectorAll('#bomChiTietBang tr[data-them]')].filter(tr=>!tr.classList.contains('bom-xoa')).map(tr=>{
-    const ma=String(tr.querySelector('.bom-ma')?.value||'').trim(), goc=tr.dataset.goc||'', cung=!!goc&&ma===goc;
+    const ma=maVatTuChuan(tr.querySelector('.bom-ma')?.value), goc=tr.dataset.goc||'', cung=!!goc&&ma===goc;
     const tt=cung?null:thongTinVatTuBom(ma);
     const d={ma_vt:ma, ten_vt:cung?(thongTinVatTuBom(goc)?.ten_vt||''):(tt?.ten_vt||''),
-      dvt:cung||goc?tr.dataset.dvt:(tt?.dvt||''),
+      dvt:cung?tr.dataset.dvt:(tt?.dvt||(goc?tr.dataset.dvt:'')),
       dinh_muc:cung&&tr.dataset.dm!==''?Number(tr.dataset.dm):null,
       theo_bom:cung?(Number(tr.dataset.theoBom)||0):0,
       thuc_dung:lamTronBom(tr.querySelector('.bom-sl')?.value), them:tr.dataset.them==='1'};
@@ -7132,6 +7194,7 @@ function danhDauLechBom(){
     const sl=tr.querySelector('.bom-sl'), ma=tr.querySelector('.bom-ma'); if(!sl||!ma) return;
     const goc=tr.dataset.goc||'', doi=!!goc&&ma.value.trim()!==goc;
     const nhan=tr.querySelector('.bom-thay'); if(nhan){ nhan.hidden=!doi; nhan.textContent=doi?`đổi từ ${goc}`:''; }
+    const la=tr.querySelector('.bom-la'); if(la) la.hidden=tr.classList.contains('bom-xoa')||laMaVatTuDaBiet(ma.value.trim());
     tr.classList.toggle('bom-lech', !tr.classList.contains('bom-xoa') && (tr.dataset.them==='1'||doi||lamTronBom(sl.value)!==lamTronBom(tr.dataset.theoBom)));
   });
 }
@@ -7208,7 +7271,22 @@ document.getElementById('bomNhanhTuanNay')?.addEventListener('click',()=>datKhoa
 document.getElementById('bomNhanhThangNay')?.addEventListener('click',()=>{ const n=new Date(); datKhoangBom(new Date(n.getFullYear(),n.getMonth(),1),n); });
 document.getElementById('bomXuatExcel')?.addEventListener('click',xuatExcelBom);
 document.getElementById('bomChiTietModal')?.addEventListener('click',e=>{ if(e.target.id==='bomChiTietModal'||e.target.id==='dongBomChiTietBtn') e.currentTarget.style.display='none'; });
-document.getElementById('bomChiTietBang')?.addEventListener('input',danhDauLechBom);
+document.getElementById('bomChiTietBang')?.addEventListener('input',e=>{
+  danhDauLechBom();
+  if(e.target.classList?.contains('bom-ma')) hienGoiYVatTu(e.target);
+});
+document.getElementById('bomChiTietBang')?.addEventListener('focusin',e=>{ if(e.target.classList?.contains('bom-ma')) hienGoiYVatTu(e.target); });
+document.getElementById('bomChiTietBang')?.addEventListener('focusout',e=>{ if(e.target.classList?.contains('bom-ma')) setTimeout(()=>{ if(document.activeElement!==oGoiYDangMo) anGoiYVatTu(); },150); });
+document.getElementById('bomChiTietBang')?.addEventListener('keydown',e=>{
+  if(!e.target.classList?.contains('bom-ma')) return;
+  const dong=[...document.querySelectorAll('#bomGoiY .bom-goi-y-dong')];
+  if(document.getElementById('bomGoiY').style.display!=='block'||!dong.length) return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); goiYDangChon=(goiYDangChon+(e.key==='ArrowDown'?1:-1)+dong.length)%dong.length; dong.forEach((d,i)=>d.classList.toggle('dang-chon',i===goiYDangChon)); }
+  else if(e.key==='Enter'&&goiYDangChon>=0){ e.preventDefault(); chonGoiYVatTu(dong[goiYDangChon].dataset.ma); }
+  else if(e.key==='Escape') anGoiYVatTu();
+});
+document.getElementById('bomGoiY')?.addEventListener('mousedown',e=>{ const d=e.target.closest('.bom-goi-y-dong'); if(d){ e.preventDefault(); chonGoiYVatTu(d.dataset.ma); } });
+document.getElementById('bomChiTietModal')?.addEventListener('scroll',anGoiYVatTu,true);
 document.getElementById('bomChiTietBang')?.addEventListener('click',e=>{
   const nut=e.target.closest('.bom-xoa-btn'); if(!nut) return;
   const tr=nut.closest('tr');

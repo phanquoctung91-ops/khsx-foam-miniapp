@@ -98,3 +98,12 @@ assert.equal(hien.length,3,'Bảng đã xác nhận phải hiện đủ 3 dòng 
 assert.equal(hien[0].ma_vt,'MTS715'); assert.equal(hien[0].goc,'MTS716');
 assert.equal(hien[1].xoa,true,'Dòng đã bỏ phải hiện gạch ngang');
 console.log('PASS  đổi mã và bỏ dòng: tính chênh đúng, bảng đã xác nhận hiện đúng');
+
+// Gợi ý mã vật tư: tìm theo mã hoặc tên, không dấu; "7" ưu tiên "7cm" hơn "17cm"; sai hoa/thường vẫn nhận
+vm.runInContext([layConst('boDauBom'),layConst('maVatTuChuan'),layConst('laMaVatTuDaBiet'),lay('goiYVatTuBom')].join('\n'),ctx);
+ctx.danhMucVatTuBom=[['MTS1716','Mút ép loại 1 hàng TS 17cm-1m6'],['MTS715','Mút ép loại 1 hàng TS 7cm-1m5'],['MTS716','Mút ép loại 1 hàng TS 7cm-1m6'],['Decal','Decal nệm Thuần Việt'],['TSR169','Túi nhựa Sora Việt Nhật']]
+  .map(([ma_vt,ten_vt])=>({ma_vt,ten_vt,dvt:'',tim:ctx.boDauBom(ma_vt+' '+ten_vt)}));
+assert.deepEqual([...ctx.goiYVatTuBom('mut ep 7','MTS716').map(x=>x.ma_vt)].slice(0,2),['MTS715','MTS716'],'"mút ép 7" phải ra mút 7cm trước mút 17cm');
+assert.deepEqual([...ctx.goiYVatTuBom('tui sora').map(x=>x.ma_vt)],['TSR169'],'Tìm theo tên không dấu');
+assert.equal(ctx.maVatTuChuan('decal'),'Decal'); assert.equal(ctx.laMaVatTuDaBiet('decal'),true); assert.equal(ctx.laMaVatTuDaBiet('XYZ9'),false);
+console.log('PASS  gợi ý mã: tìm theo mã hoặc tên không dấu, xếp đúng, gõ sai hoa/thường vẫn nhận');
