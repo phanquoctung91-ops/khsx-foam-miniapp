@@ -918,6 +918,56 @@
   body.mobile-view #autoPlanTable,
   body.mobile-view #autoPlanTableWrap{display:none;}
 
+  /* ---- Xác nhận BOM trên điện thoại (25/09/2026): mỗi lô một thẻ, nút to trong màn hình ---- */
+  .bom-chu-dt,.bom-sl-nut,#bomDungCaNgay{display:none;}
+  body.mobile-view .bom-chu-pc{display:none;}
+  body.mobile-view .bom-chu-dt{display:inline;}
+  body.mobile-view #bomDungCaNgay:not([hidden]){display:block;width:100%;min-height:46px;margin:6px 0 4px;font-size:15px;}
+  body.mobile-view #panel-bom .bom-bang-khung{overflow:visible;border:0;}
+  body.mobile-view #panel-bom .bom-bang thead{display:none;}
+  body.mobile-view #panel-bom .bom-bang,body.mobile-view #panel-bom .bom-bang tbody{display:block;}
+  body.mobile-view #bomBangLo tr{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;margin:0 0 10px;padding:11px 12px;
+    border:1px solid var(--border);border-radius:12px;background:var(--card);}
+  body.mobile-view #bomBangLo tr::before{content:'';flex-basis:100%;order:5;}
+  body.mobile-view #bomBangLo td{display:block;padding:0;border:0;}
+  body.mobile-view #bomBangLo td:empty{display:none;}
+  body.mobile-view #bomBangLo td[colspan]{flex-basis:100%;}
+  body.mobile-view #bomBangLo .bom-c-ma{order:1;font-size:15px;}
+  body.mobile-view #bomBangLo .bom-c-ten,body.mobile-view #bomBangLo .bom-c-kt{order:2;font-size:14px;}
+  body.mobile-view #bomBangLo .bom-c-tam{order:4;margin-left:auto;font-size:15px;font-weight:800;}
+  body.mobile-view #bomBangLo .bom-c-tam::after{content:' tấm';font-weight:600;font-size:12.5px;color:var(--text2);}
+  body.mobile-view #bomBangLo .bom-c-lo,body.mobile-view #bomBangLo .bom-c-ngay,body.mobile-view #bomBangLo .bom-c-bom{order:6;font-size:12.5px;color:var(--text2);}
+  body.mobile-view #bomBangLo .bom-c-ngay::before{content:'xong ';}
+  body.mobile-view #bomBangLo .bom-c-tt{order:7;margin-left:auto;}
+  body.mobile-view #bomBangLo .bom-c-nut{order:8;flex-basis:100%;display:flex;gap:8px;margin-top:8px;}
+  body.mobile-view #bomBangLo .bom-c-nut button{flex:1;min-height:44px;font-size:15px;font-weight:700;}
+  body.mobile-view #bomBangLo .bom-dung-nhanh{flex:2;background:var(--success);border-color:var(--success);color:#fff;}
+  /* Màn sửa: mỗi vật tư hai dòng — mã + ĐVT; theo BOM + thực dùng (nút − / +) + bỏ dòng */
+  body.mobile-view #bomChiTietModal .capacity-dialog{padding:12px;}
+  body.mobile-view #bomChiTietModal .bom-bang-khung{overflow:visible;}
+  body.mobile-view #bomChiTietModal .bom-bang thead{display:none;}
+  body.mobile-view #bomChiTietModal .bom-bang,body.mobile-view #bomChiTietBang{display:block;}
+  body.mobile-view #bomChiTietBang tr{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px 8px;padding:10px;border-top:1px solid var(--border);}
+  body.mobile-view #bomChiTietBang tr:first-child{border-top:0;}
+  body.mobile-view #bomChiTietBang td{display:block;padding:0;border:0;background:none;}
+  body.mobile-view #bomChiTietBang td[colspan]{grid-column:1/-1;}
+  body.mobile-view #bomChiTietBang tr.bom-lech{background:var(--warning-l);}
+  body.mobile-view #bomChiTietBang td:nth-child(1){grid-column:1/3;grid-row:1;}
+  body.mobile-view #bomChiTietBang td:nth-child(2){grid-column:3;grid-row:1;text-align:right;color:var(--text2);font-size:12.5px;}
+  body.mobile-view #bomChiTietBang td:nth-child(3){display:none;}
+  body.mobile-view #bomChiTietBang td:nth-child(4){grid-column:1;grid-row:2;text-align:left;font-size:12.5px;color:var(--text2);white-space:nowrap;}
+  body.mobile-view #bomChiTietBang td:nth-child(4):not(:empty)::before{content:'Theo BOM ';}
+  body.mobile-view #bomChiTietBang td:nth-child(5){grid-column:2;grid-row:2;justify-self:end;display:flex;align-items:center;gap:6px;}
+  body.mobile-view #bomChiTietBang td:nth-child(6){grid-column:3;grid-row:2;}
+  body.mobile-view #bomChiTietBang .bom-ma{max-width:none;width:100%;font-size:16px;padding:9px 10px;text-align:left;}
+  body.mobile-view #bomChiTietBang .bom-sl{width:74px;font-size:16px;padding:9px 6px;text-align:center;}
+  body.mobile-view #bomChiTietBang .bom-sl-nut{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;font-size:22px;font-weight:700;
+    border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);cursor:pointer;}
+  body.mobile-view #bomChiTietBang .bom-xoa-btn{width:42px;height:42px;font-size:17px;}
+  body.mobile-view #bomChiTietModal .btn-row{display:flex;flex-wrap:wrap;position:sticky;bottom:-12px;z-index:2;background:var(--card);margin:12px -12px -12px;padding:10px 12px;border-top:1px solid var(--border);}
+  body.mobile-view #bomChiTietModal .btn-row .primary-btn{flex:1;min-height:46px;font-size:16px;}
+  body.mobile-view #bomChiTietModal .btn-row .save-status{flex-basis:100%;order:2;}
+
   /* ---- Header: logo + tên công ty bên trái, tiêu đề + người dùng bên phải ---- */
   .brand{display:flex;align-items:center;gap:16px;}
   .brand-logo{width:92px;height:auto;flex:0 0 auto;}
@@ -1766,6 +1816,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <button type="button" class="bom-chip" data-loc="da">Đã xác nhận <b id="bomSoDa">0</b></button>
       <button type="button" class="bom-chip" data-loc="tatca">Tất cả</button>
     </div>
+    <button type="button" id="bomDungCaNgay" class="primary-btn" hidden></button>
     <div id="bomTrangThai" class="save-status" style="display:block;margin:6px 0;"></div>
     <div class="bom-bang-khung">
       <table class="bom-bang">
@@ -2077,7 +2128,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=208"></script>
+<script src="raw-data.js?v=209"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4190,7 +4241,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 208;
+const APP_VERSION = 209;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7133,18 +7184,27 @@ function veDanhSachBom(){
   // "Chờ xác nhận" hiện hết, không lọc ngày, để không sót lô nào.
   const hien=(bomLocDangXem==='cho'?cho:bomLocDangXem==='da'?da:ds.filter(trongKhoang))
     .sort((a,b)=>khoaNgayDMY(b.lo.ngayXong)-khoaNgayDMY(a.lo.ngayXong)||String(a.o.ma).localeCompare(String(b.o.ma),'vi'));
+  // "Đúng BOM cả ngày" (điện thoại): các lô chờ, có BOM, đóng gói xong trong khoảng ngày đang chọn.
+  const nutCaNgay=document.getElementById('bomDungCaNgay');
+  if(nutCaNgay){
+    const loNgay=cho.filter(x=>trongKhoang(x)&&(bomTheoMa[maHangBom(x.o.ma)]||[]).length);
+    const tu=isoToDMY(document.getElementById('bomTuNgay').value), den=isoToDMY(document.getElementById('bomDenNgay').value);
+    nutCaNgay.hidden=!(duocXacNhanBom()&&loNgay.length);
+    nutCaNgay.textContent=`✓ Đúng BOM cả ${tu===den?'ngày '+String(tu).slice(0,5):'từ '+String(tu).slice(0,5)+' đến '+String(den).slice(0,5)} (${loNgay.length} lô)`;
+    nutCaNgay.dataset.ids=loNgay.map(x=>x.o.id).join('|');
+  }
   const than=document.getElementById('bomBangLo');
   if(!hien.length){ than.innerHTML=`<tr><td colspan="9" style="color:var(--text2);text-align:center;padding:14px;">${bomLocDangXem==='cho'?'Không còn lô nào chờ xác nhận.':'Không có lô nào trong khoảng ngày này.'}</td></tr>`; return; }
   than.innerHTML=hien.map(({o,lo})=>{
     const coBom=(bomTheoMa[maHangBom(o.ma)]||[]).length>0, xn=bomXacNhan[o.id];
     const nhan=xn?`<span class="bom-nhan da">${xn.trang_thai==='co_thay_doi'?'Đã xác nhận · có thay đổi':'Đã xác nhận'}</span>`:'<span class="bom-nhan cho">Chờ xác nhận</span>';
     return `<tr>
-      <td>${lo.ngayXong||''}</td><td><b>${kyTuAnToan(o.ma||'-')}</b></td><td>${kyTuAnToan(o.dong||'')}</td>
-      <td>${kyTuAnToan(formatKichThuoc(o))}</td><td>${kyTuAnToan(o.lot_label||(o.is_manual?'Phát sinh':o.is_drop?'Rớt':''))}</td>
-      <td class="so">${lo.soTam}</td>
-      <td>${coBom?`${bomTheoMa[maHangBom(o.ma)].length} vật tư`:'<span class="bom-nhan thieu">Không có BOM</span>'}</td>
-      <td>${nhan}</td>
-      <td style="white-space:nowrap;">${!xn&&coBom&&duocXacNhanBom()?`<button type="button" class="capacity-quick-btn bom-dung-nhanh" data-bom-dung="${o.id}">✓ Đúng BOM</button> `:''}<button type="button" class="capacity-quick-btn" data-bom-xem="${o.id}">Xem</button></td></tr>`;
+      <td class="bom-c-ngay">${lo.ngayXong||''}</td><td class="bom-c-ma"><b>${kyTuAnToan(o.ma||'-')}</b></td><td class="bom-c-ten">${kyTuAnToan(o.dong||'')}</td>
+      <td class="bom-c-kt">${kyTuAnToan(formatKichThuoc(o))}</td><td class="bom-c-lo">${kyTuAnToan(o.lot_label||(o.is_manual?'Phát sinh':o.is_drop?'Rớt':''))}</td>
+      <td class="so bom-c-tam">${lo.soTam}</td>
+      <td class="bom-c-bom">${coBom?`${bomTheoMa[maHangBom(o.ma)].length} vật tư`:'<span class="bom-nhan thieu">Không có BOM</span>'}</td>
+      <td class="bom-c-tt">${nhan}</td>
+      <td class="bom-c-nut" style="white-space:nowrap;">${!xn&&coBom&&duocXacNhanBom()?`<button type="button" class="capacity-quick-btn bom-dung-nhanh" data-bom-dung="${o.id}">✓ Đúng BOM</button> `:''}<button type="button" class="capacity-quick-btn" data-bom-xem="${o.id}"><span class="bom-chu-pc">Xem</span><span class="bom-chu-dt">${!xn&&duocXacNhanBom()?'Sửa':'Xem'}</span></button></td></tr>`;
   }).join('');
 }
 
@@ -7266,7 +7326,7 @@ function dongVatTuBomHtml(d,khoa){
   const ma=khoa?`${kyTuAnToan(d.ma_vt)}${nhanDoi}`
     :`<input class="chu bom-ma" value="${kyTuAnToan(d.ma_vt||'')}" placeholder="Gõ mã hoặc tên" autocomplete="off"${d.xoa?' disabled':''}>${nhanDoi}<div class="bom-la" hidden>Mã này chưa có trong BOM nào, kiểm tra lại</div>`;
   const sl=khoa?(d.xoa?0:(Number(d.thuc_dung)||0))
-    :`<input class="bom-sl" type="number" min="0" step="any" inputmode="decimal" value="${Number(d.thuc_dung)||0}"${d.xoa?' disabled':''}>`;
+    :`<button type="button" class="bom-sl-nut" data-buoc="-1" aria-label="Bớt 1"${d.xoa?' disabled':''}>−</button><input class="bom-sl" type="number" min="0" step="any" inputmode="decimal" value="${Number(d.thuc_dung)||0}"${d.xoa?' disabled':''}><button type="button" class="bom-sl-nut" data-buoc="1" aria-label="Thêm 1"${d.xoa?' disabled':''}>+</button>`;
   return `<tr class="${d.xoa?'bom-xoa':''}" data-them="${d.them?1:0}" data-goc="${kyTuAnToan(goc)}" data-theo-bom="${Number(d.theo_bom)||0}" data-dm="${d.dinh_muc??''}" data-dvt="${kyTuAnToan(d.dvt||'')}">
     <td>${ma}</td><td>${kyTuAnToan(d.dvt||'')}</td>
     <td class="so">${d.dinh_muc??''}</td><td class="so">${d.them?'':(Number(d.theo_bom)||0)}</td>
@@ -7409,6 +7469,27 @@ async function xuatExcelBom(){
 }
 function themTrangExcel(X,wb,ws,ten){ X.utils.book_append_sheet(wb,ws,ten.slice(0,31)); }
 
+// Ghi "đúng BOM" cho một lô: vật tư thực dùng = đúng theo BOM chuẩn.
+function luuDungBomLo(o){
+  const lo=thongTinLoBom(o), chuan=dongBomChuan(bomTheoMa[maHangBom(o.ma)]||[],lo.soTam);
+  return luuXacNhanBom(o,'dung_bom',chuan.map(c=>({ma_vt:c.ma_vt,ten_vt:c.ten_vt,dvt:c.dvt,dinh_muc:c.dinh_muc,theo_bom:c.theo_bom,thuc_dung:c.theo_bom})),'');
+}
+document.getElementById('bomDungCaNgay')?.addEventListener('click',async e=>{
+  const nut=e.currentTarget, ids=(nut.dataset.ids||'').split('|').filter(Boolean); if(!ids.length||nut.disabled) return;
+  if(!confirm(`Xác nhận ĐÚNG BOM cho ${ids.length} lô?\n\nLô nào có thay đổi vật tư thì bấm Huỷ, sửa lô đó trước rồi mới bấm nút này.`)) return;
+  const st=document.getElementById('bomTrangThai'); nut.disabled=true;
+  let xong=0; const loi=[];
+  for(const id of ids){
+    const o=getOrderById(id); if(!o||bomXacNhan[id]) continue;
+    st.textContent=`Đang ghi ${xong+1}/${ids.length}...`; st.style.color='var(--text2)';
+    const kq=await luuDungBomLo(o);
+    if(kq.ok) xong++; else loi.push(`${o.ma||id}: ${kq.loi}`);
+  }
+  nut.disabled=false;
+  st.textContent=`Đã xác nhận đúng BOM ${xong} lô.`+(loi.length?` Chưa ghi được ${loi.length} lô — ${loi.join('; ')}`:'');
+  st.style.color=loi.length?'var(--danger)':'var(--success)';
+  veDanhSachBom();
+});
 document.getElementById('bomBangLo')?.addEventListener('click',async e=>{
   const b=e.target.closest('[data-bom-xem]'); if(b){ moChiTietBom(b.dataset.bomXem); return; }
   // "✓ Đúng BOM" ngay trên danh sách (anh Tùng 25/09/2026): lô dùng đúng BOM thì bấm một lần là xong,
@@ -7416,8 +7497,7 @@ document.getElementById('bomBangLo')?.addEventListener('click',async e=>{
   const d=e.target.closest('[data-bom-dung]'); if(!d||d.disabled) return;
   const o=getOrderById(d.dataset.bomDung); if(!o) return;
   d.disabled=true; d.textContent='Đang lưu...';
-  const lo=thongTinLoBom(o), chuan=dongBomChuan(bomTheoMa[maHangBom(o.ma)]||[],lo.soTam);
-  const kq=await luuXacNhanBom(o,'dung_bom',chuan.map(c=>({ma_vt:c.ma_vt,ten_vt:c.ten_vt,dvt:c.dvt,dinh_muc:c.dinh_muc,theo_bom:c.theo_bom,thuc_dung:c.theo_bom})),'');
+  const kq=await luuDungBomLo(o);
   if(!kq.ok){ const st=document.getElementById('bomTrangThai'); st.textContent=`${o.ma||''}: ${kq.loi}`; st.style.color='var(--danger)'; }
   veDanhSachBom();
 });
@@ -7452,12 +7532,15 @@ window.addEventListener('resize',hengDatViTriGoiY);
 window.visualViewport?.addEventListener('resize',hengDatViTriGoiY);
 window.visualViewport?.addEventListener('scroll',hengDatViTriGoiY);
 document.getElementById('bomChiTietBang')?.addEventListener('click',e=>{
+  const buoc=e.target.closest('.bom-sl-nut');
+  if(buoc){ const o=buoc.parentElement.querySelector('.bom-sl'); if(!o||o.disabled) return;
+    o.value=String(Math.max(0,lamTronBom((Number(o.value)||0)+Number(buoc.dataset.buoc)))); danhDauLechBom(); return; }
   const nut=e.target.closest('.bom-xoa-btn'); if(!nut) return;
   const tr=nut.closest('tr');
   if(tr.dataset.them==='1'){ tr.remove(); danhDauLechBom(); return; }   // dòng mới thêm: xoá hẳn
   const xoa=!tr.classList.contains('bom-xoa');
   tr.classList.toggle('bom-xoa',xoa);
-  tr.querySelectorAll('input').forEach(i=>{i.disabled=xoa;});
+  tr.querySelectorAll('input,.bom-sl-nut').forEach(i=>{i.disabled=xoa;});
   nut.textContent=xoa?'↩':'🗑'; nut.title=xoa?'Lấy lại dòng này':'Bỏ dòng này';
   danhDauLechBom();
 });
