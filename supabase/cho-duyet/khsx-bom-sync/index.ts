@@ -38,6 +38,14 @@ async function layBomErp(maHang: string[]): Promise<DongErp[]> {
   if (!res.ok) throw new Error(`ERP_${res.status}`);
   return (await res.json()).data ?? [];
 }
+// Tên thành phẩm (trường item_name của BOM cha) lấy riêng, vì trùng tên với item_name của dòng vật tư.
+async function layTenThanhPham(maHang: string[]): Promise<Record<string, string>> {
+  const url = `${ERP_URL}/api/resource/BOM?fields=${encodeURIComponent(JSON.stringify(["item", "item_name"]))}`
+    + `&filters=${encodeURIComponent(JSON.stringify([["is_active", "=", 1], ["is_default", "=", 1], ["docstatus", "=", 1], ["item", "in", maHang]]))}&limit_page_length=0`;
+  const res = await fetch(url, { headers: { Authorization: ERP_AUTH, Accept: "application/json" } });
+  if (!res.ok) throw new Error(`ERP_${res.status}`);
+  return Object.fromEntries(((await res.json()).data ?? []).map((d: { item: string; item_name: string }) => [String(d.item).toUpperCase(), d.item_name ?? ""]));
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors(req) });
@@ -66,9 +74,11 @@ Deno.serve(async (req) => {
   for (let i = 0; i < cacMa.length; i += 40) {
     const lo = cacMa.slice(i, i + 40);
     const dong = await layBomErp(lo);
+    const ten = await layTenThanhPham(lo);
     const ghi = dong.filter((d) => d.item_code && Number(d.qty) >= 0).map((d) => ({
       ma_hang: String(d.item).toUpperCase(), stt: Number(d.idx), bom: d.name, ma_vt: d.item_code,
-      ten_vt: d.item_name ?? "", dinh_muc: Number(d.qty), dvt: d.uom ?? "", dong_bo_luc: new Date().toISOString(),
+      ten_vt: d.item_name ?? "", dinh_muc: Number(d.qty), dvt: d.uom ?? "", ten_hang: ten[String(d.item).toUpperCase()] ?? "",
+      dong_bo_luc: new Date().toISOString(),
     }));
     ghi.forEach((d) => coBom.add(d.ma_hang));
     // Thay trọn BOM của từng mã: xoá dòng cũ của các mã trong lô này rồi ghi lại.

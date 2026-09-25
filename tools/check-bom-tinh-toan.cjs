@@ -107,3 +107,12 @@ assert.deepEqual([...ctx.goiYVatTuBom('mut ep 7','MTS716').map(x=>x.ma_vt)].slic
 assert.deepEqual([...ctx.goiYVatTuBom('tui sora').map(x=>x.ma_vt)],['TSR169'],'Tìm theo tên không dấu');
 assert.equal(ctx.maVatTuChuan('decal'),'Decal'); assert.equal(ctx.laMaVatTuDaBiet('decal'),true); assert.equal(ctx.laMaVatTuDaBiet('XYZ9'),false);
 console.log('PASS  gợi ý mã: tìm theo mã hoặc tên không dấu, xếp đúng, gõ sai hoa/thường vẫn nhận');
+
+// File xuất: dòng và thứ tự y như báo cáo đóng gói (anh Tùng chốt 25/09)
+const P=(id,ma,dong,ngang,sl)=>({id,date:'26/09/2026',ma,dong,ngang,dai:'200',day:'10',so_luong:sl});
+ctx.don=[P('p1','SORA10-6','SORA','160',5),P('p2','LUN10-4','LUNA','140',3),P('p3','SORA10-6','SORA','160',5),P('p4','CLS10-6','CLASSIC','160',2)];
+ctx.dongGoi={p1:{'26/09/2026':5},p2:{'26/09/2026':3},p3:{'26/09/2026':5},p4:{'26/09/2026':2}}; ctx.bomXacNhan={};
+dl=ctx.duLieuXuatBom(['26/09/2026']);
+assert.deepEqual([...dl.theoNgay['26/09/2026'].map(g=>g.ma+'|'+g.soTam)],
+  [...ctx.chuanBiDongBaoCao('26/09/2026').map(r=>r[0]+'|'+r[6])],'Thứ tự/gộp dòng khác báo cáo đóng gói');
+console.log('PASS  file BOM cùng dòng, cùng thứ tự với báo cáo đóng gói');

@@ -2064,7 +2064,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=204"></script>
+<script src="raw-data.js?v=205"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4177,7 +4177,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 204;
+const APP_VERSION = 205;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -6896,6 +6896,7 @@ const maHangBom=ma=>String(ma||'').trim().toUpperCase();
 const lamTronBom=x=>Math.round((Number(x)||0)*1000)/1000;
 let bomTheoMa={};    // MÃ HÀNG -> [{stt,ma_vt,ten_vt,dinh_muc,dvt}]
 let bomXacNhan={};   // order_id -> dòng xác nhận
+let bomTenHang={};   // MÃ HÀNG -> tên thành phẩm trên ERP (cho file xuất)
 let bomLocDangXem='cho', bomDonDangXem=null;
 
 function laDonCanBom(o){ return !!o && !o.is_warranty && !o.is_ghost && (Number(o.so_luong)||0)>0; }
@@ -6942,7 +6943,9 @@ function duLieuXuatBom(cacNgay){
       let ngang=o.ngang,dai=o.dai,day=o.day;
       if(!dai||!day){ const m=String(o.ngang||'').match(/(\d+)\s*[xX*]\s*(\d+)\s*[xX*]\s*(\d+)/); if(m){ngang=m[1];dai=m[2];day=m[3];} }
       const key=[chuanHoaMaBaoCao(o.ma),chuanHoaTenSP(o.dong),ngang,dai,day].join('|');
-      const g=nhom[key]||(nhom[key]={ma:String(o.ma||'').trim(),ten:String(o.dong||'').trim(),ngang,dai,day,soTam:0,vt:{},tt:new Set()});
+      const g=nhom[key]||(nhom[key]={maDem:{},tenDem:{},ngang,dai,day,soTam:0,vt:{},tt:new Set()});
+      const maGoc=String(o.ma||'').trim(), tenGoc=String(o.dong||'').trim();
+      g.maDem[maGoc]=(g.maDem[maGoc]||0)+1; g.tenDem[tenGoc]=(g.tenDem[tenGoc]||0)+1;
       g.soTam+=sl;
       const ds=bomTheoMa[maHangBom(o.ma)]||[];
       if(!ds.length) g.tt.add('thieu');
@@ -6953,7 +6956,11 @@ function duLieuXuatBom(cacNgay){
       if(xn.trang_thai==='co_thay_doi' && lo.ngayXong===ngay)
         Object.entries(chenhLechXacNhanBom(xn,ds,lo.soTam)).forEach(([ma,c])=>congVt(g,ma,c.ten_vt,c.dvt,null,0,c.chenh));
     });
-    theoNgay[ngay]=Object.values(nhom).sort((x,y)=>String(x.ten).localeCompare(String(y.ten),'vi')||String(x.ma).localeCompare(String(y.ma),'vi'));
+    const nhieuNhat=dem=>Object.keys(dem).sort((a,b)=>dem[b]-dem[a]||a.localeCompare(b,'vi'))[0]||'';
+    // Cùng cách chọn tên/mã và cùng thứ tự với chuanBiDongBaoCao (báo cáo đóng gói).
+    theoNgay[ngay]=Object.values(nhom).map(g=>Object.assign(g,{ma:nhieuNhat(g.maDem),ten:nhieuNhat(g.tenDem)}))
+      .sort((x,y)=>String(x.ten).localeCompare(String(y.ten),'vi')||String(x.ma).localeCompare(String(y.ma),'vi')
+        ||(Number(x.ngang)||0)-(Number(y.ngang)||0)||(Number(x.dai)||0)-(Number(y.dai)||0)||(Number(x.day)||0)-(Number(y.day)||0));
     const tamBom=theoNgay[ngay].reduce((s,g)=>s+g.soTam,0);
     const tamBaoCao=chuanBiDongBaoCao(ngay).reduce((s,r)=>s+(Number(r[6])||0),0);
     if(tamBom||tamBaoCao) kiemTra.push({ngay,tamBaoCao,tamBom});
@@ -6966,18 +6973,20 @@ const nhanTrangThaiNhomBom=tt=>tt.has('thieu')?'Không có BOM'
 
 // ---- Đọc / ghi (máy chủ hoặc bản xem thử) ----
 async function taiBomChoMa(cacMa){
-  const can=[...new Set(cacMa.map(maHangBom).filter(Boolean))].filter(m=>!(m in bomTheoMa));
+  // Mã đang báo "không có BOM" thì lần nào cũng hỏi lại — ERP có thể vừa thêm BOM (lỗi 25/09: SORA25-2020).
+  const can=[...new Set(cacMa.map(maHangBom).filter(Boolean))].filter(m=>!bomTheoMa[m]?.length);
   if(!can.length) return;
   if(XEM_THU_BOM){
     if(!window.__bomXemThu){ const r=await fetch('bom-xem-thu.local.json',{cache:'no-store'}); if(!r.ok) throw new Error('Chưa có file BOM xem thử'); window.__bomXemThu=(await r.json()).dong||[]; }
     can.forEach(m=>{bomTheoMa[m]=[];});
-    window.__bomXemThu.forEach(d=>{ if(bomTheoMa[d.ma_hang] && can.includes(d.ma_hang)) bomTheoMa[d.ma_hang].push(d); });
+    window.__bomXemThu.forEach(d=>{ if(bomTheoMa[d.ma_hang] && can.includes(d.ma_hang)){ bomTheoMa[d.ma_hang].push(d); if(d.ten_hang) bomTenHang[d.ma_hang]=d.ten_hang; } });
   }else{
     for(let i=0;i<can.length;i+=80){
       const lo=can.slice(i,i+80);
-      const {data,error}=await supabaseSelectAll('khsx_bom_lines','ma_hang,stt,ma_vt,ten_vt,dinh_muc,dvt',q=>q.in('ma_hang',lo));
+      let {data,error}=await supabaseSelectAll('khsx_bom_lines','ma_hang,stt,ma_vt,ten_vt,dinh_muc,dvt,ten_hang',q=>q.in('ma_hang',lo));
+      if(error) ({data,error}=await supabaseSelectAll('khsx_bom_lines','ma_hang,stt,ma_vt,ten_vt,dinh_muc,dvt',q=>q.in('ma_hang',lo)));   // máy chủ chưa có cột tên thành phẩm
       if(error) throw error;
-      lo.forEach(m=>{bomTheoMa[m]=[];}); data.forEach(d=>bomTheoMa[d.ma_hang]?.push(d));
+      lo.forEach(m=>{bomTheoMa[m]=[];}); data.forEach(d=>{ bomTheoMa[d.ma_hang]?.push(d); if(d.ten_hang) bomTenHang[d.ma_hang]=d.ten_hang; });
     }
   }
   can.forEach(m=>bomTheoMa[m].sort((a,b)=>a.stt-b.stt));
@@ -7032,6 +7041,7 @@ async function initBomPage(){
   document.getElementById('bomXemThuNhac').innerHTML=XEM_THU_BOM
     ?'<div class="bom-xem-thu">Bản xem thử trên máy: BOM lấy từ ERP ngày 25/09, bấm xác nhận chỉ lưu trên máy này, không ghi lên hệ thống.</div>':'';
   const st=document.getElementById('bomTrangThai'); st.textContent='Đang tải BOM...'; st.style.color='var(--text2)';
+  danhMucVatTuBom=null;   // mỗi lần mở mục này đọc lại danh sách gợi ý, có luôn vật tư mới thêm
   try{
     const ds=cacLoDuBom();
     await taiBomChoMa(ds.map(x=>x.o.ma));
@@ -7143,19 +7153,35 @@ function goiYVatTuBom(chu, goc){
 const maVatTuChuan=ma=>danhMucVatTuBom?.find(x=>x.ma_vt.toLowerCase()===String(ma||'').trim().toLowerCase())?.ma_vt||String(ma||'').trim();
 const laMaVatTuDaBiet=ma=>!danhMucVatTuBom||!ma||danhMucVatTuBom.some(x=>x.ma_vt.toLowerCase()===String(ma).toLowerCase());
 let oGoiYDangMo=null, goiYDangChon=-1;
+// Điện thoại: mở bàn phím làm khung cuộn/đổi cỡ liên tục — trước đây mỗi lần cuộn là ẩn danh
+// sách rồi gõ lại hiện ra, thành nhấp nháy. Nay chỉ đặt lại vị trí, và chỉ vẽ lại khi kết quả đổi.
+let goiYDangHien='';
 function hienGoiYVatTu(input){
   const hop=document.getElementById('bomGoiY');
   const ds=goiYVatTuBom(input.value, input.closest('tr')?.dataset.goc);
   if(!ds.length || !input.value.trim() && !input.closest('tr')?.dataset.goc){ anGoiYVatTu(); return; }
-  oGoiYDangMo=input; goiYDangChon=-1;
-  hop.innerHTML=ds.map((x,i)=>`<div class="bom-goi-y-dong" data-i="${i}" data-ma="${kyTuAnToan(x.ma_vt)}"><b>${kyTuAnToan(x.ma_vt)}</b> <span>— ${kyTuAnToan(x.ten_vt)}</span></div>`).join('');
-  const r=input.getBoundingClientRect();
-  hop.style.left=Math.max(8,Math.min(r.left,innerWidth-Math.min(420,innerWidth-16)-8))+'px';
-  hop.style.top=(r.bottom+4)+'px';
-  hop.style.width=Math.min(420,innerWidth-16)+'px';
+  const khoa=ds.map(x=>x.ma_vt).join('|');
+  if(oGoiYDangMo!==input || goiYDangHien!==khoa || hop.style.display!=='block'){
+    hop.innerHTML=ds.map((x,i)=>`<div class="bom-goi-y-dong" data-i="${i}" data-ma="${kyTuAnToan(x.ma_vt)}"><b>${kyTuAnToan(x.ma_vt)}</b> <span>— ${kyTuAnToan(x.ten_vt)}</span></div>`).join('');
+    goiYDangChon=-1; goiYDangHien=khoa;
+  }
+  oGoiYDangMo=input;
   hop.style.display='block';
+  datViTriGoiYVatTu();
 }
-function anGoiYVatTu(){ const hop=document.getElementById('bomGoiY'); if(hop) hop.style.display='none'; oGoiYDangMo=null; goiYDangChon=-1; }
+function datViTriGoiYVatTu(){
+  const hop=document.getElementById('bomGoiY'), input=oGoiYDangMo;
+  if(!hop||!input||hop.style.display!=='block') return;
+  const r=input.getBoundingClientRect(), caoMan=window.visualViewport?.height||innerHeight;
+  if(r.bottom<0||r.top>caoMan){ hop.style.visibility='hidden'; return; }   // ô đã cuộn khuất: tạm giấu, không đóng
+  const w=Math.min(420,innerWidth-16), cao=Math.min(280,hop.scrollHeight||280);
+  hop.style.width=w+'px';
+  hop.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';
+  // Bàn phím che phía dưới thì hiện lên trên ô
+  hop.style.top=((caoMan-r.bottom<cao+8 && r.top>cao+8)?(r.top-cao-4):(r.bottom+4))+'px';
+  hop.style.visibility='';
+}
+function anGoiYVatTu(){ const hop=document.getElementById('bomGoiY'); if(hop) hop.style.display='none'; oGoiYDangMo=null; goiYDangChon=-1; goiYDangHien=''; }
 function chonGoiYVatTu(ma){
   if(!oGoiYDangMo) return;
   oGoiYDangMo.value=ma;
@@ -7225,7 +7251,52 @@ async function luuChiTietBom(kieu){
   veDanhSachBom();
 }
 
-// ---- Xuất Excel theo ngày đóng gói ----
+// ---- Xuất Excel theo ngày đóng gói, khung theo file mẫu "BOM Nem Foam" (2026-09-25) ----
+// Mỗi ngày một trang; dòng và thứ tự y như báo cáo đóng gói (gộp cùng mã + tên + kích thước).
+// Mỗi dòng báo cáo = một khối: dòng "Thành phẩm: MÃ - Tên" (số tấm đóng gói), dưới là vật tư
+// thực dùng: Mã NVL | Tên NVL | ĐVT | Số Lượng | Đối tượng THCP (= mã thành phẩm).
+// Tô màu như file mẫu cần bản SheetJS có kiểu chữ (xlsx-js-style), chỉ tải khi bấm xuất;
+// tải không được thì vẫn xuất đúng khung, chỉ không có màu.
+let thuVienExcelMau=null;
+async function layThuVienExcelMau(){
+  if(thuVienExcelMau!==null) return thuVienExcelMau||null;
+  const goc=window.XLSX;
+  try{
+    await new Promise((ok,loi)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+      s.onload=ok; s.onerror=()=>loi(new Error('Không tải được thư viện tô màu'));
+      setTimeout(()=>loi(new Error('Hết giờ chờ thư viện tô màu')),15000);
+      document.head.appendChild(s);
+    });
+    thuVienExcelMau=window.XLSX&&window.XLSX!==goc?window.XLSX:false;
+  }catch(e){ thuVienExcelMau=false; }
+  finally{ window.XLSX=goc; }   // giữ nguyên bộ đọc file KHSX đang dùng
+  return thuVienExcelMau||null;
+}
+const VIEN_MONG={top:{style:'thin',color:{rgb:'BFBFBF'}},bottom:{style:'thin',color:{rgb:'BFBFBF'}},left:{style:'thin',color:{rgb:'BFBFBF'}},right:{style:'thin',color:{rgb:'BFBFBF'}}};
+function trangBomTheoMau(X, coMau, tieuDe, tomTat, khoi){
+  const hang=[[tieuDe,'','','',''],[tomTat,'','','',''],[],['Mã NVL','Tên NVL','ĐVT','Số Lượng','Đối tượng THCP']], kieu=[];
+  khoi.forEach(k=>{
+    kieu[hang.length]='tp';
+    hang.push([`Thành phẩm: ${k.ma}${k.ten?' - '+k.ten:''}${k.ghiChu?' ('+k.ghiChu+')':''}`,'','Tấm',k.soTam,'']);
+    k.vatTu.forEach(v=>{ kieu[hang.length]='vt'; hang.push([v.ma_vt,v.ten_vt||'',v.dvt||'',v.thuc_dung,k.ma]); });
+  });
+  const ws=X.utils.aoa_to_sheet(hang);
+  ws['!cols']=[{wch:24},{wch:73.6},{wch:8},{wch:12},{wch:18}];
+  if(coMau){
+    const dat=(r,c,s)=>{ const a=X.utils.encode_cell({r,c}); if(!ws[a]) ws[a]={t:'s',v:''}; ws[a].s=s; };
+    dat(0,0,{font:{bold:true,sz:14}});
+    dat(1,0,{font:{sz:10,color:{rgb:'666666'}}});
+    for(let c=0;c<5;c++) dat(3,c,{font:{bold:true},fill:{patternType:'solid',fgColor:{rgb:'D9D9D9'}},border:VIEN_MONG});
+    kieu.forEach((k,r)=>{ if(!k) return;
+      for(let c=0;c<5;c++) dat(r,c,k==='tp'
+        ?{font:{bold:true,color:{rgb:'1F4E79'}},fill:{patternType:'solid',fgColor:{rgb:'DDEBF7'}},border:VIEN_MONG}
+        :{border:VIEN_MONG});
+    });
+  }
+  return ws;
+}
 async function xuatExcelBom(){
   const st=document.getElementById('bomTrangThai');
   const tuIso=document.getElementById('bomTuNgay').value, denIso=document.getElementById('bomDenNgay').value;
@@ -7236,31 +7307,36 @@ async function xuatExcelBom(){
   try{
     const don=getOrders().filter(o=>!o.is_ghost&&!o.is_warranty&&cacNgay.some(n=>dongGoiTheoNgayCuaDon(o)[n]));
     await taiBomChoMa(don.map(o=>o.ma)); await taiXacNhanBom(don.map(o=>o.id));
-    const dl=duLieuXuatBom(cacNgay), wb=XLSX.utils.book_new();
-    const tongDong=Object.values(dl.tong).sort((a,b)=>String(a.ma_vt).localeCompare(String(b.ma_vt)))
-      .map(t=>[t.ma_vt,t.ten_vt,t.dvt,t.theo_bom,t.thuc_dung,lamTronBom(t.thuc_dung-t.theo_bom)]);
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[`Tổng vật tư ${isoToDMY(tuIso)} – ${isoToDMY(denIso)}`],[],
-      ['Mã vật tư','Tên vật tư','ĐVT','Theo BOM','Thực dùng','Chênh lệch'],...tongDong]),'Tong vat tu');
+    const mau=await layThuVienExcelMau(), X=mau||window.XLSX, coMau=!!mau;
+    const dl=duLieuXuatBom(cacNgay), wb=X.utils.book_new();
     cacNgay.forEach(ngay=>{
       const nhom=dl.theoNgay[ngay]; if(!nhom?.length) return;
-      const hang=[[`Vật tư theo BOM — đóng gói ngày ${ngay}`],[],
-        ['Mã hàng','Tên','Ngang','Dài','Dày','Số tấm đóng gói','Mã vật tư','Tên vật tư','ĐVT','Định mức 1 tấm','Theo BOM','Thực dùng','Chênh lệch','Trạng thái']];
-      nhom.forEach(g=>{
-        const vt=Object.values(g.vt), tt=nhanTrangThaiNhomBom(g.tt);
-        if(!vt.length) hang.push([g.ma,g.ten,g.ngang,g.dai,g.day,g.soTam,'','','','','','','',tt]);
-        vt.forEach(v=>hang.push([g.ma,g.ten,g.ngang,g.dai,g.day,g.soTam,v.ma_vt,v.ten_vt,v.dvt,v.dinh_muc??'',v.theo_bom,v.thuc_dung,lamTronBom(v.thuc_dung-v.theo_bom),tt]));
+      const khoi=nhom.map(g=>{
+        const tt=nhanTrangThaiNhomBom(g.tt), maTp=maHangBom(g.ma)||g.ma;
+        return {ma:maTp, ten:bomTenHang[maTp]||[g.ten,g.ngang&&g.day?`${g.ngang}x${g.dai||200}x${g.day}cm`:''].filter(Boolean).join(' '),
+          soTam:g.soTam, ghiChu:/^Đã xác nhận|^Trước/.test(tt)?'':tt.toLowerCase(),
+          vatTu:Object.values(g.vt).filter(v=>v.thuc_dung)};
       });
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(hang),ngay.slice(0,5).replace('/','-'));
+      const soTam=khoi.reduce((s,k)=>s+k.soTam,0), soDong=khoi.reduce((s,k)=>s+k.vatTu.length,0), soCho=khoi.filter(k=>k.ghiChu).length;
+      themTrangExcel(X,wb,trangBomTheoMau(X,coMau,`BOM Thành Phẩm Nệm Foam — Đóng gói ngày ${ngay}`,
+        `${khoi.length} mã thành phẩm · ${soTam} tấm · ${soDong} dòng NVL · theo đúng báo cáo đóng gói ngày ${ngay}${soCho?` · ${soCho} mã chưa xác nhận xong`:''}`,khoi),
+        `BOM ${ngay.slice(0,5).replace('/','-')}`);
     });
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Đối chiếu số tấm với báo cáo đóng gói'],[],
+    const tongDong=Object.values(dl.tong).filter(t=>t.thuc_dung||t.theo_bom).sort((a,b)=>String(a.ma_vt).localeCompare(String(b.ma_vt)))
+      .map(t=>[t.ma_vt,t.ten_vt,t.dvt,t.theo_bom,t.thuc_dung,lamTronBom(t.thuc_dung-t.theo_bom)]);
+    themTrangExcel(X,wb,X.utils.aoa_to_sheet([[`Tổng vật tư ${isoToDMY(tuIso)} – ${isoToDMY(denIso)}`],[],
+      ['Mã NVL','Tên NVL','ĐVT','Theo BOM','Thực dùng','Chênh lệch'],...tongDong]),'Tong vat tu');
+    themTrangExcel(X,wb,X.utils.aoa_to_sheet([['Đối chiếu số tấm với báo cáo đóng gói'],[],
       ['Ngày','Tấm theo báo cáo đóng gói','Tấm trong file BOM','Khớp'],
       ...dl.kiemTra.map(k=>[k.ngay,k.tamBaoCao,k.tamBom,k.tamBaoCao===k.tamBom?'Khớp':'LỆCH'])]),'Doi chieu');
-    XLSX.writeFile(wb,`BOM_${isoToDMY(tuIso).replace(/\//g,'-')}_den_${isoToDMY(denIso).replace(/\//g,'-')}.xlsx`);
+    X.writeFile(wb,`BOM_${isoToDMY(tuIso).replace(/\//g,'-')}_den_${isoToDMY(denIso).replace(/\//g,'-')}.xlsx`);
     const lech=dl.kiemTra.filter(k=>k.tamBaoCao!==k.tamBom);
-    st.textContent=lech.length?`Đã xuất file, nhưng ${lech.length} ngày lệch số tấm với báo cáo đóng gói (xem trang "Doi chieu").`:'Đã xuất file. Số tấm từng ngày khớp báo cáo đóng gói.';
+    st.textContent=(lech.length?`Đã xuất file, nhưng ${lech.length} ngày lệch số tấm với báo cáo đóng gói (xem trang "Doi chieu").`:'Đã xuất file. Số tấm từng ngày khớp báo cáo đóng gói.')
+      +(coMau?'':' (Chưa tải được phần tô màu, file vẫn đúng khung.)');
     st.style.color=lech.length?'var(--danger)':'var(--success)';
   }catch(e){ st.textContent=`Chưa xuất được: ${e.message||e}`; st.style.color='var(--danger)'; }
 }
+function themTrangExcel(X,wb,ws,ten){ X.utils.book_append_sheet(wb,ws,ten.slice(0,31)); }
 
 document.getElementById('bomBangLo')?.addEventListener('click',e=>{ const b=e.target.closest('[data-bom-xem]'); if(b) moChiTietBom(b.dataset.bomXem); });
 document.querySelectorAll('.bom-chip').forEach(c=>c.addEventListener('click',()=>{ bomLocDangXem=c.dataset.loc; veDanhSachBom(); }));
@@ -7286,7 +7362,12 @@ document.getElementById('bomChiTietBang')?.addEventListener('keydown',e=>{
   else if(e.key==='Escape') anGoiYVatTu();
 });
 document.getElementById('bomGoiY')?.addEventListener('mousedown',e=>{ const d=e.target.closest('.bom-goi-y-dong'); if(d){ e.preventDefault(); chonGoiYVatTu(d.dataset.ma); } });
-document.getElementById('bomChiTietModal')?.addEventListener('scroll',anGoiYVatTu,true);
+let hengGoiY=0;
+const hengDatViTriGoiY=()=>{ cancelAnimationFrame(hengGoiY); hengGoiY=requestAnimationFrame(datViTriGoiYVatTu); };
+document.getElementById('bomChiTietModal')?.addEventListener('scroll',hengDatViTriGoiY,true);
+window.addEventListener('resize',hengDatViTriGoiY);
+window.visualViewport?.addEventListener('resize',hengDatViTriGoiY);
+window.visualViewport?.addEventListener('scroll',hengDatViTriGoiY);
 document.getElementById('bomChiTietBang')?.addEventListener('click',e=>{
   const nut=e.target.closest('.bom-xoa-btn'); if(!nut) return;
   const tr=nut.closest('tr');
