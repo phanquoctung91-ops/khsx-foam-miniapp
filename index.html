@@ -1513,6 +1513,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div class="btn-row">
       <input type="file" id="offlinePlanFile" accept=".xlsx,.xls,.csv" style="display:none;">
       <button id="importOfflinePlanBtn" class="primary-btn">📂 Nạp file KHSX</button>
+      <button id="layKhsxSheetBtn" class="primary-btn only-manager" type="button">📥 Lấy KHSX từ Sheet</button>
       <button id="nutDonCanKiemTra" class="primary-btn only-manager" type="button" style="display:none;background:var(--warning-l);color:var(--warning);border:1px solid var(--warning);">⚠ Đơn cần kiểm tra</button>
       <button id="addManualOrderBtn" class="primary-btn only-manager" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
@@ -2023,8 +2024,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <label id="bomLyDoKhung" style="display:block;margin-top:10px;font-size:12px;font-weight:700;color:var(--text2);">Lý do thay đổi
       <input type="text" id="bomLyDo" placeholder="Ví dụ: hết MTS716, dùng MTS715 thay" autocomplete="off" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
     <div class="btn-row" style="margin-top:12px;align-items:center;flex-wrap:wrap;">
-      <button id="bomDungBtn" class="primary-btn" type="button">✓ Đúng BOM</button>
-      <button id="bomLuuThayDoiBtn" class="primary-btn" type="button" style="background:var(--warning-l);color:var(--warning);border:1px solid var(--warning);">Lưu thay đổi</button>
+      <button id="bomDungBtn" class="primary-btn" type="button" style="display:none;">✓ Đúng BOM</button>
+      <button id="bomLuuThayDoiBtn" class="primary-btn" type="button">Lưu</button>
       <button id="bomMoLaiBtn" class="capacity-quick-btn" type="button" style="display:none;">Mở lại để sửa</button>
       <span id="bomChiTietStatus" class="save-status"></span>
     </div>
@@ -2040,6 +2041,16 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <button id="dongDonKiemTraBtn" class="capacity-quick-btn" type="button">Đóng</button>
     </div>
     <div id="donKiemTraBody"></div>
+  </div>
+</div>
+
+<div id="sheetXemTruocModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="sheetXemTruocTitle">
+  <div class="capacity-dialog" style="max-width:760px;">
+    <div class="capacity-head">
+      <h3 id="sheetXemTruocTitle" style="margin:0;font-size:17px;">Lấy KHSX từ Sheet — xem trước</h3>
+      <button id="dongSheetXemTruocBtn" class="capacity-quick-btn" type="button">Đóng</button>
+    </div>
+    <div id="sheetXemTruocBody"></div>
   </div>
 </div>
 
@@ -2066,7 +2077,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=207"></script>
+<script src="raw-data.js?v=208"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4179,7 +4190,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 207;
+const APP_VERSION = 208;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -5008,6 +5019,9 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
       e[truongNguoiHoanThanh(p.stage,'code')]=wid;
       e[truongNguoiHoanThanh(p.stage,'name')]=worker?.display_name||profileNameById[p.entered_by]||wid;
       e[truongNguoiHoanThanh(p.stage,'at')]=p.updated_at||'';
+      // Tách / hợp nhất đơn đọc trường này để chuyển công sang đơn mới (lỗi 25/09/2026: thiếu
+      // trường này nên đơn tách mất tên Loan Anh / Minh Thuận).
+      if(p.completed_by_worker_id) e[truongNguoiHoanThanh(p.stage,'worker_id')]=p.completed_by_worker_id;
     }
   });
   const remotePlanRows=visibleOrd.filter(o=>!o.is_manual&&!o.is_drop&&!o.is_ghost&&!o.is_warranty).map(o=>({
@@ -6629,6 +6643,16 @@ function tachLichSuTheoTran(history,tran){
   return {giu,thua};
 }
 function tongLichSuStage(history,stage){return Object.values(history||{}).reduce((s,e)=>s+soCongDoan(e&&e[stage]),0);}
+// Người nhận công của một ô (đơn, ngày, công đoạn) để chuyển sang đơn tách / đơn mới: lấy từ dòng
+// tiến độ, không có thì lấy từ bảng công (công ghi bù từ trước không nằm trên dòng tiến độ).
+function nguoiCongCuaDong(orderId,day,stage,e){
+  const tuDong=e&&e[truongNguoiHoanThanh(stage,'worker_id')];
+  if(tuDong||!CONG_DOAN_TINH_KPI_CA_NHAN.includes(stage)) return tuDong||null;
+  const iso=dmyToIso(day);
+  const c=(supabaseStageCredits||[]).filter(x=>x.order_id===orderId&&x.work_date===iso&&x.stage===stage&&Number(x.quantity)>0)
+    .sort((a,b)=>Number(b.quantity)-Number(a.quantity))[0];
+  return c?.worker_id||null;
+}
 async function taoDonTachNguon(oldOrder,history,reason){
   const cap=Math.max(...CONG_DOAN.map(stage=>tongLichSuStage(history,stage)),0);
   if(cap<=0)return null;
@@ -6644,8 +6668,9 @@ async function taoDonTachNguon(oldOrder,history,reason){
   }).eq('id',manual.id);
   const a=assignments[manual.id]||(assignments[manual.id]={to:assignments[oldOrder.id]?.to||null,stage_by_date:{},support_by_date:{}});
   a.stage_by_date=history; a.change_note=note; a.source_order_id=oldOrder.id;
-  Object.entries(history||{}).forEach(([day,e])=>CONG_DOAN.forEach(stage=>{
-    if(e&&e[stage]!=null)recordStagePatch(manual,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,e[`_${stage}_by_worker_id`]||null);
+  const oldId=oldOrder.id;
+  CONG_DOAN.forEach(stage=>Object.entries(history||{}).forEach(([day,e])=>{
+    if(e&&e[stage]!=null)recordStagePatch(manual,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,nguoiCongCuaDong(oldId,day,stage,e));
   }));
   dongBoSoHoanThanhCu(manual); queueSupabaseManagementPatch('owner',manual);
   return manual;
@@ -6674,8 +6699,8 @@ async function xuLyThayDoiNguon(orderId){
       // nen tien do that bien mat khoi dashboard (chi con tren bao cao/Sheet da chup
       // truoc do), du con so van "nhin thay" tren man hinh nguoi vua bam Xac nhan cho
       // toi lan tai lai ke tiep. Ghi that qua RPC nhu taoDonTachNguon da lam.
-      Object.entries(split.giu||{}).forEach(([day,e])=>CONG_DOAN.forEach(stage=>{
-        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,e[`_${stage}_by_worker_id`]||null);
+      CONG_DOAN.forEach(stage=>Object.entries(split.giu||{}).forEach(([day,e])=>{
+        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,nguoiCongCuaDong(old.id,day,stage,e));
       }));
       dongBoSoHoanThanhCu(next);
     }else{
@@ -6683,8 +6708,8 @@ async function xuLyThayDoiNguon(orderId){
       if(!onlyQty){ assignments[next.id].to=null; assignments[next.id].to_goc=null; }
       // Sua 2026-09-15: cung loi nhu nhanh tren - ghi that toan bo tien do cu vao
       // next.id thay vi chi gan cuc bo, tranh mat tien do khi don cu bi xoa mem.
-      Object.entries(a.stage_by_date||{}).forEach(([day,e])=>CONG_DOAN.forEach(stage=>{
-        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,e[`_${stage}_by_worker_id`]||null);
+      CONG_DOAN.forEach(stage=>Object.entries(a.stage_by_date||{}).forEach(([day,e])=>{
+        if(e&&e[stage]!=null)recordStagePatch(next,day,stage,soCongDoan(e[stage]),e[`_${stage}_to`]||a.to||null,nguoiCongCuaDong(old.id,day,stage,e));
       }));
       dongBoSoHoanThanhCu(next);
     }
@@ -7119,7 +7144,7 @@ function veDanhSachBom(){
       <td class="so">${lo.soTam}</td>
       <td>${coBom?`${bomTheoMa[maHangBom(o.ma)].length} vật tư`:'<span class="bom-nhan thieu">Không có BOM</span>'}</td>
       <td>${nhan}</td>
-      <td><button type="button" class="capacity-quick-btn" data-bom-xem="${o.id}">Xem</button></td></tr>`;
+      <td style="white-space:nowrap;">${!xn&&coBom&&duocXacNhanBom()?`<button type="button" class="capacity-quick-btn bom-dung-nhanh" data-bom-dung="${o.id}">✓ Đúng BOM</button> `:''}<button type="button" class="capacity-quick-btn" data-bom-xem="${o.id}">Xem</button></td></tr>`;
   }).join('');
 }
 
@@ -7139,7 +7164,7 @@ function moChiTietBom(id){
   document.getElementById('bomChiTietThem').style.display=khoa?'none':'';
   document.getElementById('bomLyDoKhung').style.display=khoa&&!xn?.ly_do?'none':'';
   const lyDo=document.getElementById('bomLyDo'); lyDo.value=xn?.ly_do||''; lyDo.disabled=khoa;
-  document.getElementById('bomDungBtn').style.display=khoa||!chuan.length?'none':'';
+  document.getElementById('bomDungBtn').style.display='none';   // "Đúng BOM" nằm ngoài danh sách; trong này chỉ sửa và Lưu
   document.getElementById('bomLuuThayDoiBtn').style.display=khoa?'none':'';
   document.getElementById('bomMoLaiBtn').style.display=xn&&duocMoLaiBom()?'':'none';
   const st=document.getElementById('bomChiTietStatus'); st.textContent=''; st.style.color='';
@@ -7384,7 +7409,18 @@ async function xuatExcelBom(){
 }
 function themTrangExcel(X,wb,ws,ten){ X.utils.book_append_sheet(wb,ws,ten.slice(0,31)); }
 
-document.getElementById('bomBangLo')?.addEventListener('click',e=>{ const b=e.target.closest('[data-bom-xem]'); if(b) moChiTietBom(b.dataset.bomXem); });
+document.getElementById('bomBangLo')?.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-bom-xem]'); if(b){ moChiTietBom(b.dataset.bomXem); return; }
+  // "✓ Đúng BOM" ngay trên danh sách (anh Tùng 25/09/2026): lô dùng đúng BOM thì bấm một lần là xong,
+  // khỏi mở màn Xem. Có thay đổi thì bấm Xem, sửa rồi Lưu.
+  const d=e.target.closest('[data-bom-dung]'); if(!d||d.disabled) return;
+  const o=getOrderById(d.dataset.bomDung); if(!o) return;
+  d.disabled=true; d.textContent='Đang lưu...';
+  const lo=thongTinLoBom(o), chuan=dongBomChuan(bomTheoMa[maHangBom(o.ma)]||[],lo.soTam);
+  const kq=await luuXacNhanBom(o,'dung_bom',chuan.map(c=>({ma_vt:c.ma_vt,ten_vt:c.ten_vt,dvt:c.dvt,dinh_muc:c.dinh_muc,theo_bom:c.theo_bom,thuc_dung:c.theo_bom})),'');
+  if(!kq.ok){ const st=document.getElementById('bomTrangThai'); st.textContent=`${o.ma||''}: ${kq.loi}`; st.style.color='var(--danger)'; }
+  veDanhSachBom();
+});
 document.querySelectorAll('.bom-chip').forEach(c=>c.addEventListener('click',()=>{ bomLocDangXem=c.dataset.loc; veDanhSachBom(); }));
 document.getElementById('bomTuNgay')?.addEventListener('change',veDanhSachBom);
 document.getElementById('bomDenNgay')?.addEventListener('change',veDanhSachBom);
@@ -7952,6 +7988,12 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
     cacTo = [TO_CHUA_GAN, ...cacTo];
   container.classList.toggle('mot-the', cacTo.length === 1);
   // Điện thoại: mở sẵn đúng tổ đầu tiên còn việc, các tổ khác gập — mở app là thấy hết trong một màn.
+  // Vẽ lại cùng ngày (có số mới, tổ khác vừa nhập) thì giữ nguyên tổ đang mở / đang gập; kiểu mặc
+  // định chỉ dùng lần đầu vẽ ngày đó (lỗi 25/09/2026: đang bấm thì thẻ tổ tự thu lại).
+  const dangGap={};
+  if(container.dataset.ngay===String(ngayDangXem))
+    container.querySelectorAll('.team-ring-card[data-to]').forEach(c=>{ if(c.querySelector('.to-tom-tat')) dangGap[c.dataset.to]=c.classList.contains('to-gap'); });
+  container.dataset.ngay=String(ngayDangXem);
   let daMoMot=false;
   container.innerHTML = cacTo.map(team=>{
     // Viec 18: loc theo TO DUOC GIAO. Truoc day to ho tro de len to phu trach nen don
@@ -7997,7 +8039,7 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
                 : pctThat >= 60 ? 'var(--danger)' : '#c9ced8';
     // Điện thoại: tổ nào làm xong hết thì gập lại, tổ còn việc mở sẵn — đỡ cuộn lê thê.
     const con = Math.max(0, keHoach - hoanThanh);
-    const gapSan = con<=0 || daMoMot;
+    const gapSan = dangGap[team]!==undefined ? dangGap[team] : (con<=0 || daMoMot);
     if(!gapSan) daMoMot=true;
     return `
     <div class="team-ring-card${gapSan?' to-gap':''}" data-to="${team}">
@@ -8062,7 +8104,8 @@ function canhBaoAnhChupRong(){
   el.style.color = 'var(--danger)';
 }
 
-function renderAutoPlan(){
+function renderAutoPlan(){ const g=giuODangGo(); try{ return renderAutoPlanThat(); }finally{ traODangGo(g); } }
+function renderAutoPlanThat(){
   capNhatNutDonKiemTra();
   const dayVal = document.getElementById('autoPlanDaySelect').value;
   const q = document.getElementById('autoPlanSearchBox').value.trim().toLowerCase();
@@ -8210,6 +8253,15 @@ async function doiUuTienTrenTheTo(nut){
 }
 // Gõ số ngay trong ô D/M/Đ — bàn phím số bật sẵn, khỏi hộp prompt của trình duyệt
 // (Telegram Mini App chặn prompt, bấm vào là mất luôn lượt nhập).
+// Chia tổng mới của một dòng gộp nhiều đơn cho từng đơn: tăng thì lấp đơn đầu trước (không quá số còn
+// làm được của đơn), giảm thì bớt từ đơn cuối. Trả về đơn nào đổi thành bao nhiêu, và phần không ghi được.
+function chiaSoNhomDon(don,moi){
+  let chenh=moi-don.reduce((t,d)=>t+d.v,0);
+  const thay=[];
+  if(chenh>0){ for(const d of don){ const them=Math.min(chenh,Math.max(0,d.con)); if(them>0){ thay.push([d.id,d.v+them]); chenh-=them; } if(!chenh) break; } }
+  else{ for(const d of [...don].reverse()){ const bot=Math.min(-chenh,d.v); if(bot>0){ thay.push([d.id,d.v-bot]); chenh+=bot; } if(!chenh) break; } }
+  return {thay,thieu:Math.max(0,chenh)};
+}
 function goSoTrongO(nut){
   if(nut.querySelector('input')) return;
   const ids=(nut.dataset.ids||'').split('|').filter(Boolean);
@@ -8223,10 +8275,19 @@ function goSoTrongO(nut){
   o.focus(); o.select();
   let xong=false;
   const luu=async(ghi)=>{
-    if(xong) return; xong=true;
+    if(xong||o.dataset.boQua) return; xong=true;
     const val=o.value;
     nut.innerHTML=goc;
-    if(ghi && val!==cu) await handleStageQtyChange(id,ngay,congDoan,val);
+    if(!ghi || val===cu) return;
+    if(ids.length<2){ await handleStageQtyChange(id,ngay,congDoan,val); return; }
+    // Dòng gộp nhiều đơn cùng mã: số trong ô là TỔNG cả nhóm trong ngày. Chia phần tăng / giảm cho
+    // từng đơn, không dồn vào một đơn (lỗi 25/09/2026: sửa 10 → 8 thành 18, sinh 8 tấm ảo).
+    const moi=val===''?0:Number(val);
+    if(!Number.isInteger(moi)||moi<0){ alert('Số không hợp lệ.'); return; }
+    const don=ids.map(getOrderById).filter(Boolean).map(x=>({id:x.id,v:Number(giaTriCongDoanNgay(x,ngay,congDoan))||0,con:soLuongConChoCongDoan(x,congDoan)}));
+    const {thay,thieu}=chiaSoNhomDon(don,moi);
+    if(thieu>0) alert(`Dòng này chỉ còn làm được tới ${moi-thieu} (theo kế hoạch và công đoạn trước). Đã ghi ${moi-thieu}.`);
+    for(const [i,v] of thay) await handleStageQtyChange(i,ngay,congDoan,v?String(v):'');
   };
   o.addEventListener('keydown',ev=>{
     if(ev.key==='Enter'){ ev.preventDefault(); luu(true); }
@@ -8913,11 +8974,15 @@ document.querySelector('#autoPlanTable tbody').addEventListener('click', async (
   if(!o) return;
   trashActionInFlight.add(id);
   try{
-    const reason=prompt(`${coTienDoDon(o)?'Đơn đã có tiến độ: hệ thống sẽ tách toàn bộ số đã làm thành đơn phát sinh rồi hủy đơn gốc.':'Hủy đơn khỏi vận hành.'}\n\nNhập lý do bắt buộc:`,'');
+    // Đơn đã có số: hỏi trước có phải trùng đơn không. Trùng thì số này đã ghi ở đơn khác, huỷ
+    // luôn không tách — trước đây luôn tách sang đơn phát sinh mới, nên xoá đơn tách lại tách
+    // tiếp (LAEZ15-8 tách 3 lần) và tấm đó bị tính 2 lần (ZONE12-8 21/09).
+    const trungDon=coTienDoDon(o)&&confirm(`Đơn ${o.ma||o.dong} đã có số.\n\nCó phải TRÙNG ĐƠN không (số đã làm này đã ghi ở một đơn khác)?\n\nOK = trùng đơn: huỷ luôn, bỏ số của đơn này.\nHuỷ bỏ = không trùng: chuyển số đã làm sang đơn phát sinh rồi mới huỷ.`);
+    const reason=prompt(`${trungDon?'Trùng đơn: huỷ luôn, bỏ số của đơn này.':coTienDoDon(o)?'Đơn đã có tiến độ: hệ thống sẽ tách toàn bộ số đã làm thành đơn phát sinh rồi hủy đơn gốc.':'Hủy đơn khỏi vận hành.'}\n\nNhập lý do bắt buộc:`,trungDon?'Trùng đơn':'');
     if(!reason||!reason.trim()){alert('Phải nhập lý do hủy đơn.');return;}
     const a = assignments[id];
     let splitOrder=null;
-    if(coTienDoDon(o)){
+    if(coTienDoDon(o)&&!trungDon){
       splitOrder=await taoDonTachNguon(o,a?.stage_by_date||{},`Hủy đơn: ${reason.trim()}`);
       if(!splitOrder){alert('Không tạo được đơn phát sinh nên đơn gốc chưa bị hủy. Hãy kiểm tra kết nối rồi thử lại.');return;}
     }
@@ -9543,13 +9608,19 @@ function suaCongDoanCellHtml(o, ngay){
 async function completeOrderForDay(o,ngay){
   if(!canManage2()||!o||khoaNhapCongDoan(o,ngay))return false;
   const target=soCongDoan(o.so_luong);if(target<=0)return false;
-  const mayActor=await chonNguoiHoanThanhCongDoan('may',o,ngay);if(!mayActor)return false;
-  const packActor=await chonNguoiHoanThanhCongDoan('dong_goi',o,ngay);if(!packActor)return false;
   const history=damBaoLichSuCongDoan(o),entry=history[ngay]||(history[ngay]={});
-  for(const stage of CONG_DOAN){
-    const other=tongCongDoan(o,stage)-soCongDoan(entry[stage]);
-    entry[stage]=Math.max(0,target-other);
-    const team=toKpiKhiNhapCongDoan(o,ngay,stage),actor=stage==='may'?mayActor:stage==='dong_goi'?packActor:null;
+  // Chỉ công đoạn còn thiếu mới ghi và mới hỏi người; công đoạn đã đủ giữ nguyên người đã nhận
+  // công (lỗi 25/09/2026: gửi lại người mặc định làm một tấm có 2 người nhận).
+  const canGhi=CONG_DOAN.map(stage=>({stage,moi:Math.max(0,target-(tongCongDoan(o,stage)-soCongDoan(entry[stage])))}))
+    .filter(x=>x.moi!==soCongDoan(entry[x.stage]));
+  const nguoi={};
+  for(const {stage} of canGhi){
+    if(stage==='dan') continue;
+    nguoi[stage]=await chonNguoiHoanThanhCongDoan(stage,o,ngay); if(!nguoi[stage]) return false;
+  }
+  for(const {stage,moi} of canGhi){
+    entry[stage]=moi;
+    const team=toKpiKhiNhapCongDoan(o,ngay,stage),actor=nguoi[stage]||null;
     if(team)entry[`_${stage}_to`]=team;ganNguoiHoanThanhCongDoan(entry,stage,actor);
     recordStagePatch(o,ngay,stage,entry[stage],team,actor?.worker_id||actor?.code||null);
   }
@@ -9680,7 +9751,10 @@ async function taiTongCuaToi(workerId,stage){
   employeeMyTotalCache={key,monthQty:0,allQty:0,loading:true,error:false};
   veTongCuaToiHtml(stage);
   try{
-    const {data,error}=await supabaseDb.from('khsx_stage_credits').select('quantity,work_date').eq('worker_id',workerId).eq('stage',stage);
+    // Chỉ công của đơn còn hiệu lực (bỏ đơn đã huỷ), đọc đủ mọi trang — Minh Thuận đã quá 1.000 dòng công.
+    const loc=q=>q.eq('worker_id',workerId).eq('stage',stage).order('work_date').order('order_id').order('kpi_team');
+    let {data,error}=await supabaseSelectAll('khsx_cong_hieu_luc','quantity,work_date',loc);
+    if(error) ({data,error}=await supabaseSelectAll('khsx_stage_credits','quantity,work_date',loc));   // máy chủ chưa có view mới
     if(error) throw error;
     const now=new Date(),namNay=now.getFullYear(),thangNay=now.getMonth()+1;
     let monthQty=0,allQty=0;
@@ -9734,7 +9808,31 @@ function renderEmployeeStageWorkspace(rows,stage,dayVal){
   }).join('');
 }
 
-function renderProgress(){
+// Vẽ lại bảng / thẻ tổ trong lúc đang gõ số (tổ khác vừa nhập, số mình vừa lưu xong...) thì giữ
+// nguyên ô đang gõ cùng chữ đã gõ (lỗi 25/09/2026: ô đang gõ bị xoá, bàn phím đóng, mất số).
+function giuODangGo(){
+  const a=document.activeElement;
+  if(!a||a.tagName!=='INPUT') return null;
+  if(a.classList.contains('stage-qty-input'))
+    return {el:a,kieu:'bang',value:a.value,sel:`.stage-qty-input[data-order-id="${CSS.escape(a.dataset.orderId||'')}"][data-stage="${CSS.escape(a.dataset.stage||'')}"][data-day="${CSS.escape(a.dataset.day||'')}"]`};
+  const nut=a.classList.contains('ct-nhap')&&a.closest('.ct-o');
+  if(nut){ a.dataset.boQua='1';   // ô sắp bị xoá: không lưu số gõ dở lúc nó mất
+    return {el:a,kieu:'the',value:a.value,sel:`.ct-o[data-ids="${CSS.escape(nut.dataset.ids||'')}"][data-ngay="${CSS.escape(nut.dataset.ngay||'')}"][data-stage="${CSS.escape(nut.dataset.stage||'')}"]`}; }
+  return null;
+}
+function traODangGo(g){
+  if(!g) return;
+  if(document.contains(g.el)){ delete g.el.dataset.boQua; return; }   // ô không bị vẽ lại
+  const moi=document.querySelector(g.sel); if(!moi) return;
+  if(g.kieu==='the'){ goSoTrongO(moi); const o=moi.querySelector('input'); if(o) o.value=g.value; return; }
+  moi.value=g.value; moi.focus();
+  if(moi.dataset.traLai) return; moi.dataset.traLai='1';
+  // Số đặt lại bằng code thì trình duyệt không tự báo "đã đổi" khi rời ô — tự báo để vẫn lưu.
+  let daDoi=false; moi.addEventListener('change',()=>{daDoi=true;},{once:true});
+  moi.addEventListener('blur',()=>setTimeout(()=>{ if(!daDoi&&moi.value!==moi.defaultValue) moi.dispatchEvent(new Event('change',{bubbles:true})); },0),{once:true});
+}
+function renderProgress(){ const g=giuODangGo(); try{ return renderProgressThat(); }finally{ traODangGo(g); } }
+function renderProgressThat(){
   populateProgressSelects();
   const filtered = getFilteredProgressRows();
   const integrityBox=document.getElementById('dataIntegrityAlert');
@@ -9971,32 +10069,38 @@ document.getElementById('bulkCompleteBtn').addEventListener('click', async ()=>{
   // Nút hàng loạt KHÔNG hỏi ai làm (anh Tùng chốt 22/09/2026): tự lấy người mặc định
   // theo tổ cho May, Minh Thuận cho Đóng gói. Trước đây không truyền người nên toàn bộ
   // sản lượng bấm bằng nút này không ai nhận công — 22/09 mất 47/48 tấm Đóng gói.
+  // Công đoạn nào số không đổi thì KHÔNG gửi lại (lỗi 25/09/2026: gửi lại May với người mặc
+  // định làm một tấm có 2 người nhận công, vd Bảo Chăm tự nhập May rồi bấm nút này thành Thảo Vy).
   for(const r of targets){
     const history = damBaoLichSuCongDoan(r);
     const entry = history[ngay] || (history[ngay] = {});
     const toLam = toKpiKhiNhapCongDoan(r,ngay,'dan');
-    const danKhacNgay = tongCongDoan(r,'dan') - soCongDoan(entry.dan);
+    const danCu = soCongDoan(entry.dan), danKhacNgay = tongCongDoan(r,'dan') - danCu;
     const mucTieuDan = Math.max(soCongDoan(r.so_luong),tongCongDoan(r,'dan'));
     entry.dan = Math.max(0,mucTieuDan-danKhacNgay);
     if(toLam) entry._dan_to = toLam;
-    recordStagePatch(r,ngay,'dan',entry.dan,toLam);
-    const mayKhacNgay = tongCongDoan(r,'may') - soCongDoan(entry.may);
+    if(entry.dan!==danCu) recordStagePatch(r,ngay,'dan',entry.dan,toLam);
+    const mayCu = soCongDoan(entry.may), mayKhacNgay = tongCongDoan(r,'may') - mayCu;
     entry.may = Math.max(0,tongCongDoan(r,'dan')-mayKhacNgay);
-    const toMay = toKpiKhiNhapCongDoan(r,ngay,'may');
-    if(toMay) entry._may_to = toMay;
-    // Không có người mặc định (đơn Tổ 5) thì GIỮ NGUYÊN người đã ghi trước đó, không xoá.
-    const mayActor = await nguoiMacDinhCongDoan('may',r,ngay);
-    ganNguoiHoanThanhCongDoan(entry,'may',mayActor||undefined);
-    const mayWorker = mayActor?(mayActor.worker_id||mayActor.code||null):(entry[truongNguoiHoanThanh('may','worker_id')]||null);
-    recordStagePatch(r,ngay,'may',entry.may,toMay,mayWorker);
-    const dongGoiKhacNgay = tongCongDoan(r,'dong_goi') - soCongDoan(entry.dong_goi);
+    if(entry.may!==mayCu){
+      const toMay = toKpiKhiNhapCongDoan(r,ngay,'may');
+      if(toMay) entry._may_to = toMay;
+      // Không có người mặc định (đơn Tổ 5) thì GIỮ NGUYÊN người đã ghi trước đó, không xoá.
+      const mayActor = await nguoiMacDinhCongDoan('may',r,ngay);
+      ganNguoiHoanThanhCongDoan(entry,'may',mayActor||undefined);
+      const mayWorker = mayActor?(mayActor.worker_id||mayActor.code||null):(entry[truongNguoiHoanThanh('may','worker_id')]||null);
+      recordStagePatch(r,ngay,'may',entry.may,toMay,mayWorker);
+    }
+    const dongGoiCu = soCongDoan(entry.dong_goi), dongGoiKhacNgay = tongCongDoan(r,'dong_goi') - dongGoiCu;
     entry.dong_goi = Math.max(0,tongCongDoan(r,'may')-dongGoiKhacNgay);
-    const toDongGoi = toKpiKhiNhapCongDoan(r,ngay,'dong_goi');
-    if(toDongGoi) entry._dong_goi_to = toDongGoi;
-    const packActor = await nguoiMacDinhCongDoan('dong_goi',r,ngay);
-    ganNguoiHoanThanhCongDoan(entry,'dong_goi',packActor||undefined);
-    const packWorker = packActor?(packActor.worker_id||packActor.code||null):(entry[truongNguoiHoanThanh('dong_goi','worker_id')]||null);
-    recordStagePatch(r,ngay,'dong_goi',entry.dong_goi,toDongGoi,packWorker);
+    if(entry.dong_goi!==dongGoiCu){
+      const toDongGoi = toKpiKhiNhapCongDoan(r,ngay,'dong_goi');
+      if(toDongGoi) entry._dong_goi_to = toDongGoi;
+      const packActor = await nguoiMacDinhCongDoan('dong_goi',r,ngay);
+      ganNguoiHoanThanhCongDoan(entry,'dong_goi',packActor||undefined);
+      const packWorker = packActor?(packActor.worker_id||packActor.code||null):(entry[truongNguoiHoanThanh('dong_goi','worker_id')]||null);
+      recordStagePatch(r,ngay,'dong_goi',entry.dong_goi,toDongGoi,packWorker);
+    }
     delete entry._legacy;
     dongBoSoHoanThanhCu(r);
   }
@@ -10036,9 +10140,18 @@ async function handleResetStages(orderId, ngay, requestedStage=''){
     if(!CONG_DOAN.some(k=>entry[k] != null && entry[k] !== '')) delete history[ngay];
   }else{
     if(!canManage2()) return;
+    const e0 = history[ngay] || {};
+    // Ngày khác còn May / Đóng gói dựa vào số của ngày này thì máy chủ sẽ không cho xoá.
+    if(tongCongDoan(o,'may') - soCongDoan(e0.may) > tongCongDoan(o,'dan') - soCongDoan(e0.dan)
+      || tongCongDoan(o,'dong_goi') - soCongDoan(e0.dong_goi) > tongCongDoan(o,'may') - soCongDoan(e0.may)){
+      alert('Không xoá được ngày này: ngày khác đã May / Đóng gói bằng số Dán / May của ngày này. Xoá ngày sau trước.');
+      return;
+    }
     if(!confirm(`Xoá số Đã dán, Đã may và Đã đóng gói của ${o.dong || o.ma} trong ngày ${ngay} để nhập lại?\n\nDữ liệu các ngày khác được giữ nguyên.`)) return;
     delete history[ngay];
-    CONG_DOAN.forEach(k=>recordStagePatch(o,ngay,k,null,null));
+    // Xoá ngược Đóng gói → May → Dán: xoá Dán trước thì máy chủ từ chối vì May, Đóng gói còn số
+    // (lỗi 25/09/2026: màn hình tưởng xoá hết, tải lại Dán và May hiện về).
+    [...CONG_DOAN].reverse().forEach(k=>recordStagePatch(o,ngay,k,null,null));
   }
   dongBoSoHoanThanhCu(o);
   renderAutoPlan();
@@ -11087,6 +11200,61 @@ async function napLaiTuGoi(){
 
 document.getElementById('doBackupBtn').addEventListener('click', taiGoiSaoLuu);
 document.getElementById('doRestoreBtn').addEventListener('click', napLaiTuGoi);
+// ============ Lấy KHSX từ Google Sheet — chỉ đọc từ 26/09/2026 (anh Tùng chốt 25/09/2026) ============
+// Không tự chạy ngầm: quản lý bấm nút, xem trước từng ngày (thêm / bỏ), tick ngày nào mới ghi ngày đó.
+// Ngày trước 26/09 vẫn nạp bằng file như cũ. Ghi qua đúng đường nạp file (khsx_reconcile_sheet_plan):
+// ngày đang chốt không đổi; đơn đã có số mà Sheet bỏ thì giữ lại và vào "Đơn cần kiểm tra".
+const SHEET_DOC_TU_NGAY='26/09/2026';
+let sheetXemTruoc=null;   // {docLuc, theoNgay:{'dd/mm/yyyy':[dòng Sheet]}}
+async function moLayKhsxSheet(){
+  if(!canManage()) return;
+  const hop=document.getElementById('sheetXemTruocModal'), than=document.getElementById('sheetXemTruocBody');
+  than.innerHTML='<div style="color:var(--text2);">Đang đọc Sheet...</div>'; hop.style.display='block';
+  let rows;
+  try{ rows=(await readSheetPlanSource()).rows; }
+  catch(e){ than.innerHTML=`<div style="color:var(--danger);">Không đọc được Sheet: ${thoatHtml(e.message||String(e))}</div>`; return; }
+  const tuK=khoaNgayDMY(SHEET_DOC_TU_NGAY), theoNgay={};
+  rows.filter(r=>khoaNgayDMY(r.date)>=tuK).forEach(r=>{ (theoNgay[r.date]=theoNgay[r.date]||[]).push(r); });
+  sheetXemTruoc={docLuc:Date.now(),theoNgay};
+  const ngays=Object.keys(theoNgay).sort((a,b)=>khoaNgayDMY(a)-khoaNgayDMY(b));
+  if(!ngays.length){ than.innerHTML=`<div>Sheet chưa có dòng Foam nào từ ngày ${SHEET_DOC_TU_NGAY}.</div>`; return; }
+  const tomTat=ds=>ds.map(o=>`${thoatHtml(o.ma||o.dong||'')} ${thoatHtml(formatKichThuoc(o))} (${Number(o.so_luong)||0})`).join(', ');
+  than.innerHTML=`<p style="margin:0 0 8px;font-size:12.5px;color:var(--text2);">Chỉ đọc từ ngày ${SHEET_DOC_TU_NGAY}. Tick ngày nào thì ghi ngày đó, ngày không tick giữ nguyên.</p>`
+    + ngays.map(ngay=>{
+      const moi=theoNgay[ngay], idMoi=new Set(moi.map(r=>String(r.id)));
+      const cu=getOrders().filter(o=>o.date===ngay&&String(o.id).startsWith('r_')&&!o.is_manual&&!o.is_drop&&!o.is_warranty&&!o.is_ghost);
+      const idCu=new Set(cu.map(o=>String(o.id)));
+      const them=moi.filter(r=>!idCu.has(String(r.id))), bo=cu.filter(o=>!idMoi.has(String(o.id)));
+      const boCoSo=bo.filter(coTienDoDon), boHuy=bo.filter(o=>!coTienDoDon(o));
+      const khoa=isPlanLocked(ngay)||lockedProgressDates.includes(ngay), giong=!them.length&&!bo.length;
+      return `<label style="display:block;border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:13px;">`
+        +`<input type="checkbox" data-sheet-ngay="${ngay}"${khoa||giong?' disabled':' checked'}> <b>${ngay}</b> — Sheet có ${moi.length} dòng`
+        +(khoa?' · <span style="color:var(--text2);">🔒 ngày đang chốt, không đổi</span>':giong?' · <span style="color:var(--success);">giống trên app, không có gì đổi</span>':'')
+        +(them.length?`<div style="margin-top:4px;color:var(--success);">Thêm ${them.length} đơn: ${tomTat(them)}</div>`:'')
+        +(boHuy.length?`<div style="margin-top:4px;color:var(--danger);">Bỏ ${boHuy.length} đơn chưa làm: ${tomTat(boHuy)}</div>`:'')
+        +(boCoSo.length?`<div style="margin-top:4px;color:var(--warning);">Sheet bỏ ${boCoSo.length} đơn đã có số — giữ lại, đưa vào "Đơn cần kiểm tra": ${tomTat(boCoSo)}</div>`:'')
+        +`</label>`;
+    }).join('')
+    + `<div class="btn-row" style="margin-top:10px;align-items:center;flex-wrap:wrap;"><button type="button" id="sheetDongYBtn" class="primary-btn">Đồng ý, ghi các ngày đã tick</button><span id="sheetXemTruocStatus" class="save-status"></span></div>`;
+}
+document.getElementById('layKhsxSheetBtn')?.addEventListener('click',moLayKhsxSheet);
+document.getElementById('sheetXemTruocModal')?.addEventListener('click',async e=>{
+  const hop=e.currentTarget;
+  if(e.target===hop||e.target.id==='dongSheetXemTruocBtn'){ hop.style.display='none'; return; }
+  if(e.target.id!=='sheetDongYBtn'||!sheetXemTruoc) return;
+  const st=document.getElementById('sheetXemTruocStatus'), nut=e.target;
+  const bao=(t,mau)=>{ st.textContent=t; st.style.color=mau; };
+  const ngays=[...hop.querySelectorAll('[data-sheet-ngay]:checked')].map(x=>x.dataset.sheetNgay);
+  if(!ngays.length) return bao('Chưa tick ngày nào.','var(--danger)');
+  if(Date.now()-sheetXemTruoc.docLuc>10*60*1000) return bao('Bảng xem trước đã quá 10 phút. Đóng lại rồi bấm "Lấy KHSX từ Sheet" để đọc mới.','var(--danger)');
+  const rows=ngays.flatMap(n=>sheetXemTruoc.theoNgay[n]||[]);
+  nut.disabled=true; bao('Đang ghi...','var(--text2)');
+  const kq=await reconcileSourceRowsToSupabase(rows,{silent:false});
+  nut.disabled=false;
+  if(!kq.ok) return bao(`Chưa ghi được: ${kq.error?.message||kq.error?.code||(kq.skipped?'đang ghi dở lượt trước, thử lại sau':'lỗi không rõ')}`,'var(--danger)');
+  sheetXemTruoc=null; nut.remove();
+  bao(`Đã ghi ${ngays.length} ngày: thêm ${kq.inserted} đơn · bỏ ${kq.cancelled} đơn chưa làm${kq.review_count?` · ${kq.review_count} đơn cần kiểm tra (nút ⚠ ở đầu trang)`:''}${kq.skipped_locked?` · ${kq.skipped_locked} đơn giữ nguyên vì ngày đang chốt`:''}.`,'var(--success)');
+});
 async function readOfflineTables(file){
   if(!file)throw new Error('Chưa chọn file.');
   if(file.name.toLowerCase().endsWith('.csv'))return [parseCSV(await file.text())];
@@ -12386,6 +12554,12 @@ function startGuestDashboardPolling(){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGuestDashboard();});
 }
 
+// Mở ngoài Telegram mà chưa có phiên: màn đăng nhập không dùng được (không có Telegram ID),
+// nên cho xem như link khách. Cứu luôn người đã bị bản ≤205 làm rơi view=guest khi tự tải lại
+// (lỗi 25/09/2026) — tab cũ, lịch sử, lối tắt đều tự vào lại, không phải gửi lại link.
+function nenChuyenSangLinkKhach(coPhien){
+  return !coPhien && !PUBLIC_VIEW_MODE && !LOCAL_PREVIEW_MODE && !(TELEGRAM_WEBAPP && TELEGRAM_WEBAPP.initData);
+}
 async function bootstrap(){
   // Chờ dọn xong cache trình duyệt/PWA rồi mới dựng dữ liệu. Nếu không, lối tắt
   // điện thoại có thể tiếp tục lấy HTML và dữ liệu của bản cũ trong cùng lượt mở.
@@ -12435,6 +12609,7 @@ async function bootstrap(){
   }
   if(SUPABASE_VARIANT && !PUBLIC_VIEW_MODE){
     const {data:{session}} = supabaseDb ? await supabaseDb.auth.getSession() : {data:{session:null}};
+    if(nenChuyenSangLinkKhach(!!session)){ location.replace(getCustomerViewUrl()); return; }
     if(!session){ currentUser=null; coSession=false; document.getElementById('loginOverlay').style.display='flex'; }
   }
   recomputeAllDayKeys();

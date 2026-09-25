@@ -8,3 +8,18 @@ const khach=chay('https://phanquoctung91-ops.github.io/khsx-foam-miniapp/index.h
 assert.match(khach,/[?&]view=guest/,'Tải lại bản mới làm mất view=guest — khách bị đá ra');
 assert.doesNotMatch(chay('https://phanquoctung91-ops.github.io/khsx-foam-miniapp/index.html?source=supabase',false),/view=guest/,'Tài khoản thường bị biến thành link khách');
 console.log('PASS  tự cập nhật giữ nguyên link khách, không ảnh hưởng tài khoản thường');
+
+// Người đã bị rơi view=guest (tab cũ ?source=supabase&v=205) mở lại ngoài Telegram: phải tự vào link khách,
+// không phải gửi lại link. Trong Telegram hoặc đã có phiên thì giữ nguyên.
+{
+  const a=html.indexOf('function nenChuyenSangLinkKhach('),b=html.indexOf('\n}',a)+2;
+  const xet=(o)=>{ const ctx={PUBLIC_VIEW_MODE:false,LOCAL_PREVIEW_MODE:false,TELEGRAM_WEBAPP:{initData:''},...o}; vm.createContext(ctx); vm.runInContext(html.slice(a,b),ctx); return ctx.nenChuyenSangLinkKhach(o.coPhien||false); };
+  assert.equal(xet({}),true,'Mở ngoài Telegram chưa đăng nhập vẫn kẹt ở màn đăng nhập');
+  assert.equal(xet({TELEGRAM_WEBAPP:null}),true,'Không có thư viện Telegram vẫn kẹt ở màn đăng nhập');
+  assert.equal(xet({TELEGRAM_WEBAPP:{initData:'query_id=1'}}),false,'Nhân viên trong Telegram bị đẩy sang link khách');
+  assert.equal(xet({coPhien:true}),false,'Người đã đăng nhập bị đẩy sang link khách');
+  assert.equal(xet({PUBLIC_VIEW_MODE:true}),false,'Link khách tự chuyển vòng lặp');
+  assert.equal(xet({LOCAL_PREVIEW_MODE:true}),false,'Bản xem thử local bị chuyển trang');
+  assert.ok(html.includes("if(nenChuyenSangLinkKhach(!!session)){ location.replace(getCustomerViewUrl()); return; }"),'Chưa gọi chuyển trang ở bootstrap');
+  console.log('PASS  tab cũ bị rơi view=guest mở ngoài Telegram tự vào link khách; Telegram / đã đăng nhập giữ nguyên');
+}
