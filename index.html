@@ -1754,10 +1754,12 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div><label for="bomTuNgay">Từ ngày</label><input type="date" id="bomTuNgay"></div>
       <div><label for="bomDenNgay">Đến ngày</label><input type="date" id="bomDenNgay"></div>
       <button id="bomNhanhHomNay" type="button" class="capacity-quick-btn">Hôm nay</button>
+      <button id="bomNhanhHomQua" type="button" class="capacity-quick-btn">Hôm qua</button>
       <button id="bomNhanhTuanNay" type="button" class="capacity-quick-btn">Tuần này</button>
-      <button id="bomNhanhThangNay" type="button" class="capacity-quick-btn">Tháng này</button>
+      <button id="bomNhanhTuanTruoc" type="button" class="capacity-quick-btn">Tuần trước</button>
       <button id="bomXuatExcel" type="button" class="primary-btn">📥 Xuất Excel</button>
     </div>
+    <div id="bomThongTinXuat" style="margin:-2px 0 10px;font-size:12.5px;line-height:1.6;"></div>
     <div class="bom-chip-row">
       <button type="button" class="bom-chip active" data-loc="cho">Chờ xác nhận <b id="bomSoCho">0</b></button>
       <button type="button" class="bom-chip" data-loc="da">Đã xác nhận <b id="bomSoDa">0</b></button>
@@ -2064,7 +2066,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=206"></script>
+<script src="raw-data.js?v=207"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4177,7 +4179,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 206;
+const APP_VERSION = 207;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7038,9 +7040,49 @@ function datKhoangBom(tu,den){ document.getElementById('bomTuNgay').value=isoCua
 function cacLoDuBom(){
   return getOrders().filter(laDonCanBom).map(o=>({o,lo:thongTinLoBom(o)})).filter(x=>canXacNhanBom(x.lo));
 }
+// Dòng thông tin dưới bộ lọc — cùng câu chữ với trang Xuất báo cáo đóng gói, thêm 2 cảnh báo riêng
+// cho BOM (dòng chưa xác nhận, dòng không có BOM).
+let lanThongTinBom=0;
+async function capNhatThongTinBom(){
+  const box=document.getElementById('bomThongTinXuat'); if(!box) return;
+  const days=danhSachNgayTrongKhoang(document.getElementById('bomTuNgay').value,document.getElementById('bomDenNgay').value).map(isoToDMY);
+  if(!days.length){ box.innerHTML=''; return; }
+  const lan=++lanThongTinBom;
+  let tongDong=0,tongKH=0,tongTT=0,thieuMa=0; const khongDL=[],chuNhat=[],le=[];
+  days.forEach(ngay=>{
+    const rows=chuanBiDongBaoCao(ngay);
+    if(!rows.length){ khongDL.push(ngay); return; }
+    tongDong+=rows.length; tongKH+=rows.reduce((a,r)=>a+r[5],0); tongTT+=rows.reduce((a,r)=>a+r[6],0);
+    thieuMa+=rows.filter(r=>!String(r[0]||'').trim()).length;
+    if(laChuNhat(ngay)) chuNhat.push(ngay);
+    if(laNgayLe(ngay)) le.push(ngay);
+  });
+  const coDL=days.length-khongDL.length;
+  let html=`<div>${days.length===1?`Ngày ${days[0]}`:`${days.length} ngày đã chọn, ${coDL} ngày có dữ liệu`} — sẽ ghi <strong>${tongDong}</strong> dòng, kế hoạch <strong>${tongKH}</strong>, thực tế <strong>${tongTT}</strong>`
+    +(tongKH?` (${Math.round(tongTT/tongKH*1000)/10}%)`:'')+`</div>`;
+  if(chuNhat.length) html+=`<div style="color:var(--warning);margin-top:6px;">⚠ Có Chủ nhật trong khoảng (${chuNhat.join(', ')}) — chỉ xuất nếu có tăng ca.</div>`;
+  if(le.length) html+=`<div style="color:var(--warning);margin-top:6px;">⚠ Có ngày lễ trong khoảng (${le.join(', ')}).</div>`;
+  if(thieuMa) html+=`<div style="color:var(--warning);margin-top:6px;">⚠ Có ${thieuMa} dòng không có mã hàng; các dòng đó không tính được vật tư.</div>`;
+  if(khongDL.length) html+=`<div style="color:var(--text2);margin-top:6px;">${khongDL.length} ngày không có dữ liệu, sẽ tự bỏ qua khi xuất: ${khongDL.join(', ')}.</div>`;
+  if(!coDL) html+=`<div style="color:var(--danger);margin-top:6px;">Không có ngày nào có dữ liệu để xuất.</div>`;
+  box.innerHTML=html;
+  if(!coDL) return;
+  try{
+    const don=getOrders().filter(o=>!o.is_ghost&&!o.is_warranty&&days.some(n=>dongGoiTheoNgayCuaDon(o)[n]));
+    await taiBomChoMa(don.map(o=>o.ma)); await taiXacNhanBom(don.map(o=>o.id));
+    if(lan!==lanThongTinBom) return;   // đã đổi ngày trong lúc chờ
+    const nhom=Object.values(duLieuXuatBom(days).theoNgay).flat();
+    const cho=nhom.filter(g=>g.tt.has('cho')).length, thieu=nhom.filter(g=>g.tt.has('thieu')).length;
+    box.insertAdjacentHTML('beforeend',
+      (cho?`<div style="color:var(--warning);margin-top:6px;">⚠ ${cho} dòng chưa xác nhận BOM xong — file vẫn tính theo BOM chuẩn và ghi "(chưa xác nhận)".</div>`:'')
+      +(thieu?`<div style="color:var(--danger);margin-top:6px;">⚠ ${thieu} dòng không có BOM — trong file các dòng đó không có vật tư.</div>`:'')
+      +(!cho&&!thieu?`<div style="color:var(--success);margin-top:6px;">Mọi dòng đã xác nhận BOM (hoặc không cần xác nhận).</div>`:''));
+  }catch(e){}
+}
 async function initBomPage(){
   const tu=document.getElementById('bomTuNgay'), den=document.getElementById('bomDenNgay');
-  if(!tu.value||!den.value){ const n=new Date(); tu.value=isoCuaNgay(new Date(n.getFullYear(),n.getMonth(),1)); den.value=isoCuaNgay(n); }
+  // Ngày mặc định giống trang Xuất báo cáo đóng gói (ngày app gợi ý).
+  if(!tu.value||!den.value){ const g=dmyToIso(ngayGoiY()); tu.value=g; den.value=g; }
   document.getElementById('bomXemThuNhac').innerHTML=XEM_THU_BOM
     ?'<div class="bom-xem-thu">Bản xem thử trên máy: BOM lấy từ ERP ngày 25/09, bấm xác nhận chỉ lưu trên máy này, không ghi lên hệ thống.</div>':'';
   const st=document.getElementById('bomTrangThai'); st.textContent='Đang tải BOM...'; st.style.color='var(--text2)';
@@ -7054,6 +7096,7 @@ async function initBomPage(){
   veDanhSachBom();
 }
 function veDanhSachBom(){
+  capNhatThongTinBom();
   const tuK=khoaNgayDMY(isoToDMY(document.getElementById('bomTuNgay').value)), denK=khoaNgayDMY(isoToDMY(document.getElementById('bomDenNgay').value));
   const ds=cacLoDuBom();
   const cho=ds.filter(x=>!bomXacNhan[x.o.id]);
@@ -7346,8 +7389,9 @@ document.querySelectorAll('.bom-chip').forEach(c=>c.addEventListener('click',()=
 document.getElementById('bomTuNgay')?.addEventListener('change',veDanhSachBom);
 document.getElementById('bomDenNgay')?.addEventListener('change',veDanhSachBom);
 document.getElementById('bomNhanhHomNay')?.addEventListener('click',()=>{ const d=new Date(); datKhoangBom(d,d); });
+document.getElementById('bomNhanhHomQua')?.addEventListener('click',()=>{ const d=new Date(); d.setDate(d.getDate()-1); datKhoangBom(d,d); });
 document.getElementById('bomNhanhTuanNay')?.addEventListener('click',()=>datKhoangBom(thuHaiCuaTuan(new Date()),new Date()));
-document.getElementById('bomNhanhThangNay')?.addEventListener('click',()=>{ const n=new Date(); datKhoangBom(new Date(n.getFullYear(),n.getMonth(),1),n); });
+document.getElementById('bomNhanhTuanTruoc')?.addEventListener('click',()=>{ const a=thuHaiCuaTuan(new Date()),b=new Date(a),c=new Date(a); b.setDate(b.getDate()-7); c.setDate(c.getDate()-1); datKhoangBom(b,c); });
 document.getElementById('bomXuatExcel')?.addEventListener('click',xuatExcelBom);
 document.getElementById('bomChiTietModal')?.addEventListener('click',e=>{ if(e.target.id==='bomChiTietModal'||e.target.id==='dongBomChiTietBtn') e.currentTarget.style.display='none'; });
 document.getElementById('bomChiTietBang')?.addEventListener('input',e=>{
