@@ -1384,13 +1384,19 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 
     <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
       <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Từ ngày</label>
-        <select id="phoiTuNgay"></select></div>
+        <input type="date" id="phoiTuNgay"></div>
       <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Đến ngày</label>
-        <select id="phoiDenNgay"></select></div>
+        <input type="date" id="phoiDenNgay"></div>
       <button id="phoiExcelBtn" class="primary-btn" style="background:var(--success);">⬇ Tải Excel</button>
       <button id="phoiTinNhanBtn" class="primary-btn" style="background:var(--accent);">💬 Xuất tin nhắn</button>
       <button id="phoiCopyBtn" class="primary-btn" style="background:var(--text2);">Sao chép</button>
       <span class="save-status" id="phoiStatus"></span>
+    </div>
+    <div class="dat-nhanh" data-cho="phoi" style="display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px;">
+      <button type="button" class="capacity-quick-btn" data-nhanh="homnay">Hôm nay</button>
+      <button type="button" class="capacity-quick-btn" data-nhanh="ngaymai">Ngày mai</button>
+      <button type="button" class="capacity-quick-btn" data-nhanh="tuannay">Tuần này</button>
+      <button type="button" class="capacity-quick-btn" data-nhanh="tuansau">Tuần sau</button>
     </div>
 
     <div id="phoiBang"></div>
@@ -1411,14 +1417,20 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 
     <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
       <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Từ ngày</label>
-        <select id="aoTuNgay"></select></div>
+        <input type="date" id="aoTuNgay"></div>
       <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Đến ngày</label>
-        <select id="aoDenNgay"></select></div>
+        <input type="date" id="aoDenNgay"></div>
       <button id="aoExcelBtn" class="primary-btn" style="background:var(--success);">⬇ Tải Excel</button>
       <button id="aoTinNhanBtn" class="primary-btn" style="background:var(--accent);">💬 Xuất tin nhắn</button>
       <button id="aoAnhBtn" class="primary-btn" style="background:var(--primary);">🖼 Tải ảnh</button>
       <button id="aoCopyBtn" class="primary-btn" style="background:var(--text2);">Sao chép</button>
       <span class="save-status" id="aoStatus"></span>
+    </div>
+    <div class="dat-nhanh" data-cho="ao" style="display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px;">
+      <button type="button" class="capacity-quick-btn" data-nhanh="homnay">Hôm nay</button>
+      <button type="button" class="capacity-quick-btn" data-nhanh="ngaymai">Ngày mai</button>
+      <button type="button" class="capacity-quick-btn" data-nhanh="tuannay">Tuần này</button>
+      <button type="button" class="capacity-quick-btn" data-nhanh="tuansau">Tuần sau</button>
     </div>
 
     <div id="aoBang"></div>
@@ -2157,7 +2169,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=210"></script>
+<script src="raw-data.js?v=211"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4270,7 +4282,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 210;
+const APP_VERSION = 211;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12104,14 +12116,32 @@ function tinhDonDatPhoi(tuNgay, denNgay){
 }
 
 function tenDonHang(){ return 'Đơn hàng phôi mút ép TS cao su PU'; }
+// Bảng đặt phôi / đặt áo: ô ngày là ô lịch (yyyy-mm-dd), các hàm tính dùng dd/mm/yyyy.
+const ngayOLich=id=>{ const v=document.getElementById(id)?.value||''; return v?isoToDMY(v):''; };
+// Nút lọc nhanh: Hôm nay · Ngày mai (Chủ nhật thì sang thứ Hai) · Tuần này / Tuần sau (thứ Hai → thứ Bảy).
+function khoangNhanhDat(loai){
+  const d=new Date(); d.setHours(0,0,0,0);
+  if(loai==='ngaymai'){ const m=new Date(d); m.setDate(m.getDate()+1); if(m.getDay()===0) m.setDate(m.getDate()+1); return [m,m]; }
+  if(loai==='tuannay'||loai==='tuansau'){ const t2=thuHaiCuaTuan(d); if(loai==='tuansau') t2.setDate(t2.getDate()+7); const t7=new Date(t2); t7.setDate(t7.getDate()+5); return [t2,t7]; }
+  return [d,d];
+}
+function datKhoangNhanhDat(cho,loai,ve=true){
+  const [a,b]=khoangNhanhDat(loai);
+  document.getElementById(cho+'TuNgay').value=isoCuaNgay(a);
+  document.getElementById(cho+'DenNgay').value=isoCuaNgay(b);
+  if(ve) (cho==='ao'?veBangDatAo:veBangDatPhoi)();
+}
+document.querySelectorAll('.dat-nhanh').forEach(hop=>hop.addEventListener('click',e=>{
+  const nut=e.target.closest('[data-nhanh]'); if(nut) datKhoangNhanhDat(hop.dataset.cho,nut.dataset.nhanh);
+}));
 function nhanTuan(tu, den){
   const a = tu.split('/'), b = den.split('/');
   return `Tuần ${Number(a[0])}/${Number(a[1])} - ${Number(b[0])}/${Number(b[1])}/${b[2]}`;
 }
 
 function veBangDatPhoi(){
-  const tu = document.getElementById('phoiTuNgay').value;
-  const den = document.getElementById('phoiDenNgay').value;
+  const tu = ngayOLich('phoiTuNgay');
+  const den = ngayOLich('phoiDenNgay');
   const box = document.getElementById('phoiBang');
   const boxBoQua = document.getElementById('phoiBoQua');
   if(!tu || !den){ box.innerHTML = ''; return; }
@@ -12187,13 +12217,8 @@ function moBangDatPhoi(){
   // Chi liet ke ngay trong thang dang chon o header (giong cac bo loc ngay
   // khac trong app) - danh sach gon, cuon them chi ra cac ngay khac trong
   // CUNG thang, khong lan sang thang khac. Mac dinh chon 7 ngay gan nhat.
-  const dates = Array.from(new Set(getOrders().map(o=>o.date)))
-    .filter(ngayThuocThangHeader)
-    .sort((a,b)=> a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
-  const opt = dates.map(d=>`<option value="${d}">${d}</option>`).join('');
-  const tu = document.getElementById('phoiTuNgay'), den = document.getElementById('phoiDenNgay');
-  tu.innerHTML = opt; den.innerHTML = opt;
-  if(dates.length){ tu.value = dates[Math.max(0, dates.length-7)]; den.value = dates[dates.length-1]; }
+  // Mở ra luôn là hôm nay (anh Tùng 26/09/2026); đổi bằng ô lịch hoặc nút lọc nhanh.
+  datKhoangNhanhDat('phoi','homnay',false);
   document.getElementById('phoiStatus').textContent = '';
   document.getElementById('phoiModal').style.display = 'block';
   veBangDatPhoi();
@@ -12210,8 +12235,8 @@ document.getElementById('phoiTuNgay').addEventListener('change', veBangDatPhoi);
 document.getElementById('phoiDenNgay').addEventListener('change', veBangDatPhoi);
 
 document.getElementById('phoiCopyBtn').addEventListener('click', ()=>{
-  const tu = document.getElementById('phoiTuNgay').value;
-  const den = document.getElementById('phoiDenNgay').value;
+  const tu = ngayOLich('phoiTuNgay');
+  const den = ngayOLich('phoiDenNgay');
   const {dong} = dungBangDonHang(tu, den);
   const txt = dong.map(r=>r.join('\t')).join('\n');
   const st = document.getElementById('phoiStatus');
@@ -12234,8 +12259,8 @@ function dungTinNhanDatPhoi(ngay){
 }
 
 document.getElementById('phoiTinNhanBtn').addEventListener('click', ()=>{
-  const tu = document.getElementById('phoiTuNgay').value;
-  const den = document.getElementById('phoiDenNgay').value;
+  const tu = ngayOLich('phoiTuNgay');
+  const den = ngayOLich('phoiDenNgay');
   const st = document.getElementById('phoiStatus');
   if(tu !== den){
     st.textContent = 'Tin nhắn chỉ xuất được cho một ngày. Hãy chọn Từ ngày và Đến ngày giống nhau.';
@@ -12250,8 +12275,8 @@ document.getElementById('phoiTinNhanBtn').addEventListener('click', ()=>{
 });
 
 document.getElementById('phoiExcelBtn').addEventListener('click', ()=>{
-  const tu = document.getElementById('phoiTuNgay').value;
-  const den = document.getElementById('phoiDenNgay').value;
+  const tu = ngayOLich('phoiTuNgay');
+  const den = ngayOLich('phoiDenNgay');
   const {dong} = dungBangDonHang(tu, den);
   // CSV có dấu BOM để Excel mở đúng tiếng Việt
   const csv = '\ufeff' + dong.map(r=>r.map(o=>{
@@ -12330,7 +12355,7 @@ function dongBangDatAo(tu,den){
 }
 let lanVeBangAo=0;
 async function veBangDatAo(){
-  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value;
+  const tu=ngayOLich('aoTuNgay'), den=ngayOLich('aoDenNgay');
   const box=document.getElementById('aoBang'), boxDuoi=document.getElementById('aoBoQua');
   if(!tu||!den){ box.innerHTML=''; boxDuoi.innerHTML=''; return; }
   const lan=++lanVeBangAo;
@@ -12393,12 +12418,7 @@ function dungBangDatAo(tu,den){   // Sao chép / Excel: cùng dòng với ảnh
 }
 async function moBangDatAo(){
   if(!hasPermOrOwner('phoi_board_use')) return;
-  const dates=Array.from(new Set(getOrders().map(o=>o.date))).filter(ngayThuocThangHeader)
-    .sort((a,b)=>a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
-  const opt=dates.map(d=>`<option value="${d}">${d}</option>`).join('');
-  const tu=document.getElementById('aoTuNgay'), den=document.getElementById('aoDenNgay');
-  tu.innerHTML=opt; den.innerHTML=opt;
-  if(dates.length){ tu.value=dates[Math.max(0,dates.length-7)]; den.value=dates[dates.length-1]; }
+  datKhoangNhanhDat('ao','homnay',false);   // mở ra luôn là hôm nay
   document.getElementById('aoStatus').textContent='';
   document.getElementById('aoModal').style.display='block';
   await veBangDatAo();
@@ -12409,7 +12429,7 @@ document.getElementById('aoModal')?.addEventListener('click',e=>{ if(e.target.id
 document.getElementById('aoTuNgay')?.addEventListener('change',veBangDatAo);
 document.getElementById('aoDenNgay')?.addEventListener('change',veBangDatAo);
 document.getElementById('aoAnhBtn')?.addEventListener('click',()=>{
-  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value, st=document.getElementById('aoStatus');
+  const tu=ngayOLich('aoTuNgay'), den=ngayOLich('aoDenNgay'), st=document.getElementById('aoStatus');
   const {kq}=dongBangDatAo(tu,den);
   if(!kq.dongHang.length&&!kq.coLe.length){ st.textContent='Khoảng ngày này không có áo nào để đặt.'; st.style.color='var(--danger)'; return; }
   const ten=`dat-ao-${tu.replace(/\//g,'-')}${tu===den?'':'_den_'+den.replace(/\//g,'-')}.png`;
@@ -12419,7 +12439,7 @@ document.getElementById('aoAnhBtn')?.addEventListener('click',()=>{
   },'image/png');
 });
 document.getElementById('aoCopyBtn')?.addEventListener('click',()=>{
-  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value;
+  const tu=ngayOLich('aoTuNgay'), den=ngayOLich('aoDenNgay');
   const txt=dungBangDatAo(tu,den).dong.map(r=>r.join('\t')).join('\n'), st=document.getElementById('aoStatus');
   navigator.clipboard.writeText(txt).then(
     ()=>{ st.textContent='Đã sao chép, dán vào Excel là thành bảng.'; st.style.color='var(--success)'; },
@@ -12433,7 +12453,7 @@ function dungTinNhanDatAo(ngay){
   return dong.join(String.fromCharCode(10));
 }
 document.getElementById('aoTinNhanBtn')?.addEventListener('click',()=>{
-  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value, st=document.getElementById('aoStatus');
+  const tu=ngayOLich('aoTuNgay'), den=ngayOLich('aoDenNgay'), st=document.getElementById('aoStatus');
   if(tu!==den){ st.textContent='Tin nhắn chỉ xuất được cho một ngày. Hãy chọn Từ ngày và Đến ngày giống nhau.'; st.style.color='var(--danger)'; return; }
   const txt=dungTinNhanDatAo(tu);
   navigator.clipboard.writeText(txt).then(
@@ -12441,7 +12461,7 @@ document.getElementById('aoTinNhanBtn')?.addEventListener('click',()=>{
     ()=>{ st.textContent='Không sao chép được. Nội dung: '+txt.replace(/\n/g,' · '); st.style.color='var(--danger)'; });
 });
 document.getElementById('aoExcelBtn')?.addEventListener('click',()=>{
-  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value;
+  const tu=ngayOLich('aoTuNgay'), den=ngayOLich('aoDenNgay');
   const csv='﻿'+dungBangDatAo(tu,den).dong.map(r=>r.map(o=>{ const v=(o===null||o===undefined)?'':String(o); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(',')).join('\r\n');
   const ten=`dat-ao-${tu.replace(/\//g,'-')}_den_${den.replace(/\//g,'-')}.csv`;
   taiTepVe(ten,csv,'text/csv;charset=utf-8');
