@@ -1398,6 +1398,34 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<div id="aoModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
+  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:820px;margin:40px auto;padding:22px 24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
+      <h3 style="margin:0;font-size:17px;">👕 Bảng đặt áo</h3>
+      <button id="closeAoBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
+    </div>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:14px;">
+      Mỗi cột là <strong>một ngày kế hoạch</strong>. Mã áo lấy theo BOM của từng mã hàng,
+      số áo = số tấm kế hoạch × số áo trong BOM. Nệm cỡ lẻ ghi riêng ở dưới vì áo phải may theo cỡ thật.
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
+      <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Từ ngày</label>
+        <select id="aoTuNgay"></select></div>
+      <div><label style="display:block;font-size:11.5px;color:var(--text2);margin-bottom:4px;">Đến ngày</label>
+        <select id="aoDenNgay"></select></div>
+      <button id="aoExcelBtn" class="primary-btn" style="background:var(--success);">⬇ Tải Excel</button>
+      <button id="aoTinNhanBtn" class="primary-btn" style="background:var(--accent);">💬 Xuất tin nhắn</button>
+      <button id="aoAnhBtn" class="primary-btn" style="background:var(--primary);">🖼 Tải ảnh</button>
+      <button id="aoCopyBtn" class="primary-btn" style="background:var(--text2);">Sao chép</button>
+      <span class="save-status" id="aoStatus"></span>
+    </div>
+
+    <div id="aoBang"></div>
+    <div id="aoBoQua" style="margin-top:14px;font-size:12.5px;line-height:1.6;"></div>
+  </div>
+</div>
+
 <div id="manualOrderModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
   <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:1020px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
@@ -1569,6 +1597,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
       <button id="lockPlanBtn" class="primary-btn" style="background:var(--text2);">🔒 Chốt đầu vào</button>
       <button id="phoiBtn" class="primary-btn" style="background:var(--accent);">🧱 Bảng đặt phôi</button>
+      <button id="aoBtn" class="primary-btn" style="background:var(--accent);">👕 Bảng đặt áo</button>
     </div>
     <div class="day-select-row toolbar-filter-row">
       <label>Ngày:</label>
@@ -2128,7 +2157,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=209"></script>
+<script src="raw-data.js?v=210"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4241,7 +4270,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 209;
+const APP_VERSION = 210;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4505,7 +4534,7 @@ const PERM_TAB_RULES={
   settings:['settings_backup_download','settings_backup_restore','settings_import_khsx_file','settings_edit_targets'],
 };
 // Dot 4.3: nut (khong phai tab) cung an/hien theo permission_key, cung co che.
-const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'] };
+const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], aoBtn:['phoi_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'] };
 function applyPermissionTabGates(){
   let activeHidden=false;
   Object.entries(PERM_TAB_RULES).forEach(([tab,keys])=>{
@@ -12234,6 +12263,189 @@ document.getElementById('phoiExcelBtn').addEventListener('click', ()=>{
   const st = document.getElementById('phoiStatus');
   st.textContent = 'Đã tải ' + ten + ' — mở bằng Excel để chỉnh theo tồn kho.';
   st.style.color = 'var(--success)';
+});
+
+// ============================================================================
+//  BẢNG ĐẶT ÁO (26/09/2026, anh Tùng duyệt) — giống Bảng đặt phôi nhưng cho áo, để đặt Tổ May may trước.
+//  Mỗi mã hàng trong KHSX tra BOM, lấy mọi dòng vật tư tên bắt đầu bằng "Áo" (áo nệm AN…, áo lưới AL…,
+//  áo vải Enzo AVEZ…); số áo = số tấm kế hoạch × định mức. Cùng điều kiện lọc với bảng phôi (bỏ đơn công ty
+//  đã bỏ, phần thiếu đã tách, bảo hành) nhưng KHÔNG bỏ Hybrid / Enzo (không dùng phôi nhưng vẫn cần áo).
+//  Nệm cỡ lẻ (rộng ngoài khổ chuẩn hoặc dài khác 200) tách phần riêng, vì áo may theo cỡ thật.
+//  Tên áo rút gọn "loại áo + rộng x dày" (anh Tùng chốt: "AL20-4  ÁO LƯỚI 180x20: 5 cái"); gửi Tổ May
+//  bằng ảnh để cột thẳng hàng (dán chữ vào ô chat thì lệch).
+// ============================================================================
+const laDongAo=b=>/^ao\b/.test(boDauBom(b&&b.ten_vt).trim());
+// "Áo nệm Việt Nhật Sora (15cm/160cmx200cm)" -> {goc:"Áo Sora", co:"160x15"}; "ÁO LƯỚI 20CM-1m8" -> "ÁO LƯỚI" + "180x20";
+// "Áo Vải Nệm Foam Latex Enzo 1m6*20cm" -> "Áo Vải Latex Enzo" + "160x20"; dài khác 200 thì ghi đủ "200x220x10".
+function tenNganAo(ten){
+  const t=String(ten||'').trim(); let rong=null, day=null, m;
+  if((m=t.match(/\((\d+(?:[.,]\d+)?)\s*cm\s*\/\s*(\d+)\s*cm\s*x\s*(\d+)\s*cm\)/i))){ day=m[1]; rong=m[3]!=='200'?m[2]+'x'+m[3]:m[2]; }
+  else if((m=t.match(/(\d+(?:[.,]\d+)?)\s*cm\s*-\s*(\d)m(\d?)/i))){ day=m[1]; rong=String(Number(m[2])*100+Number(m[3]||0)*10); }
+  else if((m=t.match(/(\d)m(\d?)\s*\*\s*(\d+(?:[.,]\d+)?)\s*cm/i))){ rong=String(Number(m[1])*100+Number(m[2]||0)*10); day=m[3]; }
+  const goc=t.replace(/\(.*?\)/g,' ').replace(/\d+(?:[.,]\d+)?\s*cm\s*-\s*\d+m\d?/ig,' ').replace(/\d+m\d?\s*\*\s*\d+(?:[.,]\d+)?\s*cm/ig,' ')
+    .replace(/(^|\s)(nệm|Nệm|NỆM|Foam|FOAM)(?=\s|$)/g,' ').replace(/Việt Nhật|Thuần Việt|VIỆT NHẬT|THUẦN VIỆT/g,' ').replace(/\s+/g,' ').trim();
+  return {goc:goc||t, co:rong&&day?`${rong}x${day}`:''};
+}
+function coLeCuaAo(ngang,dai){
+  return (!isNaN(ngang)&&RONG_CHUAN.indexOf(ngang)===-1) || (!isNaN(dai)&&dai!==200);
+}
+function donTrongKhoangAo(tuNgay,denNgay){
+  const soSanh=d=>d.split('/').reverse().join(''), a=soSanh(tuNgay), b=soSanh(denNgay);
+  return getOrders().filter(o=>{ const x=soSanh(o.date); return x>=a&&x<=b&&!o.is_ghost&&!o.is_drop&&!o.is_warranty&&(Number(o.so_luong)||0)>0; });
+}
+function tinhDonDatAo(tuNgay,denNgay){
+  const ngayCot=[], p1=parseDMY(tuNgay), p2=parseDMY(denNgay);
+  if(p1&&p2){ const d=new Date(p1.y,p1.m-1,p1.d), het=new Date(p2.y,p2.m-1,p2.d); while(d<=het){ if(d.getDay()!==0) ngayCot.push(formatDMY(d)); d.setDate(d.getDate()+1); } }
+  const hang={}, le={}, thieuBom={};
+  const cong=(nhom,khoa,ma,ten,ngay,q)=>{ const r=nhom[khoa]||(nhom[khoa]={ma,ten,theoNgay:{},tong:0}); r.theoNgay[ngay]=lamTronBom((r.theoNgay[ngay]||0)+q); r.tong=lamTronBom(r.tong+q); };
+  donTrongKhoangAo(tuNgay,denNgay).forEach(o=>{
+    const sl=Number(o.so_luong)||0;
+    const ao=(bomTheoMa[maHangBom(o.ma)]||[]).filter(laDongAo);
+    if(!ao.length){ const k=String(o.ma||'').trim()||`(không mã) ${o.dong||''}`; thieuBom[k]=(thieuBom[k]||0)+sl; return; }
+    let ngang=o.ngang, dai=o.dai, day=o.day;
+    if(!dai||!day){ const m=String(o.ngang||'').match(/(\d+)\s*[xX*]\s*(\d+)\s*[xX*]\s*(\d+)/); if(m){ ngang=m[1]; dai=m[2]; day=m[3]; } }
+    const coLe=coLeCuaAo(parseFloat(ngang),parseFloat(dai));
+    ao.forEach(b=>{
+      const q=lamTronBom(sl*(Number(b.dinh_muc)||0)), tn=tenNganAo(b.ten_vt);
+      if(coLe){ const kt=`${parseFloat(ngang)}x${parseFloat(dai)}x${parseFloat(day)}`; cong(le,b.ma_vt+'|'+kt,b.ma_vt,`${tn.goc} ${kt}`,o.date,q); }
+      else cong(hang,b.ma_vt,b.ma_vt,[tn.goc,tn.co].filter(Boolean).join(' '),o.date,q);
+    });
+  });
+  const xep=(x,y)=>x.ma.localeCompare(y.ma,'vi')||x.ten.localeCompare(y.ten,'vi');
+  const dongHang=Object.values(hang).sort(xep), coLe=Object.values(le).sort(xep);
+  const tongTheoNgay={}; ngayCot.forEach(nd=>{ tongTheoNgay[nd]=lamTronBom(dongHang.reduce((t,r)=>t+(r.theoNgay[nd]||0),0)); });
+  return {ngayCot,dongHang,tongTheoNgay,tongChung:lamTronBom(dongHang.reduce((t,r)=>t+r.tong,0)),coLe,thieuBom};
+}
+const nhanNgayAo=d=>d.slice(0,2).replace(/^0/,'')+'/'+d.slice(3,5).replace(/^0/,'');
+const tieuDeDatAo=(tu,den)=>tu===den?`Đặt áo ngày ${tu.slice(0,5)}`:`Đặt áo ${tu.slice(0,5)} – ${den.slice(0,5)}`;
+// Các dòng của bảng (dùng chung màn hình, ảnh, Excel): một ngày thì cột "Số lượng" ghi "5 cái"; nhiều ngày thì mỗi ngày một cột + Tổng.
+function dongBangDatAo(tu,den){
+  const kq=tinhDonDatAo(tu,den), motNgay=tu===den;
+  const so=r=>motNgay?[`${r.tong} cái`]:[...kq.ngayCot.map(d=>r.theoNgay[d]?String(r.theoNgay[d]):''),String(r.tong)];
+  const dong=[{loai:'dau',o:['Mã áo','Áo',...(motNgay?['Số lượng']:[...kq.ngayCot.map(nhanNgayAo),'Tổng'])]}];
+  kq.dongHang.forEach(r=>dong.push({loai:'dl',o:[r.ma,r.ten,...so(r)]}));
+  if(kq.dongHang.length) dong.push({loai:'tong',o:['Tổng','',...(motNgay?[`${kq.tongChung} cái`]:[...kq.ngayCot.map(d=>kq.tongTheoNgay[d]?String(kq.tongTheoNgay[d]):''),String(kq.tongChung)])]});
+  if(kq.coLe.length){ dong.push({loai:'muc',o:['Cỡ lẻ (may theo cỡ)']}); kq.coLe.forEach(r=>dong.push({loai:'dl',o:[r.ma,r.ten,...so(r)]})); }
+  return {kq,dong};
+}
+let lanVeBangAo=0;
+async function veBangDatAo(){
+  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value;
+  const box=document.getElementById('aoBang'), boxDuoi=document.getElementById('aoBoQua');
+  if(!tu||!den){ box.innerHTML=''; boxDuoi.innerHTML=''; return; }
+  const lan=++lanVeBangAo;
+  box.innerHTML='<div style="color:var(--text2);">Đang tra BOM...</div>'; boxDuoi.innerHTML='';
+  try{ await taiBomChoMa(donTrongKhoangAo(tu,den).map(o=>o.ma)); }
+  catch(e){ if(lan===lanVeBangAo) box.innerHTML=`<div style="color:var(--danger);">Chưa tải được BOM: ${thoatHtml(e.message||String(e))}</div>`; return; }
+  if(lan!==lanVeBangAo) return;   // đã đổi ngày trong lúc chờ
+  const {kq,dong}=dongBangDatAo(tu,den);
+  const nutTin=document.getElementById('aoTinNhanBtn'); if(nutTin) nutTin.style.display=(tu===den)?'':'none';
+  if(!kq.dongHang.length&&!kq.coLe.length){ box.innerHTML='<div style="color:var(--text2);">Khoảng ngày này không có áo nào để đặt.</div>'; }
+  else{
+    const soCot=dong[0].o.length;
+    const o=(v,i,th)=>{ const phai=i>=2; return `<${th?'th':'td'} style="${phai?'text-align:right;':''}${i===0?'white-space:nowrap;font-weight:600;':''}">${thoatHtml(v)}</${th?'th':'td'}>`; };
+    box.innerHTML=`<div style="font-weight:700;font-size:14px;margin-bottom:8px;">${tieuDeDatAo(tu,den)}</div>
+      <div class="table-scroll" style="max-height:none;"><table style="min-width:0;">
+        <thead><tr>${dong[0].o.map((v,i)=>o(v,i,true)).join('')}</tr></thead>
+        <tbody>${dong.slice(1).map(d=>d.loai==='muc'
+          ?`<tr><td colspan="${soCot}" style="font-weight:700;color:var(--primary);background:var(--bg);">${thoatHtml(d.o[0])}</td></tr>`
+          :`<tr${d.loai==='tong'?' style="background:#f4f6fa;font-weight:700;"':''}>${d.o.map((v,i)=>o(v,i,false)).join('')}</tr>`).join('')}</tbody>
+      </table></div>`;
+  }
+  const thieu=Object.keys(kq.thieuBom);
+  boxDuoi.innerHTML=thieu.length?`<div style="color:var(--warning);font-weight:600;">Mã hàng chưa có BOM nên chưa biết áo:</div>`
+    +thieu.map(k=>`<div style="color:var(--text2);">· ${thoatHtml(k)}: <strong>${kq.thieuBom[k]}</strong> tấm</div>`).join(''):'';
+}
+// Ảnh bảng đặt áo: kẻ ô, cột thẳng hàng, gửi thẳng cho Tổ May.
+function veAnhDatAo(tu,den){
+  const {dong}=dongBangDatAo(tu,den), tieuDe=tieuDeDatAo(tu,den);
+  const S=2, co=15, cao=34, le=14, vien=20, fontTh=`600 ${co}px "Segoe UI", Roboto, Arial, sans-serif`, fontTd=`${co}px "Segoe UI", Roboto, Arial, sans-serif`;
+  const cv=document.createElement('canvas'), g=cv.getContext('2d');
+  const soCot=dong[0].o.length, rong=new Array(soCot).fill(0);
+  dong.forEach(d=>{ if(d.loai==='muc') return; g.font=d.loai==='dl'?fontTd:fontTh; d.o.forEach((v,i)=>{ rong[i]=Math.max(rong[i],Math.ceil(g.measureText(String(v)).width)+le*2); }); });
+  const tongRong=rong.reduce((a,b)=>a+b,0), caoTieuDe=44;
+  cv.width=(tongRong+vien*2)*S; cv.height=(caoTieuDe+dong.length*cao+vien*2)*S;
+  g.scale(S,S); g.fillStyle='#ffffff'; g.fillRect(0,0,cv.width,cv.height);
+  g.fillStyle='#1f2a44'; g.font=`700 19px "Segoe UI", Roboto, Arial, sans-serif`; g.textBaseline='middle'; g.fillText(tieuDe,vien,vien+14);
+  let y=vien+caoTieuDe, zebra=0;
+  dong.forEach(d=>{
+    const nen=d.loai==='dau'?'#e8eef7':d.loai==='tong'?'#f1f4f9':d.loai==='muc'?'#fff4e0':(zebra++%2?'#fafbfd':'#ffffff');
+    if(d.loai==='muc') zebra=0;
+    g.fillStyle=nen; g.fillRect(vien,y,tongRong,cao);
+    g.fillStyle=d.loai==='muc'?'#9a5b00':'#1f2a44';
+    if(d.loai==='muc'){ g.font=fontTh; g.fillText(d.o[0],vien+le,y+cao/2); }
+    else{
+      g.font=d.loai==='dl'?fontTd:fontTh; let x=vien;
+      d.o.forEach((v,i)=>{ const chu=String(v); if(i>=2){ g.textAlign='right'; g.fillText(chu,x+rong[i]-le,y+cao/2); g.textAlign='left'; } else g.fillText(chu,x+le,y+cao/2); x+=rong[i]; });
+    }
+    g.strokeStyle='#cfd7e3'; g.lineWidth=1; g.strokeRect(vien+.5,y+.5,tongRong-1,cao);
+    if(d.loai!=='muc'){ let x=vien; rong.slice(0,-1).forEach(w=>{ x+=w; g.beginPath(); g.moveTo(x+.5,y); g.lineTo(x+.5,y+cao); g.stroke(); }); }
+    y+=cao;
+  });
+  return cv;
+}
+function dungBangDatAo(tu,den){   // Sao chép / Excel: cùng dòng với ảnh
+  const {kq,dong}=dongBangDatAo(tu,den);
+  const out=[[tieuDeDatAo(tu,den)],...dong.map(d=>d.o)];
+  const thieu=Object.keys(kq.thieuBom);
+  if(thieu.length){ out.push([]); out.push(['Mã hàng chưa có BOM']); thieu.forEach(k=>out.push([k,kq.thieuBom[k]])); }
+  return {dong:out,kq};
+}
+async function moBangDatAo(){
+  if(!hasPermOrOwner('phoi_board_use')) return;
+  const dates=Array.from(new Set(getOrders().map(o=>o.date))).filter(ngayThuocThangHeader)
+    .sort((a,b)=>a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
+  const opt=dates.map(d=>`<option value="${d}">${d}</option>`).join('');
+  const tu=document.getElementById('aoTuNgay'), den=document.getElementById('aoDenNgay');
+  tu.innerHTML=opt; den.innerHTML=opt;
+  if(dates.length){ tu.value=dates[Math.max(0,dates.length-7)]; den.value=dates[dates.length-1]; }
+  document.getElementById('aoStatus').textContent='';
+  document.getElementById('aoModal').style.display='block';
+  await veBangDatAo();
+}
+document.getElementById('aoBtn')?.addEventListener('click',moBangDatAo);
+document.getElementById('closeAoBtn')?.addEventListener('click',()=>{ document.getElementById('aoModal').style.display='none'; });
+document.getElementById('aoModal')?.addEventListener('click',e=>{ if(e.target.id==='aoModal') e.target.style.display='none'; });
+document.getElementById('aoTuNgay')?.addEventListener('change',veBangDatAo);
+document.getElementById('aoDenNgay')?.addEventListener('change',veBangDatAo);
+document.getElementById('aoAnhBtn')?.addEventListener('click',()=>{
+  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value, st=document.getElementById('aoStatus');
+  const {kq}=dongBangDatAo(tu,den);
+  if(!kq.dongHang.length&&!kq.coLe.length){ st.textContent='Khoảng ngày này không có áo nào để đặt.'; st.style.color='var(--danger)'; return; }
+  const ten=`dat-ao-${tu.replace(/\//g,'-')}${tu===den?'':'_den_'+den.replace(/\//g,'-')}.png`;
+  veAnhDatAo(tu,den).toBlob(b=>{
+    if(!b){ st.textContent='Không tạo được ảnh.'; st.style.color='var(--danger)'; return; }
+    taiTepVe(ten,b,'image/png'); st.textContent='Đã tải ảnh '+ten+' — gửi thẳng cho Tổ May.'; st.style.color='var(--success)';
+  },'image/png');
+});
+document.getElementById('aoCopyBtn')?.addEventListener('click',()=>{
+  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value;
+  const txt=dungBangDatAo(tu,den).dong.map(r=>r.join('\t')).join('\n'), st=document.getElementById('aoStatus');
+  navigator.clipboard.writeText(txt).then(
+    ()=>{ st.textContent='Đã sao chép, dán vào Excel là thành bảng.'; st.style.color='var(--success)'; },
+    ()=>{ st.textContent='Không sao chép được, bạn bôi đen bảng rồi copy tay.'; st.style.color='var(--danger)'; });
+});
+// Tin nhắn gửi Tổ May — chỉ dùng khi lọc ĐÚNG MỘT NGÀY
+function dungTinNhanDatAo(ngay){
+  const kq=tinhDonDatAo(ngay,ngay), dong=[tieuDeDatAo(ngay,ngay)];
+  kq.dongHang.forEach(r=>{ if(r.tong>0) dong.push(`${r.ma}  ${r.ten}: ${r.tong} cái`); });
+  if(kq.coLe.length){ dong.push(''); dong.push('Cỡ lẻ (may theo cỡ):'); kq.coLe.forEach(r=>dong.push(`${r.ma}  ${r.ten}: ${r.tong} cái`)); }
+  return dong.join(String.fromCharCode(10));
+}
+document.getElementById('aoTinNhanBtn')?.addEventListener('click',()=>{
+  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value, st=document.getElementById('aoStatus');
+  if(tu!==den){ st.textContent='Tin nhắn chỉ xuất được cho một ngày. Hãy chọn Từ ngày và Đến ngày giống nhau.'; st.style.color='var(--danger)'; return; }
+  const txt=dungTinNhanDatAo(tu);
+  navigator.clipboard.writeText(txt).then(
+    ()=>{ st.textContent='Đã sao chép tin nhắn, dán thẳng vào Zalo / Telegram được.'; st.style.color='var(--success)'; },
+    ()=>{ st.textContent='Không sao chép được. Nội dung: '+txt.replace(/\n/g,' · '); st.style.color='var(--danger)'; });
+});
+document.getElementById('aoExcelBtn')?.addEventListener('click',()=>{
+  const tu=document.getElementById('aoTuNgay').value, den=document.getElementById('aoDenNgay').value;
+  const csv='﻿'+dungBangDatAo(tu,den).dong.map(r=>r.map(o=>{ const v=(o===null||o===undefined)?'':String(o); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(',')).join('\r\n');
+  const ten=`dat-ao-${tu.replace(/\//g,'-')}_den_${den.replace(/\//g,'-')}.csv`;
+  taiTepVe(ten,csv,'text/csv;charset=utf-8');
+  const st=document.getElementById('aoStatus'); st.textContent='Đã tải '+ten+' — mở bằng Excel.'; st.style.color='var(--success)';
 });
 
 // ============================================================================
