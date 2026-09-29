@@ -1550,6 +1550,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <button class="tab-btn tab-extra" data-tab="bom"><span class="tab-emoji">🧾</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l2 2 4-4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>Xác nhận BOM</button>
   <button class="tab-btn tab-extra" data-tab="wage"><span class="tab-emoji">🧾</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Số liệu lương</button>
   <button class="tab-btn tab-extra" data-tab="staff"><span class="tab-emoji">👥</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.9-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17" cy="8.7" r="2.4"/><path d="M15.6 14.8c2.3.5 3.9 2.3 3.9 5.2"/></svg>Nhân sự</button>
+  <button class="tab-btn tab-extra" data-tab="viec"><span class="tab-emoji">📝</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Giao việc</button>
   <button class="tab-btn tab-extra" data-tab="settings"><span class="tab-emoji">⚙️</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8" stroke-dasharray="2.4 2.6"/></svg>Cài đặt</button>
 </div>
 <button id="tabsMoreToggle" type="button" class="tabs-more-toggle only-manager2" aria-label="Thêm mục" aria-expanded="false">☰ Thêm</button>
@@ -1597,6 +1598,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 </div>
 
 <div class="panel" id="panel-autoplan">
+  <div id="viecCuaToi" class="card viec-cua-toi" style="display:none;margin-bottom:14px;border-left:4px solid var(--accent);"></div>
   <div class="card">
     <h3>Kế hoạch sản xuất — Tổ Mút Foam</h3>
     <div class="wf-link" data-wf="khsx">🔗 Workflow hoạt động</div>
@@ -1837,6 +1839,31 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
      tự tính lương ở ngoài. Dán theo tổ (KPI tổ, không có cá nhân đúng theo thiết kế gốc),
      May/Đóng gói theo từng người (worker_id sau Việc 8). Đọc thẳng Supabase theo khoảng
      ngày tự chọn, không giới hạn trong tháng header (khác panel-monthly). -->
+<div class="panel" id="panel-viec">
+  <div class="card">
+    <h3 style="margin:0 0 4px;">📝 Giao việc</h3>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:12px;line-height:1.5;">Việc ngoài KHSX. Giao xong bot nhắn Telegram cho người nhận. Họ bấm <b>Nhận việc</b> và chọn ngày hẹn, làm xong bấm <b>Xong</b> thì bot báo anh. 17:00 ngày hẹn mà chưa xong, bot nhắc người nhận và báo anh.</div>
+    <div style="display:grid;gap:10px;max-width:640px;margin-bottom:18px;">
+      <label style="font-size:12px;font-weight:700;color:var(--text2);">Giao cho
+        <select id="viecNguoiNhan" style="display:block;width:100%;margin-top:4px;font-size:14px;padding:8px;"></select></label>
+      <label style="font-size:12px;font-weight:700;color:var(--text2);">Việc cần làm
+        <textarea id="viecNoiDung" rows="3" maxlength="1000" placeholder="Ví dụ: Dọn kho mút cuối xưởng" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></textarea></label>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><button id="viecGiaoBtn" type="button" class="primary-btn">Giao việc</button><span id="viecStatus" class="save-status"></span></div>
+    </div>
+    <div class="bom-chip-row" id="viecLoc">
+      <button type="button" class="bom-chip active" data-loc="tatca">Tất cả</button>
+      <button type="button" class="bom-chip" data-loc="cho_nhan">Chưa nhận <b id="viecSoChoNhan">0</b></button>
+      <button type="button" class="bom-chip" data-loc="dang_lam">Đang làm <b id="viecSoDangLam">0</b></button>
+      <button type="button" class="bom-chip" data-loc="tre">Trễ <b id="viecSoTre">0</b></button>
+      <button type="button" class="bom-chip" data-loc="xong">Xong</button>
+    </div>
+    <div class="table-scroll" style="max-height:none;margin-top:8px;"><table style="min-width:0;">
+      <thead><tr><th>Việc</th><th>Người nhận</th><th>Giao lúc</th><th>Hẹn xong</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody id="viecBang"></tbody>
+    </table></div>
+  </div>
+</div>
+
 <div class="panel" id="panel-bom">
   <div class="card">
     <h3 style="margin:0 0 4px;">🧾 Xác nhận BOM</h3>
@@ -2169,7 +2196,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=211"></script>
+<script src="raw-data.js?v=212"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4282,7 +4309,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 211;
+const APP_VERSION = 212;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4542,11 +4569,11 @@ function hasPerm(key){ return myPermissionKeys.has(key); }
 function hasPermOrOwner(key){ return String(currentUser?.auth_user_id||'')===KHSX_PERMISSION_OWNER_ID || hasPerm(key); }
 const PERM_TAB_RULES={
   monthly:['view_overview'], autoplan:['khsx_view_plan'], capacity:['capacity_view'],
-  report:['report_export','report_sign_off'], wage:['payroll_view'], staff:['hr_view'], bom:['bom_confirm'],
+  report:['report_export','report_sign_off'], wage:['payroll_view'], staff:['hr_view'], bom:['bom_confirm'], viec:['task_assign'],
   settings:['settings_backup_download','settings_backup_restore','settings_import_khsx_file','settings_edit_targets'],
 };
 // Dot 4.3: nut (khong phai tab) cung an/hien theo permission_key, cung co che.
-const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], aoBtn:['phoi_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'] };
+const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], aoBtn:['ao_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'] };
 function applyPermissionTabGates(){
   let activeHidden=false;
   Object.entries(PERM_TAB_RULES).forEach(([tab,keys])=>{
@@ -5194,6 +5221,7 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
   autoPlanLoaded=true;
   saveLocalCache();
   supabaseStatus(`Supabase đã đồng bộ · ${visibleOrd.length} đơn`,true);
+  if(!allowPublic) taiViecNen();
   return true;
 }
 async function refreshFromPrimarySupabase(){
@@ -9440,6 +9468,7 @@ function restoreUiState(){
         if(st.tab==='wage') initWagePage();
         if(st.tab==='capacity') enterCapacityTab();
         if(st.tab==='bom') initBomPage();
+        if(st.tab==='viec') initViecPage();
         resetOperationalToday(st.tab);
       }
     }
@@ -9461,6 +9490,8 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(btn.dataset.tab==='wage') initWagePage();
     if(btn.dataset.tab==='capacity') enterCapacityTab();
     if(btn.dataset.tab==='bom') initBomPage();
+    if(btn.dataset.tab==='viec') initViecPage();
+    if(btn.dataset.tab==='autoplan') taiViecNen(true);
     resetOperationalToday(btn.dataset.tab);
     capNhatHienThiKpiRow();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
@@ -12417,7 +12448,7 @@ function dungBangDatAo(tu,den){   // Sao chép / Excel: cùng dòng với ảnh
   return {dong:out,kq};
 }
 async function moBangDatAo(){
-  if(!hasPermOrOwner('phoi_board_use')) return;
+  if(!hasPermOrOwner('ao_board_use')) return;
   datKhoangNhanhDat('ao','homnay',false);   // mở ra luôn là hôm nay
   document.getElementById('aoStatus').textContent='';
   document.getElementById('aoModal').style.display='block';
@@ -12467,6 +12498,143 @@ document.getElementById('aoExcelBtn')?.addEventListener('click',()=>{
   taiTepVe(ten,csv,'text/csv;charset=utf-8');
   const st=document.getElementById('aoStatus'); st.textContent='Đã tải '+ten+' — mở bằng Excel.'; st.style.color='var(--success)';
 });
+
+// ============================================================================
+//  GIAO VIỆC (28/09/2026, anh Tùng duyệt) — việc ngoài KHSX. Người có quyền "Giao việc" (tạm thời chỉ anh Tùng)
+//  giao cho một người trong danh sách nhân sự; bot nhắn Telegram (hàng chờ trên máy chủ + hàm khsx-gui-tin).
+//  Người nhận thấy ô "Việc của tôi" đầu trang KHSX: Nhận việc (bắt buộc chọn ngày hẹn, không từ chối) → Xong.
+// ============================================================================
+let viecDanhSach=[], viecLocDangXem='tatca', viecTaiLuc=0, viecDangTai=false;
+const duocGiaoViec=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('task_assign');
+const toiLa=()=>String(currentUser?.auth_user_id||'');
+const homNayIso=()=>isoCuaNgay(new Date());
+const ngayNgan=iso=>iso?`${iso.slice(8,10)}/${iso.slice(5,7)}`:'';
+const tenNhanSu=id=>(supabaseAdminProfiles||[]).find(x=>x.user_id===id)?.display_name||'';
+function viecTre(v){ return v.trang_thai==='dang_lam'&&v.han&&v.han<homNayIso(); }
+function soNgayTre(v){ return Math.round((new Date(homNayIso())-new Date(v.han))/86400000); }
+function loiViec(e){
+  const m=String(e?.message||e||'');
+  if(m.includes('TASK_ASSIGN_FORBIDDEN')) return 'Tài khoản chưa có quyền giao việc.';
+  if(m.includes('TASK_DUE_INVALID')) return 'Chọn ngày hẹn xong từ hôm nay trở đi.';
+  if(m.includes('TASK_ALREADY_TAKEN')) return 'Việc này đã nhận rồi.';
+  if(m.includes('TASK_NOT_IN_PROGRESS')) return 'Việc này chưa nhận hoặc đã xong.';
+  if(m.includes('TASK_NOT_YOURS')) return 'Việc này không phải của bạn.';
+  if(m.includes('TASK_ASSIGNEE_INVALID')) return 'Người nhận không còn trong danh sách nhân sự.';
+  if(m.includes('TASK_TEXT_INVALID')) return 'Ghi nội dung việc (tối đa 1.000 chữ).';
+  return `Chưa lưu được: ${m||'lỗi không rõ'}`;
+}
+// Nhờ máy chủ gửi ngay các tin đang chờ (không đợi bộ hẹn giờ 5 phút).
+function guiTinViecNgay(){ try{ fetch(`${SUPABASE_URL}/functions/v1/khsx-gui-tin`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(()=>setTimeout(()=>taiViecNen(true),2500)).catch(()=>{}); }catch(e){} }
+async function taiViecNen(ep=false){
+  if(!SUPABASE_VARIANT||PUBLIC_VIEW_MODE||!supabaseDb||!currentUser||viecDangTai) return;
+  if(!ep&&Date.now()-viecTaiLuc<30000) return;
+  viecDangTai=true;
+  try{
+    const {data,error}=await supabaseDb.from('khsx_tasks').select('*').order('giao_luc',{ascending:false}).limit(500);
+    if(error) return;
+    viecDanhSach=data||[]; viecTaiLuc=Date.now();
+    veViecCuaToi();
+    if(document.querySelector('.tab-btn.active')?.dataset.tab==='viec') veBangViec();
+  }finally{ viecDangTai=false; }
+}
+function veViecCuaToi(){
+  const hop=document.getElementById('viecCuaToi'); if(!hop) return;
+  const cua=viecDanhSach.filter(v=>v.nguoi_nhan===toiLa()&&v.trang_thai!=='xong')
+    .sort((a,b)=>(a.trang_thai==='cho_nhan'?0:1)-(b.trang_thai==='cho_nhan'?0:1)||String(a.han||'').localeCompare(String(b.han||'')));
+  if(!cua.length){ hop.style.display='none'; hop.innerHTML=''; return; }
+  hop.style.display='';
+  hop.innerHTML=`<div style="font-weight:800;font-size:15px;margin-bottom:8px;">📝 Việc của tôi</div>`+cua.map(v=>{
+    const nguoiGiao=tenNhanSu(v.nguoi_giao);
+    const dau=`<div style="font-size:14px;font-weight:600;white-space:pre-wrap;">${thoatHtml(v.noi_dung)}</div>
+      <div style="font-size:12px;color:var(--text2);margin:2px 0 6px;">${nguoiGiao?thoatHtml(nguoiGiao)+' giao':'Được giao'} ${ngayNgan(String(v.giao_luc).slice(0,10))}</div>`;
+    const nut=v.trang_thai==='cho_nhan'
+      ?`<label style="font-size:12.5px;">Hẹn xong <input type="date" class="viec-han" min="${homNayIso()}" value="${homNayIso()}" style="font-size:14px;padding:6px;"></label>
+        <button type="button" class="primary-btn" data-viec-nhan="${v.id}">Nhận việc</button>`
+      :`<span style="font-size:13px;${viecTre(v)?'color:var(--danger);font-weight:700;':''}">Hẹn ${ngayNgan(v.han)}${viecTre(v)?` · trễ ${soNgayTre(v)} ngày`:v.han===homNayIso()?' · hôm nay':''}</span>
+        <button type="button" class="primary-btn" style="background:var(--success);" data-viec-xong="${v.id}">✓ Xong</button>`;
+    return `<div class="viec-dong" data-id="${v.id}" style="padding:10px 0;border-top:1px solid var(--border);">${dau}
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">${nut}<span class="save-status viec-tt"></span></div></div>`;
+  }).join('');
+}
+document.getElementById('viecCuaToi')?.addEventListener('click',async e=>{
+  const nhan=e.target.closest('[data-viec-nhan]'), xong=e.target.closest('[data-viec-xong]');
+  if(!nhan&&!xong) return;
+  const dong=e.target.closest('.viec-dong'), st=dong?.querySelector('.viec-tt'), nut=nhan||xong;
+  const bao=(t,m)=>{ if(st){ st.textContent=t; st.style.color=m; } };
+  if(nhan){
+    const han=dong.querySelector('.viec-han')?.value;
+    if(!han) return bao('Chọn ngày hẹn xong.','var(--danger)');
+    nut.disabled=true; bao('Đang lưu...','var(--text2)');
+    const {error}=await supabaseDb.rpc('khsx_nhan_viec_v1',{p_id:nhan.dataset.viecNhan,p_han:han});
+    nut.disabled=false;
+    if(error) return bao(loiViec(error),'var(--danger)');
+  }else{
+    if(!confirm('Bấm Xong việc này? Bot sẽ báo cho người giao.')) return;
+    nut.disabled=true; bao('Đang lưu...','var(--text2)');
+    const {error}=await supabaseDb.rpc('khsx_xong_viec_v1',{p_id:xong.dataset.viecXong});
+    nut.disabled=false;
+    if(error) return bao(loiViec(error),'var(--danger)');
+    guiTinViecNgay();
+  }
+  await taiViecNen(true);
+});
+function initViecPage(){
+  const sel=document.getElementById('viecNguoiNhan');
+  const ds=(supabaseAdminProfiles||[]).filter(p=>p.active&&p.user_id&&p.user_id!==toiLa())
+    .sort((a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''),'vi'));
+  const cu=sel.value;
+  sel.innerHTML='<option value="">— Chọn người —</option>'+ds.map(p=>`<option value="${p.user_id}">${thoatHtml(p.display_name||'(chưa có tên)')}${p.unit_name?' · '+thoatHtml(supabaseUnitToUi(p.unit_name)||p.unit_name):''}${p.telegram_user_id?'':' · chưa có Telegram'}</option>`).join('');
+  if(cu) sel.value=cu;
+  veBangViec(); taiViecNen(true);
+}
+function veBangViec(){
+  const than=document.getElementById('viecBang'); if(!than) return;
+  const la=v=>viecLocDangXem==='tatca'||(viecLocDangXem==='tre'?viecTre(v):v.trang_thai===viecLocDangXem);
+  document.getElementById('viecSoChoNhan').textContent=viecDanhSach.filter(v=>v.trang_thai==='cho_nhan').length;
+  document.getElementById('viecSoDangLam').textContent=viecDanhSach.filter(v=>v.trang_thai==='dang_lam').length;
+  document.getElementById('viecSoTre').textContent=viecDanhSach.filter(viecTre).length;
+  document.querySelectorAll('#viecLoc .bom-chip').forEach(c=>c.classList.toggle('active',c.dataset.loc===viecLocDangXem));
+  const hien=viecDanhSach.filter(la);
+  if(!hien.length){ than.innerHTML=`<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:14px;">Chưa có việc nào.</td></tr>`; return; }
+  than.innerHTML=hien.map(v=>{
+    const tt=v.trang_thai==='xong'?`<span class="bom-nhan da">Xong ${ngayNgan(String(v.xong_luc||'').slice(0,10))}</span>`
+      :v.trang_thai==='cho_nhan'?`<span class="bom-nhan cho">Chưa nhận</span>`
+      :viecTre(v)?`<span class="bom-nhan thieu">⚠ Trễ ${soNgayTre(v)} ngày</span>`:`<span class="bom-nhan cho">Đang làm</span>`;
+    const loiTin=v.trang_thai==='cho_nhan'&&v.tin_giao_loi
+      ?`<div style="font-size:11.5px;color:var(--danger);margin-top:3px;">Chưa gửi được tin: ${thoatHtml(v.tin_giao_loi)}</div>`:'';
+    return `<tr><td style="white-space:pre-wrap;max-width:320px;">${thoatHtml(v.noi_dung)}</td>
+      <td>${thoatHtml(tenNhanSu(v.nguoi_nhan)||'—')}</td><td>${ngayNgan(String(v.giao_luc).slice(0,10))}</td>
+      <td>${v.han?ngayNgan(v.han):'—'}</td><td>${tt}${loiTin}</td>
+      <td>${v.trang_thai==='cho_nhan'&&v.tin_giao_loi?`<button type="button" class="capacity-quick-btn" data-viec-gui-lai="${v.id}">Gửi lại tin</button>`:''}</td></tr>`;
+  }).join('');
+}
+document.getElementById('viecLoc')?.addEventListener('click',e=>{ const c=e.target.closest('[data-loc]'); if(!c) return; viecLocDangXem=c.dataset.loc; veBangViec(); });
+document.getElementById('viecBang')?.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-viec-gui-lai]'); if(!b) return;
+  b.disabled=true;
+  const {error}=await supabaseDb.rpc('khsx_gui_lai_tin_viec_v1',{p_id:b.dataset.viecGuiLai});
+  b.disabled=false;
+  const st=document.getElementById('viecStatus');
+  if(error){ st.textContent=loiViec(error); st.style.color='var(--danger)'; return; }
+  st.textContent='Đã gửi lại tin.'; st.style.color='var(--success)';
+  guiTinViecNgay(); await taiViecNen(true);
+});
+document.getElementById('viecGiaoBtn')?.addEventListener('click',async e=>{
+  if(!duocGiaoViec()) return;
+  const nut=e.currentTarget, st=document.getElementById('viecStatus');
+  const bao=(t,m)=>{ st.textContent=t; st.style.color=m; };
+  const nguoi=document.getElementById('viecNguoiNhan').value, nd=document.getElementById('viecNoiDung').value.trim();
+  if(!nguoi) return bao('Chọn người nhận việc.','var(--danger)');
+  if(!nd) return bao('Ghi việc cần làm.','var(--danger)');
+  nut.disabled=true; bao('Đang giao...','var(--text2)');
+  const {error}=await supabaseDb.rpc('khsx_giao_viec_v1',{p_nguoi_nhan:nguoi,p_noi_dung:nd});
+  nut.disabled=false;
+  if(error) return bao(loiViec(error),'var(--danger)');
+  document.getElementById('viecNoiDung').value='';
+  bao(`Đã giao cho ${tenNhanSu(nguoi)||'người nhận'}, bot đang nhắn Telegram.`,'var(--success)');
+  guiTinViecNgay(); await taiViecNen(true);
+});
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) taiViecNen(); });
 
 // ============================================================================
 //  SƠ ĐỒ QUY TRÌNH (Workflow) cho từng tab
