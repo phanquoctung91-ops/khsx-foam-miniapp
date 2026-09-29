@@ -6,13 +6,17 @@ const sql=fs.readFileSync(path.resolve(__dirname,'..','supabase','migrations','2
 const A='00000000-0000-0000-0000-00000000000a', B='00000000-0000-0000-0000-00000000000b', C='00000000-0000-0000-0000-00000000000c';
 (async()=>{
   const db=await PGlite.create();
-  await db.exec(`create role anon; create role authenticated; create schema auth; create schema private;
+  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth; create schema private;
     create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('test.uid',true),'')::uuid $$;
     create function private.khsx_has_permission(p_key text, p_user uuid default auth.uid()) returns boolean language sql as $$ select p_user='${A}'::uuid $$;
     create table public.khsx_permissions(permission_key text primary key, display_name text, group_name text, description text, sort_order int);
     create table public.khsx_profiles(user_id uuid, telegram_user_id bigint, display_name text, active boolean);
     insert into public.khsx_profiles values('${A}',111,'Tùng',true),('${B}',222,'Minh Thuận',true),('${C}',null,'Mới đăng ký',true);`);
   await db.exec(sql);
+  await db.exec(fs.readFileSync(path.resolve(__dirname,'..','supabase','migrations','20260929090000_giao_viec_quyen_bot.sql'),'utf8'));
+  for(const b of ['khsx_tin_nhan_cho','khsx_tasks']) for(const q of ['select','update'])
+    assert.equal((await db.query(`select has_table_privilege('service_role','public.${b}','${q}') ok`)).rows[0].ok,true,`service_role ${q} ${b}`);
+  console.log('PASS hàm gửi tin (service_role) đọc và ghi được sổ việc + sổ tin chờ');
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`);
   const tin=async()=>(await q(`select loai,chat_id,noi_dung from public.khsx_tin_nhan_cho order by id`)).rows;
   const loi=async f=>{ try{ await f(); return ''; }catch(e){ return e.message; } };
