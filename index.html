@@ -237,6 +237,7 @@
     body.role-quan-ly .tab-group-label[data-group="vanhanh"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-group-label[data-group="vanhanh"]{order:1;}
     body.role-quan-ly .tab-btn[data-tab="autoplan"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-btn[data-tab="autoplan"]{order:2;}
     body.role-quan-ly .tab-btn[data-tab="progress"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-btn[data-tab="progress"]{order:3;}
+    body.role-quan-ly .tab-btn[data-tab="viec"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-btn[data-tab="viec"]{order:3;}
     body.role-quan-ly .tab-group-label[data-group="baocao"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-group-label[data-group="baocao"]{order:4;}
     /* "Tổng Thống kê sản xuất" đứng riêng, đầu tiên (order 0, nhỏ hơn cả tiêu đề
        nhóm "vanhanh" order 1) — không thuộc nhóm nào, theo đúng yêu cầu 2026-09-07. */
@@ -415,6 +416,8 @@
   .del-btn{background:none;border:1px solid var(--border);color:var(--danger);font-size:11.5px;padding:4px 10px;border-radius:7px;cursor:pointer;}
   .del-btn:hover{background:var(--danger-l);}
   .save-status{font-size:12.5px;margin-left:4px;}
+  .viec-dem{display:none;margin-left:6px;min-width:18px;padding:1px 6px;border-radius:9px;background:var(--warning);color:#fff;font-size:11px;font-weight:700;line-height:16px;text-align:center;box-sizing:border-box;}
+  .viec-dem.tre{background:var(--danger);}
   .badge{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11px;font-weight:700;}
   .badge-blue{background:var(--primary-l);color:var(--primary-dark);}
   .badge-progress{background:var(--warning-l);color:var(--warning);}
@@ -788,6 +791,15 @@
 
   /* Điện thoại gộp KHSX và TDSX làm một: ẩn mục Tiến độ ở thanh dưới, nhập số ngay trên thẻ tổ. */
   body.mobile-view #mainTabs .tab-btn[data-tab="progress"]{display:none;}
+  /* Giao việc đứng ngay sau KHSX: bấm ☰ Thêm là thấy liền, không phải vuốt tìm */
+  body.mobile-view #mainTabs .tab-btn.tab-extra{order:2;}
+  body.mobile-view #mainTabs .tab-btn[data-tab="viec"]{order:1;position:relative;}
+  body.mobile-view #mainTabs .tab-btn[data-tab="viec"] .viec-dem{position:absolute;top:3px;right:8px;margin:0;}
+  body.mobile-view .tabs-more-toggle .viec-dem{position:absolute;top:6px;right:6px;margin:0;}
+  body.mobile-view #panel-viec .table-scroll{display:none;}
+  #viecThe{display:none;}
+  body.mobile-view #viecThe{display:block;margin-top:8px;}
+  body.mobile-view .viec-the{padding:10px 0;border-top:1px solid var(--border);font-size:13px;}
   /* Năng lực là mục chính trên điện thoại, không để luật tab-extra của màn hẹp nuốt mất */
   body.mobile-view #mainTabs .tab-btn[data-tab="capacity"]{display:inline-flex;}
 
@@ -1550,10 +1562,11 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <button class="tab-btn tab-extra" data-tab="bom"><span class="tab-emoji">🧾</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l2 2 4-4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>Xác nhận BOM</button>
   <button class="tab-btn tab-extra" data-tab="wage"><span class="tab-emoji">🧾</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Số liệu lương</button>
   <button class="tab-btn tab-extra" data-tab="staff"><span class="tab-emoji">👥</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.9-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17" cy="8.7" r="2.4"/><path d="M15.6 14.8c2.3.5 3.9 2.3 3.9 5.2"/></svg>Nhân sự</button>
-  <button class="tab-btn tab-extra" data-tab="viec"><span class="tab-emoji">📝</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Giao việc</button>
+  <button class="tab-btn tab-extra" data-tab="viec"><span class="tab-emoji">📝</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Giao việc<span class="viec-dem" id="viecDemMenu"></span></button>
   <button class="tab-btn tab-extra" data-tab="settings"><span class="tab-emoji">⚙️</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8" stroke-dasharray="2.4 2.6"/></svg>Cài đặt</button>
 </div>
 <button id="tabsMoreToggle" type="button" class="tabs-more-toggle only-manager2" aria-label="Thêm mục" aria-expanded="false">☰ Thêm</button>
+<div id="viecCuaToi" class="card viec-cua-toi" style="display:none;margin-bottom:14px;border-left:4px solid var(--accent);"></div>
 
 <div class="panel active" id="panel-monthly">
   <div class="card" style="margin-bottom:18px;">
@@ -1598,7 +1611,6 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 </div>
 
 <div class="panel" id="panel-autoplan">
-  <div id="viecCuaToi" class="card viec-cua-toi" style="display:none;margin-bottom:14px;border-left:4px solid var(--accent);"></div>
   <div class="card">
     <h3>Kế hoạch sản xuất — Tổ Mút Foam</h3>
     <div class="wf-link" data-wf="khsx">🔗 Workflow hoạt động</div>
@@ -1861,6 +1873,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <thead><tr><th>Việc</th><th>Người nhận</th><th>Giao lúc</th><th>Hẹn xong</th><th>Trạng thái</th><th></th></tr></thead>
       <tbody id="viecBang"></tbody>
     </table></div>
+    <div id="viecThe"></div>
   </div>
 </div>
 
@@ -2196,7 +2209,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=212"></script>
+<script src="raw-data.js?v=213"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4309,7 +4322,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 212;
+const APP_VERSION = 213;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -9491,7 +9504,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(btn.dataset.tab==='capacity') enterCapacityTab();
     if(btn.dataset.tab==='bom') initBomPage();
     if(btn.dataset.tab==='viec') initViecPage();
-    if(btn.dataset.tab==='autoplan') taiViecNen(true);
+    taiViecNen();
     resetOperationalToday(btn.dataset.tab);
     capNhatHienThiKpiRow();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
@@ -12533,9 +12546,30 @@ async function taiViecNen(ep=false){
     const {data,error}=await supabaseDb.from('khsx_tasks').select('*').order('giao_luc',{ascending:false}).limit(500);
     if(error) return;
     viecDanhSach=data||[]; viecTaiLuc=Date.now();
-    veViecCuaToi();
+    veViecCuaToi(); veSoViecMenu();
     if(document.querySelector('.tab-btn.active')?.dataset.tab==='viec') veBangViec();
   }finally{ viecDangTai=false; }
+}
+// Số nhỏ cạnh chữ "Giao việc": việc chưa xong; đỏ khi có việc trễ hẹn.
+function veSoViecMenu(){
+  const o=document.getElementById('viecDemMenu'); if(!o) return;
+  const con=duocGiaoViec()?viecDanhSach.filter(v=>v.trang_thai!=='xong'):[];
+  const them=document.getElementById('tabsMoreToggle');
+  let oThem=document.getElementById('viecDemThem');
+  if(!oThem&&them){ oThem=document.createElement('span'); oThem.id='viecDemThem'; oThem.className='viec-dem'; them.appendChild(oThem); }
+  [o,oThem].forEach(x=>{ if(!x) return; x.textContent=con.length; x.style.display=con.length?'inline-block':'none'; x.classList.toggle('tre',con.some(viecTre)); });
+  if(oThem&&!document.body.classList.contains('mobile-view')) oThem.style.display='none';
+  moThangGiaoViec();
+}
+// Bot báo xong / báo trễ cho người giao: nút "Mở app" có ?mo=viec -> vào thẳng trang Giao việc (một lần).
+let daMoThangViec=false;
+function moThangGiaoViec(){
+  if(daMoThangViec||new URLSearchParams(location.search).get('mo')!=='viec'||!duocGiaoViec()) return;
+  daMoThangViec=true;
+  const tabs=document.getElementById('mainTabs');
+  tabs?.classList.add('show-extra');   // mục Giao việc nằm trong ☰ Thêm trên điện thoại: mở ra để app không tưởng mục đang bị ẩn
+  document.getElementById('tabsMoreToggle')?.setAttribute('aria-expanded','true');
+  document.querySelector('.tab-btn[data-tab="viec"]')?.click();
 }
 function veViecCuaToi(){
   const hop=document.getElementById('viecCuaToi'); if(!hop) return;
@@ -12543,7 +12577,7 @@ function veViecCuaToi(){
     .sort((a,b)=>(a.trang_thai==='cho_nhan'?0:1)-(b.trang_thai==='cho_nhan'?0:1)||String(a.han||'').localeCompare(String(b.han||'')));
   if(!cua.length){ hop.style.display='none'; hop.innerHTML=''; return; }
   hop.style.display='';
-  hop.innerHTML=`<div style="font-weight:800;font-size:15px;margin-bottom:8px;">📝 Việc của tôi</div>`+cua.map(v=>{
+  hop.innerHTML=`<div style="font-weight:800;font-size:15px;margin-bottom:8px;">📝 Việc của tôi <span class="viec-dem${cua.some(viecTre)?' tre':''}" style="display:inline-block;">${cua.length}</span></div>`+cua.map(v=>{
     const nguoiGiao=tenNhanSu(v.nguoi_giao);
     const dau=`<div style="font-size:14px;font-weight:600;white-space:pre-wrap;">${thoatHtml(v.noi_dung)}</div>
       <div style="font-size:12px;color:var(--text2);margin:2px 0 6px;">${nguoiGiao?thoatHtml(nguoiGiao)+' giao':'Được giao'} ${ngayNgan(String(v.giao_luc).slice(0,10))}</div>`;
@@ -12595,21 +12629,29 @@ function veBangViec(){
   document.getElementById('viecSoTre').textContent=viecDanhSach.filter(viecTre).length;
   document.querySelectorAll('#viecLoc .bom-chip').forEach(c=>c.classList.toggle('active',c.dataset.loc===viecLocDangXem));
   const hien=viecDanhSach.filter(la);
-  if(!hien.length){ than.innerHTML=`<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:14px;">Chưa có việc nào.</td></tr>`; return; }
-  than.innerHTML=hien.map(v=>{
+  const the=document.getElementById('viecThe');
+  if(!hien.length){ than.innerHTML=`<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:14px;">Chưa có việc nào.</td></tr>`; the.innerHTML='<div style="color:var(--text2);text-align:center;padding:14px;">Chưa có việc nào.</div>'; return; }
+  const oViec=hien.map(v=>{
     const tt=v.trang_thai==='xong'?`<span class="bom-nhan da">Xong ${ngayNgan(String(v.xong_luc||'').slice(0,10))}</span>`
       :v.trang_thai==='cho_nhan'?`<span class="bom-nhan cho">Chưa nhận</span>`
       :viecTre(v)?`<span class="bom-nhan thieu">⚠ Trễ ${soNgayTre(v)} ngày</span>`:`<span class="bom-nhan cho">Đang làm</span>`;
     const loiTin=v.trang_thai==='cho_nhan'&&v.tin_giao_loi
       ?`<div style="font-size:11.5px;color:var(--danger);margin-top:3px;">Chưa gửi được tin: ${thoatHtml(v.tin_giao_loi)}</div>`:'';
-    return `<tr><td style="white-space:pre-wrap;max-width:320px;">${thoatHtml(v.noi_dung)}</td>
+    const nutGuiLai=v.trang_thai==='cho_nhan'&&v.tin_giao_loi?`<button type="button" class="capacity-quick-btn" data-viec-gui-lai="${v.id}">Gửi lại tin</button>`:'';
+    const dong=`<tr><td style="white-space:pre-wrap;max-width:320px;">${thoatHtml(v.noi_dung)}</td>
       <td>${thoatHtml(tenNhanSu(v.nguoi_nhan)||'—')}</td><td>${ngayNgan(String(v.giao_luc).slice(0,10))}</td>
       <td>${v.han?ngayNgan(v.han):'—'}</td><td>${tt}${loiTin}</td>
-      <td>${v.trang_thai==='cho_nhan'&&v.tin_giao_loi?`<button type="button" class="capacity-quick-btn" data-viec-gui-lai="${v.id}">Gửi lại tin</button>`:''}</td></tr>`;
-  }).join('');
+      <td>${nutGuiLai}</td></tr>`;
+    const theHtml=`<div class="viec-the"><div style="font-weight:600;font-size:14px;white-space:pre-wrap;">${thoatHtml(v.noi_dung)}</div>
+      <div style="color:var(--text2);margin:3px 0 6px;">${thoatHtml(tenNhanSu(v.nguoi_nhan)||'—')} · giao ${ngayNgan(String(v.giao_luc).slice(0,10))}${v.han?` · hẹn ${ngayNgan(v.han)}`:''}</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">${tt}${nutGuiLai}</div>${loiTin}</div>`;
+    return {dong,theHtml};
+  });
+  than.innerHTML=oViec.map(o=>o.dong).join('');
+  the.innerHTML=oViec.map(o=>o.theHtml).join('');
 }
 document.getElementById('viecLoc')?.addEventListener('click',e=>{ const c=e.target.closest('[data-loc]'); if(!c) return; viecLocDangXem=c.dataset.loc; veBangViec(); });
-document.getElementById('viecBang')?.addEventListener('click',async e=>{
+const guiLaiTinViec=async e=>{
   const b=e.target.closest('[data-viec-gui-lai]'); if(!b) return;
   b.disabled=true;
   const {error}=await supabaseDb.rpc('khsx_gui_lai_tin_viec_v1',{p_id:b.dataset.viecGuiLai});
@@ -12618,7 +12660,9 @@ document.getElementById('viecBang')?.addEventListener('click',async e=>{
   if(error){ st.textContent=loiViec(error); st.style.color='var(--danger)'; return; }
   st.textContent='Đã gửi lại tin.'; st.style.color='var(--success)';
   guiTinViecNgay(); await taiViecNen(true);
-});
+};
+document.getElementById('viecBang')?.addEventListener('click',guiLaiTinViec);
+document.getElementById('viecThe')?.addEventListener('click',guiLaiTinViec);
 document.getElementById('viecGiaoBtn')?.addEventListener('click',async e=>{
   if(!duocGiaoViec()) return;
   const nut=e.currentTarget, st=document.getElementById('viecStatus');

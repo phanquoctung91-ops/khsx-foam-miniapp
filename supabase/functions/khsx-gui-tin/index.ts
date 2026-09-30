@@ -38,7 +38,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           chat_id: t.chat_id,
           text: t.noi_dung,
-          reply_markup: { inline_keyboard: [[{ text: "📝 Mở app", web_app: { url: APP_URL } }]] },
+          // Tin báo xong / báo trễ gửi người giao: mở thẳng trang Giao việc.
+          reply_markup: { inline_keyboard: [[{ text: "📝 Mở app", web_app: { url: t.loai === "xong" || t.loai === "bao_tre" ? `${APP_URL}&mo=viec` : APP_URL } }]] },
         }),
       });
       const kq = await res.json().catch(() => ({}));
