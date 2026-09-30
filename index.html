@@ -647,6 +647,8 @@
      .only-editor   : 3 vai nhập liệu      (cột Sửa, tab Tiến độ sản xuất)
      .tab-overview  : các tab tổng hợp     (Nhân viên không thấy) */
   body:not(.role-quan-ly) .only-manager{display:none !important;}
+  .nut-bang-dat-nv{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}   /* cách quyền bật/tắt nút chỉ xoá display gắn trực tiếp, nên để flex ở đây */
+  body:not(.role-nhan-vien) .nut-bang-dat-nv{display:none !important;}   /* quản lý đã có nút ở trang KHSX */
   body.role-nhan-vien .only-manager2,
   body.role-chi-xem .only-manager2{display:none !important;}
   body.role-chi-xem .only-editor{display:none !important;}
@@ -1706,6 +1708,10 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 </div>
 
 <div class="panel" id="panel-progress">
+  <div class="nut-bang-dat-nv" id="nutBangDatNv">
+    <button id="phoiBtnNv" class="primary-btn" type="button" style="background:var(--accent);flex:1 1 140px;">🧱 Bảng đặt phôi</button>
+    <button id="aoBtnNv" class="primary-btn" type="button" style="background:var(--accent);flex:1 1 140px;">👕 Bảng đặt áo</button>
+  </div>
   <div class="card">
     <h3>Tiến độ sản xuất — Tổ Mút Foam</h3>
     <div class="wf-link" data-wf="tdsx">🔗 Workflow hoạt động</div>
@@ -2209,7 +2215,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=213"></script>
+<script src="raw-data.js?v=214"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4322,7 +4328,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 213;
+const APP_VERSION = 214;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4586,7 +4592,7 @@ const PERM_TAB_RULES={
   settings:['settings_backup_download','settings_backup_restore','settings_import_khsx_file','settings_edit_targets'],
 };
 // Dot 4.3: nut (khong phai tab) cung an/hien theo permission_key, cung co che.
-const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], aoBtn:['ao_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'] };
+const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], aoBtn:['ao_board_use'], nutBangDatNv:['phoi_board_use','ao_board_use'], phoiBtnNv:['phoi_board_use'], aoBtnNv:['ao_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'] };
 function applyPermissionTabGates(){
   let activeHidden=false;
   Object.entries(PERM_TAB_RULES).forEach(([tab,keys])=>{
@@ -4752,6 +4758,7 @@ async function revalidateSupabaseSession(){
     currentUser={...currentUser,name:data.display_name||currentUser.name,role:data.role,
       unit:supabaseUnitToUi(data.unit_name),worker_id:data.worker_id||null,auth_user_id:session.user.id};
     applyRoleUI();
+    if(!document.hidden) taiViecNen();   // lượt đầu có hỏng (mạng, phiên chưa xong) thì lượt kiểm tra phiên sau tự đọc lại việc
     return true;
   }finally{ supabaseSessionCheckInFlight = false; }
 }
@@ -12468,6 +12475,8 @@ async function moBangDatAo(){
   await veBangDatAo();
 }
 document.getElementById('aoBtn')?.addEventListener('click',moBangDatAo);
+document.getElementById('aoBtnNv')?.addEventListener('click',moBangDatAo);
+document.getElementById('phoiBtnNv')?.addEventListener('click',moBangDatPhoi);
 document.getElementById('closeAoBtn')?.addEventListener('click',()=>{ document.getElementById('aoModal').style.display='none'; });
 document.getElementById('aoModal')?.addEventListener('click',e=>{ if(e.target.id==='aoModal') e.target.style.display='none'; });
 document.getElementById('aoTuNgay')?.addEventListener('change',veBangDatAo);
@@ -12544,7 +12553,7 @@ async function taiViecNen(ep=false){
   viecDangTai=true;
   try{
     const {data,error}=await supabaseDb.from('khsx_tasks').select('*').order('giao_luc',{ascending:false}).limit(500);
-    if(error) return;
+    if(error){ console.warn('Không đọc được việc được giao',error); baoLoiTaiViec(); return; }
     viecDanhSach=data||[]; viecTaiLuc=Date.now();
     veViecCuaToi(); veSoViecMenu();
     if(document.querySelector('.tab-btn.active')?.dataset.tab==='viec') veBangViec();
@@ -12571,6 +12580,13 @@ function moThangGiaoViec(){
   document.getElementById('tabsMoreToggle')?.setAttribute('aria-expanded','true');
   document.querySelector('.tab-btn[data-tab="viec"]')?.click();
 }
+function baoLoiTaiViec(){
+  const hop=document.getElementById('viecCuaToi'); if(!hop) return;
+  hop.style.display='';
+  hop.innerHTML=`<div style="font-weight:800;font-size:15px;margin-bottom:6px;">📝 Việc của tôi</div>
+    <div style="color:var(--danger);font-size:13px;margin-bottom:8px;">Chưa tải được việc được giao.</div>
+    <button type="button" class="capacity-quick-btn" data-viec-tai-lai="1">Thử lại</button>`;
+}
 function veViecCuaToi(){
   const hop=document.getElementById('viecCuaToi'); if(!hop) return;
   const cua=viecDanhSach.filter(v=>v.nguoi_nhan===toiLa()&&v.trang_thai!=='xong')
@@ -12591,6 +12607,7 @@ function veViecCuaToi(){
   }).join('');
 }
 document.getElementById('viecCuaToi')?.addEventListener('click',async e=>{
+  if(e.target.closest('[data-viec-tai-lai]')) return taiViecNen(true);
   const nhan=e.target.closest('[data-viec-nhan]'), xong=e.target.closest('[data-viec-xong]');
   if(!nhan&&!xong) return;
   const dong=e.target.closest('.viec-dong'), st=dong?.querySelector('.viec-tt'), nut=nhan||xong;
