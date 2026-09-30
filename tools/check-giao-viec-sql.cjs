@@ -8,7 +8,8 @@ const A='00000000-0000-0000-0000-00000000000a', B='00000000-0000-0000-0000-00000
   const db=await PGlite.create();
   await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth; create schema private;
     create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('test.uid',true),'')::uuid $$;
-    create function private.khsx_has_permission(p_key text, p_user uuid default auth.uid()) returns boolean language sql as $$ select p_user='${A}'::uuid $$;
+    create function private.khsx_has_permission(p_key text, p_user uuid default auth.uid()) returns boolean language sql security definer as $$ select p_user='${A}'::uuid $$;
+    revoke all on function private.khsx_has_permission(text,uuid) from public; grant usage on schema private, auth to authenticated; grant execute on function auth.uid() to authenticated;
     create table public.khsx_permissions(permission_key text primary key, display_name text, group_name text, description text, sort_order int);
     create table public.khsx_profiles(user_id uuid, telegram_user_id bigint, display_name text, active boolean);
     insert into public.khsx_profiles values('${A}',111,'Tùng',true),('${B}',222,'Minh Thuận',true),('${C}',null,'Mới đăng ký',true);`);
@@ -17,6 +18,8 @@ const A='00000000-0000-0000-0000-00000000000a', B='00000000-0000-0000-0000-00000
   for(const b of ['khsx_tin_nhan_cho','khsx_tasks']) for(const q of ['select','update'])
     assert.equal((await db.query(`select has_table_privilege('service_role','public.${b}','${q}') ok`)).rows[0].ok,true,`service_role ${q} ${b}`);
   console.log('PASS hàm gửi tin (service_role) đọc và ghi được sổ việc + sổ tin chờ');
+  await db.exec(fs.readFileSync(path.resolve(__dirname,'..','supabase','migrations','20260930090000_giao_viec_doc_so_viec.sql'),'utf8'));
+  const docNhu=async u=>{ await db.exec(`set test.uid='${u}'; set role authenticated`); try{ return (await db.query(`select noi_dung from public.khsx_tasks order by noi_dung`)).rows.map(r=>r.noi_dung); } finally { await db.exec('reset role'); } };
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`);
   const tin=async()=>(await q(`select loai,chat_id,noi_dung from public.khsx_tin_nhan_cho order by id`)).rows;
   const loi=async f=>{ try{ await f(); return ''; }catch(e){ return e.message; } };
@@ -29,6 +32,12 @@ const A='00000000-0000-0000-0000-00000000000a', B='00000000-0000-0000-0000-00000
   const id2=(await q(`select public.khsx_giao_viec_v1($1,'Việc cho người chưa có Telegram') id`,[C])).rows[0].id;
   assert.equal((await q(`select tin_giao_loi from public.khsx_tasks where id=$1`,[id2])).rows[0].tin_giao_loi,'Người này chưa có Telegram ID');
   console.log('PASS người chưa có Telegram ID: ghi rõ lý do chưa gửi được');
+  // Đọc sổ việc đúng như tài khoản thật đăng nhập (role authenticated, không phải chủ DB)
+  assert.deepEqual(await docNhu(B),['Dọn kho mút cuối xưởng']);
+  assert.deepEqual(await docNhu(C),['Việc cho người chưa có Telegram']);
+  assert.equal((await docNhu(A)).length,2);
+  assert.deepEqual(await docNhu('00000000-0000-0000-0000-0000000000dd'),[]);
+  console.log('PASS tài khoản đăng nhập: người nhận thấy việc của mình, người có quyền giao thấy hết, người khác không thấy');
 
   await la(A); assert.match(await loi(()=>q(`select public.khsx_nhan_viec_v1($1,current_date+1)`,[id])),/TASK_NOT_YOURS/);
   await la(B); assert.match(await loi(()=>q(`select public.khsx_nhan_viec_v1($1,null)`,[id])),/TASK_DUE_INVALID/);
