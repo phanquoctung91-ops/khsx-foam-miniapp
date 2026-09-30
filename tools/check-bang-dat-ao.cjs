@@ -2,9 +2,11 @@
 // nệm cỡ lẻ ghi riêng không cộng vào bảng; mã chưa có BOM ghi riêng; bỏ đơn đã bỏ / phần thiếu tách / bảo hành.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const html=fs.readFileSync(path.resolve(__dirname,'..','index.html'),'utf8');
-const a=html.indexOf('const laDongAo='), b=html.indexOf('const nhanNgayAo=');
+const a=html.indexOf('const laDongAo='), b=html.indexOf('let lanVeBangAo=');
 const ctx={
   RONG_CHUAN:[100,120,140,160,180,200,220],
+  TEAM_OPTIONS:['Tổ 1','Tổ 2','Tổ 3','Tổ 4','Tổ 5'], TO_CHUA_GAN:'Chưa gán tổ',
+  toTheToCuaDon:o=>o.to||null,
   parseDMY:s=>{const m=String(s).match(/^(\d\d)\/(\d\d)\/(\d{4})$/); return m?{d:+m[1],m:+m[2],y:+m[3]}:null;},
   formatDMY:d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,
   khoaNgayDMY:s=>Number(String(s).split('/').reverse().join('')),
@@ -18,10 +20,10 @@ const ctx={
     'LAGO10-6':[{ma_vt:'ANLAGO10-6',ten_vt:'Áo nệm Việt Nhật Latex Gold (10cm/160cmx200cm)',dinh_muc:1}]
   },
   _don:[
-    {date:'26/09/2026',ma:'HYB20-6',ngang:'160',dai:'200',day:'20',so_luong:2},
-    {date:'26/09/2026',ma:'STD20-4',ngang:'140',dai:'200',day:'20',so_luong:5},
+    {date:'26/09/2026',ma:'HYB20-6',ngang:'160',dai:'200',day:'20',so_luong:2,to:'Tổ 2'},
+    {date:'26/09/2026',ma:'STD20-4',ngang:'140',dai:'200',day:'20',so_luong:5,to:'Tổ 1'},
     {date:'28/09/2026',ma:'STD20-4',ngang:'140',dai:'200',day:'20',so_luong:3},
-    {date:'26/09/2026',ma:'LAGO10-6',ngang:'143',dai:'197',day:'10',so_luong:1},
+    {date:'26/09/2026',ma:'LAGO10-6',ngang:'143',dai:'197',day:'10',so_luong:1,to:'Tổ 1'},
     {date:'26/09/2026',ma:'KH12-2',ngang:'120',dai:'200',day:'12',so_luong:1},
     {date:'26/09/2026',ma:'STD20-4',ngang:'140',dai:'200',day:'20',so_luong:4,is_drop:true},
     {date:'26/09/2026',ma:'STD20-4',ngang:'140',dai:'200',day:'20',so_luong:9,is_ghost:true}
@@ -40,3 +42,14 @@ assert.deepEqual(kq.thieuBom,{'KH12-2':1});
 console.log('PASS mã chưa có BOM ghi riêng');
 assert.equal(kq.tongChung,12);
 console.log('PASS tổng 12 áo');
+
+// Nhóm theo tổ được giao đơn (29/09/2026): mỗi tổ một khúc, cộng riêng; cỡ lẻ ghi trong tổ, không cộng; chưa gán tổ để cuối.
+assert.deepEqual(kq.cacTo.map(t=>[t.to,t.dongHang.map(r=>r.ma+':'+r.tong),t.coLe.map(r=>r.ma),t.tongChung]),[
+  ['Tổ 1',['ANSTD20-4:5'],['ANLAGO10-6'],5],
+  ['Tổ 2',['AL20-3:2','ANHYB20-6:2'],[],4],
+  ['Chưa gán tổ',['ANSTD20-4:3'],[],3]]);
+console.log('PASS chia theo tổ: Tổ 1, Tổ 2, rồi Chưa gán tổ; cộng từng tổ; cỡ lẻ nằm trong tổ và không cộng');
+const bang=JSON.parse(JSON.stringify(ctx.dongBangDatAo('26/09/2026','26/09/2026'))).dong.map(d=>d.loai+':'+d.o.filter(Boolean).join(' | '));
+assert.deepEqual(bang,['dau:Mã áo | Áo | Số lượng','to:Tổ 1','dl:ANSTD20-4 | Áo Standard 140x20 | 5 cái','tong:Cộng Tổ 1 | 5 cái','muc:Cỡ lẻ (may theo cỡ)','dl:ANLAGO10-6 | Áo Latex Gold 143x197x10 | 1 cái',
+  'to:Tổ 2','dl:AL20-3 | ÁO LƯỚI 160x20 | 2 cái','dl:ANHYB20-6 | Áo Hybrid 160x20 | 2 cái','tong:Cộng Tổ 2 | 4 cái','tong:Tổng cả xưởng | 9 cái']);
+console.log('PASS bảng một ngày: tên tổ, các áo, Cộng tổ, cỡ lẻ riêng; cuối cùng Tổng cả xưởng');

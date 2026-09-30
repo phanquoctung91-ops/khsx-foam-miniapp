@@ -2215,7 +2215,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=214"></script>
+<script src="raw-data.js?v=215"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4328,7 +4328,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 214;
+const APP_VERSION = 215;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12372,25 +12372,31 @@ function donTrongKhoangAo(tuNgay,denNgay){
 function tinhDonDatAo(tuNgay,denNgay){
   const ngayCot=[], p1=parseDMY(tuNgay), p2=parseDMY(denNgay);
   if(p1&&p2){ const d=new Date(p1.y,p1.m-1,p1.d), het=new Date(p2.y,p2.m-1,p2.d); while(d<=het){ if(d.getDay()!==0) ngayCot.push(formatDMY(d)); d.setDate(d.getDate()+1); } }
-  const hang={}, le={}, thieuBom={};
+  const hang={}, le={}, thieuBom={}, theoTo={};   // theoTo: cùng cách cộng, tách theo tổ được giao đơn (tổ đó may)
   const cong=(nhom,khoa,ma,ten,ngay,q)=>{ const r=nhom[khoa]||(nhom[khoa]={ma,ten,theoNgay:{},tong:0}); r.theoNgay[ngay]=lamTronBom((r.theoNgay[ngay]||0)+q); r.tong=lamTronBom(r.tong+q); };
   donTrongKhoangAo(tuNgay,denNgay).forEach(o=>{
     const sl=Number(o.so_luong)||0;
     const ao=(bomTheoMa[maHangBom(o.ma)]||[]).filter(laDongAo);
     if(!ao.length){ const k=String(o.ma||'').trim()||`(không mã) ${o.dong||''}`; thieuBom[k]=(thieuBom[k]||0)+sl; return; }
+    const to=toTheToCuaDon(o)||TO_CHUA_GAN, nhomTo=theoTo[to]||(theoTo[to]={hang:{},le:{}});
     let ngang=o.ngang, dai=o.dai, day=o.day;
     if(!dai||!day){ const m=String(o.ngang||'').match(/(\d+)\s*[xX*]\s*(\d+)\s*[xX*]\s*(\d+)/); if(m){ ngang=m[1]; dai=m[2]; day=m[3]; } }
     const coLe=coLeCuaAo(parseFloat(ngang),parseFloat(dai));
     ao.forEach(b=>{
       const q=lamTronBom(sl*(Number(b.dinh_muc)||0)), tn=tenNganAo(b.ten_vt);
-      if(coLe){ const kt=`${parseFloat(ngang)}x${parseFloat(dai)}x${parseFloat(day)}`; cong(le,b.ma_vt+'|'+kt,b.ma_vt,`${tn.goc} ${kt}`,o.date,q); }
-      else cong(hang,b.ma_vt,b.ma_vt,[tn.goc,tn.co].filter(Boolean).join(' '),o.date,q);
+      if(coLe){ const kt=`${parseFloat(ngang)}x${parseFloat(dai)}x${parseFloat(day)}`; [le,nhomTo.le].forEach(n=>cong(n,b.ma_vt+'|'+kt,b.ma_vt,`${tn.goc} ${kt}`,o.date,q)); }
+      else [hang,nhomTo.hang].forEach(n=>cong(n,b.ma_vt,b.ma_vt,[tn.goc,tn.co].filter(Boolean).join(' '),o.date,q));
     });
   });
   const xep=(x,y)=>x.ma.localeCompare(y.ma,'vi')||x.ten.localeCompare(y.ten,'vi');
   const dongHang=Object.values(hang).sort(xep), coLe=Object.values(le).sort(xep);
-  const tongTheoNgay={}; ngayCot.forEach(nd=>{ tongTheoNgay[nd]=lamTronBom(dongHang.reduce((t,r)=>t+(r.theoNgay[nd]||0),0)); });
-  return {ngayCot,dongHang,tongTheoNgay,tongChung:lamTronBom(dongHang.reduce((t,r)=>t+r.tong,0)),coLe,thieuBom};
+  const tongCua=ds=>{ const t={}; ngayCot.forEach(nd=>{ t[nd]=lamTronBom(ds.reduce((x,r)=>x+(r.theoNgay[nd]||0),0)); }); return t; };
+  const thuTuTo=[...TEAM_OPTIONS,TO_CHUA_GAN];
+  const cacTo=Object.keys(theoTo).sort((x,y)=>(thuTuTo.indexOf(x)+1||99)-(thuTuTo.indexOf(y)+1||99)||x.localeCompare(y,'vi')).map(to=>{
+    const dh=Object.values(theoTo[to].hang).sort(xep);
+    return {to,dongHang:dh,coLe:Object.values(theoTo[to].le).sort(xep),tongTheoNgay:tongCua(dh),tongChung:lamTronBom(dh.reduce((t,r)=>t+r.tong,0))};
+  });
+  return {ngayCot,dongHang,tongTheoNgay:tongCua(dongHang),tongChung:lamTronBom(dongHang.reduce((t,r)=>t+r.tong,0)),coLe,thieuBom,cacTo};
 }
 const nhanNgayAo=d=>d.slice(0,2).replace(/^0/,'')+'/'+d.slice(3,5).replace(/^0/,'');
 const tieuDeDatAo=(tu,den)=>tu===den?`Đặt áo ngày ${tu.slice(0,5)}`:`Đặt áo ${tu.slice(0,5)} – ${den.slice(0,5)}`;
@@ -12399,9 +12405,14 @@ function dongBangDatAo(tu,den){
   const kq=tinhDonDatAo(tu,den), motNgay=tu===den;
   const so=r=>motNgay?[`${r.tong} cái`]:[...kq.ngayCot.map(d=>r.theoNgay[d]?String(r.theoNgay[d]):''),String(r.tong)];
   const dong=[{loai:'dau',o:['Mã áo','Áo',...(motNgay?['Số lượng']:[...kq.ngayCot.map(nhanNgayAo),'Tổng'])]}];
-  kq.dongHang.forEach(r=>dong.push({loai:'dl',o:[r.ma,r.ten,...so(r)]}));
-  if(kq.dongHang.length) dong.push({loai:'tong',o:['Tổng','',...(motNgay?[`${kq.tongChung} cái`]:[...kq.ngayCot.map(d=>kq.tongTheoNgay[d]?String(kq.tongTheoNgay[d]):''),String(kq.tongChung)])]});
-  if(kq.coLe.length){ dong.push({loai:'muc',o:['Cỡ lẻ (may theo cỡ)']}); kq.coLe.forEach(r=>dong.push({loai:'dl',o:[r.ma,r.ten,...so(r)]})); }
+  const tong=(nhan,x)=>({loai:'tong',o:[nhan,'',...(motNgay?[`${x.tongChung} cái`]:[...kq.ngayCot.map(d=>x.tongTheoNgay[d]?String(x.tongTheoNgay[d]):''),String(x.tongChung)])]});
+  kq.cacTo.forEach(t=>{
+    dong.push({loai:'to',o:[t.to]});
+    t.dongHang.forEach(r=>dong.push({loai:'dl',o:[r.ma,r.ten,...so(r)]}));
+    if(t.dongHang.length) dong.push(tong(`Cộng ${t.to}`,t));
+    if(t.coLe.length){ dong.push({loai:'muc',o:['Cỡ lẻ (may theo cỡ)']}); t.coLe.forEach(r=>dong.push({loai:'dl',o:[r.ma,r.ten,...so(r)]})); }
+  });
+  if(kq.cacTo.length>1&&kq.dongHang.length) dong.push(tong('Tổng cả xưởng',kq));
   return {kq,dong};
 }
 let lanVeBangAo=0;
@@ -12423,7 +12434,9 @@ async function veBangDatAo(){
     box.innerHTML=`<div style="font-weight:700;font-size:14px;margin-bottom:8px;">${tieuDeDatAo(tu,den)}</div>
       <div class="table-scroll" style="max-height:none;"><table style="min-width:0;">
         <thead><tr>${dong[0].o.map((v,i)=>o(v,i,true)).join('')}</tr></thead>
-        <tbody>${dong.slice(1).map(d=>d.loai==='muc'
+        <tbody>${dong.slice(1).map(d=>d.loai==='to'
+          ?`<tr><td colspan="${soCot}" style="font-weight:800;font-size:14px;color:#fff;background:var(--primary);">${thoatHtml(d.o[0])}</td></tr>`
+          :d.loai==='muc'
           ?`<tr><td colspan="${soCot}" style="font-weight:700;color:var(--primary);background:var(--bg);">${thoatHtml(d.o[0])}</td></tr>`
           :`<tr${d.loai==='tong'?' style="background:#f4f6fa;font-weight:700;"':''}>${d.o.map((v,i)=>o(v,i,false)).join('')}</tr>`).join('')}</tbody>
       </table></div>`;
@@ -12438,24 +12451,24 @@ function veAnhDatAo(tu,den){
   const S=2, co=15, cao=34, le=14, vien=20, fontTh=`600 ${co}px "Segoe UI", Roboto, Arial, sans-serif`, fontTd=`${co}px "Segoe UI", Roboto, Arial, sans-serif`;
   const cv=document.createElement('canvas'), g=cv.getContext('2d');
   const soCot=dong[0].o.length, rong=new Array(soCot).fill(0);
-  dong.forEach(d=>{ if(d.loai==='muc') return; g.font=d.loai==='dl'?fontTd:fontTh; d.o.forEach((v,i)=>{ rong[i]=Math.max(rong[i],Math.ceil(g.measureText(String(v)).width)+le*2); }); });
+  dong.forEach(d=>{ if(d.loai==='muc'||d.loai==='to') return; g.font=d.loai==='dl'?fontTd:fontTh; d.o.forEach((v,i)=>{ rong[i]=Math.max(rong[i],Math.ceil(g.measureText(String(v)).width)+le*2); }); });
   const tongRong=rong.reduce((a,b)=>a+b,0), caoTieuDe=44;
   cv.width=(tongRong+vien*2)*S; cv.height=(caoTieuDe+dong.length*cao+vien*2)*S;
   g.scale(S,S); g.fillStyle='#ffffff'; g.fillRect(0,0,cv.width,cv.height);
   g.fillStyle='#1f2a44'; g.font=`700 19px "Segoe UI", Roboto, Arial, sans-serif`; g.textBaseline='middle'; g.fillText(tieuDe,vien,vien+14);
   let y=vien+caoTieuDe, zebra=0;
   dong.forEach(d=>{
-    const nen=d.loai==='dau'?'#e8eef7':d.loai==='tong'?'#f1f4f9':d.loai==='muc'?'#fff4e0':(zebra++%2?'#fafbfd':'#ffffff');
-    if(d.loai==='muc') zebra=0;
+    const nen=d.loai==='dau'?'#e8eef7':d.loai==='tong'?'#f1f4f9':d.loai==='muc'?'#fff4e0':d.loai==='to'?'#1f3a68':(zebra++%2?'#fafbfd':'#ffffff');
+    if(d.loai==='muc'||d.loai==='to') zebra=0;
     g.fillStyle=nen; g.fillRect(vien,y,tongRong,cao);
-    g.fillStyle=d.loai==='muc'?'#9a5b00':'#1f2a44';
-    if(d.loai==='muc'){ g.font=fontTh; g.fillText(d.o[0],vien+le,y+cao/2); }
+    g.fillStyle=d.loai==='muc'?'#9a5b00':d.loai==='to'?'#ffffff':'#1f2a44';
+    if(d.loai==='muc'||d.loai==='to'){ g.font=d.loai==='to'?`700 16px "Segoe UI", Roboto, Arial, sans-serif`:fontTh; g.fillText(d.o[0],vien+le,y+cao/2); }
     else{
       g.font=d.loai==='dl'?fontTd:fontTh; let x=vien;
       d.o.forEach((v,i)=>{ const chu=String(v); if(i>=2){ g.textAlign='right'; g.fillText(chu,x+rong[i]-le,y+cao/2); g.textAlign='left'; } else g.fillText(chu,x+le,y+cao/2); x+=rong[i]; });
     }
     g.strokeStyle='#cfd7e3'; g.lineWidth=1; g.strokeRect(vien+.5,y+.5,tongRong-1,cao);
-    if(d.loai!=='muc'){ let x=vien; rong.slice(0,-1).forEach(w=>{ x+=w; g.beginPath(); g.moveTo(x+.5,y); g.lineTo(x+.5,y+cao); g.stroke(); }); }
+    if(d.loai!=='muc'&&d.loai!=='to'){ let x=vien; rong.slice(0,-1).forEach(w=>{ x+=w; g.beginPath(); g.moveTo(x+.5,y); g.lineTo(x+.5,y+cao); g.stroke(); }); }
     y+=cao;
   });
   return cv;
@@ -12501,8 +12514,13 @@ document.getElementById('aoCopyBtn')?.addEventListener('click',()=>{
 // Tin nhắn gửi Tổ May — chỉ dùng khi lọc ĐÚNG MỘT NGÀY
 function dungTinNhanDatAo(ngay){
   const kq=tinhDonDatAo(ngay,ngay), dong=[tieuDeDatAo(ngay,ngay)];
-  kq.dongHang.forEach(r=>{ if(r.tong>0) dong.push(`${r.ma}  ${r.ten}: ${r.tong} cái`); });
-  if(kq.coLe.length){ dong.push(''); dong.push('Cỡ lẻ (may theo cỡ):'); kq.coLe.forEach(r=>dong.push(`${r.ma}  ${r.ten}: ${r.tong} cái`)); }
+  kq.cacTo.forEach(t=>{
+    dong.push(''); dong.push(`${t.to}:`);
+    t.dongHang.forEach(r=>{ if(r.tong>0) dong.push(`${r.ma}  ${r.ten}: ${r.tong} cái`); });
+    if(t.dongHang.length) dong.push(`Cộng ${t.to}: ${t.tongChung} cái`);
+    if(t.coLe.length){ dong.push('Cỡ lẻ (may theo cỡ):'); t.coLe.forEach(r=>dong.push(`${r.ma}  ${r.ten}: ${r.tong} cái`)); }
+  });
+  if(kq.cacTo.length>1&&kq.dongHang.length){ dong.push(''); dong.push(`Tổng cả xưởng: ${kq.tongChung} cái`); }
   return dong.join(String.fromCharCode(10));
 }
 document.getElementById('aoTinNhanBtn')?.addEventListener('click',()=>{
