@@ -2215,7 +2215,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=215"></script>
+<script src="raw-data.js?v=216"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4328,7 +4328,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 215;
+const APP_VERSION = 216;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -8283,10 +8283,9 @@ function renderAutoPlanThat(){
   const q = document.getElementById('autoPlanSearchBox').value.trim().toLowerCase();
   const assignFilter = document.getElementById('autoPlanAssignFilter').value;
   const filtered = getOrders().filter(r=>{
-    // Header tháng/năm là ranh giới cứng theo ngày gốc của đơn. Đơn rớt có thể
-    // chuyển ngày trong cùng tháng, nhưng không được làm lẫn dữ liệu hai tháng.
-    if(!ngayThuocThangHeader(r.date)) return false;
-    if(dayVal === 'all' && !ngayThuocThangHeader(r.date)) return false;
+    // Đơn rớt trôi qua cả tháng mới (anh Tùng chốt 01/10/2026): cứ trôi tới khi xoá ở ngày gốc hoặc làm xong
+    // ở một ngày phía sau. Nên giữ đơn nếu ngày gốc HOẶC một ngày nó trôi tới thuộc tháng đang xem.
+    if(!getCarryForwardDates(r).some(ngayThuocThangHeader)) return false;
     if(dayVal !== 'all' && !getCarryForwardDates(r).includes(dayVal)) return false;
     if(q && !r.dong.toLowerCase().includes(q) && !r.ma.toLowerCase().includes(q) && !formatKichThuoc(r).toLowerCase().includes(q)) return false;
     const hasTeam = !!(assignments[r.id]?.to);
@@ -9609,9 +9608,9 @@ function getProgressRowsForCurrentFilters(chiConChoCongDoan=true,chiDungNgayGoc=
   // chỉ thấy đơn đã có tổ, tránh hai tổ cùng nhận một đơn.
   const sourceRows = canManage2() ? getOrders() : getOrders().filter(r=>assignments[r.id]?.to);
   return sourceRows.filter(r=>{
-    // Không đưa đơn có ngày gốc thuộc tháng khác vào bảng đang xem.
-    if(!ngayThuocThangHeader(r.date)) return false;
-    if(dayVal === 'all' && !ngayThuocThangHeader(r.date)) return false;
+    // Đơn rớt trôi qua cả tháng mới (anh Tùng chốt 01/10/2026): cứ trôi tới khi xoá ở ngày gốc hoặc làm xong
+    // ở một ngày phía sau. Nên giữ đơn nếu ngày gốc HOẶC một ngày nó trôi tới thuộc tháng đang xem.
+    if(!getCarryForwardDates(r).some(ngayThuocThangHeader)) return false;
     // Tổ 1–5: chỉ thấy đơn của tổ mình (kể cả phần thiếu được giao hỗ trợ).
     // Đơn chưa phân công tổ chỉ được hiện cho quản lý để gán.
     if(toSanXuat){
