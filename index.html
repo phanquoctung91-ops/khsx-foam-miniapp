@@ -1418,6 +1418,9 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
+<div id="viecXemModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
+  <div id="viecXemHop" style="background:var(--card);color:var(--text);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:640px;margin:40px auto;padding:20px 22px;"></div>
+</div>
 <div id="aoModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
   <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:820px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
@@ -1864,8 +1867,10 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div style="display:grid;gap:10px;max-width:640px;margin-bottom:18px;">
       <label style="font-size:12px;font-weight:700;color:var(--text2);">Giao cho
         <select id="viecNguoiNhan" style="display:block;width:100%;margin-top:4px;font-size:14px;padding:8px;"></select></label>
-      <label style="font-size:12px;font-weight:700;color:var(--text2);">Việc cần làm
-        <textarea id="viecNoiDung" rows="3" maxlength="1000" placeholder="Ví dụ: Dọn kho mút cuối xưởng" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></textarea></label>
+      <label style="font-size:12px;font-weight:700;color:var(--text2);">Tiêu đề
+        <input id="viecTieuDe" type="text" maxlength="150" placeholder="Ví dụ: Theo dõi hàng trả về" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+      <label style="font-size:12px;font-weight:700;color:var(--text2);">Chi tiết (không bắt buộc)
+        <textarea id="viecNoiDung" rows="4" maxlength="3000" placeholder="Ví dụ: danh sách mã, số tấm, ghi chú..." style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></textarea></label>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><button id="viecGiaoBtn" type="button" class="primary-btn">Giao việc</button><span id="viecStatus" class="save-status"></span></div>
     </div>
     <div class="bom-chip-row" id="viecLoc">
@@ -2215,7 +2220,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=216"></script>
+<script src="raw-data.js?v=217"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4328,7 +4333,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 216;
+const APP_VERSION = 217;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12555,11 +12560,13 @@ function loiViec(e){
   const m=String(e?.message||e||'');
   if(m.includes('TASK_ASSIGN_FORBIDDEN')) return 'Tài khoản chưa có quyền giao việc.';
   if(m.includes('TASK_DUE_INVALID')) return 'Chọn ngày hẹn xong từ hôm nay trở đi.';
-  if(m.includes('TASK_ALREADY_TAKEN')) return 'Việc này đã nhận rồi.';
+  if(m.includes('TASK_ALREADY_TAKEN')) return 'Người nhận đã bấm Nhận việc, không sửa được nữa.';
   if(m.includes('TASK_NOT_IN_PROGRESS')) return 'Việc này chưa nhận hoặc đã xong.';
   if(m.includes('TASK_NOT_YOURS')) return 'Việc này không phải của bạn.';
   if(m.includes('TASK_ASSIGNEE_INVALID')) return 'Người nhận không còn trong danh sách nhân sự.';
-  if(m.includes('TASK_TEXT_INVALID')) return 'Ghi nội dung việc (tối đa 1.000 chữ).';
+  if(m.includes('TASK_EDIT_FORBIDDEN')) return 'Chỉ người giao việc này mới sửa được.';
+  if(m.includes('TASK_NOT_FOUND')) return 'Không tìm thấy việc này, có thể đã bị xoá.';
+  if(m.includes('TASK_TEXT_INVALID')) return 'Ghi tiêu đề (tối đa 150 chữ); chi tiết tối đa 3.000 chữ.';
   return `Chưa lưu được: ${m||'lỗi không rõ'}`;
 }
 // Nhờ máy chủ gửi ngay các tin đang chờ (không đợi bộ hẹn giờ 5 phút).
@@ -12573,6 +12580,7 @@ async function taiViecNen(ep=false){
     if(error){ console.warn('Không đọc được việc được giao',error); baoLoiTaiViec(); return; }
     viecDanhSach=data||[]; viecTaiLuc=Date.now();
     veViecCuaToi(); veSoViecMenu();
+    if(viecDangXem&&!document.getElementById('viecSuaTieuDe')) moXemViec(viecDangXem);   // cửa sổ đang mở thì cập nhật theo số mới
     if(document.querySelector('.tab-btn.active')?.dataset.tab==='viec') veBangViec();
   }finally{ viecDangTai=false; }
 }
@@ -12604,6 +12612,76 @@ function baoLoiTaiViec(){
     <div style="color:var(--danger);font-size:13px;margin-bottom:8px;">Chưa tải được việc được giao.</div>
     <button type="button" class="capacity-quick-btn" data-viec-tai-lai="1">Thử lại</button>`;
 }
+// Việc giao trước bản có tiêu đề (hoặc máy chủ chưa cập nhật): dòng đầu là tiêu đề, phần còn lại là chi tiết.
+function tieuDeViec(v){ return v.tieu_de || String(v.noi_dung||'').split('\n')[0].trim(); }
+function chiTietViec(v){ return v.tieu_de ? String(v.noi_dung||'') : String(v.noi_dung||'').split('\n').slice(1).join('\n').trim(); }
+const nutXemViec=v=>`<a href="#" data-viec-xem="${v.id}" style="font-size:12.5px;font-weight:600;color:var(--accent);white-space:nowrap;">Xem chi tiết</a>`;
+let viecDangXem=null;
+function trangThaiViecChu(v){
+  return v.trang_thai==='xong'?`Xong ${ngayNgan(String(v.xong_luc||'').slice(0,10))}`:v.trang_thai==='cho_nhan'?'Chưa nhận'
+    :viecTre(v)?`Đang làm · trễ ${soNgayTre(v)} ngày`:'Đang làm';
+}
+function moXemViec(id,suaLuon=false){
+  const v=viecDanhSach.find(x=>x.id===id); if(!v) return;
+  viecDangXem=id;
+  const hop=document.getElementById('viecXemHop'), duocSua=v.trang_thai==='cho_nhan'&&v.nguoi_giao===toiLa();
+  const nguoiGiao=tenNhanSu(v.nguoi_giao), ct=chiTietViec(v);
+  if(suaLuon&&duocSua){
+    const O='display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);';
+    const ds=(supabaseAdminProfiles||[]).filter(p=>p.active&&p.user_id&&p.user_id!==toiLa())
+      .sort((a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''),'vi'));
+    hop.innerHTML=`<h3 style="margin:0 0 12px;font-size:17px;">✏️ Sửa việc</h3>
+      <div style="display:grid;gap:10px;">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);">Giao cho
+          <select id="viecSuaNguoi" style="${O}">${ds.map(p=>`<option value="${p.user_id}"${p.user_id===v.nguoi_nhan?' selected':''}>${thoatHtml(p.display_name||'(chưa có tên)')}</option>`).join('')}</select></label>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);">Tiêu đề
+          <input id="viecSuaTieuDe" type="text" maxlength="150" value="${thoatHtml(tieuDeViec(v))}" style="${O}"></label>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);">Chi tiết (không bắt buộc)
+          <textarea id="viecSuaChiTiet" rows="6" maxlength="3000" style="${O}">${thoatHtml(ct)}</textarea></label>
+        <div style="font-size:12px;color:var(--text2);">Lưu xong bot nhắn người nhận phần anh vừa thêm. Đổi người thì bot báo người cũ là việc đã chuyển.</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="primary-btn" data-viec-luu-sua="1">Lưu</button>
+          <button type="button" class="capacity-quick-btn" data-viec-xem="${v.id}">Huỷ</button>
+          <span class="save-status" id="viecSuaStatus"></span></div>
+      </div>`;
+  }else{
+    hop.innerHTML=`<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+        <h3 style="margin:0;font-size:17px;">${thoatHtml(tieuDeViec(v))}</h3>
+        <button type="button" class="capacity-quick-btn" data-viec-dong="1">Đóng</button></div>
+      <div style="white-space:pre-wrap;font-size:14px;line-height:1.55;margin:12px 0;${ct?'':'color:var(--text2);'}">${ct?thoatHtml(ct):'Không có chi tiết.'}</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.7;border-top:1px solid var(--border);padding-top:10px;">
+        Người nhận: <b style="color:var(--text);">${thoatHtml(tenNhanSu(v.nguoi_nhan)||'—')}</b><br>
+        ${nguoiGiao?thoatHtml(nguoiGiao)+' giao':'Giao'} ngày ${ngayNgan(String(v.giao_luc).slice(0,10))}${v.han?` · hẹn xong ${ngayNgan(v.han)}`:''}<br>
+        Trạng thái: <b style="color:var(--text);">${trangThaiViecChu(v)}</b>
+        ${v.trang_thai==='cho_nhan'&&v.tin_giao_loi?`<br><span style="color:var(--danger);">Chưa gửi được tin: ${thoatHtml(v.tin_giao_loi)}</span>`:''}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+        ${duocSua?`<button type="button" class="primary-btn" data-viec-sua="${v.id}">✏️ Sửa</button>`:''}
+        ${v.trang_thai==='cho_nhan'&&v.tin_giao_loi&&duocGiaoViec()?`<button type="button" class="capacity-quick-btn" data-viec-gui-lai="${v.id}">Gửi lại tin</button>`:''}
+      </div>`;
+  }
+  document.getElementById('viecXemModal').style.display='block';
+}
+function dongXemViec(){ viecDangXem=null; document.getElementById('viecXemModal').style.display='none'; }
+document.addEventListener('click',e=>{
+  const xem=e.target.closest('[data-viec-xem]'); if(!xem) return;
+  e.preventDefault(); moXemViec(xem.dataset.viecXem);
+});
+document.getElementById('viecXemModal')?.addEventListener('click',async e=>{
+  if(e.target.id==='viecXemModal'||e.target.closest('[data-viec-dong]')) return dongXemViec();
+  const sua=e.target.closest('[data-viec-sua]'); if(sua) return moXemViec(sua.dataset.viecSua,true);
+  if(!e.target.closest('[data-viec-luu-sua]')) return;
+  const st=document.getElementById('viecSuaStatus'), nut=e.target.closest('button');
+  const bao=(t,m)=>{ st.textContent=t; st.style.color=m; };
+  const td=document.getElementById('viecSuaTieuDe').value.trim(), ct=document.getElementById('viecSuaChiTiet').value.trim(), nguoi=document.getElementById('viecSuaNguoi').value;
+  if(!td) return bao('Ghi tiêu đề việc.','var(--danger)');
+  nut.disabled=true; bao('Đang lưu...','var(--text2)');
+  const id=viecDangXem;
+  const {error}=await supabaseDb.rpc('khsx_sua_viec_v1',{p_id:id,p_tieu_de:td,p_chi_tiet:ct,p_nguoi_nhan:nguoi});
+  nut.disabled=false;
+  if(error) return bao(loiViec(error),'var(--danger)');
+  guiTinViecNgay(); await taiViecNen(true);
+  moXemViec(id);
+});
 function veViecCuaToi(){
   const hop=document.getElementById('viecCuaToi'); if(!hop) return;
   const cua=viecDanhSach.filter(v=>v.nguoi_nhan===toiLa()&&v.trang_thai!=='xong')
@@ -12612,7 +12690,7 @@ function veViecCuaToi(){
   hop.style.display='';
   hop.innerHTML=`<div style="font-weight:800;font-size:15px;margin-bottom:8px;">📝 Việc của tôi <span class="viec-dem${cua.some(viecTre)?' tre':''}" style="display:inline-block;">${cua.length}</span></div>`+cua.map(v=>{
     const nguoiGiao=tenNhanSu(v.nguoi_giao);
-    const dau=`<div style="font-size:14px;font-weight:600;white-space:pre-wrap;">${thoatHtml(v.noi_dung)}</div>
+    const dau=`<div style="font-size:14px;font-weight:600;">${thoatHtml(tieuDeViec(v))} · ${nutXemViec(v)}</div>
       <div style="font-size:12px;color:var(--text2);margin:2px 0 6px;">${nguoiGiao?thoatHtml(nguoiGiao)+' giao':'Được giao'} ${ngayNgan(String(v.giao_luc).slice(0,10))}</div>`;
     const nut=v.trang_thai==='cho_nhan'
       ?`<label style="font-size:12.5px;">Hẹn xong <input type="date" class="viec-han" min="${homNayIso()}" value="${homNayIso()}" style="font-size:14px;padding:6px;"></label>
@@ -12672,11 +12750,11 @@ function veBangViec(){
     const loiTin=v.trang_thai==='cho_nhan'&&v.tin_giao_loi
       ?`<div style="font-size:11.5px;color:var(--danger);margin-top:3px;">Chưa gửi được tin: ${thoatHtml(v.tin_giao_loi)}</div>`:'';
     const nutGuiLai=v.trang_thai==='cho_nhan'&&v.tin_giao_loi?`<button type="button" class="capacity-quick-btn" data-viec-gui-lai="${v.id}">Gửi lại tin</button>`:'';
-    const dong=`<tr><td style="white-space:pre-wrap;max-width:320px;">${thoatHtml(v.noi_dung)}</td>
+    const dong=`<tr><td style="max-width:360px;"><b>${thoatHtml(tieuDeViec(v))}</b> · ${nutXemViec(v)}</td>
       <td>${thoatHtml(tenNhanSu(v.nguoi_nhan)||'—')}</td><td>${ngayNgan(String(v.giao_luc).slice(0,10))}</td>
       <td>${v.han?ngayNgan(v.han):'—'}</td><td>${tt}${loiTin}</td>
       <td>${nutGuiLai}</td></tr>`;
-    const theHtml=`<div class="viec-the"><div style="font-weight:600;font-size:14px;white-space:pre-wrap;">${thoatHtml(v.noi_dung)}</div>
+    const theHtml=`<div class="viec-the"><div style="font-weight:600;font-size:14px;">${thoatHtml(tieuDeViec(v))} · ${nutXemViec(v)}</div>
       <div style="color:var(--text2);margin:3px 0 6px;">${thoatHtml(tenNhanSu(v.nguoi_nhan)||'—')} · giao ${ngayNgan(String(v.giao_luc).slice(0,10))}${v.han?` · hẹn ${ngayNgan(v.han)}`:''}</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">${tt}${nutGuiLai}</div>${loiTin}</div>`;
     return {dong,theHtml};
@@ -12697,18 +12775,19 @@ const guiLaiTinViec=async e=>{
 };
 document.getElementById('viecBang')?.addEventListener('click',guiLaiTinViec);
 document.getElementById('viecThe')?.addEventListener('click',guiLaiTinViec);
+document.getElementById('viecXemModal')?.addEventListener('click',guiLaiTinViec);
 document.getElementById('viecGiaoBtn')?.addEventListener('click',async e=>{
   if(!duocGiaoViec()) return;
   const nut=e.currentTarget, st=document.getElementById('viecStatus');
   const bao=(t,m)=>{ st.textContent=t; st.style.color=m; };
-  const nguoi=document.getElementById('viecNguoiNhan').value, nd=document.getElementById('viecNoiDung').value.trim();
+  const nguoi=document.getElementById('viecNguoiNhan').value, td=document.getElementById('viecTieuDe').value.trim(), nd=document.getElementById('viecNoiDung').value.trim();
   if(!nguoi) return bao('Chọn người nhận việc.','var(--danger)');
-  if(!nd) return bao('Ghi việc cần làm.','var(--danger)');
+  if(!td) return bao('Ghi tiêu đề việc.','var(--danger)');
   nut.disabled=true; bao('Đang giao...','var(--text2)');
-  const {error}=await supabaseDb.rpc('khsx_giao_viec_v1',{p_nguoi_nhan:nguoi,p_noi_dung:nd});
+  const {error}=await supabaseDb.rpc('khsx_giao_viec_v2',{p_nguoi_nhan:nguoi,p_tieu_de:td,p_chi_tiet:nd});
   nut.disabled=false;
   if(error) return bao(loiViec(error),'var(--danger)');
-  document.getElementById('viecNoiDung').value='';
+  document.getElementById('viecTieuDe').value=''; document.getElementById('viecNoiDung').value='';
   bao(`Đã giao cho ${tenNhanSu(nguoi)||'người nhận'}, bot đang nhắn Telegram.`,'var(--success)');
   guiTinViecNgay(); await taiViecNen(true);
 });
