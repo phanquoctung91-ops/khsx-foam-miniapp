@@ -21,6 +21,7 @@ const A='00000000-0000-0000-0000-00000000000a', B='00000000-0000-0000-0000-00000
   await la(A);
   const cu=(await q(`select public.khsx_giao_viec_v1($1,$2) id`,[B,'Theo dõi hàng trả về\n1. MTS716 · 1 Tấm\n2. MTS710 · 4 Tấm'])).rows[0].id;
   await db.exec(mig('20261002090000_giao_viec_tieu_de_sua_viec.sql'));
+  await db.exec(mig('20261002120000_sua_viec_dang_lam.sql'));
   let t=(await q(`select tieu_de,noi_dung from public.khsx_tasks where id=$1`,[cu])).rows[0];
   assert.deepEqual(t,{tieu_de:'Theo dõi hàng trả về',noi_dung:'1. MTS716 · 1 Tấm\n2. MTS710 · 4 Tấm'});
   console.log('PASS việc cũ: dòng đầu thành tiêu đề, phần còn lại thành chi tiết');
@@ -58,14 +59,25 @@ const A='00000000-0000-0000-0000-00000000000a', B='00000000-0000-0000-0000-00000
   assert.equal((await q(`select nguoi_nhan from public.khsx_tasks where id=$1`,[id])).rows[0].nguoi_nhan,C);
   console.log('PASS đổi người nhận: người cũ được báo đã chuyển (tin cũ chưa gửi bị bỏ), người mới nhận tin giao việc');
 
-  await la(C); await q(`select public.khsx_nhan_viec_v1($1,private.khsx_hom_nay_vn())`,[id]);
-  await la(A); assert.match(await loi(()=>q(`select public.khsx_sua_viec_v1($1,'y','',null)`,[id])),/TASK_ALREADY_TAKEN/);
-  console.log('PASS người nhận đã bấm Nhận việc thì không sửa được nữa');
+  await la(C); await q(`select public.khsx_nhan_viec_v1($1,private.khsx_hom_nay_vn()+3)`,[id]);
+  await la(A); await q(`delete from public.khsx_tin_nhan_cho`);
+  await q(`select public.khsx_sua_viec_v1($1,'Cắt hàng Luna','5 tấm 160x20. Thêm 2 tấm 180x20',null)`,[id]);
+  t=(await q(`select trang_thai,han=private.khsx_hom_nay_vn()+3 giu from public.khsx_tasks where id=$1`,[id])).rows[0];
+  assert.deepEqual(t,{trang_thai:'dang_lam',giu:true}); assert.match((await tin())[0].noi_dung,/➕ Bổ sung: Thêm 2 tấm 180x20/);
+  console.log('PASS đang làm vẫn sửa được: bot nhắn phần bổ sung, ngày hẹn giữ nguyên');
+  const id2=(await q(`select public.khsx_giao_viec_v2($1,'Dọn kệ','') id`,[B])).rows[0].id;
+  await la(B); await q(`select public.khsx_nhan_viec_v1($1,private.khsx_hom_nay_vn())`,[id2]);
+  await la(A); await q(`select public.khsx_sua_viec_v1($1,'Dọn kệ','',$2)`,[id2,C]);
+  t=(await q(`select trang_thai,han,nguoi_nhan from public.khsx_tasks where id=$1`,[id2])).rows[0];
+  assert.deepEqual(t,{trang_thai:'cho_nhan',han:null,nguoi_nhan:C});
+  console.log('PASS đang làm mà đổi người: người mới nhận lại từ đầu (chưa nhận, chưa có ngày hẹn)');
 
   await q(`delete from public.khsx_tin_nhan_cho`);
   await la(C); await q(`select public.khsx_xong_viec_v1($1)`,[id]);
   m=await tin(); assert.match(m[0].noi_dung,/Văn Thảo đã xong việc:\nCắt hàng Luna\nHẹn/);
   console.log('PASS báo xong dùng tiêu đề cho gọn');
+  await la(A); assert.match(await loi(()=>q(`select public.khsx_sua_viec_v1($1,'y','',null)`,[id])),/TASK_DONE_LOCKED/);
+  console.log('PASS việc đã xong thì khoá, không sửa được');
   assert.match(await loi(()=>q(`select public.khsx_giao_viec_v2($1,'','abc')`,[B])),/TASK_ASSIGN_FORBIDDEN|TASK_TEXT_INVALID/);
   await la(A); assert.match(await loi(()=>q(`select public.khsx_giao_viec_v2($1,'  ','abc')`,[B])),/TASK_TEXT_INVALID/);
   console.log('PASS thiếu tiêu đề thì không giao được');

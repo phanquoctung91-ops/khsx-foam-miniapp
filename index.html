@@ -2220,7 +2220,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=217"></script>
+<script src="raw-data.js?v=218"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4333,7 +4333,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 217;
+const APP_VERSION = 218;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12560,7 +12560,8 @@ function loiViec(e){
   const m=String(e?.message||e||'');
   if(m.includes('TASK_ASSIGN_FORBIDDEN')) return 'Tài khoản chưa có quyền giao việc.';
   if(m.includes('TASK_DUE_INVALID')) return 'Chọn ngày hẹn xong từ hôm nay trở đi.';
-  if(m.includes('TASK_ALREADY_TAKEN')) return 'Người nhận đã bấm Nhận việc, không sửa được nữa.';
+  if(m.includes('TASK_ALREADY_TAKEN')) return 'Việc này đã nhận rồi.';
+  if(m.includes('TASK_DONE_LOCKED')) return 'Việc đã xong, không sửa được nữa.';
   if(m.includes('TASK_NOT_IN_PROGRESS')) return 'Việc này chưa nhận hoặc đã xong.';
   if(m.includes('TASK_NOT_YOURS')) return 'Việc này không phải của bạn.';
   if(m.includes('TASK_ASSIGNEE_INVALID')) return 'Người nhận không còn trong danh sách nhân sự.';
@@ -12624,7 +12625,7 @@ function trangThaiViecChu(v){
 function moXemViec(id,suaLuon=false){
   const v=viecDanhSach.find(x=>x.id===id); if(!v) return;
   viecDangXem=id;
-  const hop=document.getElementById('viecXemHop'), duocSua=v.trang_thai==='cho_nhan'&&v.nguoi_giao===toiLa();
+  const hop=document.getElementById('viecXemHop'), duocSua=v.trang_thai!=='xong'&&v.nguoi_giao===toiLa();
   const nguoiGiao=tenNhanSu(v.nguoi_giao), ct=chiTietViec(v);
   if(suaLuon&&duocSua){
     const O='display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);';
@@ -12638,7 +12639,7 @@ function moXemViec(id,suaLuon=false){
           <input id="viecSuaTieuDe" type="text" maxlength="150" value="${thoatHtml(tieuDeViec(v))}" style="${O}"></label>
         <label style="font-size:12px;font-weight:700;color:var(--text2);">Chi tiết (không bắt buộc)
           <textarea id="viecSuaChiTiet" rows="6" maxlength="3000" style="${O}">${thoatHtml(ct)}</textarea></label>
-        <div style="font-size:12px;color:var(--text2);">Lưu xong bot nhắn người nhận phần anh vừa thêm. Đổi người thì bot báo người cũ là việc đã chuyển.</div>
+        <div style="font-size:12px;color:var(--text2);">Lưu xong bot nhắn người nhận phần anh vừa thêm, ngày hẹn giữ nguyên. Đổi người thì bot báo người cũ là việc đã chuyển, người mới nhận việc và chọn ngày hẹn lại.</div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <button type="button" class="primary-btn" data-viec-luu-sua="1">Lưu</button>
           <button type="button" class="capacity-quick-btn" data-viec-xem="${v.id}">Huỷ</button>
