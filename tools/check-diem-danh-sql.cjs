@@ -17,7 +17,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
       $$ select p_user='${A}'::uuid or exists(select 1 from public.khsx_account_permissions where user_id=p_user and permission_key=p_key) $$;
     revoke all on function private.khsx_has_permission(text,uuid), private.khsx_is_permission_owner(uuid) from public;
     grant usage on schema private, auth to authenticated; grant execute on function auth.uid() to authenticated;
-    grant execute on function private.khsx_has_permission(text,uuid), private.khsx_is_permission_owner(uuid) to authenticated;
+    -- Giống production: authenticated KHÔNG được gọi trực tiếp khsx_has_permission / khsx_is_permission_owner (chỉ hàm bọc không tham số).
     create table public.khsx_quarter_targets(year int, quarter int, target_qty int, work_dates date[]);
     create table public.khsx_orders(id text primary key, production_date date, deleted_at timestamptz, is_warranty boolean default false, is_drop boolean default false, is_ghost boolean default false);
     insert into public.khsx_profiles values('${A}',111,'Tùng',true),('${P}',222,'Phước',true),('${P2}',333,'Phước 2',true),('${M}',444,'Không quyền',true),('${X}',555,'Đã nghỉ',false);`);
@@ -25,6 +25,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
                   '20261002090000_giao_viec_tieu_de_sua_viec.sql','20261002120000_sua_viec_dang_lam.sql']) await db.exec(mig(f));
   await db.exec(mig('20261005090000_diem_danh_phat_sua.sql'));
   await db.exec(mig('20261005120000_diem_danh_chuc_vu.sql'));
+  await db.exec(mig('20261005140000_diem_danh_sua_quyen_doc.sql'));
   // Hôm nay giả lập: đặt được bằng test.hn
   await db.exec(`create or replace function private.khsx_hom_nay_vn() returns date language sql stable as $$ select current_setting('test.hn')::date $$;`);
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`), hn=d=>db.exec(`set test.hn='${d}'`);
