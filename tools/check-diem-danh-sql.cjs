@@ -24,6 +24,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   for(const f of ['20260928090000_giao_viec.sql','20260929090000_giao_viec_quyen_bot.sql','20260930090000_giao_viec_doc_so_viec.sql',
                   '20261002090000_giao_viec_tieu_de_sua_viec.sql','20261002120000_sua_viec_dang_lam.sql']) await db.exec(mig(f));
   await db.exec(mig('20261005090000_diem_danh_phat_sua.sql'));
+  await db.exec(mig('20261005120000_diem_danh_chuc_vu.sql'));
   // Hôm nay giả lập: đặt được bằng test.hn
   await db.exec(`create or replace function private.khsx_hom_nay_vn() returns date language sql stable as $$ select current_setting('test.hn')::date $$;`);
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`), hn=d=>db.exec(`set test.hn='${d}'`);
@@ -45,6 +46,25 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   assert.equal((await q(`select ten from public.khsx_diem_danh_nguoi where id=$1`,[lan])).rows[0].ten,'Lan');
   console.log('PASS chỉ chủ tài khoản thêm người; tên trống / trùng bị chặn; tên được cắt khoảng trắng');
 
+  // Chức vụ + tổ: chỉ chủ tài khoản đặt; tổ chỉ đi với Công nhân
+  const cv=async id=>(await q(`select chuc_vu,to_lam from public.khsx_diem_danh_nguoi where id=$1`,[id])).rows[0];
+  assert.deepEqual(await cv(lan),{chuc_vu:null,to_lam:null});
+  await la(P); assert.match(await loi(()=>q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','Tổ may')`,[lan])),/ATTENDANCE_LIST_FORBIDDEN/);
+  await la(A);
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','Tổ dán 3')`,[lan]);
+  assert.deepEqual(await cv(lan),{chuc_vu:'Công nhân',to_lam:'Tổ dán 3'});
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Thủ kho','Tổ may')`,[lan]);          // chức vụ khác: tổ tự xóa
+  assert.deepEqual(await cv(lan),{chuc_vu:'Thủ kho',to_lam:null});
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','')`,[hoa]);             // Công nhân chưa chọn tổ vẫn được
+  assert.deepEqual(await cv(hoa),{chuc_vu:'Công nhân',to_lam:null});
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Giám đốc','')`,[lan])),/ATTENDEE_ROLE_INVALID/);
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','Tổ dán 9')`,[lan])),/ATTENDEE_TEAM_INVALID/);
+  assert.match(await loi(()=>q(`update public.khsx_diem_danh_nguoi set to_lam='Tổ may' where id=$1`,[lan])),/violates check constraint/);   // ghi thẳng cũng bị chặn
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'','')`,[lan]);                       // xóa trống
+  assert.deepEqual(await cv(lan),{chuc_vu:null,to_lam:null});
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','Tổ đóng gói')`,[lan]);
+  console.log('PASS chức vụ + tổ: chỉ chủ đặt được; tổ chỉ đi với Công nhân, đổi chức vụ thì tổ tự xóa; giá trị lạ bị chặn');
+
   // Tick điểm danh
   await la(M); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-12',true,true)`,[lan])),/ATTENDANCE_FORBIDDEN/);
   await la(P);
@@ -64,6 +84,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   await la(P2); await db.exec(`insert into public.khsx_account_permissions values('${P2}','phat_sua')`);
   const bang=async(tu,den)=>(await q(`select ten,ngay_chua_nhan,hop_chua_nhan,hop_da_nhan from public.khsx_phat_sua_bang_v1($1,$2)`,[tu,den])).rows;
   assert.deepEqual(await bang('2026-10-08','2026-10-12'),[{ten:'Hoa',ngay_chua_nhan:1,hop_chua_nhan:2,hop_da_nhan:0},{ten:'Lan',ngay_chua_nhan:3,hop_chua_nhan:4,hop_da_nhan:0}]);
+  assert.deepEqual((await q(`select chuc_vu,to_lam from public.khsx_phat_sua_bang_v1('2026-10-08','2026-10-12') where ten='Lan'`)).rows,[{chuc_vu:'Công nhân',to_lam:'Tổ đóng gói'}]);
   assert.deepEqual(await bang('2026-10-09','2026-10-10'),[{ten:'Lan',ngay_chua_nhan:2,hop_chua_nhan:2,hop_da_nhan:0}]);
   await la(P); assert.match(await loi(()=>q(`select * from public.khsx_phat_sua_bang_v1('2026-10-08','2026-10-12')`)),/MILK_FORBIDDEN/);
   await la(P2); assert.match(await loi(()=>q(`select * from public.khsx_phat_sua_bang_v1('2026-10-12','2026-10-08')`)),/MILK_RANGE_INVALID/);

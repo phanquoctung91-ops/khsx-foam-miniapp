@@ -2071,8 +2071,9 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <button type="button" id="ddHomNayBtn" class="capacity-quick-btn">Hôm nay</button>
       <span id="ddStatus" class="save-status" aria-live="polite"></span>
     </div>
+    <div class="bom-chip-row" id="ddLoc" style="margin-bottom:8px;"></div>
     <div class="table-scroll" style="max-height:none;"><table style="min-width:0;">
-      <thead><tr><th>Tên</th><th style="text-align:center;">Cả ngày</th><th style="text-align:center;">Sáng</th><th style="text-align:center;">Chiều</th><th></th></tr></thead>
+      <thead><tr><th>Tên</th><th>Chức vụ / Tổ</th><th style="text-align:center;">Cả ngày</th><th style="text-align:center;">Sáng</th><th style="text-align:center;">Chiều</th><th></th></tr></thead>
       <tbody id="ddBang"></tbody>
     </table></div>
     <div id="ddThemNguoi" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">
@@ -2087,6 +2088,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
         <label style="font-size:12px;font-weight:700;color:var(--text2);">Đến ngày <input type="date" id="ddSuaDen" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
         <span id="ddSuaStatus" class="save-status" aria-live="polite"></span>
       </div>
+      <div class="bom-chip-row" style="margin-bottom:8px;"><button type="button" class="bom-chip" id="ddSuaLoc" aria-pressed="false">Ngày chưa phát</button></div>
       <div class="table-scroll" style="max-height:none;"><table style="min-width:0;">
         <thead><tr><th>Tên</th><th style="text-align:right;">Ngày chưa nhận</th><th style="text-align:right;">Hộp chưa nhận</th><th style="text-align:right;">Đã nhận</th><th></th></tr></thead>
         <tbody id="ddSuaBang"></tbody>
@@ -2253,7 +2255,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=219"></script>
+<script src="raw-data.js?v=220"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4366,7 +4368,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 219;
+const APP_VERSION = 220;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12836,6 +12838,21 @@ const duocDiemDanh=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('diem
 const duocPhatSua=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('phat_sua');
 const laChuTaiKhoan=()=>toiLa()===KHSX_PERMISSION_OWNER_ID;
 let ddNguoi=[], ddDong={}, ddDaPhat=new Set(), ddLan=0;
+const DD_CHUC_VU=['Trưởng Nhóm','Tổ trưởng sản xuất','Thủ kho','Công nhân'];
+const DD_TO=['Tổ dán 1','Tổ dán 2','Tổ dán 3','Tổ dán 4','Tổ dán 5','Tổ may','Tổ đóng gói'];
+let ddLoc='';
+const DD_LOC=[...DD_CHUC_VU,...DD_TO];
+const ddHopLoc=p=>!ddLoc||(DD_TO.includes(ddLoc)?(p.chuc_vu==='Công nhân'&&p.to_lam===ddLoc):p.chuc_vu===ddLoc);
+function veLocDiemDanh(){
+  const o=document.getElementById('ddLoc'); if(!o) return;
+  o.innerHTML=['',...DD_LOC].map(k=>`<button type="button" class="bom-chip${k===ddLoc?' active':''}" data-dd-loc="${k}">${k||'Tất cả'}</button>`).join('');
+}
+const ddNhanCv=p=>[p.chuc_vu,p.chuc_vu==='Công nhân'?p.to_lam:null].filter(Boolean).join(' · ');
+function ddOChon(p){
+  if(!laChuTaiKhoan()) return `<span style="font-size:12.5px;color:var(--text2);">${thoatHtml(ddNhanCv(p))||'—'}</span>`;
+  const sel=(attr,ds,v,trong)=>`<select ${attr} data-id="${p.id}" style="font-size:12.5px;padding:4px;max-width:150px;"><option value="">${trong}</option>${ds.map(x=>`<option${x===v?' selected':''}>${x}</option>`).join('')}</select>`;
+  return sel('data-dd-cv',DD_CHUC_VU,p.chuc_vu,'— Chức vụ —')+(p.chuc_vu==='Công nhân'?' '+sel('data-dd-to',DD_TO,p.to_lam,'— Tổ —'):'');
+}
 function loiDiemDanh(e){
   const m=String(e?.message||e||'');
   if(m.includes('ATTENDANCE_FORBIDDEN')) return 'Tài khoản chưa có quyền điểm danh.';
@@ -12844,6 +12861,8 @@ function loiDiemDanh(e){
   if(m.includes('ATTENDEE_NOT_FOUND')) return 'Người này không còn trong danh sách.';
   if(m.includes('ATTENDEE_EXISTS')) return 'Tên này đã có trong danh sách.';
   if(m.includes('ATTENDEE_NAME_INVALID')) return 'Ghi tên (tối đa 100 chữ).';
+  if(m.includes('ATTENDEE_ROLE_INVALID')) return 'Chức vụ không hợp lệ.';
+  if(m.includes('ATTENDEE_TEAM_INVALID')) return 'Tổ không hợp lệ.';
   if(m.includes('ATTENDANCE_LIST_FORBIDDEN')) return 'Chỉ chủ tài khoản thêm / xóa người trong danh sách.';
   if(m.includes('MILK_FORBIDDEN')) return 'Tài khoản chưa có quyền Phát sữa.';
   if(m.includes('MILK_NOTHING_TO_GIVE')) return 'Người này không còn ngày nào chưa nhận trong khoảng đã chọn.';
@@ -12870,7 +12889,7 @@ async function taiDiemDanh(){
   const ngay=document.getElementById('ddNgay')?.value; if(!ngay) return;
   const lan=++ddLan; ddBao('ddStatus','Đang tải...');
   const [n,d,s]=await Promise.all([
-    supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten').eq('con_dung',true).order('ten'),
+    supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten,chuc_vu,to_lam').eq('con_dung',true).order('ten'),
     supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu').eq('ngay',ngay),
     supabaseDb.from('khsx_phat_sua').select('nguoi_id').eq('ngay',ngay)]);
   if(lan!==ddLan) return;
@@ -12883,11 +12902,14 @@ async function taiDiemDanh(){
 function veDiemDanh(){
   const than=document.getElementById('ddBang'); if(!than) return;
   const sua=duocDiemDanh(), xoa=laChuTaiKhoan();
-  if(!ddNguoi.length){ than.innerHTML=`<tr><td colspan="5" style="color:var(--text2);text-align:center;padding:14px;">Chưa có ai trong danh sách.${xoa?' Thêm người ở dưới.':''}</td></tr>`; return; }
-  than.innerHTML=ddNguoi.map(p=>{
+  veLocDiemDanh();
+  const hien=ddNguoi.filter(ddHopLoc);
+  if(ddNguoi.length&&!hien.length){ than.innerHTML=`<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:14px;">Không có ai trong nhóm này.</td></tr>`; return; }
+  if(!ddNguoi.length){ than.innerHTML=`<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:14px;">Chưa có ai trong danh sách.${xoa?' Thêm người ở dưới.':''}</td></tr>`; return; }
+  than.innerHTML=hien.map(p=>{
     const r=ddDong[p.id]||{sang:false,chieu:false}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
     const o=(k,v)=>`<td style="text-align:center;"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
-    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa, không sửa được">🥛 đã phát</span>':''}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
+    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa, không sửa được">🥛 đã phát</span>':''}</td><td>${ddOChon(p)}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
   }).join('');
 }
 async function ghiDiemDanh(id,sang,chieu){
@@ -12904,6 +12926,14 @@ document.getElementById('ddBang')?.addEventListener('change',e=>{
   if(c.dataset.dd==='ca') return ghiDiemDanh(id,c.checked,c.checked);
   ghiDiemDanh(id,c.dataset.dd==='sang'?c.checked:r.sang,c.dataset.dd==='chieu'?c.checked:r.chieu);
 });
+document.getElementById('ddBang')?.addEventListener('change',async e=>{
+  const c=e.target.closest('select[data-dd-cv],select[data-dd-to]'); if(!c||!laChuTaiKhoan()) return;
+  const p=ddNguoi.find(x=>x.id===c.dataset.id); if(!p) return;
+  const cv=c.hasAttribute('data-dd-cv')?c.value:p.chuc_vu, to=c.hasAttribute('data-dd-cv')?(c.value==='Công nhân'?p.to_lam:null):c.value;
+  const {error}=await supabaseDb.rpc('khsx_diem_danh_dat_chuc_vu_v1',{p_id:p.id,p_chuc_vu:cv||'',p_to:to||''});
+  if(error){ veDiemDanh(); return ddBao('ddStatus',loiDiemDanh(error),'var(--danger)'); }
+  p.chuc_vu=cv||null; p.to_lam=cv==='Công nhân'?(to||null):null; veDiemDanh(); ddBao('ddStatus',`Đã lưu chức vụ cho ${p.ten}.`,'var(--success)');
+});
 document.getElementById('ddBang')?.addEventListener('click',async e=>{
   const b=e.target.closest('[data-dd-xoa]'); if(!b||!laChuTaiKhoan()) return;
   const p=ddNguoi.find(x=>x.id===b.dataset.ddXoa); if(!p||!confirm(`Xóa ${p.ten} khỏi danh sách điểm danh?\n\nLịch sử điểm danh cũ vẫn giữ.`)) return;
@@ -12919,10 +12949,11 @@ document.getElementById('ddThemBtn')?.addEventListener('click',async()=>{
   o.value=''; await taiDiemDanh(); ddBao('ddStatus',`Đã thêm ${ten}.`,'var(--success)');
 });
 document.getElementById('ddTenMoi')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('ddThemBtn').click(); } });
+document.getElementById('ddLoc')?.addEventListener('click',e=>{ const b=e.target.closest('[data-dd-loc]'); if(!b) return; ddLoc=b.dataset.ddLoc; veDiemDanh(); });
 document.getElementById('ddNgay')?.addEventListener('change',taiDiemDanh);
 document.getElementById('ddHomNayBtn')?.addEventListener('click',()=>{ document.getElementById('ddNgay').value=homNayIso(); taiDiemDanh(); });
 // --- Phát sữa ---
-let ddSuaLan=0, ddSuaDong=[];
+let ddSuaLan=0, ddSuaDong=[], ddSuaChiChua=false;
 async function taiPhatSua(){
   const tu=document.getElementById('ddSuaTu').value, den=document.getElementById('ddSuaDen').value, than=document.getElementById('ddSuaBang');
   if(!tu||!den){ than.innerHTML=''; return; }
@@ -12931,14 +12962,18 @@ async function taiPhatSua(){
   if(lan!==ddSuaLan) return;
   if(error){ than.innerHTML=''; return ddBao('ddSuaStatus',loiDiemDanh(error),'var(--danger)'); }
   ddSuaDong=data||[]; ddBao('ddSuaStatus','');
-  if(!ddSuaDong.length){ than.innerHTML=`<tr><td colspan="5" style="color:var(--text2);text-align:center;padding:14px;">Không có điểm danh nào trong khoảng này.</td></tr>`; return; }
-  const tong=ddSuaDong.reduce((t,r)=>t+r.hop_chua_nhan,0);
-  than.innerHTML=ddSuaDong.map(r=>`<tr><td style="font-weight:600;">${thoatHtml(r.ten)}</td><td style="text-align:right;">${r.ngay_chua_nhan}</td><td style="text-align:right;font-weight:700;">${r.hop_chua_nhan}</td><td style="text-align:right;color:var(--text2);">${r.hop_da_nhan}</td><td>${r.hop_chua_nhan>0?`<button type="button" class="primary-btn" style="padding:6px 12px;" data-dd-phat="${r.nguoi_id}">Đã phát</button>`:'<span class="bom-nhan da">Đã nhận đủ</span>'}</td></tr>`).join('')
+  const hien=ddSuaChiChua?ddSuaDong.filter(r=>r.hop_chua_nhan>0):ddSuaDong;
+  if(!hien.length){ than.innerHTML=`<tr><td colspan="5" style="color:var(--text2);text-align:center;padding:14px;">${ddSuaDong.length?'Không còn ai có ngày chưa phát trong khoảng này.':'Không có điểm danh nào trong khoảng này.'}</td></tr>`; return; }
+  const tong=hien.reduce((t,r)=>t+r.hop_chua_nhan,0);
+  than.innerHTML=hien.map(r=>`<tr><td style="font-weight:600;">${thoatHtml(r.ten)}${ddNhanCv(r)?`<div style="font-size:11.5px;font-weight:400;color:var(--text2);">${thoatHtml(ddNhanCv(r))}</div>`:''}</td><td style="text-align:right;">${r.ngay_chua_nhan}</td><td style="text-align:right;font-weight:700;">${r.hop_chua_nhan}</td><td style="text-align:right;color:var(--text2);">${r.hop_da_nhan}</td><td>${r.hop_chua_nhan>0?`<button type="button" class="primary-btn" style="padding:6px 12px;" data-dd-phat="${r.nguoi_id}">Đã phát</button>`:'<span class="bom-nhan da">Đã nhận đủ</span>'}</td></tr>`).join('')
     +`<tr style="background:#f4f6fa;font-weight:700;"><td>Tổng chưa nhận</td><td></td><td style="text-align:right;">${tong}</td><td></td><td></td></tr>`;
 }
 document.getElementById('ddPhatSuaBtn')?.addEventListener('click',()=>{
   const o=document.getElementById('ddSua'), mo=o.style.display==='none';
   o.style.display=mo?'block':'none'; if(mo) taiPhatSua();
+});
+document.getElementById('ddSuaLoc')?.addEventListener('click',e=>{
+  ddSuaChiChua=!ddSuaChiChua; e.currentTarget.classList.toggle('active',ddSuaChiChua); e.currentTarget.setAttribute('aria-pressed',ddSuaChiChua); taiPhatSua();
 });
 ['ddSuaTu','ddSuaDen'].forEach(id=>document.getElementById(id)?.addEventListener('change',taiPhatSua));
 document.getElementById('ddSuaBang')?.addEventListener('click',async e=>{
