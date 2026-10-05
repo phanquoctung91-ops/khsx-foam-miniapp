@@ -26,6 +26,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   await db.exec(mig('20261005090000_diem_danh_phat_sua.sql'));
   await db.exec(mig('20261005120000_diem_danh_chuc_vu.sql'));
   await db.exec(mig('20261005140000_diem_danh_sua_quyen_doc.sql'));
+  await db.exec(mig('20261005160000_diem_danh_to_phu_kho_ho_tro.sql'));
   // Hôm nay giả lập: đặt được bằng test.hn
   await db.exec(`create or replace function private.khsx_hom_nay_vn() returns date language sql stable as $$ select current_setting('test.hn')::date $$;`);
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`), hn=d=>db.exec(`set test.hn='${d}'`);
@@ -63,6 +64,10 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   assert.match(await loi(()=>q(`update public.khsx_diem_danh_nguoi set to_lam='Tổ may' where id=$1`,[lan])),/violates check constraint/);   // ghi thẳng cũng bị chặn
   await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'','')`,[lan]);                       // xóa trống
   assert.deepEqual(await cv(lan),{chuc_vu:null,to_lam:null});
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','Tổ đóng gói')`,[lan]);
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','Phụ kho')`,[lan]); assert.deepEqual(await cv(lan),{chuc_vu:'Công nhân',to_lam:'Phụ kho'});
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','Hỗ trợ')`,[lan]); assert.deepEqual(await cv(lan),{chuc_vu:'Công nhân',to_lam:'Hỗ trợ'});
+  await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Thủ kho','Phụ kho')`,[lan]); assert.deepEqual(await cv(lan),{chuc_vu:'Thủ kho',to_lam:null});   // Phụ kho / Hỗ trợ chỉ là tổ của Công nhân
   await q(`select public.khsx_diem_danh_dat_chuc_vu_v1($1,'Công nhân','Tổ đóng gói')`,[lan]);
   console.log('PASS chức vụ + tổ: chỉ chủ đặt được; tổ chỉ đi với Công nhân, đổi chức vụ thì tổ tự xóa; giá trị lạ bị chặn');
 
