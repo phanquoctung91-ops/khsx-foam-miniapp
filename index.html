@@ -2060,7 +2060,40 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
      giữ nguyên toàn bộ id bên trong (loadStaffUsers()/renderStaffUsersList()/... ghi
      thẳng vào các id này, không đổi logic). -->
 <div class="panel" id="panel-staff">
-  <div class="card">
+  <div class="card" id="diemDanhCard" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <h3 style="margin:0;font-size:17px;">📋 Điểm danh</h3>
+      <button type="button" id="ddPhatSuaBtn" class="capacity-quick-btn" style="display:none;">🥛 Phát sữa</button>
+    </div>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5;">Tick sáng / chiều từng người. Cả ngày = 2 hộp sữa, một buổi = 1 hộp. Sửa được ngày cũ, trừ ngày đã phát sữa.</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+      <label style="font-size:12px;font-weight:700;color:var(--text2);">Ngày <input type="date" id="ddNgay" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+      <button type="button" id="ddHomNayBtn" class="capacity-quick-btn">Hôm nay</button>
+      <span id="ddStatus" class="save-status" aria-live="polite"></span>
+    </div>
+    <div class="table-scroll" style="max-height:none;"><table style="min-width:0;">
+      <thead><tr><th>Tên</th><th style="text-align:center;">Cả ngày</th><th style="text-align:center;">Sáng</th><th style="text-align:center;">Chiều</th><th></th></tr></thead>
+      <tbody id="ddBang"></tbody>
+    </table></div>
+    <div id="ddThemNguoi" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">
+      <input type="text" id="ddTenMoi" maxlength="100" placeholder="Tên người cần thêm" style="min-width:200px;font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);">
+      <button type="button" id="ddThemBtn" class="capacity-quick-btn">+ Thêm người</button>
+    </div>
+    <div id="ddSua" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+      <h4 style="margin:0 0 6px;font-size:15px;">🥛 Phát sữa</h4>
+      <div style="font-size:12.5px;color:var(--text2);margin-bottom:8px;line-height:1.5;">Đếm theo điểm danh trong khoảng ngày, chỉ tính ngày chưa nhận. Bấm <b>Đã phát</b> thì mọi ngày chưa nhận của người đó trong khoảng được đánh dấu đã nhận.</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);">Từ ngày <input type="date" id="ddSuaTu" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);">Đến ngày <input type="date" id="ddSuaDen" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+        <span id="ddSuaStatus" class="save-status" aria-live="polite"></span>
+      </div>
+      <div class="table-scroll" style="max-height:none;"><table style="min-width:0;">
+        <thead><tr><th>Tên</th><th style="text-align:right;">Ngày chưa nhận</th><th style="text-align:right;">Hộp chưa nhận</th><th style="text-align:right;">Đã nhận</th><th></th></tr></thead>
+        <tbody id="ddSuaBang"></tbody>
+      </table></div>
+    </div>
+  </div>
+  <div class="card" id="staffAccountCard">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
       <h3 id="staffModalTitle" style="margin:0;font-size:17px;">🔗 Quản lý Telegram &amp; phân tổ</h3>
     </div>
@@ -2220,7 +2253,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=218"></script>
+<script src="raw-data.js?v=219"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4333,7 +4366,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 218;
+const APP_VERSION = 219;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4593,7 +4626,7 @@ function hasPerm(key){ return myPermissionKeys.has(key); }
 function hasPermOrOwner(key){ return String(currentUser?.auth_user_id||'')===KHSX_PERMISSION_OWNER_ID || hasPerm(key); }
 const PERM_TAB_RULES={
   monthly:['view_overview'], autoplan:['khsx_view_plan'], capacity:['capacity_view'],
-  report:['report_export','report_sign_off'], wage:['payroll_view'], staff:['hr_view'], bom:['bom_confirm'], viec:['task_assign'],
+  report:['report_export','report_sign_off'], wage:['payroll_view'], staff:['hr_view','diem_danh','phat_sua'], bom:['bom_confirm'], viec:['task_assign'],
   settings:['settings_backup_download','settings_backup_restore','settings_import_khsx_file','settings_edit_targets'],
 };
 // Dot 4.3: nut (khong phai tab) cung an/hien theo permission_key, cung co che.
@@ -10970,6 +11003,8 @@ function randomStaffCode(){
 // sidebar đã có sẵn trang riêng data-tab="staff") — khởi tạo trang gọi hàm này thay vì
 // gắn vào click nút, xem tab-click-handler và restoreUiState().
 async function initStaffPage(){
+  initDiemDanh();
+  const tkCard=document.getElementById('staffAccountCard'); if(tkCard) tkCard.style.display=hasPermOrOwner('hr_view')?'':'none';
   if(!canApproveTelegram()) return;
   if(!staffUsersLoaded && !SUPABASE_VARIANT) await loadStaffUsers();
   renderStaffUsersList();
@@ -12793,6 +12828,129 @@ document.getElementById('viecGiaoBtn')?.addEventListener('click',async e=>{
   guiTinViecNgay(); await taiViecNen(true);
 });
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) taiViecNen(); });
+
+// ============================================================================
+//  ĐIỂM DANH + PHÁT SỮA (mục Nhân sự, bản 219): quyền diem_danh / phat_sua; thêm xóa người chỉ chủ tài khoản.
+// ============================================================================
+const duocDiemDanh=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('diem_danh');
+const duocPhatSua=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('phat_sua');
+const laChuTaiKhoan=()=>toiLa()===KHSX_PERMISSION_OWNER_ID;
+let ddNguoi=[], ddDong={}, ddDaPhat=new Set(), ddLan=0;
+function loiDiemDanh(e){
+  const m=String(e?.message||e||'');
+  if(m.includes('ATTENDANCE_FORBIDDEN')) return 'Tài khoản chưa có quyền điểm danh.';
+  if(m.includes('ATTENDANCE_LOCKED')) return 'Ngày này đã phát sữa, không sửa điểm danh được nữa.';
+  if(m.includes('ATTENDANCE_DATE_INVALID')) return 'Không điểm danh cho ngày chưa tới.';
+  if(m.includes('ATTENDEE_NOT_FOUND')) return 'Người này không còn trong danh sách.';
+  if(m.includes('ATTENDEE_EXISTS')) return 'Tên này đã có trong danh sách.';
+  if(m.includes('ATTENDEE_NAME_INVALID')) return 'Ghi tên (tối đa 100 chữ).';
+  if(m.includes('ATTENDANCE_LIST_FORBIDDEN')) return 'Chỉ chủ tài khoản thêm / xóa người trong danh sách.';
+  if(m.includes('MILK_FORBIDDEN')) return 'Tài khoản chưa có quyền Phát sữa.';
+  if(m.includes('MILK_NOTHING_TO_GIVE')) return 'Người này không còn ngày nào chưa nhận trong khoảng đã chọn.';
+  if(m.includes('MILK_RANGE_INVALID')) return 'Khoảng ngày không hợp lệ (từ ngày ≤ đến ngày, tối đa 400 ngày).';
+  return `Chưa lưu được: ${m||'lỗi không rõ'}`;
+}
+const ddBao=(id,t,m)=>{ const o=document.getElementById(id); if(o){ o.textContent=t; o.style.color=m||'var(--text2)'; } };
+function initDiemDanh(){
+  const card=document.getElementById('diemDanhCard'); if(!card) return;
+  const co=duocDiemDanh()||duocPhatSua();
+  card.style.display=co?'':'none';
+  if(!co) return;
+  const ngay=document.getElementById('ddNgay'), hn=homNayIso();
+  ngay.max=hn; if(!ngay.value) ngay.value=hn;
+  document.getElementById('ddPhatSuaBtn').style.display=duocPhatSua()?'':'none';
+  document.getElementById('ddThemNguoi').style.display=laChuTaiKhoan()?'flex':'none';
+  const tu=document.getElementById('ddSuaTu'), den=document.getElementById('ddSuaDen');
+  if(!den.value) den.value=hn;
+  if(!tu.value) tu.value=hn.slice(0,8)+'01';
+  den.max=hn; tu.max=hn;
+  taiDiemDanh();
+}
+async function taiDiemDanh(){
+  const ngay=document.getElementById('ddNgay')?.value; if(!ngay) return;
+  const lan=++ddLan; ddBao('ddStatus','Đang tải...');
+  const [n,d,s]=await Promise.all([
+    supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten').eq('con_dung',true).order('ten'),
+    supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu').eq('ngay',ngay),
+    supabaseDb.from('khsx_phat_sua').select('nguoi_id').eq('ngay',ngay)]);
+  if(lan!==ddLan) return;
+  const loi=n.error||d.error||s.error;
+  if(loi){ ddBao('ddStatus',`Chưa tải được điểm danh: ${loi.message||loi}`,'var(--danger)'); return; }
+  ddNguoi=n.data||[]; ddDong={}; (d.data||[]).forEach(r=>{ ddDong[r.nguoi_id]={sang:!!r.sang,chieu:!!r.chieu}; });
+  ddDaPhat=new Set((s.data||[]).map(r=>r.nguoi_id));
+  ddBao('ddStatus',''); veDiemDanh();
+}
+function veDiemDanh(){
+  const than=document.getElementById('ddBang'); if(!than) return;
+  const sua=duocDiemDanh(), xoa=laChuTaiKhoan();
+  if(!ddNguoi.length){ than.innerHTML=`<tr><td colspan="5" style="color:var(--text2);text-align:center;padding:14px;">Chưa có ai trong danh sách.${xoa?' Thêm người ở dưới.':''}</td></tr>`; return; }
+  than.innerHTML=ddNguoi.map(p=>{
+    const r=ddDong[p.id]||{sang:false,chieu:false}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
+    const o=(k,v)=>`<td style="text-align:center;"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
+    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa, không sửa được">🥛 đã phát</span>':''}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
+  }).join('');
+}
+async function ghiDiemDanh(id,sang,chieu){
+  const ngay=document.getElementById('ddNgay').value, cu=ddDong[id]||{sang:false,chieu:false};
+  if(sang||chieu) ddDong[id]={sang,chieu}; else delete ddDong[id];
+  veDiemDanh(); ddBao('ddStatus','Đang lưu...');
+  const {error}=await supabaseDb.rpc('khsx_diem_danh_ghi_v1',{p_nguoi:id,p_ngay:ngay,p_sang:sang,p_chieu:chieu});
+  if(error){ if(cu.sang||cu.chieu) ddDong[id]=cu; else delete ddDong[id]; veDiemDanh(); return ddBao('ddStatus',loiDiemDanh(error),'var(--danger)'); }
+  ddBao('ddStatus','Đã lưu.','var(--success)');
+}
+document.getElementById('ddBang')?.addEventListener('change',e=>{
+  const c=e.target.closest('input[data-dd]'); if(!c||!duocDiemDanh()) return;
+  const id=c.dataset.id, r=ddDong[id]||{sang:false,chieu:false};
+  if(c.dataset.dd==='ca') return ghiDiemDanh(id,c.checked,c.checked);
+  ghiDiemDanh(id,c.dataset.dd==='sang'?c.checked:r.sang,c.dataset.dd==='chieu'?c.checked:r.chieu);
+});
+document.getElementById('ddBang')?.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-dd-xoa]'); if(!b||!laChuTaiKhoan()) return;
+  const p=ddNguoi.find(x=>x.id===b.dataset.ddXoa); if(!p||!confirm(`Xóa ${p.ten} khỏi danh sách điểm danh?\n\nLịch sử điểm danh cũ vẫn giữ.`)) return;
+  const {error}=await supabaseDb.rpc('khsx_diem_danh_xoa_nguoi_v1',{p_id:p.id});
+  if(error) return ddBao('ddStatus',loiDiemDanh(error),'var(--danger)');
+  await taiDiemDanh(); ddBao('ddStatus',`Đã xóa ${p.ten}.`,'var(--success)');
+});
+document.getElementById('ddThemBtn')?.addEventListener('click',async()=>{
+  if(!laChuTaiKhoan()) return;
+  const o=document.getElementById('ddTenMoi'), ten=o.value.trim(); if(!ten) return ddBao('ddStatus','Ghi tên người cần thêm.','var(--danger)');
+  const {error}=await supabaseDb.rpc('khsx_diem_danh_them_nguoi_v1',{p_ten:ten});
+  if(error) return ddBao('ddStatus',loiDiemDanh(error),'var(--danger)');
+  o.value=''; await taiDiemDanh(); ddBao('ddStatus',`Đã thêm ${ten}.`,'var(--success)');
+});
+document.getElementById('ddTenMoi')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('ddThemBtn').click(); } });
+document.getElementById('ddNgay')?.addEventListener('change',taiDiemDanh);
+document.getElementById('ddHomNayBtn')?.addEventListener('click',()=>{ document.getElementById('ddNgay').value=homNayIso(); taiDiemDanh(); });
+// --- Phát sữa ---
+let ddSuaLan=0, ddSuaDong=[];
+async function taiPhatSua(){
+  const tu=document.getElementById('ddSuaTu').value, den=document.getElementById('ddSuaDen').value, than=document.getElementById('ddSuaBang');
+  if(!tu||!den){ than.innerHTML=''; return; }
+  const lan=++ddSuaLan; ddBao('ddSuaStatus','Đang tải...');
+  const {data,error}=await supabaseDb.rpc('khsx_phat_sua_bang_v1',{p_tu:tu,p_den:den});
+  if(lan!==ddSuaLan) return;
+  if(error){ than.innerHTML=''; return ddBao('ddSuaStatus',loiDiemDanh(error),'var(--danger)'); }
+  ddSuaDong=data||[]; ddBao('ddSuaStatus','');
+  if(!ddSuaDong.length){ than.innerHTML=`<tr><td colspan="5" style="color:var(--text2);text-align:center;padding:14px;">Không có điểm danh nào trong khoảng này.</td></tr>`; return; }
+  const tong=ddSuaDong.reduce((t,r)=>t+r.hop_chua_nhan,0);
+  than.innerHTML=ddSuaDong.map(r=>`<tr><td style="font-weight:600;">${thoatHtml(r.ten)}</td><td style="text-align:right;">${r.ngay_chua_nhan}</td><td style="text-align:right;font-weight:700;">${r.hop_chua_nhan}</td><td style="text-align:right;color:var(--text2);">${r.hop_da_nhan}</td><td>${r.hop_chua_nhan>0?`<button type="button" class="primary-btn" style="padding:6px 12px;" data-dd-phat="${r.nguoi_id}">Đã phát</button>`:'<span class="bom-nhan da">Đã nhận đủ</span>'}</td></tr>`).join('')
+    +`<tr style="background:#f4f6fa;font-weight:700;"><td>Tổng chưa nhận</td><td></td><td style="text-align:right;">${tong}</td><td></td><td></td></tr>`;
+}
+document.getElementById('ddPhatSuaBtn')?.addEventListener('click',()=>{
+  const o=document.getElementById('ddSua'), mo=o.style.display==='none';
+  o.style.display=mo?'block':'none'; if(mo) taiPhatSua();
+});
+['ddSuaTu','ddSuaDen'].forEach(id=>document.getElementById(id)?.addEventListener('change',taiPhatSua));
+document.getElementById('ddSuaBang')?.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-dd-phat]'); if(!b||!duocPhatSua()) return;
+  const r=ddSuaDong.find(x=>x.nguoi_id===b.dataset.ddPhat); if(!r) return;
+  const tu=document.getElementById('ddSuaTu').value, den=document.getElementById('ddSuaDen').value;
+  if(!confirm(`Xác nhận đã phát ${r.hop_chua_nhan} hộp sữa cho ${r.ten}?\n${r.ngay_chua_nhan} ngày điểm danh từ ${isoToDMY(tu)} đến ${isoToDMY(den)} sẽ được đánh dấu đã nhận và khóa điểm danh các ngày đó.`)) return;
+  b.disabled=true;
+  const {data,error}=await supabaseDb.rpc('khsx_phat_sua_v1',{p_nguoi:r.nguoi_id,p_tu:tu,p_den:den});
+  if(error){ b.disabled=false; return ddBao('ddSuaStatus',loiDiemDanh(error),'var(--danger)'); }
+  await taiPhatSua(); taiDiemDanh(); ddBao('ddSuaStatus',`Đã ghi phát ${data} hộp cho ${r.ten}.`,'var(--success)');
+});
 
 // ============================================================================
 //  SƠ ĐỒ QUY TRÌNH (Workflow) cho từng tab

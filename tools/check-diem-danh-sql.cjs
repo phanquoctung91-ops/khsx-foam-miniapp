@@ -1,0 +1,129 @@
+// Điểm danh + Phát sữa + việc nhắc điểm danh 7h (migration 20261005090000) trên PGlite.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {PGlite}=require('@electric-sql/pglite');
+const mig=f=>fs.readFileSync(path.resolve(__dirname,'..','supabase','migrations',f),'utf8');
+const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000000000b', P2='00000000-0000-0000-0000-00000000000c',
+      M='00000000-0000-0000-0000-00000000000d', X='00000000-0000-0000-0000-00000000000e';
+(async()=>{
+  const db=await PGlite.create();
+  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth; create schema private;
+    create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('test.uid',true),'')::uuid $$;
+    create table public.khsx_permissions(permission_key text primary key, display_name text, group_name text, description text, sort_order int);
+    create table public.khsx_profiles(user_id uuid, telegram_user_id bigint, display_name text, active boolean);
+    create table public.khsx_account_permissions(user_id uuid, permission_key text);
+    -- A = chủ tài khoản (anh Tùng, đủ mọi quyền); người khác chỉ có quyền được cấp
+    create function private.khsx_is_permission_owner(p_user uuid default auth.uid()) returns boolean language sql security definer as $$ select p_user='${A}'::uuid $$;
+    create function private.khsx_has_permission(p_key text, p_user uuid default auth.uid()) returns boolean language sql security definer as
+      $$ select p_user='${A}'::uuid or exists(select 1 from public.khsx_account_permissions where user_id=p_user and permission_key=p_key) $$;
+    revoke all on function private.khsx_has_permission(text,uuid), private.khsx_is_permission_owner(uuid) from public;
+    grant usage on schema private, auth to authenticated; grant execute on function auth.uid() to authenticated;
+    grant execute on function private.khsx_has_permission(text,uuid), private.khsx_is_permission_owner(uuid) to authenticated;
+    create table public.khsx_quarter_targets(year int, quarter int, target_qty int, work_dates date[]);
+    create table public.khsx_orders(id text primary key, production_date date, deleted_at timestamptz, is_warranty boolean default false, is_drop boolean default false, is_ghost boolean default false);
+    insert into public.khsx_profiles values('${A}',111,'Tùng',true),('${P}',222,'Phước',true),('${P2}',333,'Phước 2',true),('${M}',444,'Không quyền',true),('${X}',555,'Đã nghỉ',false);`);
+  for(const f of ['20260928090000_giao_viec.sql','20260929090000_giao_viec_quyen_bot.sql','20260930090000_giao_viec_doc_so_viec.sql',
+                  '20261002090000_giao_viec_tieu_de_sua_viec.sql','20261002120000_sua_viec_dang_lam.sql']) await db.exec(mig(f));
+  await db.exec(mig('20261005090000_diem_danh_phat_sua.sql'));
+  // Hôm nay giả lập: đặt được bằng test.hn
+  await db.exec(`create or replace function private.khsx_hom_nay_vn() returns date language sql stable as $$ select current_setting('test.hn')::date $$;`);
+  const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`), hn=d=>db.exec(`set test.hn='${d}'`);
+  const loi=async f=>{ try{ await f(); return ''; }catch(e){ return e.message; } };
+  hn('2026-10-12');
+
+  assert.equal((await q(`select count(*)::int n from public.khsx_permissions where permission_key in ('diem_danh','phat_sua')`)).rows[0].n,2);
+  console.log('PASS 2 quyền mới (Điểm danh, Phát sữa) có trong danh mục phân quyền');
+
+  // Danh sách người
+  await la(P); await db.exec(`insert into public.khsx_account_permissions values('${P}','diem_danh')`);
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_them_nguoi_v1('Lan')`)),/ATTENDANCE_LIST_FORBIDDEN/);
+  await la(A);
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_them_nguoi_v1('   ')`)),/ATTENDEE_NAME_INVALID/);
+  const lan=(await q(`select public.khsx_diem_danh_them_nguoi_v1('  Lan ') id`)).rows[0].id;
+  const hoa=(await q(`select public.khsx_diem_danh_them_nguoi_v1('Hoa') id`)).rows[0].id;
+  const nghi=(await q(`select public.khsx_diem_danh_them_nguoi_v1('Mai') id`)).rows[0].id;
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_them_nguoi_v1('lan')`)),/ATTENDEE_EXISTS/);
+  assert.equal((await q(`select ten from public.khsx_diem_danh_nguoi where id=$1`,[lan])).rows[0].ten,'Lan');
+  console.log('PASS chỉ chủ tài khoản thêm người; tên trống / trùng bị chặn; tên được cắt khoảng trắng');
+
+  // Tick điểm danh
+  await la(M); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-12',true,true)`,[lan])),/ATTENDANCE_FORBIDDEN/);
+  await la(P);
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-13',true,true)`,[lan])),/ATTENDANCE_DATE_INVALID/);
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,true)`,[lan]);    // cả ngày
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-09',true,false)`,[lan]);   // chỉ sáng
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-10',false,true)`,[lan]);   // chỉ chiều
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-11',true,true)`,[lan]);
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-11',false,false)`,[lan]);  // bỏ hết = xóa
+  assert.equal((await q(`select count(*)::int n from public.khsx_diem_danh where nguoi_id=$1`,[lan])).rows[0].n,3);
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,true)`,[hoa]);
+  await la(A); await q(`select public.khsx_diem_danh_xoa_nguoi_v1($1)`,[nghi]);
+  await la(P); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-12',true,true)`,[nghi])),/ATTENDEE_NOT_FOUND/);
+  console.log('PASS tick sáng / chiều / cả ngày, sửa ngày cũ được, bỏ cả hai thì xóa dòng, ngày tương lai và người đã xóa bị chặn');
+
+  // Bảng sữa
+  await la(P2); await db.exec(`insert into public.khsx_account_permissions values('${P2}','phat_sua')`);
+  const bang=async(tu,den)=>(await q(`select ten,ngay_chua_nhan,hop_chua_nhan,hop_da_nhan from public.khsx_phat_sua_bang_v1($1,$2)`,[tu,den])).rows;
+  assert.deepEqual(await bang('2026-10-08','2026-10-12'),[{ten:'Hoa',ngay_chua_nhan:1,hop_chua_nhan:2,hop_da_nhan:0},{ten:'Lan',ngay_chua_nhan:3,hop_chua_nhan:4,hop_da_nhan:0}]);
+  assert.deepEqual(await bang('2026-10-09','2026-10-10'),[{ten:'Lan',ngay_chua_nhan:2,hop_chua_nhan:2,hop_da_nhan:0}]);
+  await la(P); assert.match(await loi(()=>q(`select * from public.khsx_phat_sua_bang_v1('2026-10-08','2026-10-12')`)),/MILK_FORBIDDEN/);
+  await la(P2); assert.match(await loi(()=>q(`select * from public.khsx_phat_sua_bang_v1('2026-10-12','2026-10-08')`)),/MILK_RANGE_INVALID/);
+  console.log('PASS đếm hộp: cả ngày = 2, một buổi = 1; lọc theo khoảng ngày; quyền Phát sữa riêng với quyền Điểm danh');
+
+  // Phát sữa: loại ngày đã nhận
+  assert.equal((await q(`select public.khsx_phat_sua_v1($1,'2026-10-08','2026-10-09') h`,[lan])).rows[0].h,3);
+  assert.deepEqual(await bang('2026-10-08','2026-10-12'),[{ten:'Hoa',ngay_chua_nhan:1,hop_chua_nhan:2,hop_da_nhan:0},{ten:'Lan',ngay_chua_nhan:1,hop_chua_nhan:1,hop_da_nhan:3}]);
+  assert.match(await loi(()=>q(`select public.khsx_phat_sua_v1($1,'2026-10-08','2026-10-09')`,[lan])),/MILK_NOTHING_TO_GIVE/);
+  assert.equal((await q(`select public.khsx_phat_sua_v1($1,'2026-10-08','2026-10-12') h`,[lan])).rows[0].h,1);   // chỉ ngày 10/10 còn chưa nhận
+  const dp=(await q(`select ngay::text, so_hop, phat_boi from public.khsx_phat_sua where nguoi_id=$1 order by ngay`,[lan])).rows;
+  assert.deepEqual(dp.map(r=>[r.ngay,r.so_hop]),[['2026-10-08',2],['2026-10-09',1],['2026-10-10',1]]); assert.equal(dp[0].phat_boi,P2);
+  await la(P); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,false)`,[lan])),/ATTENDANCE_LOCKED/);
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-12',true,false)`,[lan]);   // ngày mới vẫn tick được
+  await la(P2); assert.equal((await q(`select public.khsx_phat_sua_v1($1,'2026-10-08','2026-10-12') h`,[lan])).rows[0].h,1);
+  console.log('PASS tick đã phát: ghi số hộp từng ngày + người bấm, ngày đã nhận không tính lại, ngày đã phát khóa điểm danh');
+
+  // Quyền đọc bảng khi đăng nhập thật
+  const doc=async u=>{ await db.exec(`set test.uid='${u}'; set role authenticated`); try{ return (await q(`select count(*)::int n from public.khsx_diem_danh`)).rows[0].n; } finally { await db.exec('reset role'); } };
+  assert.equal(await doc(M),0); assert.equal(await doc(P)>0,true); assert.equal(await doc(P2)>0,true);
+  await db.exec('set role authenticated'); await la(P);
+  assert.match(await loi(()=>q(`insert into public.khsx_diem_danh values($1,'2026-10-01',true,true)`,[lan])),/permission denied/);
+  await db.exec('reset role');
+  console.log('PASS tài khoản không quyền không đọc được; ghi thẳng vào bảng bị chặn (chỉ qua hàm)');
+
+  // Việc nhắc 7h
+  await db.exec(`insert into public.khsx_account_permissions values('${P2}','diem_danh'),('${X}','diem_danh')`);   // X đã nghỉ (không active)
+  const tao=async d=>{ await hn(d); return Number((await q(`select private.khsx_tao_viec_diem_danh() n`)).rows[0].n); };
+  assert.equal(await tao('2026-10-12'),0);   // quý chưa lưu lịch
+  await db.exec(`insert into public.khsx_quarter_targets values(2026,4,11500,array['2026-10-12','2026-10-13']::date[])`);
+  assert.equal(await tao('2026-10-14'),0);   // ngày không trong lịch, không có KHSX
+  await db.exec(`insert into public.khsx_orders(id,production_date,is_drop) values('r','2026-10-14',true)`);
+  await db.exec(`insert into public.khsx_orders(id,production_date,is_warranty) values('w','2026-10-14',true)`);
+  await db.exec(`insert into public.khsx_orders(id,production_date,deleted_at) values('d','2026-10-14',now())`);
+  await db.exec(`insert into public.khsx_orders(id,production_date,is_ghost) values('g','2026-10-14',true)`);
+  assert.equal(await tao('2026-10-14'),0);   // đơn rớt / bảo hành / đã xóa / ma không tính
+  assert.equal(await tao('2026-10-12'),2);   // trong lịch: Phước + Phước 2 (P có diem_danh, P2 có diem_danh); X nghỉ, M không quyền
+  assert.equal(await tao('2026-10-12'),0);   // chạy lại cùng ngày không tạo trùng
+  const v=(await q(`select nguoi_nhan,tieu_de,trang_thai,han::text han,nguoi_giao from public.khsx_tasks where tu_dong='diem_danh' order by nguoi_nhan`)).rows;
+  assert.deepEqual(v.map(r=>[r.nguoi_nhan,r.tieu_de,r.trang_thai,r.han]),[[P,'Điểm danh tổ 12/10','dang_lam','2026-10-12'],[P2,'Điểm danh tổ 12/10','dang_lam','2026-10-12']]);
+  assert.equal((await q(`select count(*)::int n from public.khsx_tin_nhan_cho where loai='giao' and chat_id in (222,333)`)).rows[0].n,2);
+  await db.exec(`insert into public.khsx_orders(id,production_date) values('ok','2026-10-18')`);   // Chủ nhật có KHSX, ngoài lịch
+  assert.equal(await tao('2026-10-18'),2);   // Chủ nhật ngoài lịch nhưng có đơn KHSX: vẫn tạo
+  console.log('PASS 7h: quý chưa lưu lịch không tạo; ngoài lịch không KHSX không tạo; đơn rớt/bảo hành/đã xóa không tính; trong lịch hoặc có KHSX thì tạo cho người có quyền, không trùng');
+
+  // Việc tự giao cho chính mình: bấm Xong / nhắc trễ không gửi tin báo người giao (chính mình); việc giao thường vẫn báo
+  await db.exec(`truncate public.khsx_tin_nhan_cho`);
+  const mine=(await q(`select id from public.khsx_tasks where tu_dong='diem_danh' and nguoi_nhan=$1 and ngay_tu_dong='2026-10-12'`,[P])).rows[0].id;
+  await hn('2026-10-12'); await la(P); await q(`select public.khsx_xong_viec_v1($1)`,[mine]);
+  assert.equal((await q(`select count(*)::int n from public.khsx_tin_nhan_cho`)).rows[0].n,0);
+  await hn('2026-10-12'); await la(A);
+  const thuong=(await q(`select public.khsx_giao_viec_v2($1,'Việc thường',''::text) id`,[P])).rows[0].id;
+  await la(P); await q(`select public.khsx_nhan_viec_v1($1,'2026-10-12')`,[thuong]);
+  await db.exec(`truncate public.khsx_tin_nhan_cho`);
+  await hn('2026-10-13'); await q(`select private.khsx_nhac_viec_tre()`);
+  const loai=(await q(`select loai,chat_id::int c from public.khsx_tin_nhan_cho order by id`)).rows;
+  // Tới hạn mà chưa xong ngày 13/10: việc điểm danh 12/10 của P2 (chỉ 'nhac') + việc thường của P (nhac + bao_tre); việc 18/10 chưa tới hạn
+  assert.equal(loai.filter(r=>r.loai==='bao_tre').length,1);
+  assert.equal(loai.filter(r=>r.loai==='nhac').length,2);
+  await la(P); await q(`select public.khsx_xong_viec_v1($1)`,[thuong]);
+  assert.equal((await q(`select count(*)::int n from public.khsx_tin_nhan_cho where loai='xong'`)).rows[0].n,1);
+  console.log('PASS việc tự giao cho chính mình không báo xong/trễ cho chính mình; việc giao thường vẫn báo như cũ');
+})().catch(e=>{ console.error('FAIL',e); process.exit(1); });
