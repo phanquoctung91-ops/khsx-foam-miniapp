@@ -2077,9 +2077,20 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   <div class="card" id="diemDanhCard" style="display:none;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
       <h3 style="margin:0;font-size:17px;">📋 Điểm danh</h3>
-      <button type="button" id="ddPhatSuaBtn" class="capacity-quick-btn" style="display:none;">🥛 Phát sữa</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" id="ddXuatBtn" class="capacity-quick-btn">📥 Xuất Excel</button>
+        <button type="button" id="ddPhatSuaBtn" class="capacity-quick-btn" style="display:none;">🥛 Phát sữa</button>
+      </div>
     </div>
     <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5;">Tick sáng / chiều từng người. Cả ngày = 2 hộp sữa, một buổi = 1 hộp. Sửa được ngày cũ, trừ ngày đã phát sữa.</div>
+    <div id="ddXuat" style="display:none;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:10px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);">Từ ngày <input type="date" id="ddXuatTu" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);">Đến ngày <input type="date" id="ddXuatDen" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+        <button type="button" id="ddXuatTai" class="primary-btn">Tải file Excel</button>
+        <span id="ddXuatStatus" class="save-status" aria-live="polite"></span>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
       <label style="font-size:12px;font-weight:700;color:var(--text2);">Ngày <input type="date" id="ddNgay" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
       <button type="button" id="ddHomNayBtn" class="capacity-quick-btn">Hôm nay</button>
@@ -2275,7 +2286,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=221"></script>
+<script src="raw-data.js?v=222"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4388,7 +4399,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 221;
+const APP_VERSION = 222;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12909,6 +12920,8 @@ function initDiemDanh(){
   if(!den.value) den.value=hn;
   if(!tu.value) tu.value=hn.slice(0,8)+'01';
   den.max=hn; tu.max=hn;
+  const xt=document.getElementById('ddXuatTu'), xd=document.getElementById('ddXuatDen');
+  if(!xd.value) xd.value=hn; if(!xt.value) xt.value=hn.slice(0,8)+'01'; xd.max=hn; xt.max=hn;
   taiDiemDanh();
 }
 async function taiDiemDanh(){
@@ -13029,6 +13042,56 @@ document.getElementById('ddSuaKhung')?.addEventListener('click',async e=>{
   const {data,error}=await supabaseDb.rpc('khsx_phat_sua_v1',{p_nguoi:r.nguoi_id,p_tu:tu,p_den:den});
   if(error){ b.disabled=false; return ddBao('ddSuaStatus',loiDiemDanh(error),'var(--danger)'); }
   await taiPhatSua(); taiDiemDanh(); ddBao('ddSuaStatus',`Đã ghi phát ${data} hộp cho ${r.ten}.`,'var(--success)');
+});
+
+// --- Xuất Excel: mỗi người một dòng, mỗi ngày một cột; cuối dòng ngày công + hộp sữa ---
+// Ngày công: cả ngày = 1, một buổi = 0,5. Hộp: cả ngày 2, một buổi 1. Hộp đã phát = hộp của các ngày đã đánh dấu phát.
+function ddBangXuat(nguoi,dd,ps,tu,den){
+  const ngay=[]; for(let d=new Date(tu+'T00:00:00');isoCuaNgay(d)<=den;d.setDate(d.getDate()+1)) ngay.push(isoCuaNgay(d));
+  const diem={}; dd.forEach(r=>{ (diem[r.nguoi_id]||(diem[r.nguoi_id]={}))[r.ngay]={sang:!!r.sang,chieu:!!r.chieu}; });
+  const phat={}; ps.forEach(r=>{ (phat[r.nguoi_id]||(phat[r.nguoi_id]=new Set())).add(r.ngay); });
+  const ds=nguoi.filter(p=>p.con_dung||diem[p.id]).sort(ddThuTu);
+  const dm=iso=>iso.slice(8,10)+'/'+iso.slice(5,7);
+  const dau=['Tên','Chức vụ','Tổ',...ngay.map(dm),'Ngày công','Tổng hộp','Hộp đã phát','Hộp chưa phát'];
+  const dong=ds.map(p=>{
+    let cong=0,hop=0,da=0;
+    const o=ngay.map(n=>{
+      const r=(diem[p.id]||{})[n]; if(!r||(!r.sang&&!r.chieu)) return '';
+      const ca=r.sang&&r.chieu, h=ca?2:1, daPhat=phat[p.id]?.has(n);
+      cong+=ca?1:0.5; hop+=h; if(daPhat) da+=h;
+      return (ca?'Cả ngày':r.sang?'Sáng':'Chiều')+(daPhat?' 🥛':'');
+    });
+    return [p.ten,p.chuc_vu||'',p.chuc_vu==='Công nhân'?(p.to_lam||''):'',...o,cong,hop,da,hop-da];
+  });
+  return [dau,...dong];
+}
+document.getElementById('ddXuatBtn')?.addEventListener('click',()=>{
+  const o=document.getElementById('ddXuat'); o.style.display=o.style.display==='none'?'block':'none';
+});
+document.getElementById('ddXuatTai')?.addEventListener('click',async e=>{
+  const nut=e.currentTarget, tu=document.getElementById('ddXuatTu').value, den=document.getElementById('ddXuatDen').value;
+  const bao=(t,m)=>ddBao('ddXuatStatus',t,m);
+  if(!duocDiemDanh()&&!duocPhatSua()) return;
+  if(!tu||!den||tu>den) return bao('Chọn khoảng ngày: từ ngày không được sau đến ngày.','var(--danger)');
+  if((new Date(den)-new Date(tu))/86400000>400) return bao('Tối đa 400 ngày một lần xuất.','var(--danger)');
+  if(typeof XLSX==='undefined') return bao('Chưa tải được thư viện Excel, kiểm tra mạng rồi thử lại.','var(--danger)');
+  nut.disabled=true; bao('Đang lấy dữ liệu...');
+  try{
+    const [n,d,s]=await Promise.all([
+      supabaseSelectAll('khsx_diem_danh_nguoi','id,ten,chuc_vu,to_lam,con_dung',q=>q.order('id')),
+      supabaseSelectAll('khsx_diem_danh','nguoi_id,ngay,sang,chieu',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
+      supabaseSelectAll('khsx_phat_sua','nguoi_id,ngay',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id'))]);
+    const loi=n.error||d.error||s.error; if(loi) throw loi;
+    const aoa=ddBangXuat(n.data||[],d.data||[],s.data||[],tu,den);
+    if(aoa.length<2) return bao('Không có ai trong danh sách để xuất.','var(--danger)');
+    const ws=XLSX.utils.aoa_to_sheet(aoa), cot=aoa[0].length;
+    ws['!cols']=aoa[0].map((_,i)=>({wch:i===0?26:i<3?18:i<cot-4?11:13}));
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Điểm danh');
+    const dmy=iso=>iso.split('-').reverse().join('-');
+    XLSX.writeFile(wb,`Diem danh ${dmy(tu)} den ${dmy(den)}.xlsx`);
+    bao(`Đã tải file: ${aoa.length-1} người, ${cot-7} ngày.`,'var(--success)');
+  }catch(err){ bao(`Chưa xuất được: ${err?.message||err}`,'var(--danger)'); }
+  finally{ nut.disabled=false; }
 });
 
 // ============================================================================
