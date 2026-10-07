@@ -1885,6 +1885,19 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
         <input id="viecTieuDe" type="text" maxlength="150" placeholder="Ví dụ: Theo dõi hàng trả về" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
       <label style="font-size:12px;font-weight:700;color:var(--text2);">Chi tiết (không bắt buộc)
         <textarea id="viecNoiDung" rows="4" maxlength="3000" placeholder="Ví dụ: danh sách mã, số tấm, ghi chú..." style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></textarea></label>
+      <div id="viecLapKhung" style="display:grid;gap:10px;">
+        <div class="bom-chip-row" id="viecLapChon"><button type="button" class="bom-chip active" data-lap="mot">Một lần</button><button type="button" class="bom-chip" data-lap="lap">🔁 Lặp lại</button></div>
+        <div id="viecLapChiTiet" style="display:none;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;">
+          <div class="bom-chip-row" id="viecLapKieu"></div>
+          <div id="viecLapThu" style="display:none;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
+          <div id="viecLapNgay" style="display:none;grid-template-columns:repeat(7,1fr);gap:6px;"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <label style="font-size:12px;font-weight:700;color:var(--text2);flex:1;min-width:140px;">Từ ngày <input id="viecLapTu" type="date" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+            <label style="font-size:12px;font-weight:700;color:var(--text2);flex:1;min-width:140px;">Đến ngày (không bắt buộc) <input id="viecLapDen" type="date" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+          </div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5;">7h sáng mỗi ngày đến lượt, hệ thống tự tạo việc cho người nhận, hạn trong ngày, bot nhắn Telegram; người nhận chỉ bấm <b>Xong</b>. Chỉ tạo vào ngày nằm trong Lịch ngày làm việc quý (bỏ Chủ nhật, lễ). Hằng tháng gặp ngày nghỉ thì dời sang ngày làm việc kế tiếp trong tháng. 17:00 chưa xong thì bot nhắc người nhận và báo anh; hôm sau vẫn tạo việc mới.</div>
+        </div>
+      </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><button id="viecGiaoBtn" type="button" class="primary-btn">Giao việc</button><span id="viecStatus" class="save-status"></span></div>
     </div>
     <div class="bom-chip-row" id="viecLoc">
@@ -1899,6 +1912,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <tbody id="viecBang"></tbody>
     </table></div>
     <div id="viecThe"></div>
+    <h4 style="margin:18px 0 6px;font-size:15px;">🔁 Việc lặp</h4>
+    <div id="viecLapDs"></div>
   </div>
 </div>
 
@@ -2286,7 +2301,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=223"></script>
+<script src="raw-data.js?v=224"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4399,7 +4414,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 223;
+const APP_VERSION = 224;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -11447,11 +11462,12 @@ async function napLaiTuGoi(){
 
 document.getElementById('doBackupBtn').addEventListener('click', taiGoiSaoLuu);
 document.getElementById('doRestoreBtn').addEventListener('click', napLaiTuGoi);
-// ============ Lấy KHSX từ Google Sheet — chỉ đọc từ 26/09/2026 (anh Tùng chốt 25/09/2026) ============
+// ============ Lấy KHSX từ Google Sheet — chỉ đọc từ HÔM NAY trở đi (anh Tùng chốt 25/09/2026; đổi 07/10/2026: ngày đã qua coi như đã chốt, không đọc lại) ============
 // Không tự chạy ngầm: quản lý bấm nút, xem trước từng ngày (thêm / bỏ), tick ngày nào mới ghi ngày đó.
-// Ngày trước 26/09 vẫn nạp bằng file như cũ. Ghi qua đúng đường nạp file (khsx_reconcile_sheet_plan):
+// Ngày đã qua vẫn nạp bằng file như cũ. Ghi qua đúng đường nạp file (khsx_reconcile_sheet_plan):
 // ngày đang chốt không đổi; đơn đã có số mà Sheet bỏ thì giữ lại và vào "Đơn cần kiểm tra".
-const SHEET_DOC_TU_NGAY='26/09/2026';
+const sheetDocTuNgay=()=>{ const [y,m,d]=homNayIso().split('-'); return `${d}/${m}/${y}`; };   // hôm nay dd/mm/yyyy
+const sheetLocTuNgay=(rows,tu)=>{ const k=khoaNgayDMY(tu); return rows.filter(r=>khoaNgayDMY(r.date)>=k); };
 let sheetXemTruoc=null;   // {docLuc, theoNgay:{'dd/mm/yyyy':[dòng Sheet]}}
 async function moLayKhsxSheet(){
   if(!canManage()) return;
@@ -11460,13 +11476,13 @@ async function moLayKhsxSheet(){
   let rows;
   try{ rows=(await readSheetPlanSource()).rows; }
   catch(e){ than.innerHTML=`<div style="color:var(--danger);">Không đọc được Sheet: ${thoatHtml(e.message||String(e))}</div>`; return; }
-  const tuK=khoaNgayDMY(SHEET_DOC_TU_NGAY), theoNgay={};
-  rows.filter(r=>khoaNgayDMY(r.date)>=tuK).forEach(r=>{ (theoNgay[r.date]=theoNgay[r.date]||[]).push(r); });
+  const tu=sheetDocTuNgay(), theoNgay={};
+  sheetLocTuNgay(rows,tu).forEach(r=>{ (theoNgay[r.date]=theoNgay[r.date]||[]).push(r); });
   sheetXemTruoc={docLuc:Date.now(),theoNgay};
   const ngays=Object.keys(theoNgay).sort((a,b)=>khoaNgayDMY(a)-khoaNgayDMY(b));
-  if(!ngays.length){ than.innerHTML=`<div>Sheet chưa có dòng Foam nào từ ngày ${SHEET_DOC_TU_NGAY}.</div>`; return; }
+  if(!ngays.length){ than.innerHTML=`<div>Sheet chưa có dòng Foam nào từ hôm nay (${tu}).</div>`; return; }
   const tomTat=ds=>ds.map(o=>`${thoatHtml(o.ma||o.dong||'')} ${thoatHtml(formatKichThuoc(o))} (${Number(o.so_luong)||0})`).join(', ');
-  than.innerHTML=`<p style="margin:0 0 8px;font-size:12.5px;color:var(--text2);">Chỉ đọc từ ngày ${SHEET_DOC_TU_NGAY}. Tick ngày nào thì ghi ngày đó, ngày không tick giữ nguyên.</p>`
+  than.innerHTML=`<p style="margin:0 0 8px;font-size:12.5px;color:var(--text2);">Chỉ đọc từ hôm nay (${tu}); ngày đã qua coi như đã chốt, không đọc lại. Tick ngày nào thì ghi ngày đó, ngày không tick giữ nguyên.</p>`
     + ngays.map(ngay=>{
       const moi=theoNgay[ngay], idMoi=new Set(moi.map(r=>String(r.id)));
       const cu=getOrders().filter(o=>o.date===ngay&&String(o.id).startsWith('r_')&&!o.is_manual&&!o.is_drop&&!o.is_warranty&&!o.is_ghost);
@@ -12636,6 +12652,9 @@ function loiViec(e){
   if(m.includes('TASK_EDIT_FORBIDDEN')) return 'Chỉ người giao việc này mới sửa được.';
   if(m.includes('TASK_NOT_FOUND')) return 'Không tìm thấy việc này, có thể đã bị xoá.';
   if(m.includes('TASK_TEXT_INVALID')) return 'Ghi tiêu đề (tối đa 150 chữ); chi tiết tối đa 3.000 chữ.';
+  if(m.includes('TASK_REPEAT_DAYS_REQUIRED')) return 'Chọn ít nhất một thứ (hằng tuần) hoặc một ngày (hằng tháng).';
+  if(m.includes('TASK_REPEAT_RANGE_INVALID')) return 'Từ ngày không được trước hôm nay; đến ngày không được trước từ ngày.';
+  if(m.includes('TASK_REPEAT_INVALID')) return 'Kiểu lặp không hợp lệ.';
   return `Chưa lưu được: ${m||'lỗi không rõ'}`;
 }
 // Nhờ máy chủ gửi ngay các tin đang chờ (không đợi bộ hẹn giờ 5 phút).
@@ -12683,6 +12702,7 @@ function baoLoiTaiViec(){
 }
 // Việc giao trước bản có tiêu đề (hoặc máy chủ chưa cập nhật): dòng đầu là tiêu đề, phần còn lại là chi tiết.
 function tieuDeViec(v){ return v.tieu_de || String(v.noi_dung||'').split('\n')[0].trim(); }
+const tieuDeViecHien=v=>(String(v.tu_dong||'').startsWith('lap-')?'🔁 ':'')+tieuDeViec(v);   // chỉ để hiển thị; ô sửa dùng tieuDeViec
 function chiTietViec(v){ return v.tieu_de ? String(v.noi_dung||'') : String(v.noi_dung||'').split('\n').slice(1).join('\n').trim(); }
 const nutXemViec=v=>`<a href="#" data-viec-xem="${v.id}" style="font-size:12.5px;font-weight:600;color:var(--accent);white-space:nowrap;">Xem chi tiết</a>`;
 let viecDangXem=null;
@@ -12715,7 +12735,7 @@ function moXemViec(id,suaLuon=false){
       </div>`;
   }else{
     hop.innerHTML=`<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
-        <h3 style="margin:0;font-size:17px;">${thoatHtml(tieuDeViec(v))}</h3>
+        <h3 style="margin:0;font-size:17px;">${thoatHtml(tieuDeViecHien(v))}</h3>
         <button type="button" class="capacity-quick-btn" data-viec-dong="1">Đóng</button></div>
       <div style="white-space:pre-wrap;font-size:14px;line-height:1.55;margin:12px 0;${ct?'':'color:var(--text2);'}">${ct?thoatHtml(ct):'Không có chi tiết.'}</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.7;border-top:1px solid var(--border);padding-top:10px;">
@@ -12759,7 +12779,7 @@ function veViecCuaToi(){
   hop.style.display='';
   hop.innerHTML=`<div style="font-weight:800;font-size:15px;margin-bottom:8px;">📝 Việc của tôi <span class="viec-dem${cua.some(viecTre)?' tre':''}" style="display:inline-block;">${cua.length}</span></div>`+cua.map(v=>{
     const nguoiGiao=tenNhanSu(v.nguoi_giao);
-    const dau=`<div style="font-size:14px;font-weight:600;">${thoatHtml(tieuDeViec(v))} · ${nutXemViec(v)}</div>
+    const dau=`<div style="font-size:14px;font-weight:600;">${thoatHtml(tieuDeViecHien(v))} · ${nutXemViec(v)}</div>
       <div style="font-size:12px;color:var(--text2);margin:2px 0 6px;">${nguoiGiao?thoatHtml(nguoiGiao)+' giao':'Được giao'} ${ngayNgan(String(v.giao_luc).slice(0,10))}</div>`;
     const nut=v.trang_thai==='cho_nhan'
       ?`<label style="font-size:12.5px;">Hẹn xong <input type="date" class="viec-han" min="${homNayIso()}" value="${homNayIso()}" style="font-size:14px;padding:6px;"></label>
@@ -12801,6 +12821,7 @@ function initViecPage(){
   sel.innerHTML='<option value="">— Chọn người —</option>'+ds.map(p=>`<option value="${p.user_id}">${thoatHtml(p.display_name||'(chưa có tên)')}${p.unit_name?' · '+thoatHtml(supabaseUnitToUi(p.unit_name)||p.unit_name):''}${p.telegram_user_id?'':' · chưa có Telegram'}</option>`).join('');
   if(cu) sel.value=cu;
   veBangViec(); taiViecNen(true);
+  veLapForm(); taiViecLap();
 }
 function veBangViec(){
   const than=document.getElementById('viecBang'); if(!than) return;
@@ -12819,11 +12840,11 @@ function veBangViec(){
     const loiTin=v.trang_thai==='cho_nhan'&&v.tin_giao_loi
       ?`<div style="font-size:11.5px;color:var(--danger);margin-top:3px;">Chưa gửi được tin: ${thoatHtml(v.tin_giao_loi)}</div>`:'';
     const nutGuiLai=v.trang_thai==='cho_nhan'&&v.tin_giao_loi?`<button type="button" class="capacity-quick-btn" data-viec-gui-lai="${v.id}">Gửi lại tin</button>`:'';
-    const dong=`<tr><td style="max-width:360px;"><b>${thoatHtml(tieuDeViec(v))}</b> · ${nutXemViec(v)}</td>
+    const dong=`<tr><td style="max-width:360px;"><b>${thoatHtml(tieuDeViecHien(v))}</b> · ${nutXemViec(v)}</td>
       <td>${thoatHtml(tenNhanSu(v.nguoi_nhan)||'—')}</td><td>${ngayNgan(String(v.giao_luc).slice(0,10))}</td>
       <td>${v.han?ngayNgan(v.han):'—'}</td><td>${tt}${loiTin}</td>
       <td>${nutGuiLai}</td></tr>`;
-    const theHtml=`<div class="viec-the"><div style="font-weight:600;font-size:14px;">${thoatHtml(tieuDeViec(v))} · ${nutXemViec(v)}</div>
+    const theHtml=`<div class="viec-the"><div style="font-weight:600;font-size:14px;">${thoatHtml(tieuDeViecHien(v))} · ${nutXemViec(v)}</div>
       <div style="color:var(--text2);margin:3px 0 6px;">${thoatHtml(tenNhanSu(v.nguoi_nhan)||'—')} · giao ${ngayNgan(String(v.giao_luc).slice(0,10))}${v.han?` · hẹn ${ngayNgan(v.han)}`:''}</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">${tt}${nutGuiLai}</div>${loiTin}</div>`;
     return {dong,theHtml};
@@ -12852,6 +12873,18 @@ document.getElementById('viecGiaoBtn')?.addEventListener('click',async e=>{
   const nguoi=document.getElementById('viecNguoiNhan').value, td=document.getElementById('viecTieuDe').value.trim(), nd=document.getElementById('viecNoiDung').value.trim();
   if(!nguoi) return bao('Chọn người nhận việc.','var(--danger)');
   if(!td) return bao('Ghi tiêu đề việc.','var(--danger)');
+  if(viecLapMode==='lap'){
+    if(viecLapKieu==='tuan'&&!viecLapThu.size) return bao('Chọn ít nhất một thứ trong tuần.','var(--danger)');
+    if(viecLapKieu==='thang'&&!viecLapNgay.size) return bao('Chọn ít nhất một ngày trong tháng.','var(--danger)');
+    nut.disabled=true; bao('Đang tạo việc lặp...','var(--text2)');
+    const {error:e2}=await supabaseDb.rpc('khsx_giao_viec_lap_v1',{p_nguoi_nhan:nguoi,p_tieu_de:td,p_chi_tiet:nd,p_kieu:viecLapKieu,
+      p_thu:[...viecLapThu],p_ngay:[...viecLapNgay],p_tu:document.getElementById('viecLapTu').value||null,p_den:document.getElementById('viecLapDen').value||null});
+    nut.disabled=false;
+    if(e2) return bao(loiViec(e2),'var(--danger)');
+    document.getElementById('viecTieuDe').value=''; document.getElementById('viecNoiDung').value='';
+    bao(`Đã tạo việc lặp cho ${tenNhanSu(nguoi)||'người nhận'}. Hôm nay đến lượt thì việc đã được tạo luôn.`,'var(--success)');
+    guiTinViecNgay(); await Promise.all([taiViecLap(),taiViecNen(true)]); return;
+  }
   nut.disabled=true; bao('Đang giao...','var(--text2)');
   const {error}=await supabaseDb.rpc('khsx_giao_viec_v2',{p_nguoi_nhan:nguoi,p_tieu_de:td,p_chi_tiet:nd});
   nut.disabled=false;
@@ -13110,6 +13143,66 @@ document.getElementById('ddXuatTai')?.addEventListener('click',async e=>{
     bao(`Đã tải file: ${aoa.length-1} người, ${cot-7} ngày.`,'var(--success)');
   }catch(err){ bao(`Chưa xuất được: ${err?.message||err}`,'var(--danger)'); }
   finally{ nut.disabled=false; }
+});
+
+// --- Việc lặp (bản 224): chọn Một lần / Lặp lại khi giao; danh sách để tạm dừng, xóa ---
+let viecLapMode='mot', viecLapKieu='ngay', viecLapThu=new Set(), viecLapNgay=new Set(), viecLapDs=[];
+const THU_TEN={1:'Thứ 2',2:'Thứ 3',3:'Thứ 4',4:'Thứ 5',5:'Thứ 6',6:'Thứ 7',7:'Chủ nhật'};
+const moTaLap=r=>(r.kieu==='ngay'?'Hằng ngày':r.kieu==='tuan'?'Hằng tuần: '+(r.thu||[]).map(x=>THU_TEN[x]).join(', '):'Hằng tháng: ngày '+(r.ngay_thang||[]).join(', '))
+  +` · từ ${isoToDMY(r.tu_ngay)}${r.den_ngay?' đến '+isoToDMY(r.den_ngay):''}`;
+function veLapForm(){
+  const k=document.getElementById('viecLapKhung'); if(!k) return;
+  const lap=viecLapMode==='lap';
+  k.querySelectorAll('#viecLapChon .bom-chip').forEach(c=>c.classList.toggle('active',c.dataset.lap===viecLapMode));
+  document.getElementById('viecLapChiTiet').style.display=lap?'grid':'none';
+  document.getElementById('viecLapKieu').innerHTML=[['ngay','Hằng ngày'],['tuan','Hằng tuần'],['thang','Hằng tháng']]
+    .map(([v,t])=>`<button type="button" class="bom-chip${v===viecLapKieu?' active':''}" data-lap-kieu="${v}">${t}</button>`).join('');
+  const thu=document.getElementById('viecLapThu'), ng=document.getElementById('viecLapNgay');
+  thu.style.display=lap&&viecLapKieu==='tuan'?'grid':'none';
+  ng.style.display=lap&&viecLapKieu==='thang'?'grid':'none';
+  thu.innerHTML=[1,2,3,4,5,6,7].map(i=>`<button type="button" class="dd-nut${viecLapThu.has(i)?' on':''}" data-lap-thu="${i}" aria-pressed="${viecLapThu.has(i)}">${THU_TEN[i]}</button>`).join('');
+  ng.innerHTML=Array.from({length:31},(_,i)=>i+1).map(i=>`<button type="button" class="dd-nut${viecLapNgay.has(i)?' on':''}" data-lap-ng="${i}" aria-pressed="${viecLapNgay.has(i)}" style="min-height:40px;">${i}</button>`).join('');
+  const hn=homNayIso(), tu=document.getElementById('viecLapTu'), den=document.getElementById('viecLapDen');
+  tu.min=hn; if(!tu.value||tu.value<hn) tu.value=hn; den.min=tu.value;
+  document.getElementById('viecGiaoBtn').textContent=lap?'Giao việc lặp':'Giao việc';
+}
+document.getElementById('viecLapKhung')?.addEventListener('click',e=>{
+  const m=e.target.closest('[data-lap]'), kk=e.target.closest('[data-lap-kieu]'), t=e.target.closest('[data-lap-thu]'), n=e.target.closest('[data-lap-ng]');
+  if(m) viecLapMode=m.dataset.lap;
+  else if(kk) viecLapKieu=kk.dataset.lapKieu;
+  else if(t){ const i=Number(t.dataset.lapThu); viecLapThu.has(i)?viecLapThu.delete(i):viecLapThu.add(i); }
+  else if(n){ const i=Number(n.dataset.lapNg); viecLapNgay.has(i)?viecLapNgay.delete(i):viecLapNgay.add(i); }
+  else return;
+  veLapForm();
+});
+document.getElementById('viecLapTu')?.addEventListener('change',()=>{ const d=document.getElementById('viecLapDen'); d.min=document.getElementById('viecLapTu').value; if(d.value&&d.value<d.min) d.value=''; });
+async function taiViecLap(){
+  if(!duocGiaoViec()) return;
+  const {data,error}=await supabaseDb.from('khsx_viec_lap').select('*').order('tao_luc',{ascending:false});
+  const o=document.getElementById('viecLapDs'); if(!o) return;
+  if(error){ o.innerHTML=`<div style="color:var(--danger);">Chưa tải được việc lặp: ${thoatHtml(error.message||error)}</div>`; return; }
+  viecLapDs=data||[];
+  o.innerHTML=viecLapDs.length?viecLapDs.map(r=>`<div class="dd-the"><div class="dd-the-ten">🔁 ${thoatHtml(r.tieu_de)}${r.tam_dung?' <span class="bom-nhan thieu">Tạm dừng</span>':' <span class="bom-nhan da">Đang chạy</span>'}
+      <small>${thoatHtml(tenNhanSu(r.nguoi_nhan)||'—')} · ${thoatHtml(moTaLap(r))}</small></div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        <button type="button" class="capacity-quick-btn" style="min-height:40px;" data-lap-tam="${r.id}">${r.tam_dung?'▶ Tiếp tục':'⏸ Tạm dừng'}</button>
+        <button type="button" class="capacity-quick-btn" style="min-height:40px;" data-lap-xoa="${r.id}">Xóa</button></div></div>`).join('')
+    :'<div style="color:var(--text2);padding:8px 0;">Chưa có việc lặp nào.</div>';
+}
+document.getElementById('viecLapDs')?.addEventListener('click',async e=>{
+  const st=document.getElementById('viecStatus'), bao=(t,m)=>{ st.textContent=t; st.style.color=m; };
+  const tam=e.target.closest('[data-lap-tam]'), xoa=e.target.closest('[data-lap-xoa]');
+  if(tam){
+    const r=viecLapDs.find(x=>x.id===tam.dataset.lapTam); if(!r) return;
+    const {error}=await supabaseDb.rpc('khsx_viec_lap_tam_dung_v1',{p_id:r.id,p_tam_dung:!r.tam_dung});
+    if(error) return bao(loiViec(error),'var(--danger)');
+    bao(r.tam_dung?'Đã tiếp tục việc lặp.':'Đã tạm dừng việc lặp.','var(--success)'); await taiViecLap();
+  }else if(xoa){
+    const r=viecLapDs.find(x=>x.id===xoa.dataset.lapXoa); if(!r||!confirm(`Xóa việc lặp "${r.tieu_de}"?\n\nViệc đã tạo trước đó vẫn giữ nguyên, chỉ không tạo thêm.`)) return;
+    const {error}=await supabaseDb.rpc('khsx_viec_lap_xoa_v1',{p_id:r.id});
+    if(error) return bao(loiViec(error),'var(--danger)');
+    bao('Đã xóa việc lặp.','var(--success)'); await taiViecLap();
+  }
 });
 
 // ============================================================================
