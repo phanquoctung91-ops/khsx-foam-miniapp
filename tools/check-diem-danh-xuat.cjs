@@ -32,3 +32,11 @@ console.log('PASS ngày công (cả ngày 1, một buổi 0,5), hộp (2 / 1), h
 const t2=J(ctx.ddBangXuat(nguoi,dd,ps,'2026-10-31','2026-11-02'));
 assert.deepEqual(t2[0].slice(3,6),['31/10','01/11','02/11'],'khoảng qua tháng');
 console.log('PASS khoảng ngày qua tháng');
+// Ghi chú: ghép sau trạng thái; ngày không điểm danh mà có ghi chú thì chỉ ghi chú; không đổi ngày công / hộp
+const gc=[{nguoi_id:'a',ngay:'2026-10-02',ghi_chu:'đi trễ'},{nguoi_id:'a',ngay:'2026-10-01',ghi_chu:'  làm bù '},{nguoi_id:'c',ngay:'2026-10-03',ghi_chu:'Nghỉ phép'},{nguoi_id:'b',ngay:'2026-10-20',ghi_chu:'ngoài khoảng'}];
+const t3=J(ctx.ddBangXuat(nguoi,dd,ps,'2026-10-01','2026-10-03',gc));
+assert.deepEqual(t3[3],['An','Công nhân','Tổ may','Cả ngày 🥛 — làm bù','Sáng — đi trễ','Chiều',2,4,2,2]);
+assert.deepEqual(t3[4],['Cúc','','','','','Nghỉ phép',0,0,0,0]);
+assert.deepEqual(t3[1],t[1],'ghi chú ngoài khoảng ngày bị bỏ qua');
+assert.equal(t3[0].length,t[0].length,'không thêm cột');
+console.log('PASS ghi chú trong file xuất: ghép sau trạng thái, ngày nghỉ chỉ ghi chú, không thêm cột, không đổi số liệu');

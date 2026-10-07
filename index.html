@@ -2099,7 +2099,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div class="bom-chip-row" id="ddLoc" style="margin-bottom:8px;"></div>
     <div id="ddKhung">
     <div class="table-scroll dd-bang-ngang" style="max-height:none;"><table style="min-width:0;">
-      <thead><tr><th>Tên</th><th>Chức vụ / Tổ</th><th style="text-align:center;">Cả ngày</th><th style="text-align:center;">Sáng</th><th style="text-align:center;">Chiều</th><th></th></tr></thead>
+      <thead><tr><th>Tên</th><th>Chức vụ / Tổ</th><th style="text-align:center;">Cả ngày</th><th style="text-align:center;">Sáng</th><th style="text-align:center;">Chiều</th><th>Ghi chú</th><th></th></tr></thead>
       <tbody id="ddBang"></tbody>
     </table></div>
     <div id="ddThe" class="dd-the-khung"></div>
@@ -2286,7 +2286,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=222"></script>
+<script src="raw-data.js?v=223"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4399,7 +4399,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 222;
+const APP_VERSION = 223;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12868,7 +12868,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) taiViecN
 const duocDiemDanh=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('diem_danh');
 const duocPhatSua=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('phat_sua');
 const laChuTaiKhoan=()=>toiLa()===KHSX_PERMISSION_OWNER_ID;
-let ddNguoi=[], ddDong={}, ddDaPhat=new Set(), ddLan=0;
+let ddNguoi=[], ddDong={}, ddDaPhat=new Set(), ddLan=0, ddGhiChu={};
 const DD_CHUC_VU=['Trưởng Nhóm','Tổ trưởng sản xuất','Thủ kho','Công nhân'];
 const DD_TO=['Tổ dán 1','Tổ dán 2','Tổ dán 3','Tổ dán 4','Tổ dán 5','Tổ may','Tổ đóng gói','Phụ kho','Hỗ trợ'];
 // Thứ tự danh sách: Trưởng Nhóm, Tổ trưởng sản xuất, Thủ kho, Công nhân (theo tổ), chưa chọn chức vụ ở cuối; cùng nhóm theo tên.
@@ -12898,6 +12898,7 @@ function loiDiemDanh(e){
   if(m.includes('ATTENDEE_NOT_FOUND')) return 'Người này không còn trong danh sách.';
   if(m.includes('ATTENDEE_EXISTS')) return 'Tên này đã có trong danh sách.';
   if(m.includes('ATTENDEE_NAME_INVALID')) return 'Ghi tên (tối đa 100 chữ).';
+  if(m.includes('ATTENDANCE_NOTE_INVALID')) return 'Ghi chú tối đa 200 ký tự.';
   if(m.includes('ATTENDEE_ROLE_INVALID')) return 'Chức vụ không hợp lệ.';
   if(m.includes('ATTENDEE_TEAM_INVALID')) return 'Tổ không hợp lệ.';
   if(m.includes('ATTENDANCE_LIST_FORBIDDEN')) return 'Chỉ chủ tài khoản thêm / xóa người trong danh sách.';
@@ -12927,15 +12928,17 @@ function initDiemDanh(){
 async function taiDiemDanh(){
   const ngay=document.getElementById('ddNgay')?.value; if(!ngay) return;
   const lan=++ddLan; ddBao('ddStatus','Đang tải...');
-  const [n,d,s]=await Promise.all([
+  const [n,d,s,g]=await Promise.all([
     supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten,chuc_vu,to_lam').eq('con_dung',true).order('ten'),
     supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu').eq('ngay',ngay),
-    supabaseDb.from('khsx_phat_sua').select('nguoi_id').eq('ngay',ngay)]);
+    supabaseDb.from('khsx_phat_sua').select('nguoi_id').eq('ngay',ngay),
+    supabaseDb.from('khsx_diem_danh_ghi_chu').select('nguoi_id,ghi_chu').eq('ngay',ngay)]);
   if(lan!==ddLan) return;
-  const loi=n.error||d.error||s.error;
+  const loi=n.error||d.error||s.error||g.error;
   if(loi){ ddBao('ddStatus',`Chưa tải được điểm danh: ${loi.message||loi}`,'var(--danger)'); return; }
   ddNguoi=n.data||[]; ddDong={}; (d.data||[]).forEach(r=>{ ddDong[r.nguoi_id]={sang:!!r.sang,chieu:!!r.chieu}; });
   ddDaPhat=new Set((s.data||[]).map(r=>r.nguoi_id));
+  ddGhiChu={}; (g.data||[]).forEach(r=>{ ddGhiChu[r.nguoi_id]=r.ghi_chu; });
   ddBao('ddStatus',''); veDiemDanh();
 }
 function veDiemDanh(){
@@ -12943,19 +12946,20 @@ function veDiemDanh(){
   const sua=duocDiemDanh(), xoa=laChuTaiKhoan();
   veLocDiemDanh();
   const hien=ddNguoi.filter(ddHopLoc).sort(ddThuTu);
-  const trong=t=>{ than.innerHTML=`<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; };
+  const trong=t=>{ than.innerHTML=`<tr><td colspan="7" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; };
   if(!ddNguoi.length) return trong(`Chưa có ai trong danh sách.${xoa?' Thêm người ở dưới.':''}`);
   if(!hien.length) return trong('Không có ai trong nhóm này.');
+  const oGc=(p,kieu)=>`<input type="text" data-dd-gc data-id="${p.id}" maxlength="200" value="${thoatHtml(ddGhiChu[p.id]||'')}" placeholder="Ghi chú"${sua?'':' disabled'} aria-label="Ghi chú ${thoatHtml(p.ten)}" style="${kieu}font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);box-sizing:border-box;">`;
   than.innerHTML=hien.map(p=>{
     const r=ddDong[p.id]||{sang:false,chieu:false}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
     const o=(k,v)=>`<td style="text-align:center;"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
-    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa, không sửa được">🥛 đã phát</span>':''}</td><td>${ddOChon(p)}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
+    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa, không sửa được">🥛 đã phát</span>':''}</td><td>${ddOChon(p)}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td>${oGc(p,'min-width:0;width:100%;max-width:240px;')}</td><td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
   }).join('');
   the.innerHTML=hien.map(p=>{
     const r=ddDong[p.id]||{sang:false,chieu:false}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
     const nut=(k,txt,on)=>`<button type="button" class="dd-nut${on?' on':''}" data-dd-n="${k}" data-id="${p.id}" aria-pressed="${on}"${tat}>${on?'✓ ':''}${txt}</button>`;
     return `<div class="dd-the"><div class="dd-the-ten">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da">🥛 đã phát</span>':''}${xoa?'':`<small>${thoatHtml(ddNhanCv(p))||'—'}</small>`}</div>${xoa?ddOChon(p):''}
-      <div class="dd-nut-hang">${nut('ca','Cả ngày',r.sang&&r.chieu)}${nut('sang','Sáng',r.sang)}${nut('chieu','Chiều',r.chieu)}</div>${xoa?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
+      <div class="dd-nut-hang">${nut('ca','Cả ngày',r.sang&&r.chieu)}${nut('sang','Sáng',r.sang)}${nut('chieu','Chiều',r.chieu)}</div>${oGc(p,'width:100%;min-width:0;min-height:42px;margin-top:8px;')}${xoa?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
   }).join('');
 }
 async function ghiDiemDanh(id,sang,chieu){
@@ -12971,6 +12975,17 @@ document.getElementById('ddKhung')?.addEventListener('change',e=>{
   const id=c.dataset.id, r=ddDong[id]||{sang:false,chieu:false};
   if(c.dataset.dd==='ca') return ghiDiemDanh(id,c.checked,c.checked);
   ghiDiemDanh(id,c.dataset.dd==='sang'?c.checked:r.sang,c.dataset.dd==='chieu'?c.checked:r.chieu);
+});
+document.getElementById('ddKhung')?.addEventListener('change',async e=>{
+  const c=e.target.closest('input[data-dd-gc]'); if(!c||!duocDiemDanh()) return;
+  const id=c.dataset.id, gt=c.value.trim(), cu=ddGhiChu[id]||'', ngay=document.getElementById('ddNgay').value;
+  if(gt===cu) return;
+  const dat=v=>document.querySelectorAll(`input[data-dd-gc][data-id="${id}"]`).forEach(i=>{ i.value=v; });   // bảng và thẻ dùng chung một giá trị
+  if(gt) ddGhiChu[id]=gt; else delete ddGhiChu[id];
+  dat(gt); ddBao('ddStatus','Đang lưu...');
+  const {error}=await supabaseDb.rpc('khsx_diem_danh_ghi_chu_v1',{p_nguoi:id,p_ngay:ngay,p_ghi_chu:gt});
+  if(error){ if(cu) ddGhiChu[id]=cu; else delete ddGhiChu[id]; dat(cu); return ddBao('ddStatus',loiDiemDanh(error),'var(--danger)'); }
+  ddBao('ddStatus','Đã lưu ghi chú.','var(--success)');
 });
 document.getElementById('ddKhung')?.addEventListener('change',async e=>{
   const c=e.target.closest('select[data-dd-cv],select[data-dd-to]'); if(!c||!laChuTaiKhoan()) return;
@@ -13046,20 +13061,22 @@ document.getElementById('ddSuaKhung')?.addEventListener('click',async e=>{
 
 // --- Xuất Excel: mỗi người một dòng, mỗi ngày một cột; cuối dòng ngày công + hộp sữa ---
 // Ngày công: cả ngày = 1, một buổi = 0,5. Hộp: cả ngày 2, một buổi 1. Hộp đã phát = hộp của các ngày đã đánh dấu phát.
-function ddBangXuat(nguoi,dd,ps,tu,den){
+function ddBangXuat(nguoi,dd,ps,tu,den,gc=[]){
   const ngay=[]; for(let d=new Date(tu+'T00:00:00');isoCuaNgay(d)<=den;d.setDate(d.getDate()+1)) ngay.push(isoCuaNgay(d));
   const diem={}; dd.forEach(r=>{ (diem[r.nguoi_id]||(diem[r.nguoi_id]={}))[r.ngay]={sang:!!r.sang,chieu:!!r.chieu}; });
   const phat={}; ps.forEach(r=>{ (phat[r.nguoi_id]||(phat[r.nguoi_id]=new Set())).add(r.ngay); });
+  const ghi={}; gc.forEach(r=>{ (ghi[r.nguoi_id]||(ghi[r.nguoi_id]={}))[r.ngay]=String(r.ghi_chu||'').trim(); });
   const ds=nguoi.filter(p=>p.con_dung||diem[p.id]).sort(ddThuTu);
   const dm=iso=>iso.slice(8,10)+'/'+iso.slice(5,7);
   const dau=['Tên','Chức vụ','Tổ',...ngay.map(dm),'Ngày công','Tổng hộp','Hộp đã phát','Hộp chưa phát'];
   const dong=ds.map(p=>{
     let cong=0,hop=0,da=0;
     const o=ngay.map(n=>{
-      const r=(diem[p.id]||{})[n]; if(!r||(!r.sang&&!r.chieu)) return '';
+      const r=(diem[p.id]||{})[n], note=(ghi[p.id]||{})[n]||'';
+      if(!r||(!r.sang&&!r.chieu)) return note;
       const ca=r.sang&&r.chieu, h=ca?2:1, daPhat=phat[p.id]?.has(n);
       cong+=ca?1:0.5; hop+=h; if(daPhat) da+=h;
-      return (ca?'Cả ngày':r.sang?'Sáng':'Chiều')+(daPhat?' 🥛':'');
+      return (ca?'Cả ngày':r.sang?'Sáng':'Chiều')+(daPhat?' 🥛':'')+(note?' — '+note:'');
     });
     return [p.ten,p.chuc_vu||'',p.chuc_vu==='Công nhân'?(p.to_lam||''):'',...o,cong,hop,da,hop-da];
   });
@@ -13077,12 +13094,13 @@ document.getElementById('ddXuatTai')?.addEventListener('click',async e=>{
   if(typeof XLSX==='undefined') return bao('Chưa tải được thư viện Excel, kiểm tra mạng rồi thử lại.','var(--danger)');
   nut.disabled=true; bao('Đang lấy dữ liệu...');
   try{
-    const [n,d,s]=await Promise.all([
+    const [n,d,s,g]=await Promise.all([
       supabaseSelectAll('khsx_diem_danh_nguoi','id,ten,chuc_vu,to_lam,con_dung',q=>q.order('id')),
       supabaseSelectAll('khsx_diem_danh','nguoi_id,ngay,sang,chieu',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
-      supabaseSelectAll('khsx_phat_sua','nguoi_id,ngay',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id'))]);
-    const loi=n.error||d.error||s.error; if(loi) throw loi;
-    const aoa=ddBangXuat(n.data||[],d.data||[],s.data||[],tu,den);
+      supabaseSelectAll('khsx_phat_sua','nguoi_id,ngay',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
+      supabaseSelectAll('khsx_diem_danh_ghi_chu','nguoi_id,ngay,ghi_chu',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id'))]);
+    const loi=n.error||d.error||s.error||g.error; if(loi) throw loi;
+    const aoa=ddBangXuat(n.data||[],d.data||[],s.data||[],tu,den,g.data||[]);
     if(aoa.length<2) return bao('Không có ai trong danh sách để xuất.','var(--danger)');
     const ws=XLSX.utils.aoa_to_sheet(aoa), cot=aoa[0].length;
     ws['!cols']=aoa[0].map((_,i)=>({wch:i===0?26:i<3?18:i<cot-4?11:13}));

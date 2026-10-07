@@ -27,6 +27,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   await db.exec(mig('20261005120000_diem_danh_chuc_vu.sql'));
   await db.exec(mig('20261005140000_diem_danh_sua_quyen_doc.sql'));
   await db.exec(mig('20261005160000_diem_danh_to_phu_kho_ho_tro.sql'));
+  await db.exec(mig('20261007090000_diem_danh_ghi_chu.sql'));
   // Hôm nay giả lập: đặt được bằng test.hn
   await db.exec(`create or replace function private.khsx_hom_nay_vn() returns date language sql stable as $$ select current_setting('test.hn')::date $$;`);
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`), hn=d=>db.exec(`set test.hn='${d}'`);
@@ -115,6 +116,30 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   assert.match(await loi(()=>q(`insert into public.khsx_diem_danh values($1,'2026-10-01',true,true)`,[lan])),/permission denied/);
   await db.exec('reset role');
   console.log('PASS tài khoản không quyền không đọc được; ghi thẳng vào bảng bị chặn (chỉ qua hàm)');
+
+  // Ghi chú theo người + ngày
+  const gc=async(id,ngay)=>(await q(`select ghi_chu from public.khsx_diem_danh_ghi_chu where nguoi_id=$1 and ngay=$2`,[id,ngay])).rows[0]?.ghi_chu;
+  await la(M); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-11','x')`,[hoa])),/ATTENDANCE_FORBIDDEN/);
+  await la(P2); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-11','x')`,[hoa])),/ATTENDANCE_FORBIDDEN/);   // chỉ có quyền Phát sữa
+  await la(P);
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-13','x')`,[hoa])),/ATTENDANCE_DATE_INVALID/);
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-11','x')`,[nghi])),/ATTENDEE_NOT_FOUND/);
+  assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-11',$2)`,[hoa,'a'.repeat(201)])),/ATTENDANCE_NOTE_INVALID/);
+  await q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-11','  Nghỉ phép  ')`,[hoa]);     // người không đi làm hôm đó vẫn ghi chú được, cắt khoảng trắng
+  assert.equal(await gc(hoa,'2026-10-11'),'Nghỉ phép');
+  await q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-11','Nghỉ ốm')`,[hoa]);            // ghi lại = thay
+  assert.equal(await gc(hoa,'2026-10-11'),'Nghỉ ốm');
+  await q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-08','Đi trễ 15 phút')`,[lan]);      // ngày đã phát sữa: ghi chú vẫn sửa được
+  assert.equal(await gc(lan,'2026-10-08'),'Đi trễ 15 phút');
+  assert.equal((await q(`select count(*)::int n from public.khsx_diem_danh where nguoi_id=$1 and ngay='2026-10-08'`,[lan])).rows[0].n,1);   // không đụng điểm danh
+  await q(`select public.khsx_diem_danh_ghi_chu_v1($1,'2026-10-11','   ')`,[hoa]);                 // rỗng = xóa
+  assert.equal(await gc(hoa,'2026-10-11'),undefined);
+  const docGc=async u=>{ await db.exec(`set test.uid='${u}'; set role authenticated`); try{ return (await q(`select count(*)::int n from public.khsx_diem_danh_ghi_chu`)).rows[0].n; } finally { await db.exec('reset role'); } };
+  assert.equal(await docGc(M),0); assert.equal(await docGc(P2),1); assert.equal(await docGc(P),1);
+  await db.exec('set role authenticated'); await la(P);
+  assert.match(await loi(()=>q(`insert into public.khsx_diem_danh_ghi_chu(nguoi_id,ngay,ghi_chu) values($1,'2026-10-01','x')`,[lan])),/permission denied/);
+  await db.exec('reset role');
+  console.log('PASS ghi chú: cần quyền Điểm danh; ngày tương lai / người đã xóa / quá 200 ký tự bị chặn; rỗng = xóa; ngày đã phát vẫn sửa được; đọc theo quyền, ghi thẳng bị chặn');
 
   // Việc nhắc 7h
   await db.exec(`insert into public.khsx_account_permissions values('${P2}','diem_danh'),('${X}','diem_danh')`);   // X đã nghỉ (không active)
