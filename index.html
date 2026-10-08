@@ -1636,7 +1636,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div class="btn-row">
       <input type="file" id="offlinePlanFile" accept=".xlsx,.xls,.csv" style="display:none;">
       <button id="importOfflinePlanBtn" class="primary-btn">📂 Nạp file KHSX</button>
-      <button id="layKhsxSheetBtn" class="primary-btn only-manager" type="button">📥 Lấy KHSX từ Sheet</button>
+      <button id="layKhsxSheetBtn" class="primary-btn" type="button">📥 Lấy KHSX từ Sheet</button>
       <button id="nutDonCanKiemTra" class="primary-btn only-manager" type="button" style="display:none;background:var(--warning-l);color:var(--warning);border:1px solid var(--warning);">⚠ Đơn cần kiểm tra</button>
       <button id="addManualOrderBtn" class="primary-btn only-manager" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
@@ -2302,7 +2302,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=225"></script>
+<script src="raw-data.js?v=226"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4415,7 +4415,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 225;
+const APP_VERSION = 226;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -4679,7 +4679,7 @@ const PERM_TAB_RULES={
   settings:['settings_backup_download','settings_backup_restore','settings_import_khsx_file','settings_edit_targets'],
 };
 // Dot 4.3: nut (khong phai tab) cung an/hien theo permission_key, cung co che.
-const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], aoBtn:['ao_board_use'], nutBangDatNv:['phoi_board_use','ao_board_use'], phoiBtnNv:['phoi_board_use'], aoBtnNv:['ao_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'] };
+const PERM_BUTTON_RULES={ phoiBtn:['phoi_board_use'], aoBtn:['ao_board_use'], nutBangDatNv:['phoi_board_use','ao_board_use'], phoiBtnNv:['phoi_board_use'], aoBtnNv:['ao_board_use'], bulkCompleteBtn:['progress_bulk_complete'], customerViewLinkBtn:['settings_guest_link'], lockPlanBtn:['khsx_lock_plan','khsx_unlock_plan'], importOfflinePlanBtn:['khsx_sync_source','settings_import_khsx_file'], layKhsxSheetBtn:['khsx_sync_source'] };
 function applyPermissionTabGates(){
   let activeHidden=false;
   Object.entries(PERM_TAB_RULES).forEach(([tab,keys])=>{
@@ -11471,7 +11471,7 @@ const sheetDocTuNgay=()=>{ const [y,m,d]=homNayIso().split('-'); return `${d}/${
 const sheetLocTuNgay=(rows,tu)=>{ const k=khoaNgayDMY(tu); return rows.filter(r=>khoaNgayDMY(r.date)>=k); };
 let sheetXemTruoc=null;   // {docLuc, theoNgay:{'dd/mm/yyyy':[dòng Sheet]}}
 async function moLayKhsxSheet(){
-  if(!canManage()) return;
+  if(!(canManage()||hasPermOrOwner('khsx_sync_source'))) return;   // Quản lý, hoặc Quản lý 2 được cấp quyền Đồng bộ kế hoạch từ nguồn (máy chủ kiểm lại)
   const hop=document.getElementById('sheetXemTruocModal'), than=document.getElementById('sheetXemTruocBody');
   than.innerHTML='<div style="color:var(--text2);">Đang đọc Sheet...</div>'; hop.style.display='block';
   let rows;
