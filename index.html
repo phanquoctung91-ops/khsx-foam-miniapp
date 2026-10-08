@@ -575,6 +575,12 @@
   /* ---- Xác nhận BOM ---- */
   .bom-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0;}
   .bom-chip{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer;}
+  /* Tiêu đề hai khối Điểm danh / Phát sữa: nổi bật, nút Ẩn / Hiện ngay sau chữ tiêu đề. */
+  .dd-tieude{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;border-radius:10px;background:var(--primary-l);border-left:5px solid var(--primary);}
+  .dd-tieude-trai{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .dd-tieude h3{margin:0;font-size:18px;font-weight:800;letter-spacing:.4px;color:var(--text);}
+  .dd-tieude .capacity-quick-btn{min-height:38px;}
+  .dd-gon{font-weight:700;}
   /* Điểm danh / Phát sữa: điện thoại dùng thẻ + nút lớn, máy tính dùng bảng. */
   .dd-the{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:10px;background:var(--card);}
   .dd-the-ten{font-weight:700;font-size:15px;color:var(--text);}
@@ -2090,13 +2096,15 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
      thẳng vào các id này, không đổi logic). -->
 <div class="panel" id="panel-staff">
   <div class="card" id="diemDanhCard" style="display:none;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
-      <h3 style="margin:0;font-size:17px;">📋 Điểm danh</h3>
+    <section id="ddKhoiDD">
+    <div class="dd-tieude">
+      <div class="dd-tieude-trai"><h3>📋 ĐIỂM DANH</h3><button type="button" class="capacity-quick-btn dd-gon" data-dd-gon="dd" aria-expanded="true">Ẩn ▲</button></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button type="button" id="ddXuatBtn" class="capacity-quick-btn">📥 Xuất Excel</button>
         <button type="button" id="ddPhatSuaBtn" class="capacity-quick-btn" style="display:none;">🥛 Phát sữa</button>
       </div>
     </div>
+    <div class="dd-than" id="ddThanDD">
     <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5;">Tick sáng / chiều từng người. Cả ngày = 2 hộp sữa, một buổi = 1 hộp. Sửa được ngày cũ, trừ ngày đã phát sữa.</div>
     <div id="ddXuat" style="display:none;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:10px;">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -2123,8 +2131,14 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <input type="text" id="ddTenMoi" maxlength="100" placeholder="Tên người cần thêm" style="min-width:200px;font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);">
       <button type="button" id="ddThemBtn" class="capacity-quick-btn">+ Thêm người</button>
     </div>
-    <div id="ddSua" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-      <h4 style="margin:0 0 6px;font-size:15px;">🥛 Phát sữa</h4>
+    </div>
+    </section>
+    <section id="ddKhoiPS" style="display:none;">
+    <div class="dd-tieude">
+      <div class="dd-tieude-trai"><h3>🥛 PHÁT SỮA</h3><button type="button" class="capacity-quick-btn dd-gon" data-dd-gon="ps" aria-expanded="true">Ẩn ▲</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;"><button type="button" id="ddVeDiemDanhBtn" class="capacity-quick-btn">📋 Điểm danh</button></div>
+    </div>
+    <div class="dd-than" id="ddThanPS">
       <div style="font-size:12.5px;color:var(--text2);margin-bottom:8px;line-height:1.5;">Đếm theo điểm danh trong khoảng ngày, chỉ tính ngày chưa nhận. Bấm <b>Đã phát</b> thì mọi ngày chưa nhận của người đó trong khoảng được đánh dấu đã nhận.</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
         <label style="font-size:12px;font-weight:700;color:var(--text2);">Từ ngày <input type="date" id="ddSuaTu" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
@@ -2141,6 +2155,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div id="ddSuaThe" class="dd-the-khung"></div>
       </div>
     </div>
+    </section>
   </div>
   <div class="card" id="staffAccountCard">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
@@ -2302,7 +2317,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=226"></script>
+<script src="raw-data.js?v=227"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4415,7 +4430,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 226;
+const APP_VERSION = 227;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12951,7 +12966,8 @@ function initDiemDanh(){
   if(!co) return;
   const ngay=document.getElementById('ddNgay'), hn=homNayIso();
   ngay.max=hn; if(!ngay.value) ngay.value=hn;
-  document.getElementById('ddPhatSuaBtn').style.display=duocPhatSua()?'':'none';
+  veGiaoDienDD();
+  if(ddKhoiDangXem()==='ps'&&!ddGd.gon.ps) taiPhatSua();
   document.getElementById('ddThemNguoi').style.display=laChuTaiKhoan()?'flex':'none';
   const tu=document.getElementById('ddSuaTu'), den=document.getElementById('ddSuaDen');
   if(!den.value) den.value=hn;
@@ -13076,9 +13092,30 @@ async function taiPhatSua(){
       ${r.hop_chua_nhan>0?`<button type="button" class="primary-btn dd-nut-lon" data-dd-phat="${r.nguoi_id}">Đã phát ${r.hop_chua_nhan} hộp</button>`:'<div style="margin-top:8px;"><span class="bom-nhan da">Đã nhận đủ</span></div>'}</div>`).join('')
     +`<div class="dd-the" style="font-weight:700;display:flex;justify-content:space-between;"><span>Tổng chưa nhận</span><span>${tong} hộp</span></div>`;
 }
-document.getElementById('ddPhatSuaBtn')?.addEventListener('click',()=>{
-  const o=document.getElementById('ddSua'), mo=o.style.display==='none';
-  o.style.display=mo?'block':'none'; if(mo) taiPhatSua();
+// Hai khối Điểm danh / Phát sữa: bấm 🥛 Phát sữa thì ẩn Điểm danh và mở Phát sữa; bấm 📋 Điểm danh thì ngược lại.
+// Mỗi khối có nút Ẩn ▲ / Hiện ▼ ngay sau tiêu đề để thu gọn. Nhớ khối đang xem + trạng thái thu gọn trên máy mỗi người.
+const DD_GD_KEY='khsx_dd_giao_dien';
+let ddGd=(()=>{ const mac={khoi:'dd',gon:{dd:false,ps:false}}; try{ const x=JSON.parse(localStorage.getItem(DD_GD_KEY)||'{}'); return {khoi:x.khoi==='ps'?'ps':'dd',gon:{dd:!!x.gon?.dd,ps:!!x.gon?.ps}}; }catch(e){ return mac; } })();
+const luuDdGd=()=>{ try{ localStorage.setItem(DD_GD_KEY,JSON.stringify(ddGd)); }catch(e){} };
+function ddKhoiDangXem(){ const dd=duocDiemDanh(), ps=duocPhatSua(); let k=ddGd.khoi; if(k==='ps'&&!ps) k='dd'; if(k==='dd'&&!dd&&ps) k='ps'; return k; }
+function veGiaoDienDD(){
+  const k=ddKhoiDangXem(), dd=duocDiemDanh(), ps=duocPhatSua();
+  document.getElementById('ddKhoiDD').style.display=k==='dd'?'':'none';
+  document.getElementById('ddKhoiPS').style.display=k==='ps'?'':'none';
+  [['dd','DD'],['ps','PS']].forEach(([m,M])=>{
+    const g=!!ddGd.gon[m], b=document.querySelector(`[data-dd-gon="${m}"]`);
+    document.getElementById('ddThan'+M).style.display=g?'none':'';
+    if(b){ b.textContent=g?'Hiện ▼':'Ẩn ▲'; b.setAttribute('aria-expanded',String(!g)); }
+  });
+  document.getElementById('ddPhatSuaBtn').style.display=ps?'':'none';
+  document.getElementById('ddVeDiemDanhBtn').style.display=dd?'':'none';
+}
+document.getElementById('ddPhatSuaBtn')?.addEventListener('click',()=>{ ddGd.khoi='ps'; ddGd.gon.ps=false; luuDdGd(); veGiaoDienDD(); taiPhatSua(); });
+document.getElementById('ddVeDiemDanhBtn')?.addEventListener('click',()=>{ ddGd.khoi='dd'; ddGd.gon.dd=false; luuDdGd(); veGiaoDienDD(); });
+document.getElementById('diemDanhCard')?.addEventListener('click',e=>{
+  const b=e.target.closest('[data-dd-gon]'); if(!b) return;
+  const m=b.dataset.ddGon; ddGd.gon[m]=!ddGd.gon[m]; luuDdGd(); veGiaoDienDD();
+  if(m==='ps'&&!ddGd.gon.ps) taiPhatSua();
 });
 document.getElementById('ddSuaLoc')?.addEventListener('click',e=>{
   ddSuaChiChua=!ddSuaChiChua; e.currentTarget.classList.toggle('active',ddSuaChiChua); e.currentTarget.setAttribute('aria-pressed',ddSuaChiChua); taiPhatSua();
