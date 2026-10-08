@@ -28,6 +28,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   await db.exec(mig('20261005140000_diem_danh_sua_quyen_doc.sql'));
   await db.exec(mig('20261005160000_diem_danh_to_phu_kho_ho_tro.sql'));
   await db.exec(mig('20261007090000_diem_danh_ghi_chu.sql'));
+  await db.exec(mig('20261008090000_phat_sua_hoan_tac.sql'));
   // Hôm nay giả lập: đặt được bằng test.hn
   await db.exec(`create or replace function private.khsx_hom_nay_vn() returns date language sql stable as $$ select current_setting('test.hn')::date $$;`);
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`), hn=d=>db.exec(`set test.hn='${d}'`);
@@ -108,6 +109,33 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-12',true,false)`,[lan]);   // ngày mới vẫn tick được
   await la(P2); assert.equal((await q(`select public.khsx_phat_sua_v1($1,'2026-10-08','2026-10-12') h`,[lan])).rows[0].h,1);
   console.log('PASS tick đã phát: ghi số hộp từng ngày + người bấm, ngày đã nhận không tính lại, ngày đã phát khóa điểm danh');
+
+  // Phát sữa v2 (không hộp xác nhận) + Hoàn tác theo lô, chỉ chủ tài khoản
+  const hoaSua=async()=>(await bang('2026-10-08','2026-10-12')).find(r=>r.ten==='Hoa');
+  await la(P2);
+  const l1=(await q(`select public.khsx_phat_sua_v2($1,'2026-10-08','2026-10-12') r`,[hoa])).rows[0].r;
+  assert.equal(l1.hop,2); assert.ok(l1.lo);
+  assert.deepEqual(await hoaSua(),{ten:'Hoa',ngay_chua_nhan:0,hop_chua_nhan:0,hop_da_nhan:2});
+  assert.match(await loi(()=>q(`select public.khsx_phat_sua_v2($1,'2026-10-08','2026-10-12')`,[hoa])),/MILK_NOTHING_TO_GIVE/);
+  await la(P); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,false)`,[hoa])),/ATTENDANCE_LOCKED/);
+  assert.match(await loi(()=>q(`select public.khsx_phat_sua_hoan_tac_v1($1)`,[l1.lo])),/MILK_UNDO_FORBIDDEN/);       // Phước (Điểm danh) không hoàn tác được
+  await la(P2); assert.match(await loi(()=>q(`select public.khsx_phat_sua_hoan_tac_v1($1)`,[l1.lo])),/MILK_UNDO_FORBIDDEN/);   // người có quyền Phát sữa cũng không
+  await la(A);
+  assert.deepEqual((await q(`select public.khsx_phat_sua_hoan_tac_v1($1) r`,[l1.lo])).rows[0].r,{hop:2,ngay:1});
+  assert.deepEqual(await hoaSua(),{ten:'Hoa',ngay_chua_nhan:1,hop_chua_nhan:2,hop_da_nhan:0});
+  assert.match(await loi(()=>q(`select public.khsx_phat_sua_hoan_tac_v1($1)`,[l1.lo])),/MILK_UNDO_NOTHING/);              // hoàn tác lần hai
+  assert.match(await loi(()=>q(`select public.khsx_phat_sua_hoan_tac_v1('00000000-0000-0000-0000-0000000000ff')`)),/MILK_UNDO_NOTHING/);
+  assert.match(await loi(()=>q(`select public.khsx_phat_sua_hoan_tac_v1(null)`)),/MILK_UNDO_NOTHING/);
+  await la(P); await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,true)`,[hoa]);                                // mở khóa: sửa điểm danh lại được
+  // hai lô độc lập: hoàn tác lô sau không đụng lô trước
+  await la(P2); const l2=(await q(`select public.khsx_phat_sua_v2($1,'2026-10-08','2026-10-08') r`,[hoa])).rows[0].r;
+  await la(P); await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-09',true,false)`,[hoa]);
+  await la(P2); const l3=(await q(`select public.khsx_phat_sua_v2($1,'2026-10-09','2026-10-09') r`,[hoa])).rows[0].r;
+  await la(A); await q(`select public.khsx_phat_sua_hoan_tac_v1($1)`,[l3.lo]);
+  assert.deepEqual((await q(`select ngay::text n from public.khsx_phat_sua where nguoi_id=$1 order by 1`,[hoa])).rows.map(r=>r.n),['2026-10-08']);
+  await q(`select public.khsx_phat_sua_hoan_tac_v1($1)`,[l2.lo]);
+  await la(P); await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-09',false,false)`,[hoa]);                              // trả lại trạng thái cũ cho các bài sau
+  console.log('PASS Phát sữa v2 + Hoàn tác: gỡ đúng lô vừa bấm (không đụng lô khác), mở khóa điểm danh, chỉ chủ tài khoản hoàn tác, hoàn tác lần hai / mã lạ báo không còn gì');
 
   // Quyền đọc bảng khi đăng nhập thật
   const doc=async u=>{ await db.exec(`set test.uid='${u}'; set role authenticated`); try{ return (await q(`select count(*)::int n from public.khsx_diem_danh`)).rows[0].n; } finally { await db.exec('reset role'); } };

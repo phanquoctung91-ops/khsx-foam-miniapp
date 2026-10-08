@@ -2130,6 +2130,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
         <label style="font-size:12px;font-weight:700;color:var(--text2);">Từ ngày <input type="date" id="ddSuaTu" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
         <label style="font-size:12px;font-weight:700;color:var(--text2);">Đến ngày <input type="date" id="ddSuaDen" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
         <span id="ddSuaStatus" class="save-status" aria-live="polite"></span>
+        <button type="button" id="ddSuaHoanTac" class="capacity-quick-btn" style="display:none;">↩ Hoàn tác</button>
       </div>
       <div class="bom-chip-row" style="margin-bottom:8px;"><button type="button" class="bom-chip" id="ddSuaLoc" aria-pressed="false">Ngày chưa phát</button></div>
       <div id="ddSuaKhung">
@@ -2301,7 +2302,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=224"></script>
+<script src="raw-data.js?v=225"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4414,7 +4415,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 224;
+const APP_VERSION = 225;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12936,6 +12937,8 @@ function loiDiemDanh(e){
   if(m.includes('ATTENDEE_TEAM_INVALID')) return 'Tổ không hợp lệ.';
   if(m.includes('ATTENDANCE_LIST_FORBIDDEN')) return 'Chỉ chủ tài khoản thêm / xóa người trong danh sách.';
   if(m.includes('MILK_FORBIDDEN')) return 'Tài khoản chưa có quyền Phát sữa.';
+  if(m.includes('MILK_UNDO_FORBIDDEN')) return 'Chỉ chủ tài khoản hoàn tác được.';
+  if(m.includes('MILK_UNDO_NOTHING')) return 'Không còn gì để hoàn tác (đã hoàn tác rồi).';
   if(m.includes('MILK_NOTHING_TO_GIVE')) return 'Người này không còn ngày nào chưa nhận trong khoảng đã chọn.';
   if(m.includes('MILK_RANGE_INVALID')) return 'Khoảng ngày không hợp lệ (từ ngày ≤ đến ngày, tối đa 400 ngày).';
   return `Chưa lưu được: ${m||'lỗi không rõ'}`;
@@ -13053,7 +13056,7 @@ document.getElementById('ddLoc')?.addEventListener('click',e=>{ const b=e.target
 document.getElementById('ddNgay')?.addEventListener('change',taiDiemDanh);
 document.getElementById('ddHomNayBtn')?.addEventListener('click',()=>{ document.getElementById('ddNgay').value=homNayIso(); taiDiemDanh(); });
 // --- Phát sữa ---
-let ddSuaLan=0, ddSuaDong=[], ddSuaChiChua=false;
+let ddSuaLan=0, ddSuaDong=[], ddSuaChiChua=false, ddSuaLoCuoi=null;
 async function taiPhatSua(){
   const tu=document.getElementById('ddSuaTu').value, den=document.getElementById('ddSuaDen').value, than=document.getElementById('ddSuaBang'), the=document.getElementById('ddSuaThe');
   if(!tu||!den){ than.innerHTML=''; the.innerHTML=''; return; }
@@ -13080,16 +13083,25 @@ document.getElementById('ddPhatSuaBtn')?.addEventListener('click',()=>{
 document.getElementById('ddSuaLoc')?.addEventListener('click',e=>{
   ddSuaChiChua=!ddSuaChiChua; e.currentTarget.classList.toggle('active',ddSuaChiChua); e.currentTarget.setAttribute('aria-pressed',ddSuaChiChua); taiPhatSua();
 });
-['ddSuaTu','ddSuaDen'].forEach(id=>document.getElementById(id)?.addEventListener('change',taiPhatSua));
+['ddSuaTu','ddSuaDen'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{ ddSuaLoCuoi=null; const h=document.getElementById('ddSuaHoanTac'); if(h) h.style.display='none'; taiPhatSua(); }));
+document.getElementById('ddSuaHoanTac')?.addEventListener('click',async e=>{
+  const nut=e.currentTarget, c=ddSuaLoCuoi; if(!c||!laChuTaiKhoan()) return;
+  nut.disabled=true;
+  const {data,error}=await supabaseDb.rpc('khsx_phat_sua_hoan_tac_v1',{p_lo:c.lo});
+  if(error){ nut.disabled=false; return ddBao('ddSuaStatus',loiDiemDanh(error),'var(--danger)'); }
+  ddSuaLoCuoi=null; nut.style.display='none';
+  await taiPhatSua(); taiDiemDanh(); ddBao('ddSuaStatus',`Đã hoàn tác: gỡ ${data.hop} hộp của ${c.ten}.`,'var(--success)');
+});
 document.getElementById('ddSuaKhung')?.addEventListener('click',async e=>{
   const b=e.target.closest('[data-dd-phat]'); if(!b||!duocPhatSua()) return;
   const r=ddSuaDong.find(x=>x.nguoi_id===b.dataset.ddPhat); if(!r) return;
   const tu=document.getElementById('ddSuaTu').value, den=document.getElementById('ddSuaDen').value;
-  if(!confirm(`Xác nhận đã phát ${r.hop_chua_nhan} hộp sữa cho ${r.ten}?\n${r.ngay_chua_nhan} ngày điểm danh từ ${isoToDMY(tu)} đến ${isoToDMY(den)} sẽ được đánh dấu đã nhận và khóa điểm danh các ngày đó.`)) return;
-  b.disabled=true;
-  const {data,error}=await supabaseDb.rpc('khsx_phat_sua_v1',{p_nguoi:r.nguoi_id,p_tu:tu,p_den:den});
+  b.disabled=true;   // ghi luôn, không hỏi lại; chủ tài khoản có nút Hoàn tác
+  const {data,error}=await supabaseDb.rpc('khsx_phat_sua_v2',{p_nguoi:r.nguoi_id,p_tu:tu,p_den:den});
   if(error){ b.disabled=false; return ddBao('ddSuaStatus',loiDiemDanh(error),'var(--danger)'); }
-  await taiPhatSua(); taiDiemDanh(); ddBao('ddSuaStatus',`Đã ghi phát ${data} hộp cho ${r.ten}.`,'var(--success)');
+  ddSuaLoCuoi={lo:data.lo,ten:r.ten,hop:data.hop};
+  const ht=document.getElementById('ddSuaHoanTac'); if(ht){ ht.style.display=laChuTaiKhoan()?'':'none'; ht.disabled=false; ht.textContent=`↩ Hoàn tác (${r.ten}, ${data.hop} hộp)`; }
+  await taiPhatSua(); taiDiemDanh(); ddBao('ddSuaStatus',`Đã ghi phát ${data.hop} hộp cho ${r.ten}.`,'var(--success)');
 });
 
 // --- Xuất Excel: mỗi người một dòng, mỗi ngày một cột; cuối dòng ngày công + hộp sữa ---
