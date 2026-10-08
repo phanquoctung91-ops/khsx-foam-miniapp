@@ -575,6 +575,21 @@
   /* ---- Xác nhận BOM ---- */
   .bom-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0;}
   .bom-chip{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer;}
+  /* Thanh tiến độ quý (bản 228): chiều dài = mục tiêu quý, phần tô = đã đóng gói, vạch mờ = tiến độ trung bình cần đạt đến hôm nay. */
+  .tdq{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin:0 0 14px;}
+  .tdq-hd{display:flex;justify-content:space-between;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0 0 30px;}
+  .tdq-hd b{font-size:15px;font-weight:700;}
+  .tdq-hd span{font-size:13px;color:var(--text2);}
+  .tdq-bar{position:relative;height:22px;border-radius:6px;background:var(--bg);border:1px solid var(--border);}
+  .tdq-fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px 0 0 5px;min-width:3px;}
+  .tdq-fill.dat{border-radius:5px;}
+  .tdq-gach{position:absolute;top:-8px;bottom:-8px;width:0;border-left:2px dashed var(--text);opacity:.45;}
+  .tdq-nhan{position:absolute;top:-30px;font-size:12px;color:var(--text2);white-space:nowrap;}
+  .tdq-tr{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:6px 0 0;}
+  .tdq-ft{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;margin:10px 0 0;color:var(--text2);}
+  .tdq-ft i{display:inline-block;vertical-align:middle;margin-right:6px;}
+  body.mobile-view .tdq{padding:10px 12px;margin-bottom:10px;}
+  body.mobile-view .tdq-hd b{font-size:14px;}
   /* Tiêu đề hai khối Điểm danh / Phát sữa: nổi bật, nút Ẩn / Hiện ngay sau chữ tiêu đề. */
   .dd-tieude{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;border-radius:10px;background:var(--primary-l);border-left:5px solid var(--primary);}
   .dd-tieude-trai{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -1572,6 +1587,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <div id="emptyState" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;text-align:center;color:var(--text2);font-size:14px;box-shadow:var(--shadow);"></div>
 
 <div id="mainContent">
+<div id="thanhTienDoQuy" class="tdq" style="display:none;"></div>
 <div id="neoKpiChung"></div>
 <div class="kpis" id="kpiRow"></div>
 
@@ -2317,7 +2333,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=227"></script>
+<script src="raw-data.js?v=228"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2753,6 +2769,35 @@ function taoCauBaoCaoKrTuan(nam,thang,hienTai=new Date()){
   };
 }
 
+// Thanh tiến độ quý — một thanh ngang trên mọi tab và mọi giao diện. Số liệu lấy đúng từ thẻ "Tốc độ quý" (tinhTocDoQuy):
+// phần tô = đóng gói đến hôm nay (không tính bảo hành); vạch mờ = mục tiêu quý / số ngày làm việc cả quý x số ngày làm việc đã qua (tính cả hôm nay).
+function tinhThanhTienDoQuy(t){
+  const mt=Number(t&&t.mucTieu)||0, tong=Number(t&&t.totalWorkdays)||0;
+  if(!(mt>0)||!(tong>0)) return null;                      // chưa có mục tiêu quý / chưa có lịch ngày làm việc: không vẽ
+  const dg=Math.max(0,Number(t.output)||0), qua=Math.min(tong,Math.max(0,Number(t.elapsedWorkdays)||0));
+  const gach=mt*qua/tong, lech=dg-gach, p=x=>Math.max(0,Math.min(100,x/mt*100));
+  const dat=dg>=mt, coGach=qua>0;
+  return {quy:t.quy,nam:t.nam,mt,dg,qua,tong,gach,lech,dat,coGach,fillPct:p(dg),gachPct:p(gach),phanTram:dg/mt*100,
+    mau:!coGach?'neutral':lech>=0?'xanh':'vang',nhanPhai:p(gach)>60};
+}
+function veThanhTienDoQuy(t){
+  const o=document.getElementById('thanhTienDoQuy'); if(!o) return;
+  const m=tinhThanhTienDoQuy(t);
+  if(!m){ o.style.display='none'; o.innerHTML=''; return; }
+  const so=x=>Math.round(x).toLocaleString('vi-VN'), pt=m.phanTram.toLocaleString('vi-VN',{maximumFractionDigits:1});
+  const mau=m.mau==='xanh'?'var(--success)':m.mau==='vang'?'var(--warning)':'var(--primary)';
+  const lechTxt=!m.coGach?'Chưa có ngày làm việc nào đã qua trong quý'
+    :Math.abs(m.lech)<0.5?'Đúng tiến độ':m.lech>0?`Vượt ${so(m.lech)} tấm so với tiến độ`:`Chậm ${so(-m.lech)} tấm so với tiến độ`;
+  const lechMau=m.mau==='xanh'?'var(--success)':m.mau==='vang'?'var(--warning)':'var(--text2)';
+  const nhanGach=m.coGach?`<div class="tdq-gach" style="left:${m.gachPct}%"></div><div class="tdq-nhan" style="left:${m.gachPct}%;${m.nhanPhai?'transform:translateX(-100%);padding-right:6px;':'padding-left:6px;'}">Cần đạt: ${so(m.gach)}</div>`:'';
+  o.innerHTML=`<div class="tdq-hd"><b>Tiến độ đóng gói Quý ${m.quy}/${m.nam}</b><span>${so(m.dg)} / ${so(m.mt)} tấm · ${pt}%${m.dat?' · đã đạt mục tiêu quý':''}</span></div>
+    <div class="tdq-bar" role="progressbar" aria-label="Tiến độ đóng gói Quý ${m.quy}/${m.nam}" aria-valuemin="0" aria-valuemax="${Math.round(m.mt)}" aria-valuenow="${Math.round(Math.min(m.dg,m.mt))}" aria-valuetext="${so(m.dg)} trên ${so(m.mt)} tấm; ${thoatHtml(lechTxt)}">
+      <div class="tdq-fill${m.dat?' dat':''}" style="width:${m.fillPct}%;background:${mau};${m.dg>0?'':'min-width:0;'}"></div>${nhanGach}
+    </div>
+    <div class="tdq-tr"><span>0</span><span>Mục tiêu quý: ${so(m.mt)} tấm</span></div>
+    <div class="tdq-ft"><span><i style="width:12px;height:12px;border-radius:3px;background:${mau}"></i>Đã đóng gói: ${so(m.dg)}</span>${m.coGach?`<span><i style="width:0;height:14px;border-left:2px dashed var(--text);opacity:.45"></i>Tiến độ trung bình đến hôm nay (${m.qua}/${m.tong} ngày làm việc)</span>`:''}<span style="color:${lechMau}">${lechTxt}</span></div>`;
+  o.style.display='';
+}
 function computeAndRenderKpis(){
   // KHSX cần thấy cả kế hoạch tương lai trong tháng, nhưng KPI thực tế chỉ được
   // tính đến hôm nay. Không dùng dayKeys trực tiếp vì dayKeys còn phục vụ hiển thị.
@@ -2787,6 +2832,7 @@ function computeAndRenderKpis(){
     ? `TB đóng gói: <b>${tbKhoangNgay.toLocaleString('vi-VN',{maximumFractionDigits:1})} tấm/ngày</b> · ${danhGiaTocDo(tbKhoangNgay)}`
     : 'Chưa có mục tiêu tính toán';
   const tocDoQuy = tinhTocDoQuy();
+  try{ veThanhTienDoQuy(tocDoQuy); }catch(e){ console.warn('Chưa vẽ được thanh tiến độ quý',e); }
   const namHeader=Number(yearFilterSelect.value),thangHeader=Number(monthFilterSelect.value);
   const baoCaoKr=taoCauBaoCaoKrTuan(namHeader,thangHeader);
   weeklyKrDetail = baoCaoKr.text ? baoCaoKr : null;
@@ -4430,7 +4476,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 227;
+const APP_VERSION = 228;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7371,7 +7417,7 @@ function veDanhSachBom(){
   const da=ds.filter(x=>bomXacNhan[x.o.id]&&trongKhoang(x));
   document.getElementById('bomSoCho').textContent=cho.length;
   document.getElementById('bomSoDa').textContent=da.length;
-  document.querySelectorAll('.bom-chip').forEach(c=>c.classList.toggle('active',c.dataset.loc===bomLocDangXem));
+  document.querySelectorAll('#panel-bom .bom-chip').forEach(c=>c.classList.toggle('active',c.dataset.loc===bomLocDangXem));   // chỉ nút lọc của trang BOM (các nút bom-chip ở trang khác không bị đụng)
   // "Chờ xác nhận" hiện hết, không lọc ngày, để không sót lô nào.
   const hien=(bomLocDangXem==='cho'?cho:bomLocDangXem==='da'?da:ds.filter(trongKhoang))
     .sort((a,b)=>khoaNgayDMY(b.lo.ngayXong)-khoaNgayDMY(a.lo.ngayXong)||String(a.o.ma).localeCompare(String(b.o.ma),'vi'));
@@ -7692,7 +7738,7 @@ document.getElementById('bomBangLo')?.addEventListener('click',async e=>{
   if(!kq.ok){ const st=document.getElementById('bomTrangThai'); st.textContent=`${o.ma||''}: ${kq.loi}`; st.style.color='var(--danger)'; }
   veDanhSachBom();
 });
-document.querySelectorAll('.bom-chip').forEach(c=>c.addEventListener('click',()=>{ bomLocDangXem=c.dataset.loc; veDanhSachBom(); }));
+document.querySelectorAll('#panel-bom .bom-chip').forEach(c=>c.addEventListener('click',()=>{ bomLocDangXem=c.dataset.loc; veDanhSachBom(); }));
 document.getElementById('bomTuNgay')?.addEventListener('change',veDanhSachBom);
 document.getElementById('bomDenNgay')?.addEventListener('change',veDanhSachBom);
 document.getElementById('bomNhanhHomNay')?.addEventListener('click',()=>{ const d=new Date(); datKhoangBom(d,d); });
@@ -13072,7 +13118,7 @@ document.getElementById('ddLoc')?.addEventListener('click',e=>{ const b=e.target
 document.getElementById('ddNgay')?.addEventListener('change',taiDiemDanh);
 document.getElementById('ddHomNayBtn')?.addEventListener('click',()=>{ document.getElementById('ddNgay').value=homNayIso(); taiDiemDanh(); });
 // --- Phát sữa ---
-let ddSuaLan=0, ddSuaDong=[], ddSuaChiChua=false, ddSuaLoCuoi=null;
+let ddSuaLan=0, ddSuaDong=[], ddSuaLoCuoi=null, ddSuaLocTruoc=null;   // ddSuaLocTruoc: khoảng ngày trước khi bấm "Ngày chưa phát"
 async function taiPhatSua(){
   const tu=document.getElementById('ddSuaTu').value, den=document.getElementById('ddSuaDen').value, than=document.getElementById('ddSuaBang'), the=document.getElementById('ddSuaThe');
   if(!tu||!den){ than.innerHTML=''; the.innerHTML=''; return; }
@@ -13081,8 +13127,8 @@ async function taiPhatSua(){
   if(lan!==ddSuaLan) return;
   if(error){ than.innerHTML=''; the.innerHTML=''; return ddBao('ddSuaStatus',loiDiemDanh(error),'var(--danger)'); }
   ddSuaDong=data||[]; ddBao('ddSuaStatus','');
-  const hien=(ddSuaChiChua?ddSuaDong.filter(r=>r.hop_chua_nhan>0):[...ddSuaDong]).sort(ddThuTu);
-  if(!hien.length){ const t=ddSuaDong.length?'Không còn ai có ngày chưa phát trong khoảng này.':'Không có điểm danh nào trong khoảng này.'; than.innerHTML=`<tr><td colspan="5" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; return; }
+  const hien=[...ddSuaDong].sort(ddThuTu);
+  if(!hien.length){ const t='Không có điểm danh nào trong khoảng này.'; than.innerHTML=`<tr><td colspan="5" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; return; }
   const tong=hien.reduce((t,r)=>t+r.hop_chua_nhan,0);
   than.innerHTML=hien.map(r=>`<tr><td style="font-weight:600;">${thoatHtml(r.ten)}${ddNhanCv(r)?`<div style="font-size:11.5px;font-weight:400;color:var(--text2);">${thoatHtml(ddNhanCv(r))}</div>`:''}</td><td style="text-align:right;">${r.ngay_chua_nhan}</td><td style="text-align:right;font-weight:700;">${r.hop_chua_nhan}</td><td style="text-align:right;color:var(--text2);">${r.hop_da_nhan}</td><td>${r.hop_chua_nhan>0?`<button type="button" class="primary-btn" style="padding:6px 12px;" data-dd-phat="${r.nguoi_id}">Đã phát</button>`:'<span class="bom-nhan da">Đã nhận đủ</span>'}</td></tr>`).join('')
     +`<tr style="background:#f4f6fa;font-weight:700;"><td>Tổng chưa nhận</td><td></td><td style="text-align:right;">${tong}</td><td></td><td></td></tr>`;
@@ -13117,10 +13163,21 @@ document.getElementById('diemDanhCard')?.addEventListener('click',e=>{
   const m=b.dataset.ddGon; ddGd.gon[m]=!ddGd.gon[m]; luuDdGd(); veGiaoDienDD();
   if(m==='ps'&&!ddGd.gon.ps) taiPhatSua();
 });
-document.getElementById('ddSuaLoc')?.addEventListener('click',e=>{
-  ddSuaChiChua=!ddSuaChiChua; e.currentTarget.classList.toggle('active',ddSuaChiChua); e.currentTarget.setAttribute('aria-pressed',ddSuaChiChua); taiPhatSua();
+// Nút "Ngày chưa phát": bấm một lần tự đặt Từ ngày = ngày điểm danh đầu tiên còn chưa phát, Đến ngày = điểm danh mới nhất; bấm lần nữa trả lại khoảng cũ.
+const datNutChua=bat=>{ const n=document.getElementById('ddSuaLoc'); if(!n) return; n.classList.toggle('active',bat); n.setAttribute('aria-pressed',String(bat)); };
+document.getElementById('ddSuaLoc')?.addEventListener('click',async e=>{
+  const nut=e.currentTarget, tuEl=document.getElementById('ddSuaTu'), denEl=document.getElementById('ddSuaDen');
+  if(ddSuaLocTruoc){ tuEl.value=ddSuaLocTruoc.tu; denEl.value=ddSuaLocTruoc.den; ddSuaLocTruoc=null; datNutChua(false); return taiPhatSua(); }
+  nut.disabled=true;
+  const {data,error}=await supabaseDb.rpc('khsx_phat_sua_chua_v1');
+  nut.disabled=false;
+  if(error) return ddBao('ddSuaStatus',loiDiemDanh(error),'var(--danger)');
+  const r=Array.isArray(data)?data[0]:data;
+  if(!r||!r.tu) return ddBao('ddSuaStatus','Không còn ngày nào chưa phát sữa.','var(--success)');
+  ddSuaLocTruoc={tu:tuEl.value,den:denEl.value}; tuEl.value=r.tu; denEl.value=r.den; datNutChua(true);
+  await taiPhatSua(); ddBao('ddSuaStatus',`Chưa phát từ ${isoToDMY(r.tu)} đến ${isoToDMY(r.den)}.`,'var(--text2)');
 });
-['ddSuaTu','ddSuaDen'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{ ddSuaLoCuoi=null; const h=document.getElementById('ddSuaHoanTac'); if(h) h.style.display='none'; taiPhatSua(); }));
+['ddSuaTu','ddSuaDen'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{ ddSuaLocTruoc=null; datNutChua(false); ddSuaLoCuoi=null; const h=document.getElementById('ddSuaHoanTac'); if(h) h.style.display='none'; taiPhatSua(); }));
 document.getElementById('ddSuaHoanTac')?.addEventListener('click',async e=>{
   const nut=e.currentTarget, c=ddSuaLoCuoi; if(!c||!laChuTaiKhoan()) return;
   nut.disabled=true;

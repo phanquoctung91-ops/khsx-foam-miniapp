@@ -29,6 +29,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   await db.exec(mig('20261005160000_diem_danh_to_phu_kho_ho_tro.sql'));
   await db.exec(mig('20261007090000_diem_danh_ghi_chu.sql'));
   await db.exec(mig('20261008090000_phat_sua_hoan_tac.sql'));
+  await db.exec(mig('20261009090000_phat_sua_khoang_chua.sql'));
   // Hôm nay giả lập: đặt được bằng test.hn
   await db.exec(`create or replace function private.khsx_hom_nay_vn() returns date language sql stable as $$ select current_setting('test.hn')::date $$;`);
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`), hn=d=>db.exec(`set test.hn='${d}'`);
@@ -206,4 +207,17 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   await la(P); await q(`select public.khsx_xong_viec_v1($1)`,[thuong]);
   assert.equal((await q(`select count(*)::int n from public.khsx_tin_nhan_cho where loai='xong'`)).rows[0].n,1);
   console.log('PASS việc tự giao cho chính mình không báo xong/trễ cho chính mình; việc giao thường vẫn báo như cũ');
+  // Khoảng ngày chưa phát sữa (nút "Ngày chưa phát" tự đặt Từ ngày / Đến ngày)
+  await la(P2);
+  const kh=(await q(`select tu::text tu, den::text den from public.khsx_phat_sua_chua_v1()`)).rows[0];
+  const tay=(await q(`select min(ngay)::text tu, max(ngay)::text den from public.khsx_diem_danh d where not exists(select 1 from public.khsx_phat_sua s where s.nguoi_id=d.nguoi_id and s.ngay=d.ngay)`)).rows[0];
+  assert.ok(kh.tu&&kh.den); assert.equal(kh.tu,tay.tu);
+  assert.equal(kh.den,(await q(`select max(ngay)::text d from public.khsx_diem_danh`)).rows[0].d);
+  await la(M); assert.match(await loi(()=>q(`select * from public.khsx_phat_sua_chua_v1()`)),/MILK_FORBIDDEN/);
+  await la(P); assert.match(await loi(()=>q(`select * from public.khsx_phat_sua_chua_v1()`)),/MILK_FORBIDDEN/);      // chỉ có quyền Điểm danh
+  await la(P2);
+  for(const n of (await q(`select distinct nguoi_id id from public.khsx_diem_danh`)).rows) await q(`select public.khsx_phat_sua_v2($1,'2026-01-01','2026-12-31')`,[n.id]).catch(()=>{});   // phát hết
+  const het=(await q(`select tu::text tu, den::text den from public.khsx_phat_sua_chua_v1()`)).rows[0];
+  assert.equal(het.tu,null); assert.ok(het.den);
+  console.log('PASS khoảng chưa phát: Từ ngày = ngày điểm danh đầu tiên còn chưa phát, Đến ngày = điểm danh mới nhất; phát hết thì Từ ngày rỗng; cần quyền Phát sữa');
 })().catch(e=>{ console.error('FAIL',e); process.exit(1); });
