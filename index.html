@@ -2345,7 +2345,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=233"></script>
+<script src="raw-data.js?v=234"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4488,7 +4488,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 233;
+const APP_VERSION = 234;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -13285,10 +13285,19 @@ th,td{border:1px solid #000;height:17mm;padding:0 2mm;font-size:13pt;vertical-al
 document.getElementById('ddInTcBtn')?.addEventListener('click',()=>{
   const ds=ddNguoi.filter(p=>(ddDong[p.id]||{}).tc>0).sort(ddThuTu).map(p=>({ten:p.ten,tc:ddDong[p.id].tc}));
   if(!ds.length) return ddBao('ddStatus','Ngày này chưa có ai tăng ca.','var(--danger)');
-  const w=window.open('','_blank');
-  if(!w) return ddBao('ddStatus','Trình duyệt đang chặn cửa sổ in. Cho phép cửa sổ bật lên rồi bấm lại.','var(--danger)');
-  w.document.open(); w.document.write(giayTangCaHtml(ds,new URL('assets/tc-logo.png?v=233',location.href).href)); w.document.close();
-  const im=w.document.querySelector('img'), in_=()=>{ w.focus(); w.print(); };
+  const trang=giayTangCaHtml(ds,new URL('assets/tc-logo.png?v=234',location.href).href);
+  const tai=()=>{   // dự phòng: nơi không cho in (một số trình duyệt nhúng) thì tải file về, mở bằng Chrome rồi in
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([trang],{type:'text/html;charset=utf-8'}));
+    a.download=`Giay de xuat tang ca ${document.getElementById('ddNgay').value}.html`; document.body.appendChild(a); a.click(); a.remove();
+    ddBao('ddStatus','Máy này không mở được hộp thoại in. Đã tải file giấy về, mở file bằng Chrome rồi in.','var(--danger)');
+  };
+  const cu=document.getElementById('ddInKhung'); if(cu) cu.remove();
+  const fr=document.createElement('iframe'); fr.id='ddInKhung'; fr.setAttribute('aria-hidden','true'); fr.tabIndex=-1;
+  fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+  document.body.appendChild(fr);
+  const d=fr.contentDocument; d.open(); d.write(trang); d.close();
+  const in_=()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); ddBao('ddStatus',''); }catch(e){ tai(); } };
+  const im=d.querySelector('img');
   if(im&&!im.complete){ im.onload=in_; im.onerror=in_; } else setTimeout(in_,200);
 });
 document.getElementById('ddXuatBtn')?.addEventListener('click',()=>{
