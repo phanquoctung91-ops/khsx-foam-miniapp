@@ -613,6 +613,8 @@
   .dd-tc-the .dd-tc-gio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .dd-tc-the .dd-tc-gio label{justify-content:center;flex-direction:column;border:1.5px solid var(--border);border-radius:10px;min-height:52px;padding:6px 0;}
   .dd-tc-the .dd-tc-gio input{width:24px;height:24px;}
+  .dd-tc-dong{min-width:34px;min-height:34px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-size:14px;cursor:pointer;}
+  .dd-tc-the .dd-tc-dong{grid-column:1/-1;min-height:40px;}
   .dd-the select{width:100%;min-height:42px;font-size:14px;margin-top:8px;}
   .dd-nut-lon{width:100%;min-height:46px;margin-top:8px;font-size:15px;}
   body:not(.mobile-view) .dd-the-khung{display:none;}
@@ -2126,6 +2128,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div class="dd-tieude-trai"><h3>📋 ĐIỂM DANH</h3><button type="button" class="capacity-quick-btn dd-gon" data-dd-gon="dd" aria-expanded="true">Ẩn ▲</button></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button type="button" id="ddXuatBtn" class="capacity-quick-btn">📥 Xuất Excel</button>
+        <button type="button" id="ddInTcBtn" class="capacity-quick-btn">🖨 In giấy tăng ca</button>
         <button type="button" id="ddPhatSuaBtn" class="capacity-quick-btn" style="display:none;">🥛 Phát sữa</button>
       </div>
     </div>
@@ -2342,7 +2345,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=232"></script>
+<script src="raw-data.js?v=233"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4485,7 +4488,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 232;
+const APP_VERSION = 233;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -13061,10 +13064,9 @@ function veDiemDanh(){
   if(!hien.length) return trong('Không có ai trong nhóm này.');
   const oGc=(p,kieu)=>`<input type="text" data-dd-gc data-id="${p.id}" maxlength="200" value="${thoatHtml(ddGhiChu[p.id]||'')}" placeholder="Ghi chú"${sua?'':' disabled'} aria-label="Ghi chú ${thoatHtml(p.ten)}" style="${kieu}font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);box-sizing:border-box;">`;
   const tcKhoi=(p,r,tat)=>{
-    const coDD=r.sang||r.chieu, mo=ddMoTc.has(p.id)||!!r.tc, tatTc=(tat||!coDD)?' disabled':'';
-    const nutMo=`<button type="button" class="dd-nut dd-tc-mo${r.tc?' on':''}" data-dd-tc-mo="${p.id}" aria-expanded="${mo}"${tatTc}${coDD?'':' title="Tick sáng hoặc chiều trước khi báo tăng ca"'}>${r.tc?`✓ Tăng ca ${r.tc}h`:'Tăng ca'}</button>`;
-    const ch=mo&&coDD?`<div class="dd-tc-gio">${[1,2,3].map(g=>`<label><input type="checkbox" data-dd-tc="${g}" data-id="${p.id}"${r.tc===g?' checked':''}${tatTc}> ${g}h <small>${TANG_CA_GIO[g]}</small></label>`).join('')}</div>`:'';
-    return nutMo+ch;
+    const coDD=r.sang||r.chieu, mo=coDD&&(ddMoTc.has(p.id)||!!r.tc), tatTc=(tat||!coDD)?' disabled':'';
+    if(!mo) return `<button type="button" class="dd-nut dd-tc-mo" data-dd-tc-mo="${p.id}" aria-expanded="false"${tatTc}${coDD?'':' title="Tick sáng hoặc chiều trước khi báo tăng ca"'}>Tăng ca</button>`;
+    return `<div class="dd-tc-gio">${[1,2,3].map(g=>`<label><input type="checkbox" data-dd-tc="${g}" data-id="${p.id}"${r.tc===g?' checked':''}${tatTc}> ${g}h <small>${TANG_CA_GIO[g]}</small></label>`).join('')}${r.tc?'':`<button type="button" class="dd-tc-dong" data-dd-tc-mo="${p.id}" aria-label="Đóng tăng ca"${tatTc}>✕</button>`}</div>`;
   };
   than.innerHTML=hien.map(p=>{
     const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
@@ -13256,6 +13258,39 @@ function ddBangXuat(nguoi,dd,ps,tu,den,gc=[]){
   });
   return [dau,...dong];
 }
+const GIAY_TC_DONG=11;   // mẫu giấy có 11 dòng/tờ
+function giayTangCaHtml(ds,logo){
+  const trang=Math.max(1,Math.ceil(ds.length/GIAY_TC_DONG));
+  let h='';
+  for(let t=0;t<trang;t++){
+    let dong='';
+    for(let i=0;i<GIAY_TC_DONG;i++){
+      const k=t*GIAY_TC_DONG+i, x=ds[k];
+      dong+=`<tr><td class="c">${k+1}</td><td>${x?thoatHtml(x.ten):''}</td><td class="c">${x?'17h':''}</td><td class="c">${x?(17+x.tc)+'h':''}</td><td></td></tr>`;
+    }
+    h+=`<section class="tr"><div class="dau"><img src="${logo}" alt=""><div class="qh"><b>CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><b>Độc lập - Tự do - Hạnh phúc</b><i class="ng">Ngày ....... tháng ....... năm ..........</i></div></div>
+<h1>GIẤY ĐỀ XUẤT TĂNG CA</h1><div class="bp"><b>Bộ phận:</b></div>
+<table><thead><tr><th class="tt">TT</th><th>Họ và tên</th><th class="gi">Từ giờ</th><th class="gi">Đến giờ</th><th>Nội dung công việc tăng ca</th></tr></thead><tbody>${dong}</tbody></table>
+<div class="ky"><div><b>Phòng HCNS</b><i>(Ký, ghi rõ họ tên)</i></div><div><b>BAN GIÁM ĐỐC</b><i>(Ký, ghi rõ họ tên)</i></div><div><b>Trưởng bộ phận</b><i>(Ký, ghi rõ họ tên)</i></div></div></section>`;
+  }
+  const css=`@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box}body{margin:0;font:13pt "Times New Roman",Times,serif;color:#000}
+.tr{page-break-after:always;height:272mm;position:relative}.tr:last-child{page-break-after:auto}
+.dau{display:flex;align-items:flex-start}.dau img{width:34mm;height:auto;margin-top:2mm}.qh{flex:1;text-align:center;display:flex;flex-direction:column;gap:1mm;padding-right:34mm}
+.qh b{font-size:12pt}.ng{font-size:11pt;margin-top:5mm}h1{text-align:center;font-size:20pt;margin:6mm 0 4mm;font-weight:700}
+.bp{border-bottom:1.5px dotted #000;height:8mm;font-size:12pt}table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:1mm}
+th,td{border:1px solid #000;height:17mm;padding:0 2mm;font-size:13pt;vertical-align:middle}th{height:11mm;font-size:12pt}.tt{width:12mm}.gi{width:22mm}.c{text-align:center}
+.ky{display:flex;justify-content:space-between;margin-top:5mm}.ky div{display:flex;flex-direction:column;align-items:center;width:33%}.ky b{font-size:12pt}.ky i{font-size:11pt;margin-top:1mm}`;
+  return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Giấy đề xuất tăng ca</title><style>${css}</style></head><body>${h}</body></html>`;
+}
+document.getElementById('ddInTcBtn')?.addEventListener('click',()=>{
+  const ds=ddNguoi.filter(p=>(ddDong[p.id]||{}).tc>0).sort(ddThuTu).map(p=>({ten:p.ten,tc:ddDong[p.id].tc}));
+  if(!ds.length) return ddBao('ddStatus','Ngày này chưa có ai tăng ca.','var(--danger)');
+  const w=window.open('','_blank');
+  if(!w) return ddBao('ddStatus','Trình duyệt đang chặn cửa sổ in. Cho phép cửa sổ bật lên rồi bấm lại.','var(--danger)');
+  w.document.open(); w.document.write(giayTangCaHtml(ds,new URL('assets/tc-logo.png?v=233',location.href).href)); w.document.close();
+  const im=w.document.querySelector('img'), in_=()=>{ w.focus(); w.print(); };
+  if(im&&!im.complete){ im.onload=in_; im.onerror=in_; } else setTimeout(in_,200);
+});
 document.getElementById('ddXuatBtn')?.addEventListener('click',()=>{
   const o=document.getElementById('ddXuat'); o.style.display=o.style.display==='none'?'block':'none';
 });
