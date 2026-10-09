@@ -19,109 +19,109 @@
   /* Giao diện tối theo mẫu Hospital Dashboard (Clinova) — 2026-09-05, giao diện DUY NHẤT
      của app (đã bỏ giao diện sáng + nút chuyển đổi). Màu đo trực tiếp từ bản mẫu bằng
      getComputedStyle/canvas, không đoán từ ảnh: nền #100f0c, thẻ #181714, viền #282622,
-     chữ #e6e4e1/#9a9891, accent teal #57b6b6, xanh lá #52b57b, đỏ #e65252, vàng #e6b552. */
-  /* Bảng màu rút từ logo: navy #203a76 và xanh da trời #63c4e3.
+     chữ #e6e4e1/#9a9891, accent teal #b65777, xanh lá #52b57b, đỏ #e65252, vàng #e6b552. */
+  /* Bảng màu rút từ logo: navy #76203d và xanh da trời #e3638e.
      Nền sáng là mặc định; nền tối nằm ở khối :root[data-theme="dark"] ngay dưới. */
   :root{
-    --bg:#f2f6fb; --card:#ffffff; --border:#dbe4f0; --text:#16233f; --text2:#5d6b85;
-    --sidebar-bg:#eaf0f9;
-    --primary:#203a76; --primary-l:#e8eefb; --primary-dark:#16294f;
-    --brand-light:#26799b; --brand-light-l:#e3f4fb;
+    --bg:#f3f3f3; --card:#ffffff; --border:#e6e0e3; --text:#171717; --text2:#525252;
+    --sidebar-bg:#efe8ec;
+    --primary:#c41a53; --primary-l:#fbe6ee; --primary-dark:#8e0e3b;
+    --brand-light:#b3134b; --brand-light-l:#fbe6ee;
     --success:#177349; --success-l:#e4f4ec;
     --warning:#8a5a10; --warning-l:#fbf0dc;
-    --danger:#ab3030; --danger-l:#fbe8e8;
-    --accent:#26799b; --accent-l:#e3f4fb;
-    --shadow:0 1px 2px rgba(32,58,118,.05), 0 6px 18px rgba(32,58,118,.06);
+    --danger:#b42323; --danger-l:#fbe8e8;
+    --accent:#b3134b; --accent-l:#fbe6ee;
+    --shadow:0 1px 2px rgba(142,14,59,.05), 0 6px 18px rgba(142,14,59,.06);
     /* Màu chữ đặt trên nền xanh chủ đạo: nền sáng dùng chữ trắng, nền tối dùng chữ đậm. */
     --on-primary:#ffffff;
     --bao-hanh:#8a5cd0;
   }
   :root[data-theme="dark"]{
-    --bg:#0e1522; --card:#16202f; --border:#26313f; --text:#e4e9f1; --text2:#94a1b5;
-    --sidebar-bg:#0a111c;
-    --primary:#63c4e3; --primary-l:#102a36; --primary-dark:#8fd8ef;
-    --brand-light:#63c4e3; --brand-light-l:#102a36;
+    --bg:#12040a; --card:#1c0710; --border:#3a1524; --text:#e7c9d4; --text2:#b489a0;
+    --sidebar-bg:#0c0307;
+    --primary:#ff5c93; --primary-l:#3a0d1c; --primary-dark:#ffa3c2;
+    --brand-light:#ff5c93; --brand-light-l:#3a0d1c;
     --success:#4cc38a; --success-l:#10291f;
     --warning:#d6a44b; --warning-l:#2e2413;
-    --danger:#e07070; --danger-l:#2e1616;
-    --accent:#63c4e3; --accent-l:#102a36;
-    --shadow:0 1px 0 rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.28);
-    --on-primary:#0e1522;
+    --danger:#ff7b7b; --danger-l:#2e1616;
+    --accent:#ff5c93; --accent-l:#3a0d1c;
+    --shadow:0 1px 0 rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
+    --on-primary:#12040a;
     --bao-hanh:#b18cf0;
   }
   body.dark-mode{background:var(--bg);color:var(--text);}
   /* Mau nhom san pham: ban goc la nen sang, ban toi khoi phuc dung mau cu. */
   body.dark-mode .group-thanh-cong{background:#12321f!important;color:#4cc38a!important;border-color:#1f4a30!important;}
-  body.dark-mode .group-digital{background:#10233a!important;color:#6bb6f0!important;border-color:#1a3a5c!important;}
+  body.dark-mode .group-digital{background:#3a101e!important;color:#f06b97!important;border-color:#5c1a30!important;}
   body.dark-mode .group-global{background:#241a38!important;color:#b18cf0!important;border-color:#3a2a5c!important;}
   body.dark-mode .group-chau-au{background:#3a2810!important;color:#e0a050!important;border-color:#5c3f1a!important;}
-  body.dark-mode .group-khsx{background:#1a2230!important;color:#8fa8c9!important;border-color:#2a3a4f!important;}
+  body.dark-mode .group-khsx{background:#1d1115!important;color:#c098a5!important;border-color:#301b22!important;}
   body.dark-mode .group-bao-hanh{background:#241a38!important;color:#a879ff!important;border-color:#3a2a5c!important;}
-  body.dark-mode .group-phat-sinh{background:#0f2b30!important;color:#4fc3d9!important;border-color:#1a4550!important;}
-  body.dark-mode .group-khac{background:#1f2a3a!important;color:#94a1b5!important;border-color:#333029!important;}
-  body.dark-mode select,body.dark-mode input,body.dark-mode textarea,body.dark-mode button:not(.primary-btn){background:#1b2534!important;color:var(--text)!important;border-color:var(--border)!important;}
-  body.dark-mode select:focus,body.dark-mode input:focus,body.dark-mode textarea:focus{background:#1f2a3a!important;border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(56,217,255,.14);}
-  body.dark-mode table th{background:#1f2a3a!important;color:#e4e9f1!important;}
-  body.dark-mode .panel,body.dark-mode .card,body.dark-mode .kpi,body.dark-mode [role="dialog"]>div{background:linear-gradient(145deg,#1b2534,#0e1522)!important;color:var(--text);}
-  body.dark-mode [style*="background:#f8f9fb"],body.dark-mode [style*="background:#f7fbff"],body.dark-mode [style*="background:#f4f6fa"],body.dark-mode [style*="background:#fff"],body.dark-mode [style*="background: white"],body.dark-mode [style*="background:white"]{background:#1f2a3a!important;color:var(--text)!important;}
+  body.dark-mode .group-phat-sinh{background:#300f1a!important;color:#d94f7d!important;border-color:#501a2c!important;}
+  body.dark-mode .group-khac{background:#231419!important;color:#b5949f!important;border-color:#333029!important;}
+  body.dark-mode select,body.dark-mode input,body.dark-mode textarea,body.dark-mode button:not(.primary-btn){background:#1f1216!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode select:focus,body.dark-mode input:focus,body.dark-mode textarea:focus{background:#231419!important;border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(243,68,126,.14);}
+  body.dark-mode table th{background:#231419!important;color:#ede8ea!important;}
+  body.dark-mode .panel,body.dark-mode .card,body.dark-mode .kpi,body.dark-mode [role="dialog"]>div{background:linear-gradient(145deg,#1f1216,#14090d)!important;color:var(--text);}
+  body.dark-mode [style*="background:#faf9f9"],body.dark-mode [style*="background:#fbfbfb"],body.dark-mode [style*="background:#f8f6f7"],body.dark-mode [style*="background:#fff"],body.dark-mode [style*="background: white"],body.dark-mode [style*="background:white"]{background:#231419!important;color:var(--text)!important;}
   /* #fdf2f1 (khối "Nạp lại từ gói sao lưu") và #fdecea trước giờ thiếu trong danh sách dò
      nên không bao giờ đổi màu ở chế độ tối — nền hồng nhạt + chữ đỏ nhạt, rất khó đọc. */
   body.dark-mode [style*="background:#fdf2f1"],body.dark-mode [style*="background:#fdecea"]{background:var(--danger-l)!important;color:var(--danger)!important;}
-  body.dark-mode [style*="color:#1a1d23"],body.dark-mode [style*="color:#111"],body.dark-mode [style*="color:black"]{color:var(--text)!important;}
-  body.dark-mode #loginOverlay{background:radial-gradient(circle at 20% 0,#173330 0,#0e1522 48%,#0a0a08 100%)!important;}
-  body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#1b2534;border:1px solid var(--border);}
-  body.dark-mode .tab-btn,body.dark-mode .management-tools-menu button{color:var(--text2);background:#0d2032;}
-  body.dark-mode .tab-btn.active{color:var(--primary)!important;box-shadow:0 0 14px rgba(56,217,255,.24);}
+  body.dark-mode [style*="color:#151012"],body.dark-mode [style*="color:#111"],body.dark-mode [style*="color:black"]{color:var(--text)!important;}
+  body.dark-mode #loginOverlay{background:radial-gradient(circle at 20% 0,#173330 0,#14090d 48%,#0a0a08 100%)!important;}
+  body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#1f1216;border:1px solid var(--border);}
+  body.dark-mode .tab-btn,body.dark-mode .management-tools-menu button{color:var(--text2);background:#320d19;}
+  body.dark-mode .tab-btn.active{color:var(--primary)!important;box-shadow:0 0 14px rgba(243,68,126,.24);}
   body.dark-mode .table-scroll,body.dark-mode table td{background:var(--card);color:var(--text);border-color:var(--border);}
-  body.dark-mode tr:hover td{background:#1f2a3a!important;}
+  body.dark-mode tr:hover td{background:#231419!important;}
   body.dark-mode .modal-overlay,body.dark-mode [id$="Modal"]{color:var(--text);}
-  body.dark-mode [id$="Modal"]>div,body.dark-mode #loginOverlay>div{background:linear-gradient(145deg,#1b2534,#0e1522)!important;color:var(--text)!important;border-color:var(--border)!important;}
-  body.dark-mode [id$="Modal"] [style*="background:#f8f9fb"],
-  body.dark-mode [id$="Modal"] [style*="background:#f7fbff"],
-  body.dark-mode [id$="Modal"] [style*="background:#f4f6fa"],
+  body.dark-mode [id$="Modal"]>div,body.dark-mode #loginOverlay>div{background:linear-gradient(145deg,#1f1216,#14090d)!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode [id$="Modal"] [style*="background:#faf9f9"],
+  body.dark-mode [id$="Modal"] [style*="background:#fbfbfb"],
+  body.dark-mode [id$="Modal"] [style*="background:#f8f6f7"],
   body.dark-mode [id$="Modal"] [style*="background:#fff"],
-  body.dark-mode [id$="Modal"] [style*="background:white"]{background:#1f2a3a!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode [id$="Modal"] [style*="background:white"]{background:#231419!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode [id$="Modal"] [style*="background:#fdf2f1"],
   body.dark-mode [id$="Modal"] [style*="background:#fdecea"]{background:var(--danger-l)!important;color:var(--danger)!important;border-color:var(--danger)!important;}
   body.dark-mode .tabs,body.dark-mode .team-card,body.dark-mode .stage-summary-item,
   body.dark-mode .capacity-filters,body.dark-mode .capacity-section,
   body.dark-mode .wf-step,body.dark-mode .management-tools-menu button,
   body.dark-mode #supabaseTelegramAdmin,body.dark-mode #autoPlanTable tbody,
-  body.dark-mode #progressTable tbody{background:#16202f!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode #progressTable tbody{background:#2f161e!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode .wf-step span,body.dark-mode .wf-note,body.dark-mode .capacity-note,
   body.dark-mode .team-card .to-label,body.dark-mode .stage-summary-item,
-  body.dark-mode #supabaseTelegramAdmin [style*="color:#1f4d78"]{color:var(--text2)!important;}
+  body.dark-mode #supabaseTelegramAdmin [style*="color:#781f3d"]{color:var(--text2)!important;}
   body.dark-mode .wf-note{background:#2e2413!important;border-color:var(--warning)!important;}
   /* Các bảng này bật/tắt bằng panel.style.display=... trong JS, thao tác đó khiến trình
-     duyệt viết lại toàn bộ thuộc tính style (đổi #f8f9fb thành rgb(248,249,251)), làm luật
-     [style*="background:#f8f9fb"] phía trên không còn khớp được nữa -> nền vẫn sáng trong khi
+     duyệt viết lại toàn bộ thuộc tính style (đổi #faf9f9 thành rgb(250,249,249)), làm luật
+     [style*="background:#faf9f9"] phía trên không còn khớp được nữa -> nền vẫn sáng trong khi
      chữ đã đổi màu sáng theo dark mode, gần như vô hình. Chốt luật riêng theo ID, không phụ
      thuộc chuỗi mã màu trong style nữa. */
-  body.dark-mode #lockPlanPanel,body.dark-mode #lockProgressPanel{background:#1f2a3a!important;color:var(--text)!important;}
+  body.dark-mode #lockPlanPanel,body.dark-mode #lockProgressPanel{background:#231419!important;color:var(--text)!important;}
   body.dark-mode #unlockEditNotice{background:var(--danger-l)!important;color:var(--danger)!important;}
-  /* Nút "Đăng ký Telegram ID" ở màn đăng nhập dùng màu #eef8fc/#1e6f96 — không nằm trong
+  /* Nút "Đăng ký Telegram ID" ở màn đăng nhập dùng màu #f6f4f5/#961e46 — không nằm trong
      danh sách hex được dò bên dưới nên trước giờ luôn sáng bất kể chế độ tối. */
-  body.dark-mode #telegramRegisterBtn{background:#1f2a3a!important;color:var(--primary)!important;border-color:var(--primary)!important;}
+  body.dark-mode #telegramRegisterBtn{background:#231419!important;color:var(--primary)!important;border-color:var(--primary)!important;}
   /* exitManagerStageBtn cũng bị luật "button:not(.primary-btn)" ở trên ghi đè mất màu đỏ cảnh báo
      (nút thoát công đoạn) — chốt riêng theo ID để giữ đúng ý nghĩa cảnh báo. */
   body.dark-mode #exitManagerStageBtn{background:var(--danger)!important;color:var(--on-primary)!important;}
   body.dark-mode .capacity-quick-btn,body.dark-mode .warranty-detail-btn,
-  body.dark-mode #supabaseTelegramAdmin button{background:#1f2a3a!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode #supabaseTelegramAdmin button{background:#231419!important;color:var(--text)!important;border-color:var(--border)!important;}
   body.dark-mode tr.row-new td,body.dark-mode tr.row-changed td,body.dark-mode tr.row-rot td,
   body.dark-mode tr.row-ghost td,body.dark-mode tr.row-baohanh td,body.dark-mode tr.row-uutien td,
-  body.dark-mode tr.row-split-source td{background:#1f2a3a!important;border-color:var(--border)!important;}
-  body.dark-mode #autoPlanTable tbody tr,body.dark-mode #progressTable tbody tr{background:#16202f!important;border-color:var(--border)!important;}
-  body.dark-mode .ops-command-center{background:linear-gradient(145deg,#1b2534,#0e1522)!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
-  body.dark-mode .ops-stage-card{background:#16202f!important;border-color:var(--border)!important;}
+  body.dark-mode tr.row-split-source td{background:#231419!important;border-color:var(--border)!important;}
+  body.dark-mode #autoPlanTable tbody tr,body.dark-mode #progressTable tbody tr{background:#2f161e!important;border-color:var(--border)!important;}
+  body.dark-mode .ops-command-center{background:linear-gradient(145deg,#1f1216,#14090d)!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
+  body.dark-mode .ops-stage-card{background:#2f161e!important;border-color:var(--border)!important;}
   body.dark-mode .ops-stage-name,body.dark-mode .ops-stage-value,body.dark-mode .ops-stage-meta strong{color:var(--text)!important;}
   body.dark-mode .ops-alert-strip{background:#2e2413!important;color:var(--text)!important;}
   body.dark-mode .employee-capacity-alert{background:#2e2413!important;color:var(--text)!important;}
-  body.dark-mode .employee-order-card{background:#16202f!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
+  body.dark-mode .employee-order-card{background:#2f161e!important;border-color:var(--border)!important;box-shadow:var(--shadow);}
   body.dark-mode .employee-order-title,body.dark-mode .employee-order-plan strong{color:var(--text)!important;}
   body.dark-mode .employee-order-meta{border-color:var(--border)!important;color:var(--text2)!important;}
-  body.dark-mode .employee-empty{background:#16202f!important;border-color:var(--border)!important;color:var(--text2)!important;}
-  body.dark-mode [style*="background:#fdf2f1"],body.dark-mode [style*="background:#fdecea"],body.dark-mode [style*="background:#fdf4e3"],body.dark-mode [style*="background:#eef3f9"]{background:#2a2430!important;color:var(--text)!important;border-color:var(--border)!important;}
-  body.dark-mode .kpi{box-shadow:0 0 18px rgba(56,217,255,.08);}
+  body.dark-mode .employee-empty{background:#2f161e!important;border-color:var(--border)!important;color:var(--text2)!important;}
+  body.dark-mode [style*="background:#fdf2f1"],body.dark-mode [style*="background:#fdecea"],body.dark-mode [style*="background:#fdf4e3"],body.dark-mode [style*="background:#f5f2f3"]{background:#2a2430!important;color:var(--text)!important;border-color:var(--border)!important;}
+  body.dark-mode .kpi{box-shadow:0 0 18px rgba(243,68,126,.08);}
   /* Khách dùng cùng kích thước bảng và biểu đồ với quản lý. */
   *{box-sizing:border-box;}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
@@ -149,7 +149,7 @@
   .kpi.k-accent{border-top-color:var(--accent);}
   .kpi .label{font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
   .kpi{transition:transform .15s ease, box-shadow .15s ease;}
-  .kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(16,24,40,.10);}
+  .kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(24,11,15,.10);}
   .kpi-phu{font-size:11.5px;color:var(--text2);margin-top:5px;}
   /* Dòng nhỏ báo số đã gồm bảo hành — cùng màu tím bảo hành đang dùng ở các tab */
   .kpi-bao-hanh{font-size:11.5px;font-weight:700;color:var(--bao-hanh);margin-top:5px;}
@@ -160,7 +160,7 @@
   .kpi-thanh i{display:block;height:100%;border-radius:99px;transition:width .6s ease;}
   .kpi .value{font-size:20px;font-weight:700;letter-spacing:-0.3px;}
   .kpi-refresh-btn{width:28px;height:28px;padding:0;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--accent);cursor:pointer;font-size:18px;line-height:1;}
-  .kpi-refresh-btn:hover{border-color:var(--accent);box-shadow:0 0 12px rgba(46,143,181,.25);}
+  .kpi-refresh-btn:hover{border-color:var(--accent);box-shadow:0 0 12px rgba(181,46,91,.25);}
   .kpi-refresh-btn.is-loading{animation:kpi-spin .8s linear infinite;}
   @keyframes kpi-spin{to{transform:rotate(360deg)}}
   /* Sửa 2026-09-07 (Phần 5): icon + sparkline + % xu hướng cho thẻ KPI trang "Tổng
@@ -275,16 +275,16 @@
   .search-with-clear{position:relative;display:flex;flex:1 1 260px;min-width:190px;}
   .search-with-clear input{width:100%;padding-right:38px;}
   .search-clear-btn{position:absolute;right:5px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--text2);font-size:19px;line-height:1;cursor:pointer;padding:5px 8px;border-radius:7px;display:none;}
-  .search-clear-btn:hover{background:#eef2f7;color:var(--danger);}
+  .search-clear-btn:hover{background:#f4f1f2;color:var(--danger);}
   .search-with-clear.has-value .search-clear-btn{display:block;}
-  .date-select-limited.is-open{position:relative;z-index:40;max-height:248px;overflow-y:auto;box-shadow:0 8px 24px rgba(15,23,42,.18);}
-  select, input{font-family:inherit;font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid var(--border);background:#fbfbfc;color:var(--text);}
+  .date-select-limited.is-open{position:relative;z-index:40;max-height:248px;overflow-y:auto;box-shadow:0 8px 24px rgba(25,10,15,.18);}
+  select, input{font-family:inherit;font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid var(--border);background:#fcfbfb;color:var(--text);}
   select:focus, input:focus{outline:none;border-color:var(--primary);background:#fff;}
   input[type="text"]{min-width:220px;flex:1;}
 
   table{width:100%;border-collapse:collapse;font-size:13px;color:var(--text);}
   th{text-align:left;padding:12px 7px;color:var(--text);font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:0.15px;border-bottom:1px solid var(--border);white-space:normal;line-height:1.25;height:56px;vertical-align:middle;overflow-wrap:normal;word-break:normal;hyphens:none;position:sticky;top:0;background:var(--card);}
-  td{padding:9px 8px;border-bottom:1px solid #f1f2f5;white-space:nowrap;}
+  td{padding:9px 8px;border-bottom:1px solid #f4f2f3;white-space:nowrap;}
 
   /* ---- Bố cục bảng đơn hàng ----
      Mỗi cột có bề rộng tối thiểu cố định nên không "nhảy" mỗi lần vẽ lại.
@@ -326,11 +326,11 @@
   .made-up-note{display:block;margin-top:5px;font-size:9.5px;line-height:1.15;white-space:nowrap;text-align:center;letter-spacing:-0.1px;}
   .lot-badge{display:block;width:max-content;max-width:100%;margin:4px auto 0;white-space:nowrap;}
   .stage-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;align-items:stretch;}
-  .stage-summary-item{padding:4px 3px;border-radius:7px;background:#f3f6fa;color:var(--text2);font-size:9.5px;line-height:1.15;text-align:center;}
+  .stage-summary-item{padding:4px 3px;border-radius:7px;background:#f8f5f6;color:var(--text2);font-size:9.5px;line-height:1.15;text-align:center;}
   .stage-summary-item strong{display:block;margin-top:2px;color:var(--text);font-size:13px;}
   .cell-note{margin-top:5px;font-size:10.5px;line-height:1.3;color:var(--text2);font-weight:500;}
   .employee-mobile-summary,.employee-mobile-group{display:none;}
-  tbody tr:hover td{background:#f8f9fb;}
+  tbody tr:hover td{background:#faf9f9;}
   .table-scroll{overflow-x:auto;max-height:520px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);}
   .table-scroll table{border:none;}
   .overtime-panel{display:none;background:var(--warning-l);border:1px solid var(--warning);border-radius:10px;padding:14px;margin:0 0 16px;}
@@ -392,11 +392,11 @@
   .chart-wrap{position:relative;width:100%;}
 
   .team-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
-  .team-card{background:#f8f9fb;border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+  .team-card{background:#faf9f9;border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
   .team-card .to-label{font-size:11.5px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.3px;}
   .team-card .rate{font-size:21px;font-weight:700;margin:5px 0;}
 
-  .alert-item{display:flex;gap:12px;padding:11px 4px;border-bottom:1px solid #f1f2f5;font-size:12.5px;align-items:flex-start;}
+  .alert-item{display:flex;gap:12px;padding:11px 4px;border-bottom:1px solid #f4f2f3;font-size:12.5px;align-items:flex-start;}
   .alert-item:last-child{border-bottom:none;}
   .alert-date{color:var(--text2);min-width:82px;font-weight:600;}
 
@@ -409,9 +409,9 @@
   .primary-btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 18px;border-radius:9px;border:none;background:var(--primary);color:var(--on-primary);cursor:pointer;}
   .primary-btn:disabled{background:var(--border);color:var(--text);opacity:.7;cursor:not-allowed;}
   .primary-btn:hover:not(:disabled){background:var(--primary-dark);}
-  textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;padding:10px;border-radius:9px;border:1px solid var(--border);background:#fbfbfc;width:100%;resize:vertical;}
+  textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;padding:10px;border-radius:9px;border:1px solid var(--border);background:#fcfbfb;width:100%;resize:vertical;}
   textarea:focus{outline:none;border-color:var(--primary);background:#fff;}
-  .manual-entry-row{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid #f1f2f5;font-size:12.5px;}
+  .manual-entry-row{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid #f4f2f3;font-size:12.5px;}
   .manual-entry-row:last-child{border-bottom:none;}
   .del-btn{background:none;border:1px solid var(--border);color:var(--danger);font-size:11.5px;padding:4px 10px;border-radius:7px;cursor:pointer;}
   .del-btn:hover{background:var(--danger-l);}
@@ -432,8 +432,8 @@
   .badge-ghost{background:var(--danger);color:#fff;border:1px solid var(--danger);}
 
   /* Đơn mới vừa xuất hiện từ sheet */
-  tr.row-new td{background:#eef4ff;border-bottom:1px solid #cfdcf7;}
-  tr.row-new:hover td{background:#e3ecfd;}
+  tr.row-new td{background:#f8f5f6;border-bottom:1px solid #f7cfdc;}
+  tr.row-new:hover td{background:#f2eeef;}
   tr.row-new td:first-child{box-shadow:inset 4px 0 0 var(--primary);}
 
   /* Dòng hàng bảo hành — ngoài kế hoạch, chỉ để theo dõi */
@@ -455,7 +455,7 @@
   tr.row-uutien td:first-child{box-shadow:inset 5px 0 0 #d9a300;}
   .badge-uutien{background:#d9a300;color:#fff;border:1px solid #b98a00;}
   input.uutien-tick{width:17px;height:17px;cursor:pointer;accent-color:#d9a300;}
-  @keyframes prioritySlowPulse{0%,100%{box-shadow:0 0 0 1px rgba(217,163,0,.35),0 3px 10px rgba(25,55,90,.07)}50%{box-shadow:0 0 0 4px rgba(217,163,0,.7),0 0 22px rgba(255,193,7,.45)}}
+  @keyframes prioritySlowPulse{0%,100%{box-shadow:0 0 0 1px rgba(217,163,0,.35),0 3px 10px rgba(90,25,47,.07)}50%{box-shadow:0 0 0 4px rgba(217,163,0,.7),0 0 22px rgba(255,193,7,.45)}}
   .employee-order-card.is-priority{border:2px solid var(--warning);background:var(--warning-l);animation:prioritySlowPulse 2.4s ease-in-out infinite;}
   .employee-priority-flag{display:inline-block;margin-bottom:4px;padding:3px 8px;border-radius:999px;background:#d9a300;color:#fff;font-size:10px;font-weight:900;letter-spacing:.03em;}
 
@@ -466,10 +466,10 @@
 
   tr.row-rot td{background:#fdf2f1;}
   tr.row-rot:hover td{background:#fbe8e7;}
-  tr.row-split-source td{background:#eef2f7;color:#697586;}
-  tr.row-split-source td:first-child{box-shadow:inset 4px 0 0 #94a3b8;}
+  tr.row-split-source td{background:#f4f1f2;color:#866973;}
+  tr.row-split-source td:first-child{box-shadow:inset 4px 0 0 #b894a0;}
   tr.row-split-source td::after{opacity:.85;}
-  tr.row-split-source:hover td{background:#e5ebf2;}
+  tr.row-split-source:hover td{background:#eee9eb;}
   tr.row-integrity td{box-shadow:inset 0 1px 0 #e0a128,inset 0 -1px 0 #e0a128;}
   .data-integrity-alert{display:none;margin:0 0 12px;border:1px solid var(--warning);border-radius:10px;background:var(--warning-l);color:var(--warning);padding:9px 12px;font-size:12px;}
   .data-integrity-alert summary{cursor:pointer;font-weight:800;}
@@ -491,7 +491,7 @@
   input.qty-input{width:100%;min-width:0;max-width:100%;padding:6px 5px;text-align:center;}
   .stage-cell{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-width:0;margin:0 auto;}
   .stage-cell input.qty-input{transition:border-color .15s,box-shadow .15s,background .15s;}
-  .stage-cell input.stage-ready{background:#fff;border-color:#4aa3df;box-shadow:0 0 0 2px rgba(74,163,223,.12);}
+  .stage-cell input.stage-ready{background:#fff;border-color:#df4a7c;box-shadow:0 0 0 2px rgba(223,74,124,.12);}
   .stage-sync-badge{align-self:center;font-size:12px;line-height:1;cursor:help;}
   .stage-sync-badge.sync-pending{animation:stageSyncPulse 1s ease-in-out infinite;}
   .stage-sync-badge.sync-error{color:var(--danger);}
@@ -502,16 +502,16 @@
   .stage-hint.wait{color:var(--accent);}
   .stage-total{font-size:14px;font-weight:800;color:var(--text);padding:6px 0;}
   .stage-readonly{font-size:13px;font-weight:800;color:var(--text);text-align:center;}
-  .status-over{display:block;margin-top:4px;color:#2475d0;font-size:11px;font-weight:800;}
+  .status-over{display:block;margin-top:4px;color:#d0245d;font-size:11px;font-weight:800;}
   .group-chip{display:inline-block;max-width:100%;margin:1px 2px;padding:3px 7px;border-radius:999px;font-size:10.5px;font-weight:800;line-height:1.2;white-space:normal;overflow-wrap:break-word;border:1px solid transparent;}
   .group-thanh-cong{background:#e4f4ec;color:#146c45;border-color:#9fd6b8;}
-  .group-digital{background:#e6eefb;color:#1d5d99;border-color:#a8c2e6;}
+  .group-digital{background:#f2eff0;color:#991d46;border-color:#e6a8bd;}
   .group-global{background:#efe9fa;color:#6134ad;border-color:#c3b2e8;}
   .group-chau-au{background:#fbf0dc;color:#8a5a10;border-color:#e3c489;}
-  .group-khsx{background:#eaeff6;color:#3f5572;border-color:#b9c6d8;}
+  .group-khsx{background:#f2eeef;color:#452932;border-color:#d6bbc4;}
   .group-bao-hanh{background:#efe9fa;color:#6134ad;border-color:#c3b2e8;}
-  .group-phat-sinh{background:#e2f3f6;color:#186f82;border-color:#9fd0da;}
-  .group-khac{background:#f0f1f3;color:#5d6b85;border-color:#c9ccd2;}
+  .group-phat-sinh{background:#eeeaeb;color:#82183b;border-color:#da9fb3;}
+  .group-khac{background:#f3f0f1;color:#855d6a;border-color:#d2c9cc;}
 
   .team-ring-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:stretch;}
   /* Chỉ có một thẻ (tài khoản gắn tổ) -> thu lại, không để chiếm hết chiều ngang */
@@ -535,7 +535,7 @@
     display:grid;grid-template-columns:1fr auto auto;column-gap:0;row-gap:0;
     font-size:11.5px;line-height:1.5;text-align:left;width:100%;max-width:360px;}
   /* Đường kẻ chấm mờ chạy suốt mỗi dòng để mắt dò không bị lệch hàng */
-  .team-ring-list > *{border-bottom:1px dotted #d8dee8;padding-top:3px;padding-bottom:3px;}
+  .team-ring-list > *{border-bottom:1px dotted #e4dcdf;padding-top:3px;padding-bottom:3px;}
   .team-ring-list .t{color:var(--text);min-width:0;white-space:normal;overflow-wrap:break-word;padding-left:4px;padding-right:8px;}
   .team-ring-list .ho-tro{font-style:normal;font-size:10px;font-weight:700;color:var(--accent);}
   .team-ring-list-xong{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);
@@ -551,8 +551,8 @@
   .team-ring-list b.team-ring-row-uutien{border-radius:0 4px 4px 0;}
 
   /* ---- Popup số liệu năng lực ---- */
-  .capacity-modal{display:none;position:fixed;inset:0;z-index:9350;background:rgba(18,20,26,.48);padding:16px;overflow:auto;}
-  .capacity-dialog{background:var(--card);border-radius:16px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:1120px;margin:24px auto;padding:20px;}
+  .capacity-modal{display:none;position:fixed;inset:0;z-index:9350;background:rgba(16,11,13,.48);padding:16px;overflow:auto;}
+  .capacity-dialog{background:var(--card);border-radius:16px;box-shadow:0 18px 50px rgba(24,11,15,.24);max-width:1120px;margin:24px auto;padding:20px;}
   .capacity-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
   /* ---- Sửa tay đơn + Đơn cần kiểm tra ---- */
   .sua-don-luoi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
@@ -624,7 +624,7 @@
   .bom-bang .bom-thay{font-size:10.5px;color:var(--warning);margin-top:2px;}
   .bom-bang .bom-ma{max-width:150px;}
   .bom-la{font-size:10.5px;color:var(--danger);margin-top:2px;}
-  .bom-goi-y{display:none;position:fixed;z-index:9500;max-height:280px;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 30px rgba(16,24,40,.22);}
+  .bom-goi-y{display:none;position:fixed;z-index:9500;max-height:280px;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 30px rgba(24,11,15,.22);}
   .bom-goi-y-dong{padding:8px 10px;font-size:12.5px;cursor:pointer;border-top:1px solid var(--border);}
   .bom-goi-y-dong:first-child{border-top:0;}
   .bom-goi-y-dong span{color:var(--text2);}
@@ -650,7 +650,7 @@
   .capacity-note{font-size:11.5px;color:var(--text2);line-height:1.45;margin-top:10px;}
   .speed-kpi-card{cursor:pointer;position:relative;}
   .speed-kpi-card:focus{outline:2px solid var(--primary);outline-offset:2px;}
-  .speed-kpi-card:hover{box-shadow:0 0 0 1px var(--primary),0 8px 24px rgba(16,24,40,.16);}
+  .speed-kpi-card:hover{box-shadow:0 0 0 1px var(--primary),0 8px 24px rgba(24,11,15,.16);}
   .speed-kpi-hint{display:block;margin-top:7px;font-size:10.5px;color:var(--accent);font-weight:700;}
   .speed-detail-dialog{max-width:720px;}
   .speed-detail-lead{padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:var(--primary-l);color:var(--text);font-size:12.5px;line-height:1.5;margin-bottom:12px;}
@@ -664,8 +664,8 @@
   .speed-detail-warning{background:var(--warning-l);border:1px solid var(--warning);color:var(--text);}
   /* Câu báo cáo tuần xuống 4 dòng — giữ nguyên chỗ ngắt dòng của chuỗi, không dồn thành một khối. */
   .speed-detail-result{background:var(--success-l);border:1px solid var(--success);color:var(--text);font-weight:700;white-space:pre-line;}
-  body.dark-mode .speed-detail-lead{background:#132b2b!important;border-color:var(--border)!important;}
-  body.dark-mode .speed-detail-row{background:#16202f!important;border-color:var(--border)!important;}
+  body.dark-mode .speed-detail-lead{background:#2b131b!important;border-color:var(--border)!important;}
+  body.dark-mode .speed-detail-row{background:#2f161e!important;border-color:var(--border)!important;}
   body.dark-mode .speed-detail-formula{background:#241f30!important;border-color:var(--border)!important;}
   body.dark-mode .speed-detail-warning{background:#2e2413!important;color:var(--text)!important;}
   body.dark-mode .speed-detail-result{background:#10291f!important;color:var(--text)!important;}
@@ -703,7 +703,7 @@
   #managementToolsBtn{
     font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:9px;cursor:pointer;
     border:1px solid var(--primary);background:var(--primary);color:#fff;white-space:nowrap;
-    box-shadow:0 1px 3px rgba(29,78,216,.18);
+    box-shadow:0 1px 3px rgba(216,29,91,.18);
   }
   /* Nút đổi nền: chỉ một hình, cao bằng nút Công cụ, hoà vào thanh chứ không chen ngang. */
   #themeBtn{
@@ -717,21 +717,21 @@
   #managerStageViewBtn{
     font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 11px;border-radius:9px;cursor:pointer;
     border:1px solid var(--border);background:var(--primary-l);color:var(--primary);white-space:nowrap;
-    box-shadow:0 1px 3px rgba(16,24,40,.08);
+    box-shadow:0 1px 3px rgba(24,11,15,.08);
   }
   #managerStageViewBtn:hover{background:var(--primary-l);border-color:var(--primary);}
   .management-tools-menu{
     display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:1000;
     width:min(260px,calc(100vw - 24px));padding:7px;background:var(--card);
-    border:1px solid var(--border);border-radius:11px;box-shadow:0 10px 28px rgba(16,24,40,.16);
+    border:1px solid var(--border);border-radius:11px;box-shadow:0 10px 28px rgba(24,11,15,.16);
   }
   .management-tools-menu.open{display:flex;flex-direction:column;gap:5px;}
   .management-tools-menu button{
     width:100%;font-family:inherit;font-size:12.5px;font-weight:650;text-align:left;
     padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;
-    background:#f7f9fc;color:var(--text);white-space:normal;
+    background:#faf9f9;color:var(--text);white-space:normal;
   }
-  .management-tools-menu button:hover{background:var(--primary-l);border-color:#d4e1f4;}
+  .management-tools-menu button:hover{background:var(--primary-l);border-color:#f4d4df;}
 
   /* Hàng nút: dàn ngang đều nhau, tối đa 6 nút một hàng */
   .btn-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px;}
@@ -1043,7 +1043,7 @@
   .wf-link:hover{color:var(--primary);border-bottom-color:var(--primary);}
   /* Sơ đồ quy trình trong popup */
   .wf-step{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border-radius:10px;
-    background:#f6f9fc;border:1px solid var(--border);margin-bottom:8px;}
+    background:#faf8f9;border:1px solid var(--border);margin-bottom:8px;}
   .wf-num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;
     font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;}
   .wf-step b{display:block;font-size:13px;color:var(--text);margin-bottom:2px;}
@@ -1076,8 +1076,8 @@
     /* Màn hình hẹp: mỗi đơn là một thẻ, không ép bảng PC vào điện thoại. */
     #autoPlanTable thead, #progressTable thead{display:none;}
     #autoPlanTable tbody, #progressTable tbody{display:block;padding:8px;background:var(--bg);}
-    #autoPlanTable tbody tr, #progressTable tbody tr{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 7px rgba(26,39,62,.05);}
-    #autoPlanTable tbody td, #progressTable tbody td{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;grid-column:span 2;width:auto!important;min-width:0!important;max-width:none!important;padding:9px 7px;border:0;border-right:1px solid #eef1f5;border-bottom:1px solid #eef1f5;white-space:normal;text-align:center;overflow-wrap:break-word;}
+    #autoPlanTable tbody tr, #progressTable tbody tr{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 7px rgba(62,26,38,.05);}
+    #autoPlanTable tbody td, #progressTable tbody td{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;grid-column:span 2;width:auto!important;min-width:0!important;max-width:none!important;padding:9px 7px;border:0;border-right:1px solid #f3f0f1;border-bottom:1px solid #f3f0f1;white-space:normal;text-align:center;overflow-wrap:break-word;}
     #autoPlanTable tbody td::before, #progressTable tbody td::before{display:block;margin-bottom:5px;color:var(--text2);font-size:9px;font-weight:800;line-height:1.15;text-transform:uppercase;letter-spacing:.15px;}
     #autoPlanTable tbody .col-date, #progressTable tbody .col-date,
     #autoPlanTable tbody .col-code, #progressTable tbody .col-code,
@@ -1257,28 +1257,28 @@
   }
   .team-ring-extra{font-size:10.5px;color:var(--accent);font-weight:600;margin-top:2px;}
   /* ---- Khung điều hành mới: lớp hiển thị song song, không thay logic/bảng cũ ---- */
-  .ops-command-center{margin:2px 0 16px;padding:16px;border:1px solid #d7e2ef;border-radius:16px;background:linear-gradient(145deg,#f8fbff 0%,#fff 55%,#f4f8fc 100%);box-shadow:0 8px 24px rgba(31,65,105,.08);}
+  .ops-command-center{margin:2px 0 16px;padding:16px;border:1px solid #efd7df;border-radius:16px;background:linear-gradient(145deg,#fcfbfb 0%,#fff 55%,#f9f7f8 100%);box-shadow:0 8px 24px rgba(105,31,56,.08);}
   .ops-command-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;}
   .ops-command-title{font-size:14px;font-weight:800;color:var(--primary);letter-spacing:.01em;}
   .ops-command-sub{margin-top:3px;font-size:11px;color:var(--text2);}
   .ops-live-pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:6px 9px;border-radius:999px;background:var(--success-l);color:var(--success);font-size:10px;font-weight:800;}
   .ops-live-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:#52b57b;box-shadow:0 0 0 4px rgba(82,181,123,.16);}
   .ops-stage-flow{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;align-items:stretch;gap:8px;}
-  .ops-stage-arrow{display:flex;align-items:center;justify-content:center;color:#8ca0b7;font-size:20px;font-weight:700;}
-  .ops-stage-card{position:relative;min-width:0;padding:13px;border:1px solid #dce5ef;border-radius:13px;background:#fff;overflow:hidden;}
-  .ops-stage-card::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--stage-color,#2c75a0);}
+  .ops-stage-arrow{display:flex;align-items:center;justify-content:center;color:#b78c9a;font-size:20px;font-weight:700;}
+  .ops-stage-card{position:relative;min-width:0;padding:13px;border:1px solid #efdce2;border-radius:13px;background:#fff;overflow:hidden;}
+  .ops-stage-card::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--stage-color,#a02c53);}
   .ops-stage-card.is-ok{--stage-color:#129353;}
   .ops-stage-card.is-warn{--stage-color:#c27a11;}
   .ops-stage-card.is-danger{--stage-color:#cc3732;}
   .ops-stage-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
-  .ops-stage-name{font-size:12px;font-weight:800;color:#24364b;text-transform:uppercase;letter-spacing:.04em;}
+  .ops-stage-name{font-size:12px;font-weight:800;color:#4b2431;text-transform:uppercase;letter-spacing:.04em;}
   .ops-stage-status{padding:4px 7px;border-radius:999px;background:var(--sidebar-bg);color:var(--text2);font-size:9.5px;font-weight:800;}
   .ops-stage-card.is-ok .ops-stage-status{background:var(--success-l);color:var(--success);}
   .ops-stage-card.is-warn .ops-stage-status{background:var(--warning-l);color:var(--warning);}
   .ops-stage-card.is-danger .ops-stage-status{background:var(--danger-l);color:var(--danger);}
-  .ops-stage-value{font-size:25px;font-weight:850;color:#132337;line-height:1;}
+  .ops-stage-value{font-size:25px;font-weight:850;color:#37131f;line-height:1;}
   .ops-stage-meta{display:flex;justify-content:space-between;gap:8px;margin-top:8px;color:var(--text2);font-size:10.5px;}
-  .ops-stage-meta strong{color:#293b50;}
+  .ops-stage-meta strong{color:#301b22;}
   .ops-alert-strip{display:none;align-items:flex-start;gap:9px;margin-top:11px;padding:9px 11px;border-radius:10px;background:#fff3e2;color:#8a5200;font-size:11px;line-height:1.4;}
   .ops-alert-strip.show{display:flex;}
   @media(max-width:700px){
@@ -1359,37 +1359,37 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   .employee-my-total-error{color:#ffd7d7;}
   .employee-capacity-alert{margin:8px 0 10px;padding:9px 11px;border-radius:10px;background:#fff2d9;color:#8a5200;font-size:11px;font-weight:700;}
   .employee-order-list{display:grid;gap:9px;}
-  .employee-order-card{background:#fff;border:1px solid #d7e1ed;border-radius:13px;box-shadow:0 3px 10px rgba(25,55,90,.07);overflow:hidden;}
+  .employee-order-card{background:#fff;border:1px solid #edd7de;border-radius:13px;box-shadow:0 3px 10px rgba(90,25,47,.07);overflow:hidden;}
   .employee-order-main{display:grid;grid-template-columns:minmax(0,1fr) 68px 98px;align-items:center;gap:8px;padding:11px;}
-  .employee-order-title{font-size:15px;font-weight:850;color:#17283d;line-height:1.25;}
+  .employee-order-title{font-size:15px;font-weight:850;color:#3d1724;line-height:1.25;}
   .employee-order-note{font-size:10px;color:#e65252;margin-top:3px;line-height:1.3;}
   .employee-order-plan{text-align:center;color:var(--text2);font-size:9px;}
-  .employee-order-plan strong{display:block;color:#17283d;font-size:18px;}
+  .employee-order-plan strong{display:block;color:#3d1724;font-size:18px;}
   .employee-order-entry .stage-cell{display:block;}
   .employee-order-entry .qty-input{width:100%!important;min-height:48px;font-size:20px!important;font-weight:850;text-align:center;border:2px solid var(--primary);border-radius:10px;}
   .employee-order-entry .stage-hint{font-size:9px;margin-top:3px;text-align:center;}
-  .employee-order-meta{display:flex;justify-content:space-between;gap:8px;padding:7px 11px;border-top:1px solid #edf1f6;color:#607086;font-size:9.5px;}
-  .employee-empty{padding:26px 15px;text-align:center;background:#fff;border:1px dashed #c9d5e3;border-radius:13px;color:#607086;}
+  .employee-order-meta{display:flex;justify-content:space-between;gap:8px;padding:7px 11px;border-top:1px solid #f3f0f1;color:#86606d;font-size:9.5px;}
+  .employee-empty{padding:26px 15px;text-align:center;background:#fff;border:1px dashed #dbd1d4;border-radius:13px;color:#86606d;}
 }
 </style>
 </head>
 <body>
-<div id="localPreviewBanner" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9998;background:#173f73;color:#fff;border:2px solid #fff;border-radius:999px;box-shadow:0 5px 18px rgba(0,0,0,.24);padding:9px 16px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap;max-width:calc(100vw - 28px);overflow:hidden;text-overflow:ellipsis;">
+<div id="localPreviewBanner" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9998;background:#731736;color:#fff;border:2px solid #fff;border-radius:999px;box-shadow:0 5px 18px rgba(0,0,0,.24);padding:9px 16px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap;max-width:calc(100vw - 28px);overflow:hidden;text-overflow:ellipsis;">
   BẢN XEM THỬ LOCAL — không ghi dữ liệu thật, không xuất báo cáo
 </div>
-<div id="loginOverlay" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#eef1f6,#e3e8f0);display:flex;align-items:center;justify-content:center;padding:20px;">
+<div id="loginOverlay" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#f4f0f1,#ece7e9);display:flex;align-items:center;justify-content:center;padding:20px;">
   <div style="width:100%;max-width:360px;">
   <div style="text-align:center;margin-bottom:18px;">
     <img src="data:image/png;base64,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" alt="Nệm Thành Công" style="width:150px;height:auto;">
   </div>
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 40px rgba(20,30,60,.16);padding:30px 28px;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 40px rgba(60,20,33,.16);padding:30px 28px;">
     <h2 style="margin:0 0 4px;font-size:18px;">Kế hoạch sản xuất</h2>
     <p style="margin:0 0 20px;color:var(--text2);font-size:12.5px;">Tổ Mút Foam — Nệm Thành Công</p>
     <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;">Mã đăng nhập</label>
     <input type="password" id="loginCodeInput" placeholder="Nhập mã của bạn" autocomplete="off"
            style="width:100%;box-sizing:border-box;padding:11px 12px;font-size:14px;letter-spacing:1px;">
     <button id="loginBtn" class="primary-btn" style="width:100%;margin-top:14px;padding:11px;font-size:14px;">Vào dashboard</button>
-    <button id="telegramRegisterBtn" type="button" style="display:none;width:100%;margin-top:10px;padding:10px 12px;font-size:13px;border-radius:9px;border:1px solid #2d8fc1;background:#eef8fc;color:#1e6f96;cursor:pointer;font-weight:700;">🆔 Đăng ký Telegram ID</button>
+    <button id="telegramRegisterBtn" type="button" style="display:none;width:100%;margin-top:10px;padding:10px 12px;font-size:13px;border-radius:9px;border:1px solid #c12d5e;background:#f6f4f5;color:#961e46;cursor:pointer;font-weight:700;">🆔 Đăng ký Telegram ID</button>
     <div id="telegramRegisterStatus" aria-live="polite" style="display:none;margin-top:8px;color:var(--text2);font-size:12px;line-height:1.45;"></div>
     <div id="loginError" style="display:none;margin-top:12px;color:var(--danger);font-size:12.5px;"></div>
     <div style="display:flex;align-items:center;gap:10px;margin:20px 0 16px;">
@@ -1410,8 +1410,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
   </div>
 </div>
-<div id="wfModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
-  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:720px;margin:40px auto;padding:22px 24px;">
+<div id="wfModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(16,11,13,.45);padding:20px;overflow:auto;">
+  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(24,11,15,.24);max-width:720px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
       <h3 id="wfTitle" style="margin:0;font-size:17px;"></h3>
       <button id="closeWfBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
@@ -1420,8 +1420,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-<div id="phoiModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
-  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:720px;margin:40px auto;padding:22px 24px;">
+<div id="phoiModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(16,11,13,.45);padding:20px;overflow:auto;">
+  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(24,11,15,.24);max-width:720px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
       <h3 style="margin:0;font-size:17px;">🧱 Bảng đặt phôi</h3>
       <button id="closePhoiBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
@@ -1453,11 +1453,11 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-<div id="viecXemModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
-  <div id="viecXemHop" style="background:var(--card);color:var(--text);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:640px;margin:40px auto;padding:20px 22px;"></div>
+<div id="viecXemModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(16,11,13,.45);padding:20px;overflow:auto;">
+  <div id="viecXemHop" style="background:var(--card);color:var(--text);border-radius:14px;box-shadow:0 18px 50px rgba(24,11,15,.24);max-width:640px;margin:40px auto;padding:20px 22px;"></div>
 </div>
-<div id="aoModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
-  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:820px;margin:40px auto;padding:22px 24px;">
+<div id="aoModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(16,11,13,.45);padding:20px;overflow:auto;">
+  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(24,11,15,.24);max-width:820px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
       <h3 style="margin:0;font-size:17px;">👕 Bảng đặt áo</h3>
       <button id="closeAoBtn" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
@@ -1490,8 +1490,8 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-<div id="manualOrderModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.45);padding:20px;overflow:auto;">
-  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(16,24,40,.24);max-width:1020px;margin:40px auto;padding:22px 24px;">
+<div id="manualOrderModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(16,11,13,.45);padding:20px;overflow:auto;">
+  <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(24,11,15,.24);max-width:1020px;margin:40px auto;padding:22px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
       <h3 style="margin:0;font-size:17px;">+ Thêm đơn phát sinh</h3>
       <button id="closeManualOrderModalBtn" type="button" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;">Đóng</button>
@@ -1516,7 +1516,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-<div id="productDetailModal" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(18,20,26,.55);padding:18px;overflow:auto;">
+<div id="productDetailModal" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(16,11,13,.55);padding:18px;overflow:auto;">
   <div style="background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.28);max-width:820px;margin:36px auto;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
       <h3 id="productDetailTitle" style="margin:0;font-size:17px;">Chi tiết sản xuất</h3>
@@ -1526,7 +1526,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   </div>
 </div>
 
-<div id="managerStageModal" class="only-manager2 manager-stage-modal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(18,20,26,.55);padding:18px;overflow:auto;">
+<div id="managerStageModal" class="only-manager2 manager-stage-modal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(16,11,13,.55);padding:18px;overflow:auto;">
   <div style="background:var(--card);border-radius:14px;max-width:460px;margin:52px auto;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.28);">
     <h3 style="margin:0 0 6px;">Vào giao diện công đoạn</h3>
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px;">Quản lý thao tác thật dưới công đoạn đã chọn; lịch sử vẫn ghi tài khoản quản lý.</div>
@@ -1681,7 +1681,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <span class="save-status" id="autoPlanStatus"></span>
       <span class="save-status" id="autoPlanIntegrityWarning" role="alert" aria-live="polite" hidden></span>
     </div>
-    <div id="lockPlanPanel" style="display:none;background:#f8f9fb;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div id="lockPlanPanel" style="display:none;background:#faf9f9;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="font-size:12.5px;color:var(--text2);margin-bottom:9px;">
         Tick chọn ngày muốn <strong>chốt dữ liệu đầu vào</strong>. Ngày đã chốt sẽ giữ nguyên danh sách đơn, không nhận thay đổi từ sheet công ty nữa (sheet bị sửa/xoá/lọc cũng không ảnh hưởng). Bạn vẫn phân công tổ, thêm đơn phát sinh và xoá đơn được như bình thường.
       </div>
@@ -1781,7 +1781,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       <div id="overtimeStatus" class="save-status" style="display:block;margin-top:8px;"></div>
       <div id="overtimeSavedList" class="overtime-list"></div>
     </div>
-    <div id="lockProgressPanel" style="display:none;background:#f8f9fb;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div id="lockProgressPanel" style="display:none;background:#faf9f9;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="font-size:12.5px;color:var(--text2);margin-bottom:9px;">
         Tick chọn ngày muốn <strong>chốt tiến độ</strong>. Ngày đã chốt thì số liệu và phân công không sửa được nữa. Chỉ Quản lý mới có quyền mở khóa tạm ở tab Kế hoạch sản xuất; Quản lý 2 không có quyền mở khóa.
       </div>
@@ -2208,7 +2208,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
         <span class="save-status" id="staffStatus"></span>
       </div>
       <div id="supabaseTelegramAdmin" style="display:none;margin:4px 0 14px;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--primary-l);">
-        <div style="font-size:12.5px;font-weight:800;color:#1f4d78;margin-bottom:5px;">🔗 Duyệt tài khoản Telegram</div>
+        <div style="font-size:12.5px;font-weight:800;color:#781f3d;margin-bottom:5px;">🔗 Duyệt tài khoản Telegram</div>
         <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:9px;">Nhân viên tự gửi Telegram ID. Quản lý duyệt theo luồng: chọn vai, chọn tổ/công đoạn (bắt buộc với Nhân viên), rồi bấm Duyệt.</div>
         <div id="adminTelegramStatus" aria-live="polite" style="display:none;margin-top:8px;font-size:11.5px;line-height:1.4;"></div>
         <div id="telegramAccessRequests" style="margin-top:10px;"></div>
@@ -2333,7 +2333,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=228"></script>
+<script src="raw-data.js?v=229"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2492,10 +2492,10 @@ let PRODUCT_COLOR_MAP = {};
 
 const FIXED_PRODUCT_COLORS = {
   'Sora': '#16a34a',       // xanh lá
-  'Classic': '#2563eb',    // xanh dương
+  'Classic': '#eb2567',    // xanh dương
   'KingHome': '#dc2626'    // đỏ
 };
-const FALLBACK_PALETTE = ['#d97706','#7c3aed','#0d9488','#db2777','#64748b','#ea580c','#92400e','#a21caf','#eab308','#0f766e','#9333ea','#475569'];
+const FALLBACK_PALETTE = ['#d97706','#7c3aed','#0d9488','#db2777','#8b6471','#ea580c','#92400e','#a21caf','#eab308','#760f31','#9333ea','#402d33'];
 
 function buildProductColorMap(){
   const totals = {};
@@ -2814,7 +2814,7 @@ function computeAndRenderKpis(){
   let totalBaoHanh = tongKpi.warranty;
   const rate = totalPlan>0 ? Math.round((totalDG/totalPlan)*1000)/10 : null;
   const kpiRow = document.getElementById('kpiRow');
-  const mauTyLe = rate==null ? 'var(--text2)' : rate>=95 ? 'var(--success)' : rate>=85 ? 'var(--warning)' : rate>=60 ? 'var(--danger)' : '#8a90a0';
+  const mauTyLe = rate==null ? 'var(--text2)' : rate>=95 ? 'var(--success)' : rate>=85 ? 'var(--warning)' : rate>=60 ? 'var(--danger)' : '#a08a91';
   const tienDoNgay = metricDayKeys.length ? Math.round(activeDays/metricDayKeys.length*100) : 0;
   const quy = tinhTienDoQuyHienTai();
   const mucTieuHtml = quy.mucTieu>0
@@ -2966,7 +2966,7 @@ function renderDay(key){
     type:'bar',
     data:{
       labels:['Kế hoạch','Đóng gói'],
-      datasets:[{data:[plan,dg], backgroundColor:['#1d4ed8','#0f8a4c'], borderRadius:6, maxBarThickness:64}]
+      datasets:[{data:[plan,dg], backgroundColor:['#d81d5b','#0f8a4c'], borderRadius:6, maxBarThickness:64}]
     },
     options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}
   });
@@ -3139,7 +3139,7 @@ const CHART_TOOLTIP_STYLE = () => ({
 });
 // Chữ trục và chú thích theo màu chữ phụ của bảng màu; gọi lại mỗi lần vẽ để đổi nền là đổi theo.
 function apDungMauChuBieuDo(){
-  if(window.Chart&&Chart.defaults) Chart.defaults.color=mauTheme('--text2','#dce7f7');
+  if(window.Chart&&Chart.defaults) Chart.defaults.color=mauTheme('--text2','#f7dce5');
 }
 
 function renderMonthly(){
@@ -3214,7 +3214,7 @@ function renderMonthly(){
 
   document.getElementById('monthlyKpis').innerHTML = `
     <div class="kpi k-accent">
-      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:var(--primary);">${ICON_KE_HOACH}</span>${veSparkline(dailyPlan.map(d=>d.plan),'#57b6b6')}</div>
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:var(--primary);">${ICON_KE_HOACH}</span>${veSparkline(dailyPlan.map(d=>d.plan),'#b65777')}</div>
       <div class="label">Tổng kế hoạch</div>
       <div class="kpi-value-row"><div class="value">${rangePlan.toLocaleString()}</div>${veTrendBadge(rangePlan, rangeKpiKyTruoc.plan)}</div>
     </div>
@@ -3229,7 +3229,7 @@ function renderMonthly(){
       <div class="kpi-value-row"><div class="value" style="color:${rangeRate==null?'var(--text2)':rangeRate>=95?'var(--success)':rangeRate>=80?'var(--warning)':'var(--danger)'}">${rangeRate==null?'—':rangeRate+'%'}</div>${veTrendBadge(rangeRate, rangeRateKyTruoc)}</div>
     </div>
     <div class="kpi k-accent">
-      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:var(--primary);">${ICON_DONG_GOI}</span>${veSparkline(dailyPlan.map(d=>d.dg),'#57b6b6')}</div>
+      <div class="kpi-top"><span class="kpi-icon" style="background:var(--primary-l);color:var(--primary);">${ICON_DONG_GOI}</span>${veSparkline(dailyPlan.map(d=>d.dg),'#b65777')}</div>
       <div class="label">Đóng gói trong kỳ</div>
       <div class="kpi-value-row"><div class="value">${rangeKpi.throughput.toLocaleString()}</div>${veTrendBadge(rangeKpi.throughput, rangeKpiKyTruoc.throughput)}</div>
     </div>
@@ -3261,7 +3261,7 @@ function renderMonthly(){
       labels:products.map(p=>p.name),
       datasets:[{
         data:products.map(p=>p.total),
-        backgroundColor:products.map(p=>PRODUCT_COLOR_MAP[p.name] || '#94a3b8'),
+        backgroundColor:products.map(p=>PRODUCT_COLOR_MAP[p.name] || '#b894a0'),
         borderWidth:0,
         borderRadius:5
       }]
@@ -3327,7 +3327,7 @@ function renderMonthly(){
     data:{
       labels:teamKeys.map(t=>teamLabel(t)),
       datasets:[
-        {label:'Kế hoạch', data:teamKeys.map(t=>teamMap[t].ke_hoach), backgroundColor:'#57b6b6', borderRadius:4, maxBarThickness:24},
+        {label:'Kế hoạch', data:teamKeys.map(t=>teamMap[t].ke_hoach), backgroundColor:'#b65777', borderRadius:4, maxBarThickness:24},
         {label:'Hoàn thành', data:teamKeys.map(t=>teamMap[t].hoan_thanh), backgroundColor:'#52b57b', borderRadius:4, maxBarThickness:24},
         {label:'Bảo hành', data:teamKeys.map(t=>teamMap[t].bao_hanh), backgroundColor:'#e6b552', borderRadius:4, maxBarThickness:24}
       ]
@@ -3348,7 +3348,7 @@ function renderMonthly(){
     data:{
       labels:dailyPlan.map(d=>d.date.slice(0,5)),
       datasets:[
-        {label:'Kế hoạch', data:dailyPlan.map(d=>d.plan), borderColor:'#57b6b6', backgroundColor:'rgba(87,182,182,0.1)', borderWidth:2, fill:true, tension:0.25, pointRadius:4},
+        {label:'Kế hoạch', data:dailyPlan.map(d=>d.plan), borderColor:'#b65777', backgroundColor:'rgba(182,87,119,0.1)', borderWidth:2, fill:true, tension:0.25, pointRadius:4},
         {label:'Đóng gói', data:dailyPlan.map(d=>d.dg), borderColor:'#52b57b', backgroundColor:'rgba(82,181,123,0.1)', borderWidth:2, fill:true, tension:0.25, pointRadius:4}
       ]
     },
@@ -4057,7 +4057,7 @@ function chonNhanSuBangDanhSach(ds,nhanCongDoan,indexMacDinh){
   if(chonNhanSuOverlayPending) return chonNhanSuOverlayPending;
   const promise = new Promise(resolve=>{
     const overlay=document.createElement('div');
-    overlay.style.cssText='position:fixed;inset:0;z-index:9600;background:rgba(18,20,26,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
+    overlay.style.cssText='position:fixed;inset:0;z-index:9600;background:rgba(16,11,13,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
     overlay.innerHTML=`<div style="width:min(420px,100%);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 55px rgba(0,0,0,.25);"><h3 style="margin:0 0 6px;font-size:17px;">Chọn người ${nhanCongDoan} hoàn thành</h3><div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Tick đúng một người thực hiện.</div><div class="staff-check-list" style="display:grid;gap:8px;">${ds.map((u,i)=>`<label style="display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--border);border-radius:9px;cursor:pointer;"><input type="checkbox" name="staff-completer" value="${i}" ${i===indexMacDinh?'checked':''}><span>${thoatHtml(u.name||u.code)}</span></label>`).join('')}</div><div class="staff-check-error" style="display:none;color:var(--danger);font-size:12px;margin-top:9px;">Hãy tick đúng một người.</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;"><button type="button" data-action="cancel" class="capacity-quick-btn">Hủy</button><button type="button" data-action="ok" class="primary-btn">Xác nhận</button></div></div>`;
     document.body.appendChild(overlay);
     const close=value=>{overlay.remove();chonNhanSuOverlayPending=null;resolve(value);};
@@ -4476,7 +4476,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 228;
+const APP_VERSION = 229;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -8338,7 +8338,7 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
       const slBaoHanh = baoHanhCuaTo(team, cacNgayDangXem);
       return `
       <div class="team-ring-card" data-to="${team}">
-        <div class="team-ring" style="background:${coHoTro ? 'var(--success)' : '#e4e7ed'};">
+        <div class="team-ring" style="background:${coHoTro ? 'var(--success)' : '#ebe6e8'};">
           <div class="team-ring-inner" style="font-size:13px;color:${coHoTro?'var(--success)':'var(--text2)'};font-weight:800;">—</div>
         </div>
         <div class="team-ring-label">${team}</div>
@@ -8356,7 +8356,7 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
     const duoiChuan = pctThat < 60;
     const color = pctThat >= 95 ? 'var(--success)'
                 : pctThat >= 85 ? 'var(--warning)'
-                : pctThat >= 60 ? 'var(--danger)' : '#c9ced8';
+                : pctThat >= 60 ? 'var(--danger)' : '#d6cbcf';
     // Điện thoại: tổ nào làm xong hết thì gập lại, tổ còn việc mở sẵn — đỡ cuộn lê thê.
     const con = Math.max(0, keHoach - hoanThanh);
     const gapSan = dangGap[team]!==undefined ? dangGap[team] : (con<=0 || daMoMot);
@@ -8364,13 +8364,13 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
     return `
     <div class="team-ring-card${gapSan?' to-gap':''}" data-to="${team}">
       <button type="button" class="to-tom-tat">
-        <span class="to-tom-tat-vong" style="background:conic-gradient(${color} 0% ${pct}%, #e4e7ed ${pct}% 100%);"><span>${pct}%</span></span>
+        <span class="to-tom-tat-vong" style="background:conic-gradient(${color} 0% ${pct}%, #ebe6e8 ${pct}% 100%);"><span>${pct}%</span></span>
         <span class="to-tom-tat-ten">${team}</span>
         <span class="to-tom-tat-so">${hoanThanh.toLocaleString()} / ${keHoach.toLocaleString()}</span>
         <span class="to-tom-tat-con">${con>0?`còn ${con.toLocaleString()}`:'xong'}</span>
       </button>
       <div class="to-than">
-      <div class="team-ring${duoiChuan ? ' ring-canh-bao' : ''}${extra>0 ? ' ring-vuot-kh' : ''}" style="background:conic-gradient(${color} 0% ${pct}%, #e4e7ed ${pct}% 100%);">
+      <div class="team-ring${duoiChuan ? ' ring-canh-bao' : ''}${extra>0 ? ' ring-vuot-kh' : ''}" style="background:conic-gradient(${color} 0% ${pct}%, #ebe6e8 ${pct}% 100%);">
         <div class="team-ring-inner"${duoiChuan ? ' style="color:var(--danger);font-weight:800;"' : ''}>${pct}%</div>
       </div>
       <div class="team-ring-label">${team}</div>
@@ -10213,7 +10213,7 @@ function renderProgressThat(){
       <div class="kpi k-warning"><div class="label">Đơn chờ ${tenCongDoan}</div><div class="value">${filtered.length}</div></div>
       <div class="kpi k-accent"><div class="label">Số lượng chờ ${tenCongDoan}</div><div class="value">${soCho.toLocaleString('vi-VN')}</div></div>
       <div class="kpi k-success"><div class="label">Công đoạn được nhập</div><div class="value" style="font-size:18px;">${nhanCongDoan}</div></div>
-      ${dayVal==='all' ? '<div class="kpi" style="border-top-color:#4aa3df;"><div class="label">Nhập công đoạn</div><div class="kpi-phu" style="color:#2475a9;font-weight:700;">Chọn một ngày để nhập số</div></div>' : ''}
+      ${dayVal==='all' ? '<div class="kpi" style="border-top-color:#df4a7c;"><div class="label">Nhập công đoạn</div><div class="kpi-phu" style="color:#a92450;font-weight:700;">Chọn một ngày để nhập số</div></div>' : ''}
     `;
   }else{
     document.getElementById('progressKpis').innerHTML = `
@@ -10233,7 +10233,7 @@ function renderProgressThat(){
         <div class="value" style="color:${donRotTonDong>0?'var(--danger)':'var(--text2)'}">${donRotTonDong}</div>
         ${donRotTonDong>0 ? `<div class="kpi-phu" style="color:var(--danger);font-weight:700;">Chưa xong, đang trôi sang ngày sau</div>` : ''}
       </div>` : ''}
-      ${dayVal==='all' ? '<div class="kpi" style="border-top-color:#4aa3df;"><div class="label">Nhập công đoạn</div><div class="kpi-phu" style="color:#2475a9;font-weight:700;">Chọn một ngày để nhập số</div></div>' : ''}
+      ${dayVal==='all' ? '<div class="kpi" style="border-top-color:#df4a7c;"><div class="label">Nhập công đoạn</div><div class="kpi-phu" style="color:#a92450;font-weight:700;">Chọn một ngày để nhập số</div></div>' : ''}
     `;
   }
 
@@ -10929,7 +10929,7 @@ function renderSupabaseTelegramAdmin(){
   const unitValues=[...TEAM_OPTIONS,'Tổ may','Tổ đóng gói'];
   const unitOptions='<option value="">Chọn tổ/công đoạn...</option>'+unitValues.map(t=>`<option value="${t}">${telegramUnitLabel(t)}</option>`).join('');
   const roleNote=canManage()?'Quản lý được duyệt mọi vai. Quản lý 2 chỉ được duyệt Nhân viên mới.':'Quản lý 2 chỉ được duyệt Nhân viên mới; sau khi duyệt không sửa hoặc thu hồi.';
-  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#1f4d78;margin-bottom:3px;">Telegram ID → nhập tên → chọn vai → chọn tổ/công đoạn → Duyệt</div><div style="font-size:11px;color:var(--text2);margin-bottom:7px;">${roleNote}</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram ID</th><th>Tên hiển thị</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>{
+  box.innerHTML=`<div style="font-size:11.5px;font-weight:700;color:#781f3d;margin-bottom:3px;">Telegram ID → nhập tên → chọn vai → chọn tổ/công đoạn → Duyệt</div><div style="font-size:11px;color:var(--text2);margin-bottom:7px;">${roleNote}</div><div class="table-scroll" style="max-height:260px;"><table><thead><tr><th>Telegram ID</th><th>Tên hiển thị</th><th>Vai</th><th>Tổ/công đoạn</th><th></th></tr></thead><tbody>${requests.map(r=>{
     return `<tr><td><strong>${thoatHtml(r.telegram_user_id)}</strong><br><span style="font-size:10.5px;color:var(--text2);">Đăng ký ${thoatHtml(new Date(r.registered_at).toLocaleString('vi-VN'))}</span></td><td><input class="telegram-request-name" type="text" maxlength="80" placeholder="Tên do Quản lý nhập" style="min-width:170px;padding:7px 9px;"></td><td><select class="telegram-request-role">${roleOptions}</select></td><td><select class="telegram-request-unit" disabled>${unitOptions}</select><span class="telegram-request-unit-note" style="display:block;color:var(--text2);font-size:11px;margin-top:4px;">Chỉ cần chọn cho Nhân viên</span></td><td><button type="button" class="primary-btn approve-telegram-btn" data-telegram-id="${thoatHtml(r.telegram_user_id)}" style="padding:6px 9px;font-size:11px;background:#1f7a52;">Duyệt</button></td></tr>`;
   }).join('')}</tbody></table></div>`;
 }
@@ -12371,7 +12371,7 @@ function veBangDatPhoi(){
             ${kq.ngayCot.map(d=>`<td style="text-align:right;">${r.theoNgay[d] || ''}</td>`).join('')}
             <td style="text-align:right;font-weight:600;">${r.tong}</td>
           </tr>`).join('')}
-          <tr style="background:#f4f6fa;">
+          <tr style="background:#f8f6f7;">
             <td style="font-weight:700;">Tổng</td>
             ${kq.ngayCot.map(d=>`<td style="text-align:right;font-weight:700;">${kq.tongTheoNgay[d]}</td>`).join('')}
             <td style="text-align:right;font-weight:700;">${kq.tongChung}</td>
@@ -12588,7 +12588,7 @@ async function veBangDatAo(){
           ?`<tr><td colspan="${soCot}" style="font-weight:800;font-size:14px;color:#fff;background:var(--primary);">${thoatHtml(d.o[0])}</td></tr>`
           :d.loai==='muc'
           ?`<tr><td colspan="${soCot}" style="font-weight:700;color:var(--primary);background:var(--bg);">${thoatHtml(d.o[0])}</td></tr>`
-          :`<tr${d.loai==='tong'?' style="background:#f4f6fa;font-weight:700;"':''}>${d.o.map((v,i)=>o(v,i,false)).join('')}</tr>`).join('')}</tbody>
+          :`<tr${d.loai==='tong'?' style="background:#f8f6f7;font-weight:700;"':''}>${d.o.map((v,i)=>o(v,i,false)).join('')}</tr>`).join('')}</tbody>
       </table></div>`;
   }
   const thieu=Object.keys(kq.thieuBom);
@@ -13131,7 +13131,7 @@ async function taiPhatSua(){
   if(!hien.length){ const t='Không có điểm danh nào trong khoảng này.'; than.innerHTML=`<tr><td colspan="5" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; return; }
   const tong=hien.reduce((t,r)=>t+r.hop_chua_nhan,0);
   than.innerHTML=hien.map(r=>`<tr><td style="font-weight:600;">${thoatHtml(r.ten)}${ddNhanCv(r)?`<div style="font-size:11.5px;font-weight:400;color:var(--text2);">${thoatHtml(ddNhanCv(r))}</div>`:''}</td><td style="text-align:right;">${r.ngay_chua_nhan}</td><td style="text-align:right;font-weight:700;">${r.hop_chua_nhan}</td><td style="text-align:right;color:var(--text2);">${r.hop_da_nhan}</td><td>${r.hop_chua_nhan>0?`<button type="button" class="primary-btn" style="padding:6px 12px;" data-dd-phat="${r.nguoi_id}">Đã phát</button>`:'<span class="bom-nhan da">Đã nhận đủ</span>'}</td></tr>`).join('')
-    +`<tr style="background:#f4f6fa;font-weight:700;"><td>Tổng chưa nhận</td><td></td><td style="text-align:right;">${tong}</td><td></td><td></td></tr>`;
+    +`<tr style="background:#f8f6f7;font-weight:700;"><td>Tổng chưa nhận</td><td></td><td style="text-align:right;">${tong}</td><td></td><td></td></tr>`;
   the.innerHTML=hien.map(r=>`<div class="dd-the"><div class="dd-the-ten">${thoatHtml(r.ten)}${ddNhanCv(r)?`<small>${thoatHtml(ddNhanCv(r))}</small>`:''}</div>
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;font-size:14px;"><span>${r.ngay_chua_nhan} ngày chưa nhận</span><b style="font-size:17px;">${r.hop_chua_nhan} hộp</b></div>
       <div style="font-size:12px;color:var(--text2);margin-top:2px;">Đã nhận ${r.hop_da_nhan} hộp</div>
