@@ -604,6 +604,15 @@
   .dd-nut{min-height:46px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;}
   .dd-nut.on{background:var(--primary);border-color:var(--primary);color:var(--on-primary);}
   .dd-nut:disabled{opacity:.45;cursor:not-allowed;}
+  .dd-tc-mo{min-height:34px;padding:0 10px;font-size:13px;}
+  .dd-tc-gio{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+  .dd-tc-gio label{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:700;}
+  .dd-tc-gio input{width:20px;height:20px;}
+  .dd-tc-gio small{font-weight:400;color:var(--text2);}
+  .dd-tc-the .dd-tc-mo{width:100%;min-height:46px;font-size:14px;margin-top:8px;}
+  .dd-tc-the .dd-tc-gio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .dd-tc-the .dd-tc-gio label{justify-content:center;flex-direction:column;border:1.5px solid var(--border);border-radius:10px;min-height:52px;padding:6px 0;}
+  .dd-tc-the .dd-tc-gio input{width:24px;height:24px;}
   .dd-the select{width:100%;min-height:42px;font-size:14px;margin-top:8px;}
   .dd-nut-lon{width:100%;min-height:46px;margin-top:8px;font-size:15px;}
   body:not(.mobile-view) .dd-the-khung{display:none;}
@@ -2138,7 +2147,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
     <div class="bom-chip-row" id="ddLoc" style="margin-bottom:8px;"></div>
     <div id="ddKhung">
     <div class="table-scroll dd-bang-ngang" style="max-height:none;"><table style="min-width:0;">
-      <thead><tr><th>Tên</th><th>Chức vụ / Tổ</th><th style="text-align:center;">Cả ngày</th><th style="text-align:center;">Sáng</th><th style="text-align:center;">Chiều</th><th>Ghi chú</th><th></th></tr></thead>
+      <thead><tr><th>Tên</th><th>Chức vụ / Tổ</th><th style="text-align:center;">Cả ngày</th><th style="text-align:center;">Sáng</th><th style="text-align:center;">Chiều</th><th style="text-align:center;">Tăng ca</th><th>Ghi chú</th><th></th></tr></thead>
       <tbody id="ddBang"></tbody>
     </table></div>
     <div id="ddThe" class="dd-the-khung"></div>
@@ -2333,7 +2342,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=231"></script>
+<script src="raw-data.js?v=232"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4476,7 +4485,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 231;
+const APP_VERSION = 232;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -12963,7 +12972,8 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) taiViecN
 const duocDiemDanh=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('diem_danh');
 const duocPhatSua=()=>SUPABASE_VARIANT&&!PUBLIC_VIEW_MODE&&hasPermOrOwner('phat_sua');
 const laChuTaiKhoan=()=>toiLa()===KHSX_PERMISSION_OWNER_ID;
-let ddNguoi=[], ddDong={}, ddDaPhat=new Set(), ddLan=0, ddGhiChu={};
+let ddNguoi=[], ddDong={}, ddDaPhat=new Set(), ddLan=0, ddGhiChu={}, ddMoTc=new Set();
+const TANG_CA_GIO={1:'17h-18h',2:'17h-19h',3:'17h-20h'};   // tăng ca 1/2/3 giờ, tính từ 17h
 const DD_CHUC_VU=['Trưởng Nhóm','Tổ trưởng sản xuất','Thủ kho','Công nhân'];
 const DD_TO=['Tổ dán 1','Tổ dán 2','Tổ dán 3','Tổ dán 4','Tổ dán 5','Tổ may','Tổ đóng gói','Phụ kho','Hỗ trợ'];
 // Thứ tự danh sách: Trưởng Nhóm, Tổ trưởng sản xuất, Thủ kho, Công nhân (theo tổ), chưa chọn chức vụ ở cuối; cùng nhóm theo tên.
@@ -12989,6 +12999,8 @@ function loiDiemDanh(e){
   const m=String(e?.message||e||'');
   if(m.includes('ATTENDANCE_FORBIDDEN')) return 'Tài khoản chưa có quyền điểm danh.';
   if(m.includes('ATTENDANCE_LOCKED')) return 'Ngày này đã phát sữa, không sửa điểm danh được nữa.';
+  if(m.includes('ATTENDANCE_OT_NEEDS_CHECKIN')) return 'Chưa điểm danh sáng/chiều thì không báo tăng ca được.';
+  if(m.includes('ATTENDANCE_OT_INVALID')) return 'Tăng ca chỉ nhận 1, 2 hoặc 3 giờ.';
   if(m.includes('ATTENDANCE_DATE_INVALID')) return 'Không điểm danh cho ngày chưa tới.';
   if(m.includes('ATTENDEE_NOT_FOUND')) return 'Người này không còn trong danh sách.';
   if(m.includes('ATTENDEE_EXISTS')) return 'Tên này đã có trong danh sách.';
@@ -13028,13 +13040,13 @@ async function taiDiemDanh(){
   const lan=++ddLan; ddBao('ddStatus','Đang tải...');
   const [n,d,s,g]=await Promise.all([
     supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten,chuc_vu,to_lam').eq('con_dung',true).order('ten'),
-    supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu').eq('ngay',ngay),
+    supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu,tang_ca').eq('ngay',ngay),
     supabaseDb.from('khsx_phat_sua').select('nguoi_id').eq('ngay',ngay),
     supabaseDb.from('khsx_diem_danh_ghi_chu').select('nguoi_id,ghi_chu').eq('ngay',ngay)]);
   if(lan!==ddLan) return;
   const loi=n.error||d.error||s.error||g.error;
   if(loi){ ddBao('ddStatus',`Chưa tải được điểm danh: ${loi.message||loi}`,'var(--danger)'); return; }
-  ddNguoi=n.data||[]; ddDong={}; (d.data||[]).forEach(r=>{ ddDong[r.nguoi_id]={sang:!!r.sang,chieu:!!r.chieu}; });
+  ddNguoi=n.data||[]; ddDong={}; (d.data||[]).forEach(r=>{ ddDong[r.nguoi_id]={sang:!!r.sang,chieu:!!r.chieu,tc:r.tang_ca||0}; });
   ddDaPhat=new Set((s.data||[]).map(r=>r.nguoi_id));
   ddGhiChu={}; (g.data||[]).forEach(r=>{ ddGhiChu[r.nguoi_id]=r.ghi_chu; });
   ddBao('ddStatus',''); veDiemDanh();
@@ -13044,25 +13056,31 @@ function veDiemDanh(){
   const sua=duocDiemDanh(), xoa=laChuTaiKhoan();
   veLocDiemDanh();
   const hien=ddNguoi.filter(ddHopLoc).sort(ddThuTu);
-  const trong=t=>{ than.innerHTML=`<tr><td colspan="7" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; };
+  const trong=t=>{ than.innerHTML=`<tr><td colspan="8" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; };
   if(!ddNguoi.length) return trong(`Chưa có ai trong danh sách.${xoa?' Thêm người ở dưới.':''}`);
   if(!hien.length) return trong('Không có ai trong nhóm này.');
   const oGc=(p,kieu)=>`<input type="text" data-dd-gc data-id="${p.id}" maxlength="200" value="${thoatHtml(ddGhiChu[p.id]||'')}" placeholder="Ghi chú"${sua?'':' disabled'} aria-label="Ghi chú ${thoatHtml(p.ten)}" style="${kieu}font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);box-sizing:border-box;">`;
+  const tcKhoi=(p,r,tat)=>{
+    const coDD=r.sang||r.chieu, mo=ddMoTc.has(p.id)||!!r.tc, tatTc=(tat||!coDD)?' disabled':'';
+    const nutMo=`<button type="button" class="dd-nut dd-tc-mo${r.tc?' on':''}" data-dd-tc-mo="${p.id}" aria-expanded="${mo}"${tatTc}${coDD?'':' title="Tick sáng hoặc chiều trước khi báo tăng ca"'}>${r.tc?`✓ Tăng ca ${r.tc}h`:'Tăng ca'}</button>`;
+    const ch=mo&&coDD?`<div class="dd-tc-gio">${[1,2,3].map(g=>`<label><input type="checkbox" data-dd-tc="${g}" data-id="${p.id}"${r.tc===g?' checked':''}${tatTc}> ${g}h <small>${TANG_CA_GIO[g]}</small></label>`).join('')}</div>`:'';
+    return nutMo+ch;
+  };
   than.innerHTML=hien.map(p=>{
-    const r=ddDong[p.id]||{sang:false,chieu:false}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
+    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
     const o=(k,v)=>`<td style="text-align:center;"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
-    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa, không sửa được">🥛 đã phát</span>':''}</td><td>${ddOChon(p)}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td>${oGc(p,'min-width:0;width:100%;max-width:240px;')}</td><td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
+    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa, không sửa được">🥛 đã phát</span>':''}</td><td>${ddOChon(p)}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td style="text-align:center;">${tcKhoi(p,r,tat)}</td><td>${oGc(p,'min-width:0;width:100%;max-width:240px;')}</td><td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
   }).join('');
   the.innerHTML=hien.map(p=>{
-    const r=ddDong[p.id]||{sang:false,chieu:false}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
+    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
     const nut=(k,txt,on)=>`<button type="button" class="dd-nut${on?' on':''}" data-dd-n="${k}" data-id="${p.id}" aria-pressed="${on}"${tat}>${on?'✓ ':''}${txt}</button>`;
     return `<div class="dd-the"><div class="dd-the-ten">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da">🥛 đã phát</span>':''}${xoa?'':`<small>${thoatHtml(ddNhanCv(p))||'—'}</small>`}</div>${xoa?ddOChon(p):''}
-      <div class="dd-nut-hang">${nut('ca','Cả ngày',r.sang&&r.chieu)}${nut('sang','Sáng',r.sang)}${nut('chieu','Chiều',r.chieu)}</div>${oGc(p,'width:100%;min-width:0;min-height:42px;margin-top:8px;')}${xoa?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
+      <div class="dd-nut-hang">${nut('ca','Cả ngày',r.sang&&r.chieu)}${nut('sang','Sáng',r.sang)}${nut('chieu','Chiều',r.chieu)}</div><div class="dd-tc-the">${tcKhoi(p,r,tat)}</div>${oGc(p,'width:100%;min-width:0;min-height:42px;margin-top:8px;')}${xoa?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
   }).join('');
 }
 async function ghiDiemDanh(id,sang,chieu){
   const ngay=document.getElementById('ddNgay').value, cu=ddDong[id]||{sang:false,chieu:false};
-  if(sang||chieu) ddDong[id]={sang,chieu}; else delete ddDong[id];
+  if(sang||chieu) ddDong[id]={sang,chieu,tc:cu.tc||0}; else delete ddDong[id];
   veDiemDanh(); ddBao('ddStatus','Đang lưu...');
   const {error}=await supabaseDb.rpc('khsx_diem_danh_ghi_v1',{p_nguoi:id,p_ngay:ngay,p_sang:sang,p_chieu:chieu});
   if(error){ if(cu.sang||cu.chieu) ddDong[id]=cu; else delete ddDong[id]; veDiemDanh(); return ddBao('ddStatus',loiDiemDanh(error),'var(--danger)'); }
@@ -13073,6 +13091,23 @@ document.getElementById('ddKhung')?.addEventListener('change',e=>{
   const id=c.dataset.id, r=ddDong[id]||{sang:false,chieu:false};
   if(c.dataset.dd==='ca') return ghiDiemDanh(id,c.checked,c.checked);
   ghiDiemDanh(id,c.dataset.dd==='sang'?c.checked:r.sang,c.dataset.dd==='chieu'?c.checked:r.chieu);
+});
+async function ghiTangCa(id,gio){
+  const ngay=document.getElementById('ddNgay').value, cu=ddDong[id]; if(!cu||!(cu.sang||cu.chieu)) return;
+  const truoc=cu.tc||0; cu.tc=gio; veDiemDanh(); ddBao('ddStatus','Đang lưu...');
+  const {error}=await supabaseDb.rpc('khsx_diem_danh_tang_ca_v1',{p_nguoi:id,p_ngay:ngay,p_gio:gio||null});
+  if(error){ cu.tc=truoc; veDiemDanh(); return ddBao('ddStatus',loiDiemDanh(error),'var(--danger)'); }
+  ddBao('ddStatus',gio?`Đã lưu tăng ca ${gio}h.`:'Đã bỏ tăng ca.','var(--success)');
+}
+document.getElementById('ddKhung')?.addEventListener('click',e=>{
+  const b=e.target.closest('button[data-dd-tc-mo]'); if(!b||b.disabled||!duocDiemDanh()) return;
+  const id=b.dataset.ddTcMo; if(ddMoTc.has(id)) ddMoTc.delete(id); else ddMoTc.add(id);
+  veDiemDanh();
+});
+document.getElementById('ddKhung')?.addEventListener('change',e=>{
+  const c=e.target.closest('input[data-dd-tc]'); if(!c||!duocDiemDanh()) return;
+  const id=c.dataset.id, g=Number(c.dataset.ddTc), hien=(ddDong[id]||{}).tc||0;
+  ghiTangCa(id,hien===g?0:g);   // chọn một trong 3; bấm lại ô đang chọn thì bỏ
 });
 document.getElementById('ddKhung')?.addEventListener('change',async e=>{
   const c=e.target.closest('input[data-dd-gc]'); if(!c||!duocDiemDanh()) return;
@@ -13202,22 +13237,22 @@ document.getElementById('ddSuaKhung')?.addEventListener('click',async e=>{
 // Ngày công: cả ngày = 1, một buổi = 0,5. Hộp: cả ngày 2, một buổi 1. Hộp đã phát = hộp của các ngày đã đánh dấu phát.
 function ddBangXuat(nguoi,dd,ps,tu,den,gc=[]){
   const ngay=[]; for(let d=new Date(tu+'T00:00:00');isoCuaNgay(d)<=den;d.setDate(d.getDate()+1)) ngay.push(isoCuaNgay(d));
-  const diem={}; dd.forEach(r=>{ (diem[r.nguoi_id]||(diem[r.nguoi_id]={}))[r.ngay]={sang:!!r.sang,chieu:!!r.chieu}; });
+  const diem={}; dd.forEach(r=>{ (diem[r.nguoi_id]||(diem[r.nguoi_id]={}))[r.ngay]={sang:!!r.sang,chieu:!!r.chieu,tc:r.tang_ca||0}; });
   const phat={}; ps.forEach(r=>{ (phat[r.nguoi_id]||(phat[r.nguoi_id]=new Set())).add(r.ngay); });
   const ghi={}; gc.forEach(r=>{ (ghi[r.nguoi_id]||(ghi[r.nguoi_id]={}))[r.ngay]=String(r.ghi_chu||'').trim(); });
   const ds=nguoi.filter(p=>p.con_dung||diem[p.id]).sort(ddThuTu);
   const dm=iso=>iso.slice(8,10)+'/'+iso.slice(5,7);
-  const dau=['Tên','Chức vụ','Tổ',...ngay.map(dm),'Ngày công','Tổng hộp','Hộp đã phát','Hộp chưa phát'];
+  const dau=['Tên','Chức vụ','Tổ',...ngay.map(dm),'Ngày công','Tổng hộp','Hộp đã phát','Hộp chưa phát','Giờ tăng ca'];
   const dong=ds.map(p=>{
-    let cong=0,hop=0,da=0;
+    let cong=0,hop=0,da=0,gioTc=0;
     const o=ngay.map(n=>{
       const r=(diem[p.id]||{})[n], note=(ghi[p.id]||{})[n]||'';
       if(!r||(!r.sang&&!r.chieu)) return note;
       const ca=r.sang&&r.chieu, h=ca?2:1, daPhat=phat[p.id]?.has(n);
-      cong+=ca?1:0.5; hop+=h; if(daPhat) da+=h;
-      return (ca?'Cả ngày':r.sang?'Sáng':'Chiều')+(daPhat?' 🥛':'')+(note?' — '+note:'');
+      cong+=ca?1:0.5; hop+=h; if(daPhat) da+=h; gioTc+=r.tc||0;
+      return (ca?'Cả ngày':r.sang?'Sáng':'Chiều')+(daPhat?' 🥛':'')+(r.tc?` + Tăng ca ${r.tc}h (${TANG_CA_GIO[r.tc]})`:'')+(note?' — '+note:'');
     });
-    return [p.ten,p.chuc_vu||'',p.chuc_vu==='Công nhân'?(p.to_lam||''):'',...o,cong,hop,da,hop-da];
+    return [p.ten,p.chuc_vu||'',p.chuc_vu==='Công nhân'?(p.to_lam||''):'',...o,cong,hop,da,hop-da,gioTc];
   });
   return [dau,...dong];
 }
@@ -13235,18 +13270,18 @@ document.getElementById('ddXuatTai')?.addEventListener('click',async e=>{
   try{
     const [n,d,s,g]=await Promise.all([
       supabaseSelectAll('khsx_diem_danh_nguoi','id,ten,chuc_vu,to_lam,con_dung',q=>q.order('id')),
-      supabaseSelectAll('khsx_diem_danh','nguoi_id,ngay,sang,chieu',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
+      supabaseSelectAll('khsx_diem_danh','nguoi_id,ngay,sang,chieu,tang_ca',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
       supabaseSelectAll('khsx_phat_sua','nguoi_id,ngay',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
       supabaseSelectAll('khsx_diem_danh_ghi_chu','nguoi_id,ngay,ghi_chu',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id'))]);
     const loi=n.error||d.error||s.error||g.error; if(loi) throw loi;
     const aoa=ddBangXuat(n.data||[],d.data||[],s.data||[],tu,den,g.data||[]);
     if(aoa.length<2) return bao('Không có ai trong danh sách để xuất.','var(--danger)');
     const ws=XLSX.utils.aoa_to_sheet(aoa), cot=aoa[0].length;
-    ws['!cols']=aoa[0].map((_,i)=>({wch:i===0?26:i<3?18:i<cot-4?11:13}));
+    ws['!cols']=aoa[0].map((_,i)=>({wch:i===0?26:i<3?18:i<cot-5?11:13}));
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Điểm danh');
     const dmy=iso=>iso.split('-').reverse().join('-');
     XLSX.writeFile(wb,`Diem danh ${dmy(tu)} den ${dmy(den)}.xlsx`);
-    bao(`Đã tải file: ${aoa.length-1} người, ${cot-7} ngày.`,'var(--success)');
+    bao(`Đã tải file: ${aoa.length-1} người, ${cot-8} ngày.`,'var(--success)');
   }catch(err){ bao(`Chưa xuất được: ${err?.message||err}`,'var(--danger)'); }
   finally{ nut.disabled=false; }
 });
