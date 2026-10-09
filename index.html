@@ -2333,7 +2333,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=230"></script>
+<script src="raw-data.js?v=231"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4476,7 +4476,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 230;
+const APP_VERSION = 231;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -7659,7 +7659,7 @@ function trangBomTheoMau(X, coMau, tieuDe, tomTat, khoi){
     for(let c=0;c<5;c++) dat(3,c,{font:{bold:true},fill:{patternType:'solid',fgColor:{rgb:'D9D9D9'}},border:VIEN_MONG});
     kieu.forEach((k,r)=>{ if(!k) return;
       for(let c=0;c<5;c++) dat(r,c,k==='tp'
-        ?{font:{bold:true,color:{rgb:'1F4E79'}},fill:{patternType:'solid',fgColor:{rgb:'DDEBF7'}},border:VIEN_MONG}
+        ?{font:{bold:true,color:{rgb:'791F3D'}},fill:{patternType:'solid',fgColor:{rgb:'F7DDE6'}},border:VIEN_MONG}
         :{border:VIEN_MONG});
     });
   }
@@ -12605,19 +12605,19 @@ function veAnhDatAo(tu,den){
   const tongRong=rong.reduce((a,b)=>a+b,0), caoTieuDe=44;
   cv.width=(tongRong+vien*2)*S; cv.height=(caoTieuDe+dong.length*cao+vien*2)*S;
   g.scale(S,S); g.fillStyle='#ffffff'; g.fillRect(0,0,cv.width,cv.height);
-  g.fillStyle='#1f2a44'; g.font=`700 19px "Segoe UI", Roboto, Arial, sans-serif`; g.textBaseline='middle'; g.fillText(tieuDe,vien,vien+14);
+  g.fillStyle='#441f2b'; g.font=`700 19px "Segoe UI", Roboto, Arial, sans-serif`; g.textBaseline='middle'; g.fillText(tieuDe,vien,vien+14);
   let y=vien+caoTieuDe, zebra=0;
   dong.forEach(d=>{
-    const nen=d.loai==='dau'?'#e8eef7':d.loai==='tong'?'#f1f4f9':d.loai==='muc'?'#fff4e0':d.loai==='to'?'#1f3a68':(zebra++%2?'#fafbfd':'#ffffff');
+    const nen=d.loai==='dau'?'#f1eeef':d.loai==='tong'?'#f6f4f5':d.loai==='muc'?'#fff4e0':d.loai==='to'?'#681f37':(zebra++%2?'#fcfbfb':'#ffffff');
     if(d.loai==='muc'||d.loai==='to') zebra=0;
     g.fillStyle=nen; g.fillRect(vien,y,tongRong,cao);
-    g.fillStyle=d.loai==='muc'?'#9a5b00':d.loai==='to'?'#ffffff':'#1f2a44';
+    g.fillStyle=d.loai==='muc'?'#9a5b00':d.loai==='to'?'#ffffff':'#441f2b';
     if(d.loai==='muc'||d.loai==='to'){ g.font=d.loai==='to'?`700 16px "Segoe UI", Roboto, Arial, sans-serif`:fontTh; g.fillText(d.o[0],vien+le,y+cao/2); }
     else{
       g.font=d.loai==='dl'?fontTd:fontTh; let x=vien;
       d.o.forEach((v,i)=>{ const chu=String(v); if(i>=2){ g.textAlign='right'; g.fillText(chu,x+rong[i]-le,y+cao/2); g.textAlign='left'; } else g.fillText(chu,x+le,y+cao/2); x+=rong[i]; });
     }
-    g.strokeStyle='#cfd7e3'; g.lineWidth=1; g.strokeRect(vien+.5,y+.5,tongRong-1,cao);
+    g.strokeStyle='#ded4d7'; g.lineWidth=1; g.strokeRect(vien+.5,y+.5,tongRong-1,cao);
     if(d.loai!=='muc'&&d.loai!=='to'){ let x=vien; rong.slice(0,-1).forEach(w=>{ x+=w; g.beginPath(); g.moveTo(x+.5,y); g.lineTo(x+.5,y+cao); g.stroke(); }); }
     y+=cao;
   });
