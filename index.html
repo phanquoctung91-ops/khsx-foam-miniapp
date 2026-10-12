@@ -68,7 +68,7 @@
      nên không bao giờ đổi màu ở chế độ tối — nền hồng nhạt + chữ đỏ nhạt, rất khó đọc. */
   body.dark-mode [style*="background:#fdf2f1"],body.dark-mode [style*="background:#fdecea"]{background:var(--danger-l)!important;color:var(--danger)!important;}
   body.dark-mode [style*="color:#151012"],body.dark-mode [style*="color:#111"],body.dark-mode [style*="color:black"]{color:var(--text)!important;}
-  body.dark-mode #loginOverlay{background:radial-gradient(circle at 20% 0,#173330 0,#14090d 48%,#0a0a08 100%)!important;}
+  body.dark-mode #loginOverlay{background:radial-gradient(circle at 20% 0,#3a0d1c 0,#14090d 48%,#0a0a08 100%)!important;}
   body.dark-mode .tabs,body.dark-mode .management-tools-menu{background:#1f1216;border:1px solid var(--border);}
   body.dark-mode .tab-btn,body.dark-mode .management-tools-menu button{color:var(--text2);background:#320d19;}
   body.dark-mode .tab-btn.active{color:var(--primary)!important;box-shadow:0 0 14px rgba(243,68,126,.24);}
@@ -1360,7 +1360,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
   body.stage-view-dan .employee-stage-workspace,
   body.stage-view-may .employee-stage-workspace,
   body.stage-view-dong-goi .employee-stage-workspace{display:block;}
-  .employee-stage-head{position:sticky;top:0;z-index:12;margin:-10px -10px 10px;padding:12px 12px 10px;background:linear-gradient(135deg,#12332e,#1c5a54);color:#fff;box-shadow:0 5px 18px rgba(0,0,0,.35);}
+  .employee-stage-head{position:sticky;top:0;z-index:12;margin:-10px -10px 10px;padding:12px 12px 10px;background:linear-gradient(135deg,#5c0a27,#8e0e3b);color:#fff;box-shadow:0 5px 18px rgba(0,0,0,.35);}
   .employee-stage-identity{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
   .employee-stage-name{font-size:18px;font-weight:850;line-height:1.15;}
   .employee-stage-date{font-size:11px;opacity:.85;margin-top:4px;}
@@ -2353,7 +2353,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=236"></script>
+<script src="raw-data.js?v=237"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4496,7 +4496,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 236;
+const APP_VERSION = 237;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
