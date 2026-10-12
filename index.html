@@ -2353,7 +2353,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=238"></script>
+<script src="raw-data.js?v=239"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4496,7 +4496,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 238;
+const APP_VERSION = 239;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -13266,19 +13266,22 @@ function ddBangXuat(nguoi,dd,ps,tu,den,gc=[]){
   });
   return [dau,...dong];
 }
-const GIAY_TC_DONG=11;   // mẫu giấy có 11 dòng/tờ
+const GIAY_TC_DONG=11, GIAY_TC_TOI_DA=30, GIAY_TC_CAO_BANG=177;   // tối thiểu 11 dòng như mẫu; tối đa 30 dòng/tờ; 177mm là chiều cao dành cho các dòng
 function giayTangCaHtml(ds,logo){
-  const trang=Math.max(1,Math.ceil(ds.length/GIAY_TC_DONG));
+  const trang=Math.max(1,Math.ceil(ds.length/GIAY_TC_TOI_DA));
   let h='';
   for(let t=0;t<trang;t++){
+    // cân đối vào một tờ: số dòng theo số người, hàng thấp dần cho vừa khung (không dưới 11 dòng như mẫu)
+    const dau=t*GIAY_TC_TOI_DA, soDong=Math.max(GIAY_TC_DONG,Math.min(GIAY_TC_TOI_DA,ds.length-dau));
+    const cao=Math.min(8.5,GIAY_TC_CAO_BANG/soDong), co=cao>=8?13:cao>=7?12:cao>=6?11:10;
     let dong='';
-    for(let i=0;i<GIAY_TC_DONG;i++){
-      const k=t*GIAY_TC_DONG+i, x=ds[k];
+    for(let i=0;i<soDong;i++){
+      const k=dau+i, x=ds[k];
       dong+=`<tr><td class="c">${k+1}</td><td class="ten">${x?thoatHtml(x.ten):''}</td><td class="c">${x?'17h':''}</td><td class="c">${x?(17+x.tc)+'h':''}</td><td></td></tr>`;
     }
     h+=`<section class="tr"><div class="dau"><img src="${logo}" alt=""><div class="qh"><b>CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><b>Độc lập - Tự do - Hạnh phúc</b><span class="gach"></span><i>Ngày ....... tháng ....... năm ..........</i></div></div>
 <h1>GIẤY ĐỀ XUẤT TĂNG CA</h1><div class="bp"><b>Bộ phận:</b><span>${'.'.repeat(220)}</span></div>
-<table><thead><tr><th class="tt">TT</th><th>Họ và tên</th><th class="gi">Từ giờ</th><th class="gi">Đến giờ</th><th>Nội dung công việc tăng ca</th></tr></thead><tbody>${dong}</tbody></table>
+<table style="--rh:${cao.toFixed(2)}mm;--fs:${co}pt"><thead><tr><th class="tt">TT</th><th>Họ và tên</th><th class="gi">Từ giờ</th><th class="gi">Đến giờ</th><th>Nội dung công việc tăng ca</th></tr></thead><tbody>${dong}</tbody></table>
 <div class="ky"><div><b>Phòng HCNS</b><i>(Ký, ghi rõ họ tên)</i></div><div><b>BAN GIÁM ĐỐC</b><i>(Ký, ghi rõ họ tên)</i></div><div><b>Trưởng bộ phận</b><i>(Ký, ghi rõ họ tên)</i></div></div></section>`;
   }
   const css=`@page{size:A4 portrait;margin:0}*{box-sizing:border-box}body{margin:0;font:13pt "Times New Roman",Times,serif;color:#000}
@@ -13288,7 +13291,7 @@ function giayTangCaHtml(ds,logo){
 h1{text-align:center;font-size:23pt;margin:9mm 0 6mm;font-weight:700;letter-spacing:.3px}
 .bp{display:flex;align-items:baseline;gap:2mm;font-size:13pt;margin-bottom:3mm;white-space:nowrap}.bp b{flex:none}.bp span{flex:1;overflow:hidden;letter-spacing:1px}
 table{width:100%;border-collapse:collapse;table-layout:fixed;border:1.6px solid #000}th,td{border:1px solid #000;padding:0 3mm;vertical-align:middle}
-th{height:9mm;font-size:12.5pt;font-weight:700;text-align:center}td{height:8.5mm;font-size:13pt;line-height:1.2}.tt{width:14mm}.gi{width:24mm}.c{text-align:center;padding:0}.ten{padding-left:4mm}
+th{height:9mm;font-size:12.5pt;font-weight:700;text-align:center}td{height:var(--rh,8.5mm);font-size:var(--fs,13pt);line-height:1.1}.tt{width:14mm}.gi{width:24mm}.c{text-align:center;padding:0}.ten{padding-left:4mm}
 .ky{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:9mm;text-align:center}.ky b{display:block;font-size:12.5pt}.ky i{display:block;font-size:11pt;margin-top:1mm}`;
   return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Giấy đề xuất tăng ca</title><style>${css}</style></head><body>${h}</body></html>`;
 }
