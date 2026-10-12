@@ -31,6 +31,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   await db.exec(mig('20261008090000_phat_sua_hoan_tac.sql'));
   await db.exec(mig('20261009090000_phat_sua_khoang_chua.sql'));
   await db.exec(mig('20261009120000_diem_danh_tang_ca.sql'));
+  await db.exec(mig('20261012180000_diem_danh_bo_khoa_phat_sua.sql'));
   // Hôm nay giả lập: đặt được bằng test.hn
   await db.exec(`create or replace function private.khsx_hom_nay_vn() returns date language sql stable as $$ select current_setting('test.hn')::date $$;`);
   const q=(s,p)=>db.query(s,p), la=u=>db.exec(`set test.uid='${u}'`), hn=d=>db.exec(`set test.hn='${d}'`);
@@ -107,10 +108,12 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   assert.equal((await q(`select public.khsx_phat_sua_v1($1,'2026-10-08','2026-10-12') h`,[lan])).rows[0].h,1);   // chỉ ngày 10/10 còn chưa nhận
   const dp=(await q(`select ngay::text, so_hop, phat_boi from public.khsx_phat_sua where nguoi_id=$1 order by ngay`,[lan])).rows;
   assert.deepEqual(dp.map(r=>[r.ngay,r.so_hop]),[['2026-10-08',2],['2026-10-09',1],['2026-10-10',1]]); assert.equal(dp[0].phat_boi,P2);
-  await la(P); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,false)`,[lan])),/ATTENDANCE_LOCKED/);
+  await la(P); await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,false)`,[lan]);   // ngày đã phát sữa vẫn sửa được điểm danh
+  assert.equal((await q(`select so_hop from public.khsx_phat_sua where nguoi_id=$1 and ngay='2026-10-08'`,[lan])).rows[0].so_hop,2,'số hộp đã phát giữ nguyên');
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,true)`,[lan]);   // trả về như cũ cho các bước sau
   await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-12',true,false)`,[lan]);   // ngày mới vẫn tick được
   await la(P2); assert.equal((await q(`select public.khsx_phat_sua_v1($1,'2026-10-08','2026-10-12') h`,[lan])).rows[0].h,1);
-  console.log('PASS tick đã phát: ghi số hộp từng ngày + người bấm, ngày đã nhận không tính lại, ngày đã phát khóa điểm danh');
+  console.log('PASS tick đã phát: ghi số hộp từng ngày + người bấm, ngày đã nhận không tính lại, ngày đã phát sữa KHÔNG khóa điểm danh, số hộp đã phát giữ nguyên');
 
   // Phát sữa v2 (không hộp xác nhận) + Hoàn tác theo lô, chỉ chủ tài khoản
   const hoaSua=async()=>(await bang('2026-10-08','2026-10-12')).find(r=>r.ten==='Hoa');
@@ -119,7 +122,9 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   assert.equal(l1.hop,2); assert.ok(l1.lo);
   assert.deepEqual(await hoaSua(),{ten:'Hoa',ngay_chua_nhan:0,hop_chua_nhan:0,hop_da_nhan:2});
   assert.match(await loi(()=>q(`select public.khsx_phat_sua_v2($1,'2026-10-08','2026-10-12')`,[hoa])),/MILK_NOTHING_TO_GIVE/);
-  await la(P); assert.match(await loi(()=>q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,false)`,[hoa])),/ATTENDANCE_LOCKED/);
+  await la(P); await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,false)`,[hoa]);   // đã phát sữa vẫn sửa được
+  await la(P2); assert.equal((await hoaSua()).hop_da_nhan,2,'số hộp đã nhận không đổi khi sửa điểm danh'); await la(P);
+  await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-08',true,true)`,[hoa]);
   assert.match(await loi(()=>q(`select public.khsx_phat_sua_hoan_tac_v1($1)`,[l1.lo])),/MILK_UNDO_FORBIDDEN/);       // Phước (Điểm danh) không hoàn tác được
   await la(P2); assert.match(await loi(()=>q(`select public.khsx_phat_sua_hoan_tac_v1($1)`,[l1.lo])),/MILK_UNDO_FORBIDDEN/);   // người có quyền Phát sữa cũng không
   await la(A);
@@ -241,7 +246,7 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   assert.equal((await q(`select count(*)::int n from public.khsx_diem_danh where nguoi_id=$1`,[tc])).rows[0].n,0);   // bỏ hết tick = xóa dòng, tăng ca mất theo
   await q(`select public.khsx_diem_danh_ghi_v1($1,'2026-10-12',true,false)`,[tc]); assert.equal(await tcv('2026-10-12'),null,'tick lại không còn tăng ca cũ');
   await la(A); await q(`insert into public.khsx_phat_sua(nguoi_id,ngay,so_hop,phat_boi) values($1,'2026-10-12',1,$2)`,[tc,A]);
-  await la(P); assert.match(await loi(()=>q(`select public.khsx_diem_danh_tang_ca_v1($1,'2026-10-12',2::smallint)`,[tc])),/ATTENDANCE_LOCKED/);
+  await la(P); await q(`select public.khsx_diem_danh_tang_ca_v1($1,'2026-10-12',2::smallint)`,[tc]); assert.equal(await tcv('2026-10-12'),2);   // đã phát sữa vẫn báo / sửa tăng ca được
   assert.equal((await q(`select count(*)::int n from public.khsx_phat_sua where nguoi_id=$1`,[tc])).rows[0].n,1);   // tăng ca không đụng số hộp sữa
-  console.log('PASS tăng ca: cần tick sáng/chiều, chọn một 1-3h, bỏ hết tick thì mất, giữ khi đổi sáng/chiều, ngày đã phát khóa, quyền điểm danh');
+  console.log('PASS tăng ca: cần tick sáng/chiều, chọn một 1-3h, bỏ hết tick thì mất, giữ khi đổi sáng/chiều, ngày đã phát sữa không khóa, quyền điểm danh');
 })().catch(e=>{ console.error('FAIL',e); process.exit(1); });

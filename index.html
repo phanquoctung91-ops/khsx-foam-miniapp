@@ -2141,7 +2141,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
       </div>
     </div>
     <div class="dd-than" id="ddThanDD">
-    <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5;">Tick sáng / chiều từng người. Cả ngày = 2 hộp sữa, một buổi = 1 hộp. Sửa được ngày cũ, trừ ngày đã phát sữa.</div>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5;">Tick sáng / chiều từng người. Cả ngày = 2 hộp sữa, một buổi = 1 hộp. Sửa được ngày cũ.</div>
     <div id="ddXuat" style="display:none;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:10px;">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <label style="font-size:12px;font-weight:700;color:var(--text2);">Từ ngày <input type="date" id="ddXuatTu" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
@@ -2353,7 +2353,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=237"></script>
+<script src="raw-data.js?v=238"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4496,7 +4496,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 237;
+const APP_VERSION = 238;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -13010,7 +13010,6 @@ function ddOChon(p){
 function loiDiemDanh(e){
   const m=String(e?.message||e||'');
   if(m.includes('ATTENDANCE_FORBIDDEN')) return 'Tài khoản chưa có quyền điểm danh.';
-  if(m.includes('ATTENDANCE_LOCKED')) return 'Ngày này đã phát sữa, không sửa điểm danh được nữa.';
   if(m.includes('ATTENDANCE_OT_NEEDS_CHECKIN')) return 'Chưa điểm danh sáng/chiều thì không báo tăng ca được.';
   if(m.includes('ATTENDANCE_OT_INVALID')) return 'Tăng ca chỉ nhận 1, 2 hoặc 3 giờ.';
   if(m.includes('ATTENDANCE_DATE_INVALID')) return 'Không điểm danh cho ngày chưa tới.';
@@ -13078,12 +13077,12 @@ function veDiemDanh(){
     return `<div class="dd-tc-gio">${[1,2,3].map(g=>`<label><input type="checkbox" data-dd-tc="${g}" data-id="${p.id}"${r.tc===g?' checked':''}${tatTc}> ${g}h <small>${TANG_CA_GIO[g]}</small></label>`).join('')}${r.tc?'':`<button type="button" class="dd-tc-dong" data-dd-tc-mo="${p.id}" aria-label="Đóng tăng ca"${tatTc}>✕</button>`}</div>`;
   };
   than.innerHTML=hien.map(p=>{
-    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
+    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=!sua?' disabled':'';
     const o=(k,v)=>`<td style="text-align:center;"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
-    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa, không sửa được">🥛 đã phát</span>':''}</td><td>${ddOChon(p)}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td style="text-align:center;">${tcKhoi(p,r,tat)}</td><td>${oGc(p,'min-width:0;width:100%;max-width:240px;')}</td><td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
+    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa (chỉ là thông tin, vẫn sửa được điểm danh)">🥛 đã phát</span>':''}</td><td>${ddOChon(p)}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td style="text-align:center;">${tcKhoi(p,r,tat)}</td><td>${oGc(p,'min-width:0;width:100%;max-width:240px;')}</td><td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
   }).join('');
   the.innerHTML=hien.map(p=>{
-    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||khoa)?' disabled':'';
+    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=!sua?' disabled':'';
     const nut=(k,txt,on)=>`<button type="button" class="dd-nut${on?' on':''}" data-dd-n="${k}" data-id="${p.id}" aria-pressed="${on}"${tat}>${on?'✓ ':''}${txt}</button>`;
     return `<div class="dd-the"><div class="dd-the-ten">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da">🥛 đã phát</span>':''}${xoa?'':`<small>${thoatHtml(ddNhanCv(p))||'—'}</small>`}</div>${xoa?ddOChon(p):''}
       <div class="dd-nut-hang">${nut('ca','Cả ngày',r.sang&&r.chieu)}${nut('sang','Sáng',r.sang)}${nut('chieu','Chiều',r.chieu)}</div><div class="dd-tc-the">${tcKhoi(p,r,tat)}</div>${oGc(p,'width:100%;min-width:0;min-height:42px;margin-top:8px;')}${xoa?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
