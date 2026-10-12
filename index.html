@@ -328,6 +328,14 @@
   .stage-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;align-items:stretch;}
   .stage-summary-item{padding:4px 3px;border-radius:7px;background:#f8f5f6;color:var(--text2);font-size:9.5px;line-height:1.15;text-align:center;}
   .stage-summary-item strong{display:block;margin-top:2px;color:var(--text);font-size:13px;}
+  .stage-summary-item.sd-xanh{background:var(--success-l);color:var(--success);}
+  .stage-summary-item.sd-xanh strong{color:var(--success);}
+  .stage-summary-item.sd-vang{background:var(--warning-l);color:var(--warning);}
+  .stage-summary-item.sd-vang strong{color:var(--warning);}
+  body.dark-mode .stage-summary-item.sd-xanh{background:var(--success-l)!important;color:var(--success)!important;}
+  body.dark-mode .stage-summary-item.sd-vang{background:var(--warning-l)!important;color:var(--warning)!important;}
+  body.dark-mode .stage-summary-item.sd-xanh strong{color:var(--success);}
+  body.dark-mode .stage-summary-item.sd-vang strong{color:var(--warning);}
   .cell-note{margin-top:5px;font-size:10.5px;line-height:1.3;color:var(--text2);font-weight:500;}
   .employee-mobile-summary,.employee-mobile-group{display:none;}
   tbody tr:hover td{background:#faf9f9;}
@@ -2345,7 +2353,7 @@ html.khsx-fast-session #loginOverlay{display:none !important;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=235"></script>
+<script src="raw-data.js?v=236"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4488,7 +4496,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 235;
+const APP_VERSION = 236;
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
 const RELOAD_MARK_KEY = SUPABASE_VARIANT ? 'khsx_supabase_reload_for_version' : 'khsx_reload_for_version';
 let checkingAppVersion = false;
@@ -9922,7 +9930,8 @@ function tienDoGopHtml(o, ngay){
   const cacCongDoan = [['Dán','dan'],['May','may'],['ĐG','dong_goi']];
   return `<div class="stage-summary">${cacCongDoan.map(([nhan,k])=>{
     const value = (!ngay || ngay === 'all') ? tongCongDoan(o,k) : soCongDoan(giaTriCongDoanNgay(o,ngay,k));
-    return `<span class="stage-summary-item">${nhan}<strong>${value.toLocaleString('vi-VN')}</strong></span>`;
+    const kh = soCongDoan(o.so_luong), mau = kh>0 && value>0 ? (value>=kh?' sd-xanh':' sd-vang') : '';   // đủ kế hoạch = xanh, có số nhưng chưa đủ = vàng, 0 = như cũ
+    return `<span class="stage-summary-item${mau}">${nhan}<strong>${value.toLocaleString('vi-VN')}</strong></span>`;
   }).join('')}</div>`;
 }
 function suaCongDoanCellHtml(o, ngay){
