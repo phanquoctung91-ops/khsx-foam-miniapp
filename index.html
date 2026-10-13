@@ -1375,6 +1375,14 @@ button:not(:disabled):active{transform:scale(.94);}
 .kpi-thanh i.fx-sheen::after{content:'';position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:fxSheen 1.4s ease-out;}
 .stage-summary-item{transition:background-color .45s,color .45s;}
 tr.fx-flash td{animation:fxRowFlash 2.4s var(--fx-ease);}
+/* thanh tiến độ quý */
+@keyframes fxSheenLoop{0%{transform:translateX(-130%)}40%,100%{transform:translateX(330%)}}
+@keyframes fxDrop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+@keyframes fxGlowOnce{0%{box-shadow:0 0 0 0 var(--fx-glow)}60%{box-shadow:0 0 0 9px rgba(196,26,83,0)}100%{box-shadow:0 0 0 0 rgba(196,26,83,0)}}
+.tdq-fill{overflow:hidden;transition:width 1.2s var(--fx-ease);}
+.tdq-fill::after{content:'';position:absolute;top:0;bottom:0;left:0;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:fxSheenLoop 4s ease-in-out infinite;}
+.fx-glow1{animation:fxGlowOnce 1.2s ease-out 2;}
+.fx-drop{animation:fxDrop .55s var(--fx-spring) both;animation-delay:var(--fx-d,1s);}
 tr.fx-row-in{animation:fxRise .45s var(--fx-ease) both;animation-delay:calc(var(--fx-i,0) * 28ms);}
 
 /* điểm danh, giao việc */
@@ -1397,6 +1405,55 @@ html.fx-theming *,html.fx-theming *::before,html.fx-theming *::after{transition:
 #kbXongBar{position:fixed;left:0;top:0;z-index:99990;box-sizing:border-box;padding:6px 10px;background:var(--card);border-top:1px solid var(--border);box-shadow:0 -6px 18px rgba(0,0,0,.2);animation:fxBarUp .22s var(--fx-ease);}
 #kbXongBar[hidden]{display:none;}
 #kbXongBtn{display:block;width:100%;min-height:46px;border:0;border-radius:10px;background:var(--primary);color:var(--on-primary);font-size:17px;font-weight:800;font-family:inherit;}
+/* ---- Nhật ký nhập liệu (màn Tiến độ): 3 bảng Dán / May / Đóng gói, bấm mới xổ ra ---- */
+.nkx-cd{display:inline-block;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:800;white-space:nowrap;}
+.nkx-cd.dan{background:var(--primary-l);color:var(--primary);}
+.nkx-cd.may{background:var(--warning-l);color:var(--warning);}
+.nkx-cd.dong_goi{background:var(--bao-hanh-l,#f4efff);color:var(--bao-hanh,#8a5cd0);}
+.nkx-box{border:1px solid var(--border);border-radius:12px;margin:0 0 10px;overflow:hidden;}
+.nkx-tieu{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--card);color:var(--text);padding:11px 12px;text-align:left;font:inherit;cursor:pointer;}
+.nkx-tieu:hover{background:var(--bg);}
+.nkx-tt{flex:1;min-width:0;font-size:12.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nkx-tt b{color:var(--text);}
+.nkx-mui{color:var(--text2);transition:transform .25s;}
+.nkx-box.mo .nkx-mui{transform:rotate(180deg);}
+.nkx-than{display:none;border-top:1px solid var(--border);}
+.nkx-box.mo .nkx-than{display:block;}
+.nkx-loc{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:9px 12px;background:var(--bg);}
+.nkx-loc .bom-chip small{opacity:.75;margin-left:3px;}
+.nkx-sep{width:1px;height:18px;background:var(--border);margin:0 2px;}
+.nkx-tim{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;padding:5px 9px;font:inherit;font-size:12.5px;width:150px;}
+.nkx-cuon{max-height:300px;overflow-y:auto;}
+.nkx-bang table{width:100%;border-collapse:collapse;font-size:13px;min-width:0;}
+.nkx-bang th{position:sticky;top:0;z-index:2;background:var(--card);color:var(--text2);text-align:left;font-weight:700;padding:7px 8px;white-space:nowrap;border-bottom:1px solid var(--border);}
+.nkx-bang td{padding:6px 8px;border-top:1px solid var(--border);vertical-align:middle;height:36px;}
+.nkx-bang td.gio{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700;}
+.nkx-bang tr.to td{background:var(--bg);font-weight:800;font-size:12.5px;padding:6px 8px;height:auto;position:sticky;top:31px;z-index:1;}
+.nkx-bang tr.to td span{font-weight:600;color:var(--text2);margin-left:8px;}
+.nkx-bang tr.trongto td{color:var(--text2);font-style:italic;height:30px;}
+.nkx-bang tr.ht td{color:var(--text2);}
+.nkx-bang .don small{display:block;color:var(--text2);font-size:11.5px;line-height:1.2;}
+.nkx-dd{white-space:nowrap;font-variant-numeric:tabular-nums;}
+.nkx-dd .mu,.nkx-dd .gx{color:var(--text2);}
+.nkx-dd .tang{color:var(--success);font-weight:800;}
+.nkx-dd .giam{color:var(--danger);font-weight:800;}
+.nkx-lo{font-size:11.5px;font-weight:700;border-radius:6px;padding:1px 7px;white-space:nowrap;}
+.nkx-lo.moi{background:var(--success-l);color:var(--success);}
+.nkx-lo.sua{background:var(--warning-l);color:var(--warning);}
+.nkx-lo.xoa{background:var(--danger-l);color:var(--danger);}
+.nkx-chan{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:7px 12px;font-size:12px;color:var(--text2);border-top:1px solid var(--border);}
+.nkx-chan .ok{color:var(--success);font-weight:700;}
+.nkx-chan .lech{color:var(--danger);font-weight:800;}
+.nkx-the{display:none;}
+body.mobile-view .nkx-bang{display:none;}
+body.mobile-view .nkx-the{display:block;padding:8px;max-height:360px;overflow-y:auto;}
+body.mobile-view .nkx-tim{width:100%;}
+.nkx-t1{border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:0 0 7px;}
+.nkx-t1 .r1{display:flex;justify-content:space-between;gap:6px;font-weight:700;}
+.nkx-t1 .r2{margin:3px 0 0;font-size:12.5px;color:var(--text2);}
+.nkx-t1 .r3{display:flex;justify-content:space-between;align-items:center;margin-top:5px;}
+.nkx-togc{font-size:12.5px;font-weight:800;background:var(--bg);border-radius:8px;padding:5px 9px;margin:8px 0 6px;}
+.nkx-trong{padding:14px;text-align:center;color:var(--text2);font-size:13px;}
 /* máy bật "giảm chuyển động": tắt toàn bộ */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;animation-delay:0s !important;transition-duration:.01ms !important;scroll-behavior:auto !important;}
@@ -1834,6 +1891,11 @@ html.fx-theming *,html.fx-theming *::before,html.fx-theming *::after{transition:
         <tbody></tbody>
       </table>
     </div>
+  </div>
+  <div class="card" id="nhatKyCard" style="display:none;">
+    <h4 style="margin:0 0 4px;font-size:15px;">📜 Nhật ký nhập liệu · <span id="nhatKyNgay"></span></h4>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Ai nhập tiến độ, lúc mấy giờ, số cũ → số mới. Xem theo ngày đang chọn ở bộ lọc Ngày phía trên. Bấm vào từng công đoạn để xổ ra.</div>
+    <div id="nhatKyThan"></div>
   </div>
 </div>
 
@@ -2307,7 +2369,7 @@ html.fx-theming *,html.fx-theming *::before,html.fx-theming *::after{transition:
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=241"></script>
+<script src="raw-data.js?v=243"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2316,15 +2378,6 @@ const monthly = RAW.monthly;
 function parseDMY(dateStr){
   const [d,m,y] = dateStr.split('/').map(Number);
   return {d,m,y};
-}
-function isoToDMY(iso){
-  // iso: yyyy-mm-dd -> dd/mm/yyyy
-  const [y,m,d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-function dmyToIso(dmy){
-  const [d,m,y] = dmy.split('/');
-  return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
 }
 function formatDMY(dateObj){
   const dd = String(dateObj.getDate()).padStart(2,'0');
@@ -2619,9 +2672,6 @@ function tongKpiTuRowsTheoKeys(keys){
   return {plan,done,warranty,throughput,carryover};
 }
 
-function isoCuaNgay(dateObj){
-  return `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-}
 function ngayTuIsoLocal(iso){
   const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3])):null;
@@ -2971,16 +3021,6 @@ const monthFromSelect = document.getElementById('monthFromSelect');
 const monthToSelect = document.getElementById('monthToSelect');
 const monthRangeNote = document.getElementById('monthRangeNote');
 
-function dmyToIso(s){
-  const p = parseDMY(s || '');
-  if(!p || !p.y) return '';
-  const z = n=>String(n).padStart(2,'0');
-  return `${p.y}-${z(p.m)}-${z(p.d)}`;
-}
-function isoToDMY(s){
-  const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
-}
 function isoDayNumber(s){
   const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m ? Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3]))/86400000 : NaN;
@@ -3365,7 +3405,6 @@ const SHEET_GID = '1960770014';
 // NOTE: live fetch is currently blocked by the artifact sandbox (CORS). This is a
 // snapshot of the real "Foam" rows pulled from the sheet by Claude, used here so you
 // can see what the tab looks like once it's actually connected live.
-const SIMULATED_AUTOPLAN_DATA = [{"date":"27/07/2026","ma":"LUN15-6","dong":"LUNA","ngang":160,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"LUN20-8","dong":"LUNA","ngang":180,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"LUN15-4","dong":"LUNA","ngang":140,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"SORA15-2020","dong":"SORA","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"27/07/2026","ma":"EZ20-3","dong":"LATEX ENZO","ngang":160,"dai":200,"day":20,"so_luong":41,"trang_thai":"","ghi_chu":"Vải premium cũ, có khoá kéo, đóng bao keo trong"},{"date":"27/07/2026","ma":"EZ20-5","dong":"LATEX ENZO","ngang":200,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":"Làm nệm tròn đường kính 2m, Vải premium cũ, có khoá kéo"},{"date":"27/07/2026","ma":"CLS15-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA10-63","dong":"SORA","ngang":63,"dai":183,"day":10,"so_luong":60,"trang_thai":"","ghi_chu":"Tái 1 con std 90x190x10, (áo standard không đít thêu + thêm tem cty khách)"},{"date":"28/07/2026","ma":"SORA10-6","dong":"SORA","ngang":160,"dai":200,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-6","dong":"SORA","ngang":160,"dai":200,"day":15,"so_luong":27,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA15-8","dong":"SORA","ngang":180,"dai":200,"day":15,"so_luong":27,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-8","dong":"SORA","ngang":180,"dai":200,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":200,"day":10,"so_luong":15,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS15-2022","dong":"CLASSIC","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS15-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS10-6","dong":"CLASSIC","ngang":160,"dai":200,"day":10,"so_luong":15,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"CLS15-8","dong":"CLASSIC","ngang":180,"dai":200,"day":15,"so_luong":9,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE17-8","dong":"3'ZONE","ngang":180,"dai":200,"day":17,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2022","dong":"SORA","ngang":220,"dai":200,"day":10,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"LAGO10-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"LAGO15-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":15,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-2020","dong":"SORA","ngang":200,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"ZONE12-6","dong":"3'ZONE","ngang":160,"dai":200,"day":12,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"ZONE17-6","dong":"3'ZONE","ngang":160,"dai":200,"day":17,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"LAGO10-4","dong":"LATEX GOLD","ngang":140,"dai":200,"day":10,"so_luong":5,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"STD20-2020","dong":"STANDARD","ngang":200,"dai":200,"day":20,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"ZONE17-6","dong":"3'ZONE","ngang":160,"dai":200,"day":17,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"CLS10-2022","dong":"CLASSIC","ngang":220,"dai":200,"day":10,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"STD15-2022","dong":"STANDARD","ngang":220,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"30/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":180,"day":10,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA10-63","dong":"SORA","ngang":63,"dai":183,"day":10,"so_luong":30,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD15-2022","dong":"STANDARD","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD20-2","dong":"STANDARD","ngang":120,"dai":200,"day":20,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"STD10-2022","dong":"STANDARD","ngang":220,"dai":240,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LAEZ10-2022","dong":"LATEX ENZO","ngang":220,"dai":200,"day":10,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LAEZ15-2022","dong":"LATEX ENZO","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"ZONE17-8","dong":"3'ZONE","ngang":180,"dai":200,"day":17,"so_luong":2,"trang_thai":"","ghi_chu":"Ưu tiên sáng sản xuất"},{"date":"29/07/2026","ma":"PRE15-4","dong":"PREMIUM","ngang":140,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":"Ưu tiên sáng sản xuất"},{"date":"29/07/2026","ma":"STD10-2","dong":"STANDARD","ngang":110,"dai":170,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":"tái chế con std 140x175x10"},{"date":"29/07/2026","ma":"STD10-1","dong":"STANDARD","ngang":90,"dai":180,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":"tái chế con classic 150x190x10"},{"date":"29/07/2026","ma":"STD15-6","dong":"STANDARD","ngang":150,"dai":190,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"EZ20-3","dong":"LATEX ENZO","ngang":160,"dai":200,"day":20,"so_luong":2,"trang_thai":"","ghi_chu":"Vải premium cũ, có khoá kéo, đóng bao keo trong"},{"date":"29/07/2026","ma":"PRE15-2022","dong":"PREMIUM","ngang":220,"dai":200,"day":15,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"CLS20-2020","dong":"CLASSIC","ngang":200,"dai":200,"day":20,"so_luong":3,"trang_thai":"","ghi_chu":""},{"date":"29/07/2026","ma":"LUN10-2","dong":"LUNA","ngang":120,"dai":200,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"PRE10-6","dong":"PREMIUM","ngang":150,"dai":197,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-2","dong":"SORA","ngang":120,"dai":180,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"LAGO15-4","dong":"LATEX GOLD","ngang":140,"dai":190,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE17-2022","dong":"3'ZONE","ngang":220,"dai":200,"day":17,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"ZONE12-2020","dong":"3'ZONE","ngang":200,"dai":200,"day":12,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA10-4","dong":"SORA","ngang":140,"dai":192,"day":10,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"SORA15-2022","dong":"SORA","ngang":220,"dai":200,"day":15,"so_luong":1,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"KH12-4","dong":"KING HOME","ngang":140,"dai":200,"day":12,"so_luong":2,"trang_thai":"","ghi_chu":""},{"date":"28/07/2026","ma":"KH12-6","dong":"KING HOME","ngang":160,"dai":200,"day":12,"so_luong":6,"trang_thai":"","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO10-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-2020","dong":"STANDARD","ngang":200,"dai":200,"day":15,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"SORA10-1","dong":"SORA","ngang":100,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-4","dong":"STANDARD","ngang":140,"dai":200,"day":15,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"SORA10-4","dong":"SORA","ngang":140,"dai":200,"day":10,"so_luong":15,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO15-8","dong":"LATEX GOLD","ngang":180,"dai":200,"day":15,"so_luong":9,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO20-6","dong":"LATEX GOLD","ngang":160,"dai":200,"day":20,"so_luong":5,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO15-2022","dong":"LATEX GOLD","ngang":220,"dai":200,"day":15,"so_luong":3,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"STD15-6","dong":"STANDARD","ngang":160,"dai":200,"day":15,"so_luong":9,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO20-8","dong":"LATEX GOLD","ngang":180,"dai":200,"day":20,"so_luong":5,"trang_thai":"Chốt","ghi_chu":""},{"date":"31/07/2026","ma":"LAGO10-2022","dong":"LATEX GOLD","ngang":220,"dai":200,"day":10,"so_luong":2,"trang_thai":"Chốt","ghi_chu":""}];
 
 const TEAM_OPTIONS = ['Tổ 1','Tổ 2','Tổ 3','Tổ 4','Tổ 5'];
 const TO_CHUA_GAN = 'Chưa gán tổ';
@@ -4365,14 +4404,6 @@ function spinoffCellHtml(o, ngay, allowTdsxManager2=false){
   return `<span style="font-weight:600;">${spinA.to}</span>`;
 }
 
-// Nút "Sửa" từng dòng ở tab Tiến độ: đưa đơn về trạng thái như chưa từng nhập số lượng hoàn thành.
-function resetQtyCellHtml(o){
-  const a = assignments[o.id];
-  if(!canEdit()) return '';
-  if(isProgressLocked(o)) return '<span title="Ngày đã chốt tiến độ" style="color:var(--text2);">🔒</span>';
-  if(!a || a.so_luong_hoan_thanh == null) return '<span style="color:var(--text2);">—</span>';
-  return `<button class="reset-qty-btn" data-order-id="${o.id}" style="font-size:11.5px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;">Sửa</button>`;
-}
 // ============================================================================
 //  NGƯỜI DÙNG & PHÂN QUYỀN
 //  Toàn bộ mã đăng nhập nằm ở Apps Script (tab "Users"), KHÔNG có mã nào trong
@@ -4452,7 +4483,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 241;
+const APP_VERSION = 243;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -4509,6 +4540,34 @@ const FX=(()=>{
     const was=prev.get(key); prev.set(key,meta.v);
     if(was===undefined){ countTo(el,0,meta.v,meta,orig); if(meta.post.trim().startsWith('%')&&meta.v>=100) celebrate(card,key); }
     else if(was!==meta.v){ countTo(el,was,meta.v,meta,orig); flash(card,'fx-bump',1000); if(meta.post.trim().startsWith('%')&&meta.v>=100&&was<100) celebrate(card,key); }
+  }
+  // ---- thanh tiến độ quý: chạy từ 0 / từ mức cũ, vạch "Cần…" rơi xuống, dòng "x / y tấm · z%" đếm tăng ----
+  function doTdqFill(el){
+    const w=parseFloat(el.style.width); if(!isFinite(w)) return;
+    const key='tdq|'+scopeId(el), was=prev.get(key); prev.set(key,w);
+    const bar=el.parentElement, dat=el.classList.contains('dat');
+    if(on()&&was!==undefined&&was!==w) flash(bar,'fx-bump',900);
+    if(on()&&from0(was)!==w){
+      const target=el.style.width; el.style.width=from0(was)+'%'; void el.offsetWidth;
+      requestAnimationFrame(()=>{ el.style.width=target; });
+    }
+    if(dat&&on()&&bar&&once('tdq-dat|'+scopeId(el))) setTimeout(()=>{ bar.classList.add('fx-glow1'); setTimeout(()=>bar.classList.remove('fx-glow1'),2600); },1100);   // đạt mục tiêu quý: viền sáng nhấp nháy một lần
+    if(on()&&once('tdq-gach|'+scopeId(el))) bar&&bar.querySelectorAll('.tdq-gach,.tdq-nhan').forEach((x,i)=>{ x.style.setProperty('--fx-d',(1.0+i*0.15)+'s'); x.classList.add('fx-drop'); setTimeout(()=>{ x.classList.remove('fx-drop'); x.style.removeProperty('--fx-d'); },2200); });
+  }
+  const from0=was=>was===undefined?0:was;
+  function doTdqText(el){   // "174 / 14.000 tấm · 52,3%": số đã đóng và phần trăm đếm tăng cùng thanh
+    const orig=el.textContent, tok=orig.match(/\d[\d.,]*/g); if(!tok||tok.length<3||el.children.length) return;
+    const a=parseNum(tok[0]), p=parseNum(tok[2]+'%'); if(!a||!p) return;
+    const key='tdqt|'+scopeId(el), was=prev.get(key); prev.set(key,[a.v,p.v]);
+    if(!on()||(was&&was[0]===a.v&&was[1]===p.v)) return;
+    const fa=was?was[0]:0, fp=was?was[1]:0, t0=performance.now(), dur=1200;
+    const i0=orig.indexOf(tok[0]), i2=orig.indexOf(tok[2],i0+tok[0].length+tok[1].length);
+    const mk=(x,y)=>orig.slice(0,i0)+fmt(x,a)+orig.slice(i0+tok[0].length,i2)+fmt(y,p)+orig.slice(i2+tok[2].length);
+    el.dataset.fxRun='1'; el.textContent=mk(fa,fp);
+    const step=now=>{ if(!el.isConnected) return; const t=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-t,4);
+      if(t<1){ el.textContent=mk(fa+(a.v-fa)*e,fp+(p.v-fp)*e); requestAnimationFrame(step); } else { el.textContent=orig; delete el.dataset.fxRun; } };
+    requestAnimationFrame(step);
+    setTimeout(()=>{ if(el.dataset.fxRun){ el.textContent=orig; delete el.dataset.fxRun; } },dur+500);
   }
   // ---- thanh tiến độ ----
   function doBar(el){
@@ -4589,7 +4648,7 @@ const FX=(()=>{
   }
 
   const SEL_VALUE='.kpi .value,.employee-stage-metric strong,.employee-stage-score strong,.employee-my-total-value,.team-ring-inner,.to-tom-tat-vong>span';
-  const SEL_ALL=[SEL_VALUE,'.kpi-thanh i','[style*="conic-gradient"]','.kpi','.stage-summary-item','tr.row-new,tr.row-changed',
+  const SEL_ALL=[SEL_VALUE,'.kpi-thanh i','.tdq-fill','.tdq-hd span','[style*="conic-gradient"]','.kpi','.stage-summary-item','tr.row-new,tr.row-changed',
     '.employee-order-card,.employee-stage-head,.viec-the,.viec-dong,.team-ring-card','.dd-nut[data-dd-n],input[data-dd],input[data-dd-tc],.bom-chip,.to-tick-btn',
     '.dd-tc-gio','.bom-nhan.da','.save-status,[id$="Status"]'].join(',');
   function enhance(el){
@@ -4598,6 +4657,8 @@ const FX=(()=>{
     done.add(el); hidden.delete(el);
     if(el.matches(SEL_VALUE)) doValue(el);
     if(el.matches('.kpi-thanh i')) doBar(el);
+    if(el.matches('.tdq-fill')) doTdqFill(el);
+    if(el.matches('.tdq-hd span')) doTdqText(el);
     if(el.matches('[style*="conic-gradient"]')) doRing(el);
     if(el.matches('.kpi')) doRise(el,'k|'+scopeId(el)+'|'+(el.querySelector('.label')?tx(el.querySelector('.label')).slice(0,40):''));
     if(el.matches('.stage-summary-item')) doStageBox(el);
@@ -4738,7 +4799,7 @@ async function getRepoAppVersion(){
   if(LOCAL_PREVIEW_MODE) return 0;
   const url = getCanonicalDashboardUrl();
   url.searchParams.set('_version_check', Date.now());
-  const res = await fetch(url.href, {cache:'no-store'});
+  const res = await fetchCoHan(url.href, {cache:'no-store'});
   if(!res.ok) throw new Error('HTTP ' + res.status);
   const html = await res.text();
   const match = html.match(/const\s+APP_VERSION\s*=\s*(\d+)/);
@@ -4934,7 +4995,7 @@ async function sendUserCommand(payload){
     return;
   }
   try{
-    await fetch(STORAGE_API_URL, {
+    await fetchCoHanDai(STORAGE_API_URL, {
       method:'POST', mode:'no-cors',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(Object.assign({code: currentUser ? currentUser.code : ''}, payload))
@@ -5250,9 +5311,18 @@ function supabaseStatus(message, ok=true){
   el.textContent=message;
   el.style.color=ok?'var(--success)':'var(--warning)';
 }
+// fetch có hạn chờ: mạng yếu hoặc máy chủ treo thì dừng thay vì treo mãi (25 giây; nhóm ghi Sheet/Apps Script chậm hơn: 60 giây).
+// Chỉ canh phần chờ máy chủ trả lời; phần đọc nội dung sau đó không bị giới hạn.
+async function fetchCoHan(url,opt,ms){
+  const c=new AbortController(), t=setTimeout(()=>c.abort(),ms||25000);
+  try{ return await fetch(url,Object.assign({},opt,{signal:c.signal})); }
+  catch(e){ if(c.signal.aborted) throw new Error('Hết thời gian chờ máy chủ'); throw e; }
+  finally{ clearTimeout(t); }
+}
+const fetchCoHanDai=(url,opt)=>fetchCoHan(url,opt,60000);
 async function loginWithTelegram(){
   if(!supabaseDb || !TELEGRAM_WEBAPP || !TELEGRAM_WEBAPP.initData) return null;
-  const res=await fetch(SUPABASE_TELEGRAM_LOGIN_URL,{
+  const res=await fetchCoHan(SUPABASE_TELEGRAM_LOGIN_URL,{
     method:'POST',cache:'no-store',
     headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY},
     body:JSON.stringify({init_data:TELEGRAM_WEBAPP.initData})
@@ -5292,7 +5362,7 @@ async function registerTelegramId(){
   if(errEl) errEl.style.display='none';
   setStatus('Đang gửi yêu cầu đăng ký...');
   try{
-    const res=await fetch(SUPABASE_TELEGRAM_REGISTER_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY},body:JSON.stringify({init_data:TELEGRAM_WEBAPP.initData})});
+    const res=await fetchCoHan(SUPABASE_TELEGRAM_REGISTER_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY},body:JSON.stringify({init_data:TELEGRAM_WEBAPP.initData})});
     const data=await res.json().catch(()=>null);
     if(!res.ok){
       const detail=data?.db_code||data?.error||'';
@@ -6114,7 +6184,7 @@ async function storageSet(key, value){
   try{
     // Content-Type: text/plain + mode: no-cors để trình duyệt không chặn request lúc gửi đi.
     // Không đọc được response (bình thường với no-cors) nhưng Apps Script vẫn ghi vào Sheet.
-    await fetch(STORAGE_API_URL, {
+    await fetchCoHanDai(STORAGE_API_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: {'Content-Type': 'text/plain;charset=utf-8'},
@@ -6602,19 +6672,9 @@ async function saveAssignments(){
   saveLocalCache();
   await storageSet(ASSIGNMENT_STORAGE_KEY, assignments);
 }
-async function loadDynamicOrders(){
-  dynamicOrders = (await storageGet(DYNAMIC_ORDERS_KEY)) || [];
-}
 async function saveDynamicOrders(){
   saveLocalCache();
   await storageSet(DYNAMIC_ORDERS_KEY, dynamicOrders);
-}
-async function loadDeletedOrders(){
-  deletedOrderIds = (await storageGet(DELETED_ORDERS_KEY)) || [];
-}
-async function saveDeletedOrders(){
-  saveLocalCache();
-  await storageSet(DELETED_ORDERS_KEY, deletedOrderIds);
 }
 
 // minimal CSV parser that handles quoted fields with commas/newlines
@@ -7546,8 +7606,6 @@ function phanBoNhanSuBaoHanh(ngay,chiTiet){
   let vyCon=Math.ceil(to5.reduce((s,x)=>s+x.qty,0)/2); to5.forEach(({i,qty})=>{const vy=Math.min(qty,vyCon),cham=qty-vy;rows[i].bh_may_phan_bo=[];if(vy)rows[i].bh_may_phan_bo.push({name:'Thảo Vy',so_luong:vy});if(cham)rows[i].bh_may_phan_bo.push({name:'Bảo Chăm',so_luong:cham});vyCon-=vy;});
   return rows;
 }
-function hienThiPhanBoBaoHanh(ds,tong){ const rows=(ds||[]).filter(x=>soCongDoan(x.so_luong)>0); return rows.length?rows.map(x=>`${thoatHtml(x.name)}${rows.length>1||soCongDoan(x.so_luong)!==soCongDoan(tong)?` (${soCongDoan(x.so_luong)})`:''}`).join('<br>'):'—'; }
-function loiBaoHanhDeHienThi(x){ const ds=Array.isArray(x&&x.loi)?x.loi:(x&&x.loi?[x.loi]:[]); return ds.filter(v=>!['maytay','donggoi'].includes(normHeaderText(v))).join(', ')||'-'; }
 
 function ngayHomQuaDMY(){ const d=new Date(); d.setDate(d.getDate()-1); return formatDMY(d); }
 function warrantyPayloadDaDu(){ return warrantyPayloadCoverage.today&&warrantyPayloadCoverage.yesterday; }
@@ -7800,10 +7858,6 @@ function formatKichThuoc(r){
 
 // Vẽ 5 ô "Tổ 1..5" dạng vòng tròn: Kế hoạch chỉ tính đơn trong kế hoạch (isPlannedOrder),
 // Hoàn thành tính TẤT CẢ (kể cả phần làm hộ/vượt kế hoạch) — đúng quy tắc đã thống nhất.
-// Viết hoa chữ đầu mỗi từ: "LATEX GOLD" -> "Latex Gold"
-function hoaChuDau(t){
-  return String(t || '').toLowerCase().replace(/(^|[\s\-'])(\p{L})/gu, (m,a,b)=> a + b.toUpperCase());
-}
 
 // Danh sách đơn của một tổ, dạng "Sora 160x15: 9" — gộp các dòng trùng tên + kích thước
 // anDongDaXong = true -> bỏ những dòng đã làm xong (dùng cho vai Nhân viên ở tab Tiến độ,
@@ -8521,12 +8575,6 @@ function switchCapacitySubtab(name){
   if(stats) stats.classList.toggle('active', name==='stats');
   if(warranty) warranty.classList.toggle('active', name==='warranty');
 }
-function openCapacityStats(){
-  if(!canManage2()) return;
-  document.querySelector('.tab-btn[data-tab="capacity"]')?.click();
-  switchCapacitySubtab('stats');
-  resetCapacityWeek();
-}
 document.querySelectorAll('.capacity-subtab').forEach(btn=>btn.addEventListener('click',()=>{
   switchCapacitySubtab(btn.dataset.subtab);
   // Việc 15: bấm thẳng sub-tab "Bảo hành" (không qua nút "Xem chi tiết" của 1 đơn) — nếu
@@ -8971,60 +9019,6 @@ document.querySelector('#autoPlanTable tbody').addEventListener('click', async (
   }
 });
 
-// When staff enters a completed quantity short of the plan, spin the remainder off as a new
-// unassigned "Đơn hàng rớt" row that reappears in Kế hoạch tuần for re-assignment.
-async function handleQtyChange(orderId, rawVal){
-  if(!canEdit()) return;
-  const o = getOrderById(orderId);
-  if(!o) return;
-  if(!assignments[orderId]) assignments[orderId] = {to:null, so_luong_hoan_thanh:null, spinoff_id:null};
-  const a = assignments[orderId];
-  const val = rawVal === '' ? null : parseFloat(rawVal);
-
-  if(val == null || isNaN(val) || val < 0){
-    a.so_luong_hoan_thanh = null;
-    a.ngay_hoan_thanh = null;
-  } else if(val >= o.so_luong){
-    a.so_luong_hoan_thanh = o.so_luong;
-    a.ngay_hoan_thanh = formatDMY(new Date()); // sản lượng tính cho NGÀY LÀM THẬT
-    // fully completed after all — drop any still-unassigned spinoff created earlier
-    if(a.spinoff_id){
-      const spin = getOrderById(a.spinoff_id);
-      if(spin && !(assignments[spin.id]?.to)){
-        dynamicOrders = dynamicOrders.filter(d=>d.id!==a.spinoff_id);
-        orderEntityStore?.remove(a.spinoff_id);
-        delete assignments[spin.id];
-      }
-      a.spinoff_id = null;
-    }
-  } else {
-    a.so_luong_hoan_thanh = val;
-    a.ngay_hoan_thanh = formatDMY(new Date()); // sản lượng tính cho NGÀY LÀM THẬT
-    const remainder = o.so_luong - val;
-    let spin = a.spinoff_id ? getOrderById(a.spinoff_id) : null;
-    if(spin){
-      // Mỗi đơn gốc chỉ được có DUY NHẤT một phần thiếu -> cập nhật lại dòng đang có,
-      // tuyệt đối không tạo thêm dòng mới (trước đây gây ra đơn rớt trùng lặp).
-      spin.so_luong = remainder;
-      const sa = assignments[spin.id];
-      if(sa && sa.to){
-        // Tổ hỗ trợ đã nhận thì hiểu là làm đủ phần thiếu (kể cả khi phần thiếu vừa đổi số).
-        sa.so_luong_hoan_thanh = remainder;
-        if(!sa.ngay_hoan_thanh) sa.ngay_hoan_thanh = formatDMY(new Date());
-      }
-    } else {
-      const newId = 'd' + Date.now() + Math.random().toString(36).slice(2,7);
-      spin = {id:newId, date:o.date, ma:o.ma, dong:o.dong, ngang:o.ngang, dai:o.dai, day:o.day, so_luong:remainder, ghi_chu:o.ghi_chu, is_drop:true};
-      dynamicOrders.push(spin);
-      orderEntityStore?.patch(spin);
-      a.spinoff_id = newId;
-    }
-  }
-  renderAutoPlan();
-  renderProgress();
-  scheduleMonthlySync();
-  queueSave('assignments','dynamic');
-}
 
 // Feed every Foam order (mọi trạng thái — không chỉ đơn đã xong) vào data model "Tổng hợp
 // tháng" (allDays), để ngày nào cũng hiện ra dù chưa có đơn nào hoàn thành (hôm nay, ngày
@@ -9299,6 +9293,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     resetOperationalToday(btn.dataset.tab);
     capNhatHienThiKpiRow();
     setTimeout(()=>FX.flush(),70); FX.reveal(document.getElementById('panel-'+btn.dataset.tab));
+    if(btn.dataset.tab==='progress') nhatKyLamMoi();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
     // Chọn xong thì tự thu gọn drawer "☰ Thêm" trên điện thoại, không để mở lì.
     // TRỪ tab đang mở lại chính là mục trong drawer (vd Nhân sự/Cài đặt/Lương) —
@@ -9530,17 +9525,6 @@ function oNhapCongDoanHtml(o, ngay, congDoan){
     <input type="number" class="qty-input stage-qty-input${readyClass}" data-order-id="${o.id}" data-stage="${congDoan}" data-day="${ngay}"
       min="0" step="1"${maxAttr} value="${value == null ? '' : value}" placeholder="Nhập số..." ${enabled?'':'disabled'}>
     ${stageSyncBadgeHtml(o.id,ngay,congDoan)}
-    ${hintCongDoanHtml(o,ngay,congDoan,info)}
-  </div>`;
-}
-function congDoanChiDocHtml(o, ngay, congDoan){
-  if(!ngay || ngay === 'all'){
-    return `<div class="stage-readonly">${tongCongDoan(o,congDoan).toLocaleString('vi-VN')}</div>`;
-  }
-  const value = giaTriCongDoanNgay(o,ngay,congDoan);
-  const info = thongTinCongDoanNgay(o,ngay);
-  return `<div class="stage-cell">
-    <div class="stage-readonly">${soCongDoan(value).toLocaleString('vi-VN')}</div>
     ${hintCongDoanHtml(o,ngay,congDoan,info)}
   </div>`;
 }
@@ -9792,7 +9776,7 @@ function traODangGo(g){
   let daDoi=false; moi.addEventListener('change',()=>{daDoi=true;},{once:true});
   moi.addEventListener('blur',()=>setTimeout(()=>{ if(!daDoi&&moi.value!==moi.defaultValue) moi.dispatchEvent(new Event('change',{bubbles:true})); },0),{once:true});
 }
-function renderProgress(){ const g=giuODangGo(); try{ return renderProgressThat(); }finally{ traODangGo(g); } }
+function renderProgress(){ const g=giuODangGo(); try{ return renderProgressThat(); }finally{ traODangGo(g); nhatKyLamMoi(); } }
 function renderProgressThat(){
   populateProgressSelects();
   const filtered = getFilteredProgressRows();
@@ -9925,6 +9909,98 @@ function renderProgressThat(){
 }
 
 progressDaySelect.addEventListener('change', ()=>{renderProgress();renderOvertimePanel();});
+// ===== Nhật ký nhập liệu (màn Tiến độ) =====
+// CHỈ ĐỌC: lấy từ hàm khsx_nhat_ky_nhap_v1 (nhật ký sửa tiến độ của 3 công đoạn). Không tự cộng số, không đụng đường ghi và KPI.
+// Một nguồn, một hàm vẽ (nkVe) cho cả 3 bảng Dán / May / Đóng gói.
+const NK_CD={dan:'Dán',may:'May',dong_goi:'Đóng gói'}, NK_THU_TU=['dan','may','dong_goi'], NK_TO=['To 1','To 2','To 3','To 4','To 5'];
+const NK_LOAI={insert:['moi','Nhập mới'],update:['sua','Sửa'],delete:['xoa','Xóa']};
+const nkLocMoi=()=>({to:'',loai:'',q:'',an:true,moiTruoc:false});
+const nkSt={ngay:'',dong:[],doiSoat:null,biCat:false,loi:'',luc:0,dangTai:false,mo:{dan:false,may:false,dong_goi:false},loc:{dan:nkLocMoi(),may:nkLocMoi(),dong_goi:nkLocMoi()}};
+const nkTenTo=t=>String(t||'').replace('To ','Tổ ');
+const nkGio=(iso,giay)=>new Date(iso).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',second:giay?'2-digit':undefined,hour12:false});
+const nkNhieu=r=>r.nguoi==='(hệ thống)'||((r.moi||0)===0&&r.op!=='delete'&&(r.cu||0)===0);   // dòng về 0 hoặc do hệ thống tạo: ẩn mặc định
+function nkNgayDangXem(){ const v=(document.getElementById('progressDaySelect')||{}).value; return (v&&v!=='all'&&dmyToIso(v))||homNayIso(); }
+const nkCoThe=()=>!!(typeof supabaseDb!=='undefined'&&supabaseDb&&currentUser&&!PUBLIC_VIEW_MODE);
+function nkThayDoi(r){
+  const cu=r.cu==null?0:r.cu, moi=r.moi==null?0:r.moi, d=moi-cu;
+  if(r.op==='delete') return `<span class="nkx-dd"><span class="gx">${cu}</span> <span class="mu">→</span> <span class="giam">xóa</span></span>`;
+  const dau=d>0?`<span class="tang">+${d}</span>`:d<0?`<span class="giam">${d}</span>`:'<span class="gx">±0</span>';
+  return `<span class="nkx-dd"><span class="gx">${r.cu==null?'—':r.cu}</span> <span class="mu">→</span> <b>${moi}</b> &nbsp;${dau}</span>`;
+}
+function nkDongDaLoc(cd){
+  const f=nkSt.loc[cd];
+  return nkSt.dong.filter(r=>r.stage===cd&&(!f.to||r.kpi_team===f.to)&&(!f.loai||r.op===f.loai)&&(!f.an||!nkNhieu(r))
+    &&(!f.q||`${r.nguoi} ${r.hoan_thanh||''} ${r.ma||''} ${r.ten||''}`.toLowerCase().includes(f.q.toLowerCase())));
+}
+function nkVeMotBang(cd){
+  const tatCa=nkSt.dong.filter(r=>r.stage===cd), f=nkSt.loc[cd], coHT=cd!=='dan';
+  const moiNhat=tatCa.length?tatCa.reduce((a,b)=>String(b.changed_at)>String(a.changed_at)?b:a):null;
+  const tt=`<b>${tatCa.length}</b> lần ghi${moiNhat?` · gần nhất <b>${nkGio(moiNhat.changed_at)}</b> · ${thoatHtml(moiNhat.nguoi)}`:' · chưa có nhập'}`;
+  let h=`<div class="nkx-box${nkSt.mo[cd]?' mo':''}" data-nkx-cd="${cd}"><button type="button" class="nkx-tieu" data-nkx-mo="${cd}"><span class="nkx-cd ${cd}">${NK_CD[cd]}</span><span class="nkx-tt">${tt}</span><span class="nkx-mui">▾</span></button><div class="nkx-than">`;
+  if(nkSt.mo[cd]){
+    const dem=to=>tatCa.filter(r=>r.kpi_team===to).length;
+    const chip=(k,v,on,nhan)=>`<button type="button" class="bom-chip${on?' active':''}" data-nkx-k="${k}" data-nkx-v="${v}">${nhan}</button>`;
+    h+=`<div class="nkx-loc">${chip('to','',!f.to,'Tổ 1 → 5')}${NK_TO.map(t=>chip('to',t,f.to===t,`${nkTenTo(t)}<small>${dem(t)}</small>`)).join('')}<span class="nkx-sep"></span>`
+      +[['','Mọi loại'],['insert','Nhập mới'],['update','Sửa'],['delete','Xóa']].map(x=>chip('loai',x[0],f.loai===x[0],x[1])).join('')
+      +`<span class="nkx-sep"></span>${chip('an','',f.an,'Ẩn dòng về 0 / hệ thống')}${chip('sx','',f.moiTruoc,'Mới nhất trước')}`
+      +`<input class="nkx-tim" type="search" data-nkx-q="${cd}" placeholder="Tìm người, mã, tên…" value="${thoatHtml(f.q)}"></div>`;
+    const rs=nkDongDaLoc(cd), sx=(a,b)=>f.moiTruoc?String(b.changed_at).localeCompare(String(a.changed_at)):String(a.changed_at).localeCompare(String(b.changed_at));
+    let bang=`<div class="nkx-cuon nkx-bang"><table><thead><tr><th>Giờ</th><th>Đơn</th><th>Người nhập</th>${coHT?'<th>Người hoàn thành</th>':''}<th>Thay đổi (cũ → mới)</th><th>Loại</th></tr></thead><tbody>`, the='<div class="nkx-the">', hien=0;
+    const cot=coHT?6:5;
+    (f.to?[f.to]:NK_TO).forEach(t=>{
+      const ds=rs.filter(r=>r.kpi_team===t).sort(sx);
+      bang+=`<tr class="to"><td colspan="${cot}">${nkTenTo(t)}<span>${ds.length} dòng</span></td></tr>`; the+=`<div class="nkx-togc">${nkTenTo(t)} · ${ds.length} dòng</div>`;
+      if(!ds.length) bang+=`<tr class="trongto"><td colspan="${cot}">${dem(t)?'Không có dòng nào khớp bộ lọc':'Chưa có nhập trong ngày'}</td></tr>`;
+      ds.forEach(r=>{
+        hien++; const lo=NK_LOAI[r.op]||['sua',r.op];
+        bang+=`<tr class="${r.nguoi==='(hệ thống)'?'ht':''}"><td class="gio" title="${nkGio(r.changed_at,true)}">${nkGio(r.changed_at)}</td><td class="don">${thoatHtml(r.ma||'')} · ${thoatHtml(r.ten||'')}<small>${r.rong||''}×${r.dai||''}</small></td><td>${thoatHtml(r.nguoi)}</td>${coHT?`<td>${r.hoan_thanh?thoatHtml(r.hoan_thanh):'—'}</td>`:''}<td>${nkThayDoi(r)}</td><td><span class="nkx-lo ${lo[0]}">${lo[1]}</span></td></tr>`;
+        the+=`<div class="nkx-t1"><div class="r1"><span>${nkGio(r.changed_at)} · ${thoatHtml(r.ma||'')}</span><span class="nkx-lo ${lo[0]}">${lo[1]}</span></div><div class="r2">${thoatHtml(r.nguoi)}${coHT&&r.hoan_thanh?` · hoàn thành: ${thoatHtml(r.hoan_thanh)}`:''}</div><div class="r3">${nkThayDoi(r)}</div></div>`;
+      });
+    });
+    const ds=nkSt.doiSoat&&nkSt.doiSoat[cd];
+    const doiSoat=ds?(ds.nhat_ky===ds.kpi?`<span class="ok">✓ Tổng nhật ký ${ds.nhat_ky.toLocaleString('vi-VN')} = tổng tiến độ đã lưu ${ds.kpi.toLocaleString('vi-VN')}</span>`:`<span class="lech">⚠ Lệch: nhật ký ${ds.nhat_ky.toLocaleString('vi-VN')}, tiến độ đã lưu ${ds.kpi.toLocaleString('vi-VN')}</span>`):'';
+    h+=bang+'</tbody></table></div>'+the+'</div>'+`<div class="nkx-chan"><span>Hiện <b>${hien}</b> / ${tatCa.length} dòng trong ngày${nkSt.biCat?' · chỉ có 500 dòng mới nhất':''}</span>${doiSoat}</div>`;
+  }
+  return h+'</div></div>';
+}
+function nkVe(){
+  const th=document.getElementById('nhatKyThan'), card=document.getElementById('nhatKyCard'); if(!th||!card) return;
+  card.style.display=nkCoThe()?'':'none'; if(!nkCoThe()) return;
+  const cuon={}; th.querySelectorAll('[data-nkx-cd]').forEach(b=>{ const c=b.querySelector('.nkx-cuon,.nkx-the'); if(c) cuon[b.dataset.nkxCd]=c.scrollTop; });
+  const timDangGo=document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.nkxQ;
+  const vt=timDangGo?document.activeElement.selectionStart:0;
+  document.getElementById('nhatKyNgay').textContent=isoToDMY(nkSt.ngay||nkNgayDangXem());
+  th.innerHTML=nkSt.loi?`<div class="nkx-trong" style="color:var(--danger);">Chưa tải được nhật ký: ${thoatHtml(nkSt.loi)}</div>`+NK_THU_TU.map(nkVeMotBang).join(''):NK_THU_TU.map(nkVeMotBang).join('');
+  th.querySelectorAll('[data-nkx-cd]').forEach(b=>{ const c=b.querySelector('.nkx-cuon,.nkx-the'); if(c&&cuon[b.dataset.nkxCd]) c.scrollTop=cuon[b.dataset.nkxCd]; });
+  if(timDangGo){ const o=th.querySelector(`[data-nkx-q="${timDangGo}"]`); if(o){ o.focus(); try{ o.setSelectionRange(vt,vt); }catch(e){} } }
+}
+async function nkTai(){
+  if(!nkCoThe()||nkSt.dangTai) return;
+  const ngay=nkNgayDangXem(); nkSt.dangTai=true;
+  try{
+    const {data,error}=await supabaseDb.rpc('khsx_nhat_ky_nhap_v1',{p_ngay:ngay});
+    if(error) throw error;
+    if(nkNgayDangXem()!==ngay){ nkSt.dangTai=false; return nkTai(); }   // anh đổi ngày giữa chừng: tải lại cho đúng ngày
+    nkSt.ngay=ngay; nkSt.dong=data.dong||[]; nkSt.doiSoat=data.doi_soat||null; nkSt.biCat=!!data.bi_cat; nkSt.loi=''; nkSt.luc=Date.now();
+  }catch(e){ nkSt.loi=String(e&&e.message||e).slice(0,120); }
+  nkSt.dangTai=false; nkVe();
+}
+// gọi mỗi khi màn Tiến độ vẽ lại: đổi ngày thì tải ngày mới; có bảng đang mở thì làm mới tối đa 8 giây một lần; đóng hết thì 30 giây
+function nhatKyLamMoi(){
+  try{
+    const p=document.getElementById('panel-progress'); if(!p||!p.classList.contains('active')||!nkCoThe()) return;
+    const ngay=nkNgayDangXem(), moBat=NK_THU_TU.some(c=>nkSt.mo[c]), tre=Date.now()-nkSt.luc;
+    if(ngay!==nkSt.ngay||tre>(moBat?8000:30000)) nkTai(); else nkVe();
+  }catch(e){}
+}
+document.getElementById('nhatKyThan')?.addEventListener('click',e=>{
+  const mo=e.target.closest('[data-nkx-mo]'); if(mo){ const cd=mo.dataset.nkxMo; nkSt.mo[cd]=!nkSt.mo[cd]; nkVe(); return; }
+  const c=e.target.closest('[data-nkx-k]'); if(!c) return;
+  const cd=c.closest('[data-nkx-cd]').dataset.nkxCd, f=nkSt.loc[cd], k=c.dataset.nkxK;
+  if(k==='an') f.an=!f.an; else if(k==='sx') f.moiTruoc=!f.moiTruoc; else f[k]=c.dataset.nkxV;
+  nkVe();
+});
+document.getElementById('nhatKyThan')?.addEventListener('input',e=>{ const q=e.target.dataset&&e.target.dataset.nkxQ; if(q){ nkSt.loc[q].q=e.target.value; nkVe(); } });
 progressTeamSelect.addEventListener('change', renderProgress);
 progressSearchBox.addEventListener('input',window.KhsxDataCore.debounce(renderProgress,160));
 function overtimeStageFromUnit(unit){
@@ -10592,7 +10668,7 @@ async function loadSupabaseTelegramAdminData(){
 async function manageTelegramAccount(telegramId,role='',unit='',displayName='',action='approve'){
   const {data:{session}}=await supabaseDb.auth.getSession();
   if(!session) return {error:'SESSION_EXPIRED'};
-  const response=await fetch(SUPABASE_TELEGRAM_ACCOUNT_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({action,telegram_user_id:telegramId,role:role||'',unit_name:unit||'',display_name:displayName||''})});
+  const response=await fetchCoHan(SUPABASE_TELEGRAM_ACCOUNT_URL,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLIC_KEY,'Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({action,telegram_user_id:telegramId,role:role||'',unit_name:unit||'',display_name:displayName||''})});
   const data=await response.json().catch(()=>null);
   if(!response.ok) return {error:data?.error||'ACCOUNT_ACTION_FAILED'};
   return data||{ok:true};
@@ -11751,7 +11827,7 @@ function capNhatThongTinXuat(){
 async function xuatMotNgayBaoCao(ngay, rows){
   const token = 'x' + Date.now() + Math.random().toString(36).slice(2,7);
   try{
-    await fetch(REPORT_API_URL, {
+    await fetchCoHanDai(REPORT_API_URL, {
       method:'POST', mode:'no-cors',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({

@@ -5,7 +5,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const start=html.indexOf('function isoCuaNgay');
+const start=html.indexOf('function ngayTuIsoLocal');   // khối bắt đầu ngay sau isoCuaNgay (bản isoCuaNgay duy nhất nằm chỗ khác nên nạp riêng)
+const isoCuaNgayMa=html.match(/^function isoCuaNgay\([^\n]*\n/m);
 const end=html.indexOf('function computeAndRenderKpis',start);
 if(start<0||end<0) throw new Error('Không tìm thấy khối câu báo cáo KR tuần');
 
@@ -42,7 +43,7 @@ const context={
   },
 };
 vm.createContext(context);
-vm.runInContext(html.slice(start,end),context);
+vm.runInContext((isoCuaNgayMa?isoCuaNgayMa[0]:'')+html.slice(start,end),context);
 
 function assert(ok,message){if(!ok)throw new Error(message);}
 
