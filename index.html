@@ -238,6 +238,7 @@
     body.role-quan-ly .tab-btn[data-tab="autoplan"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-btn[data-tab="autoplan"]{order:2;}
     body.role-quan-ly .tab-btn[data-tab="progress"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-btn[data-tab="progress"]{order:3;}
     body.role-quan-ly .tab-btn[data-tab="viec"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-btn[data-tab="viec"]{order:3;}
+    body.role-quan-ly .tab-btn[data-tab="nhatky"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-btn[data-tab="nhatky"]{order:3;}
     body.role-quan-ly .tab-group-label[data-group="baocao"],body:is(.role-quan-ly-2,.role-chi-xem) .tab-group-label[data-group="baocao"]{order:4;}
     /* "Tổng Thống kê sản xuất" đứng riêng, đầu tiên (order 0, nhỏ hơn cả tiêu đề
        nhóm "vanhanh" order 1) — không thuộc nhóm nào, theo đúng yêu cầu 2026-09-07. */
@@ -1690,6 +1691,7 @@ body.mobile-view .nkx-tim{width:100%;}
   <button class="tab-btn tab-extra" data-tab="report"><span class="tab-emoji">📤</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><polyline points="7,8 12,3 17,8"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>Xuất báo cáo</button>
   <button class="tab-btn tab-extra" data-tab="wage"><span class="tab-emoji">🧾</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Số liệu lương</button>
   <button class="tab-btn tab-extra" data-tab="staff"><span class="tab-emoji">👥</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.9-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17" cy="8.7" r="2.4"/><path d="M15.6 14.8c2.3.5 3.9 2.3 3.9 5.2"/></svg>Nhân sự</button>
+  <button class="tab-btn" data-tab="nhatky"><span class="tab-emoji">📜</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Nhật ký</button>
   <button class="tab-btn tab-extra" data-tab="viec"><span class="tab-emoji">📝</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Giao việc<span class="viec-dem" id="viecDemMenu"></span></button>
   <button class="tab-btn tab-extra" data-tab="settings"><span class="tab-emoji">⚙️</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8" stroke-dasharray="2.4 2.6"/></svg>Cài đặt</button>
 </div>
@@ -1892,11 +1894,6 @@ body.mobile-view .nkx-tim{width:100%;}
       </table>
     </div>
   </div>
-  <div class="card" id="nhatKyCard" style="display:none;">
-    <h4 style="margin:0 0 4px;font-size:15px;">📜 Nhật ký nhập liệu · <span id="nhatKyNgay"></span></h4>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Ai nhập tiến độ, lúc mấy giờ, số cũ → số mới. Xem theo ngày đang chọn ở bộ lọc Ngày phía trên. Bấm vào từng công đoạn để xổ ra.</div>
-    <div id="nhatKyThan"></div>
-  </div>
 </div>
 
 <!-- Sửa 2026-09-06 (Giai đoạn 2 redesign): "Số liệu năng lực" + "Bảo hành" trước đây là
@@ -1904,6 +1901,20 @@ body.mobile-view .nkx-tim{width:100%;}
      giữ NGUYÊN mọi id bên trong (capacityStatsSummary, capacityDanBody, capacityMayBody,
      capacityPackBody, warrantyDetailTitle, warrantyDetailSummary, warrantyDetailBody) vì
      renderCapacityStats()/openWarrantyDetail() ghi thẳng vào các id này. -->
+<div class="panel" id="panel-nhatky">
+  <div class="card" id="nhatKyCard">
+    <h4 style="margin:0 0 4px;font-size:15px;">📜 Nhật ký nhập liệu · <span id="nhatKyNgay"></span></h4>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Ai nhập tiến độ, lúc mấy giờ, số cũ → số mới. Bấm vào từng công đoạn để xổ ra.</div>
+    <div class="day-select-row toolbar-filter-row" style="margin-bottom:10px;">
+      <label for="nhatKyNgayChon">Ngày:</label>
+      <input type="date" id="nhatKyNgayChon">
+      <button type="button" class="bom-chip" data-nk-ngay="0">Hôm nay</button>
+      <button type="button" class="bom-chip" data-nk-ngay="-1">Hôm qua</button>
+    </div>
+    <div id="nhatKyThan"></div>
+  </div>
+</div>
+
 <div class="panel" id="panel-capacity">
   <div class="card">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
@@ -2369,7 +2380,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=243"></script>
+<script src="raw-data.js?v=244"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4483,7 +4494,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 243;
+const APP_VERSION = 244;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -5034,6 +5045,7 @@ function applyPermissionTabGates(){
     btn.style.setProperty('display', allowed?'':'none', 'important');
     if(!allowed && btn.classList.contains('active')) activeHidden=true;
   });
+  { const nk=document.querySelector('.tab-btn[data-tab="nhatky"]'); if(nk){ const ok=nkCoThe(); nk.style.setProperty('display',ok?'':'none','important'); if(!ok&&nk.classList.contains('active')) activeHidden=true; } }
   Object.entries(PERM_BUTTON_RULES).forEach(([id,keys])=>{
     const btn=document.getElementById(id);
     if(!btn) return;
@@ -9268,6 +9280,7 @@ function restoreUiState(){
         if(st.tab==='wage') initWagePage();
         if(st.tab==='capacity') enterCapacityTab();
         if(st.tab==='viec') initViecPage();
+        if(st.tab==='nhatky') nhatKyLamMoi();
         resetOperationalToday(st.tab);
       }
     }
@@ -9293,7 +9306,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     resetOperationalToday(btn.dataset.tab);
     capNhatHienThiKpiRow();
     setTimeout(()=>FX.flush(),70); FX.reveal(document.getElementById('panel-'+btn.dataset.tab));
-    if(btn.dataset.tab==='progress') nhatKyLamMoi();
+    if(btn.dataset.tab==='nhatky') nhatKyLamMoi();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
     // Chọn xong thì tự thu gọn drawer "☰ Thêm" trên điện thoại, không để mở lì.
     // TRỪ tab đang mở lại chính là mục trong drawer (vd Nhân sự/Cài đặt/Lương) —
@@ -9776,7 +9789,7 @@ function traODangGo(g){
   let daDoi=false; moi.addEventListener('change',()=>{daDoi=true;},{once:true});
   moi.addEventListener('blur',()=>setTimeout(()=>{ if(!daDoi&&moi.value!==moi.defaultValue) moi.dispatchEvent(new Event('change',{bubbles:true})); },0),{once:true});
 }
-function renderProgress(){ const g=giuODangGo(); try{ return renderProgressThat(); }finally{ traODangGo(g); nhatKyLamMoi(); } }
+function renderProgress(){ const g=giuODangGo(); try{ return renderProgressThat(); }finally{ traODangGo(g); } }
 function renderProgressThat(){
   populateProgressSelects();
   const filtered = getFilteredProgressRows();
@@ -9919,7 +9932,7 @@ const nkSt={ngay:'',dong:[],doiSoat:null,biCat:false,loi:'',luc:0,dangTai:false,
 const nkTenTo=t=>String(t||'').replace('To ','Tổ ');
 const nkGio=(iso,giay)=>new Date(iso).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',second:giay?'2-digit':undefined,hour12:false});
 const nkNhieu=r=>r.nguoi==='(hệ thống)'||((r.moi||0)===0&&r.op!=='delete'&&(r.cu||0)===0);   // dòng về 0 hoặc do hệ thống tạo: ẩn mặc định
-function nkNgayDangXem(){ const v=(document.getElementById('progressDaySelect')||{}).value; return (v&&v!=='all'&&dmyToIso(v))||homNayIso(); }
+function nkNgayDangXem(){ const v=(document.getElementById('nhatKyNgayChon')||{}).value; return /^\d{4}-\d{2}-\d{2}$/.test(v||'')?v:homNayIso(); }
 const nkCoThe=()=>!!(typeof supabaseDb!=='undefined'&&supabaseDb&&currentUser&&!PUBLIC_VIEW_MODE);
 function nkThayDoi(r){
   const cu=r.cu==null?0:r.cu, moi=r.moi==null?0:r.moi, d=moi-cu;
@@ -9985,10 +9998,10 @@ async function nkTai(){
   }catch(e){ nkSt.loi=String(e&&e.message||e).slice(0,120); }
   nkSt.dangTai=false; nkVe();
 }
-// gọi mỗi khi màn Tiến độ vẽ lại: đổi ngày thì tải ngày mới; có bảng đang mở thì làm mới tối đa 8 giây một lần; đóng hết thì 30 giây
+// gọi khi mở tab Nhật ký hoặc đổi ngày: đổi ngày thì tải ngày mới; có bảng đang mở thì làm mới tối đa 8 giây một lần; đóng hết thì 30 giây
 function nhatKyLamMoi(){
   try{
-    const p=document.getElementById('panel-progress'); if(!p||!p.classList.contains('active')||!nkCoThe()) return;
+    const p=document.getElementById('panel-nhatky'); if(!p||!p.classList.contains('active')||!nkCoThe()) return;
     const ngay=nkNgayDangXem(), moBat=NK_THU_TU.some(c=>nkSt.mo[c]), tre=Date.now()-nkSt.luc;
     if(ngay!==nkSt.ngay||tre>(moBat?8000:30000)) nkTai(); else nkVe();
   }catch(e){}
@@ -10000,6 +10013,8 @@ document.getElementById('nhatKyThan')?.addEventListener('click',e=>{
   if(k==='an') f.an=!f.an; else if(k==='sx') f.moiTruoc=!f.moiTruoc; else f[k]=c.dataset.nkxV;
   nkVe();
 });
+(()=>{ const o=document.getElementById('nhatKyNgayChon'); if(!o) return; o.value=isoCuaNgay(new Date()); o.addEventListener('change',nhatKyLamMoi);
+  document.querySelectorAll('[data-nk-ngay]').forEach(b=>b.addEventListener('click',()=>{ const d=new Date(isoCuaNgay(new Date())+'T12:00:00'); d.setDate(d.getDate()+Number(b.dataset.nkNgay)); o.value=isoCuaNgay(d); nhatKyLamMoi(); })); })();
 document.getElementById('nhatKyThan')?.addEventListener('input',e=>{ const q=e.target.dataset&&e.target.dataset.nkxQ; if(q){ nkSt.loc[q].q=e.target.value; nkVe(); } });
 progressTeamSelect.addEventListener('change', renderProgress);
 progressSearchBox.addEventListener('input',window.KhsxDataCore.debounce(renderProgress,160));
