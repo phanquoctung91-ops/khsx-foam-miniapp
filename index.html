@@ -2418,7 +2418,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=245"></script>
+<script src="raw-data.js?v=246"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2978,7 +2978,7 @@ function chayDemSo(goc){
     setTimeout(chot, 900);                       // lưới an toàn: chậm nhất 0,9 giây phải đúng số
     const buoc = t=>{
       if(xong) return;
-      const k = Math.min(1, (t - batDau) / 600);
+      const k = Math.max(0, Math.min(1, (t - batDau) / 600));   // t là mốc của khung hình, có thể sớm hơn batDau khi máy bận: không được để k âm
       const muot = 1 - Math.pow(1 - k, 3);
       el.textContent = Math.round(dich * muot).toLocaleString() + hau;
       if(k < 1) requestAnimationFrame(buoc); else chot();
@@ -4532,7 +4532,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 245;
+const APP_VERSION = 246;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -4569,7 +4569,7 @@ const FX=(()=>{
     el.dataset.fxRun='1';
     const step=now=>{
       if(!el.isConnected){ return; }
-      const t=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-t,4);
+      const t=Math.max(0,Math.min(1,(now-t0)/dur)), e=1-Math.pow(1-t,4);
       if(t<1){ el.textContent=meta.pre+fmt(from+(to-from)*e,meta)+meta.post; requestAnimationFrame(step); }
       else { el.textContent=orig; delete el.dataset.fxRun; }
     };
@@ -4613,7 +4613,7 @@ const FX=(()=>{
     const i0=orig.indexOf(tok[0]), i2=orig.indexOf(tok[2],i0+tok[0].length+tok[1].length);
     const mk=(x,y)=>orig.slice(0,i0)+fmt(x,a)+orig.slice(i0+tok[0].length,i2)+fmt(y,p)+orig.slice(i2+tok[2].length);
     el.dataset.fxRun='1'; el.textContent=mk(fa,fp);
-    const step=now=>{ if(!el.isConnected) return; const t=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-t,4);
+    const step=now=>{ if(!el.isConnected) return; const t=Math.max(0,Math.min(1,(now-t0)/dur)), e=1-Math.pow(1-t,4);
       if(t<1){ el.textContent=mk(fa+(a.v-fa)*e,fp+(p.v-fp)*e); requestAnimationFrame(step); } else { el.textContent=orig; delete el.dataset.fxRun; } };
     requestAnimationFrame(step);
     setTimeout(()=>{ if(el.dataset.fxRun){ el.textContent=orig; delete el.dataset.fxRun; } },dur+500);
@@ -4638,7 +4638,7 @@ const FX=(()=>{
     const orig=el.style.background, t0=performance.now(), dur=1100;
     const step=now=>{
       if(!el.isConnected) return;
-      const t=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-t,4), p=from+(to-from)*e;
+      const t=Math.max(0,Math.min(1,(now-t0)/dur)), e=1-Math.pow(1-t,4), p=from+(to-from)*e;
       if(t<1){ el.style.background='conic-gradient('+m[1]+' 0% '+p+'%, '+m[3]+' '+p+'% 100%)'; requestAnimationFrame(step); }
       else el.style.background=orig;
     };
