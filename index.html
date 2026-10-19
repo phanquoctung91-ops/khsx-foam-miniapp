@@ -2435,7 +2435,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=248"></script>
+<script src="raw-data.js?v=249"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4452,7 +4452,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 248;
+const APP_VERSION = 249;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -4714,7 +4714,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     bar.style.top=top+'px'; bar.style.left=(v?v.offsetLeft:0)+'px'; bar.style.width=(v?v.width:window.innerWidth)+'px';
   };
   document.addEventListener('focusin',e=>{
-    if(!e.target.classList||!e.target.classList.contains('stage-qty-input')||!cam()) return;
+    if(!e.target.classList||!(e.target.classList.contains('stage-qty-input')||e.target.classList.contains('ct-nhap'))||!cam()) return;   // ct-nhap = ô gõ số D/M/Đ trên thẻ tổ
     clearTimeout(tre); cur=e.target; bar.hidden=false; dat();
     setTimeout(()=>{ dat(); if(cur&&cur.scrollIntoView) cur.scrollIntoView({block:'center',behavior:'smooth'}); },300);
   });
@@ -4726,6 +4726,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   btn.addEventListener('click',()=>{ const o=cur; bar.hidden=true; cur=null; if(o) o.blur(); });   // blur => sự kiện change có sẵn lưu số
   if(window.visualViewport){ visualViewport.addEventListener('resize',dat); visualViewport.addEventListener('scroll',dat); }
   window.addEventListener('resize',dat);
+  // Ô D/M/Đ bị xoá khỏi trang ngay lúc rời ô nên sự kiện rời ô không tới được đây: tự ẩn thanh Xong khi ô không còn giữ con trỏ.
+  setInterval(()=>{ if(!bar.hidden && (!cur || !cur.isConnected || document.activeElement!==cur)){ bar.hidden=true; cur=null; } },400);
 });
 
 const APP_VERSION_KEY = SUPABASE_VARIANT ? 'khsx_supabase_app_version' : 'khsx_app_version';
@@ -13355,12 +13357,16 @@ MAN_HEP.addEventListener('change',()=>{
 });
 apDungManHep();
 // Đang gõ vào ô nhập thì hạ thanh dưới xuống (bàn phím mở), gõ xong hiện lại.
-let henGoXong=null;
-document.addEventListener('focusin',e=>{
-  if(!document.body.classList.contains('mobile-view')) return;
-  if(e.target.matches('textarea,input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]):not([type=date]):not([type=color])')){ clearTimeout(henGoXong); document.body.classList.add('dang-go'); }
-});
-document.addEventListener('focusout',()=>{ clearTimeout(henGoXong); henGoXong=setTimeout(()=>document.body.classList.remove('dang-go'),220); });
+// Dựa vào TRẠNG THÁI (ô nào đang giữ con trỏ) chứ không dựa vào sự kiện rời ô: ô nhập D/M/Đ bị xoá khỏi trang ngay lúc rời ô
+// nên sự kiện rời ô không tới được đây (lỗi 20/10/2026: nhập số xong thanh dưới biến mất mãi).
+const O_NHAP_GO='textarea,input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]):not([type=date]):not([type=color])';
+function capNhatDangGo(){
+  const a=document.activeElement;
+  document.body.classList.toggle('dang-go',!!(a&&a!==document.body&&a.isConnected&&a.matches&&a.matches(O_NHAP_GO)&&document.body.classList.contains('mobile-view')));
+}
+['focusin','focusout','pointerdown','touchend','keyup','visibilitychange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(capNhatDangGo,60),true));
+window.addEventListener('resize',()=>setTimeout(capNhatDangGo,60));
+setInterval(capNhatDangGo,800);   // lưới an toàn: dù sự kiện nào bị lỡ, tối đa 0,8 giây là thanh dưới trở lại
 
 // "Chi tiết thống kê": mượn luôn khối thẻ đang có, mở ra xem rồi trả về chỗ cũ —
 // không nhân bản để renderMonthly() vẫn ghi đúng vào một khối duy nhất.
