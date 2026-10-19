@@ -18,5 +18,5 @@ for(const s of ['1.157','101.1%','12,5%','1.234.567','49','0','1,170']){ const m
 const m1=parseNum('1.170'); assert.equal(fmt(500,m1),'500'); assert.equal(fmt(1234,m1),'1.234','giữ dấu chấm hàng nghìn như bản gốc');
 console.log('PASS đọc/ghi số đếm: nghìn, thập phân, % , tiền tố/hậu tố, giữ đúng dấu phân cách; ô có hai số không đếm');
 // các điểm gắn
-for(const t of ["FX.chartAnim('dayStageChart')","FX.chartAnim('productChart')","FX.chartAnim('teamMonthChart')","FX.chartAnim('dailyTrendChart')","FX.theme();","FX.reveal(document.getElementById('panel-'+btn.dataset.tab))","FX.forget('tc|'+id)",'@media (prefers-reduced-motion:reduce)','id="khsxFx"','doTdqFill','doTdqText','.tdq-fill::after','fxSheenLoop 4s ease-in-out infinite','fx-glow1']) assert.ok(html.includes(t),'thiếu '+t);
+for(const t of ["FX.chartAnim('productChart')","FX.chartAnim('teamMonthChart')","FX.chartAnim('dailyTrendChart')","FX.theme();","FX.reveal(document.getElementById('panel-'+btn.dataset.tab))","FX.forget('tc|'+id)",'@media (prefers-reduced-motion:reduce)','id="khsxFx"','doTdqFill','doTdqText','.tdq-fill::after','fxSheenLoop 4s ease-in-out infinite','fx-glow1']) assert.ok(html.includes(t),'thiếu '+t);
 console.log('PASS các điểm gắn: 4 biểu đồ, đổi giao diện, mở tab, nút Tăng ca, giảm chuyển động');

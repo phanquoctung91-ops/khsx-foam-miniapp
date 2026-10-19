@@ -341,25 +341,13 @@
   tbody tr:hover td{background:#faf9f9;}
   .table-scroll{overflow-x:auto;max-height:520px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);}
   .table-scroll table{border:none;}
-  .overtime-panel{display:none;background:var(--warning-l);border:1px solid var(--warning);border-radius:10px;padding:14px;margin:0 0 16px;}
-  .overtime-panel.is-open{display:block;}
-  .overtime-form{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(170px,1fr) minmax(130px,.7fr) auto;gap:10px;align-items:end;}
-  .overtime-field{display:flex;flex-direction:column;gap:5px;min-width:0;}
-  .overtime-field label{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;}
-  .overtime-derived{min-height:36px;padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--card);font-size:12px;line-height:1.35;}
-  .overtime-list{margin-top:12px;display:grid;gap:7px;}
-  .overtime-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) 82px auto;gap:10px;align-items:center;padding:9px 10px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:12px;}
-  .overtime-empty{padding:10px;color:var(--text2);font-size:12px;text-align:center;}
-  .overtime-worker-checks{max-height:210px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:7px;padding:8px;border:1px solid var(--border);border-radius:9px;background:var(--card);}
-  .overtime-worker-check{display:flex;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;font-size:12px;}
-  .overtime-worker-check input{width:17px;height:17px;accent-color:var(--warning);}
-  .overtime-worker-check small{display:block;color:var(--text2);margin-top:2px;}
 
   .note{color:var(--danger);font-style:italic;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
 
-  html{overflow-x:hidden;}
-  body{overflow-x:hidden;}
+  html{overflow-x:hidden;overscroll-behavior-y:none;}
+  body{overflow-x:hidden;overscroll-behavior-y:none;}
+  button,select,input,textarea,[role="button"],.tab-btn,.bom-chip{touch-action:manipulation;}
 
   /* Tablet / máy tính bảng, cả 2 chiều xoay */
   @media(max-width:900px){
@@ -378,7 +366,6 @@
     #autoPlanTable th, #autoPlanTable td,
     #progressTable th, #progressTable td{padding:6px 5px;}
     #autoPlanTable, #progressTable{min-width:0;}
-    .overtime-form,.overtime-row{grid-template-columns:1fr;}
   }
   /* Điện thoại nằm dọc (chiều hẹp nhất) */
   @media(max-width:480px){
@@ -765,7 +752,7 @@
      Bật bằng class body.mobile-view, gắn từ matchMedia trong JS.
      Mọi luật ở đây đều nằm trong phạm vi class đó, máy tính không đổi gì.
      ============================================================ */
-  body.mobile-view{padding-bottom:calc(66px + env(safe-area-inset-bottom, 0px));}
+  body.mobile-view{padding-bottom:calc(78px + max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)));}
 
   /* Đầu trang gọn lại: logo nhỏ, tên công ty 1 dòng, bỏ căn phải cho tiêu đề */
   body.mobile-view header{margin-bottom:12px;}
@@ -788,7 +775,7 @@
   body.mobile-view #mainTabs{
     position:fixed;left:0;right:0;bottom:0;z-index:9000;
     display:flex;gap:0;width:auto;max-width:none;margin:0;border-radius:0;
-    padding:6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    padding:6px 4px calc(6px + max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)));
     background:var(--card);border-top:1px solid var(--border);
     box-shadow:0 -2px 12px rgba(0,0,0,.08);overflow-x:auto;
   }
@@ -796,21 +783,43 @@
   body.mobile-view #mainTabs{align-items:stretch;}
   body.mobile-view #mainTabs .tab-btn{
     flex:1 1 0;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-    padding:6px 2px;height:52px;font-size:10px;font-weight:700;line-height:1.1;
+    padding:6px 2px;height:60px;font-size:11px;font-weight:700;line-height:1.15;
     border:none!important;border-radius:9px;text-align:center;white-space:nowrap;overflow:hidden;
   }
-  body.mobile-view #mainTabs .tab-btn .tab-svg{width:19px;height:19px;}
+  body.mobile-view #mainTabs .tab-btn .tab-svg{width:23px;height:23px;}
   body.mobile-view #mainTabs .nhan-dai{display:none;}
   body.mobile-view #mainTabs .nhan-ngan{display:inline;}
   .nhan-ngan{display:none;}
   body.mobile-view #mainTabs .tab-btn.active{background:var(--primary-l)!important;color:var(--primary)!important;}
+  /* Mục phụ (Nhân sự, Giao việc, Lương, Báo cáo, Cài đặt) không chen vào thanh dưới nữa: mở bằng bảng trượt ☰ Thêm.
+     Vẫn giữ nút trong trang (không display:none) để các đoạn kiểm tra "tab đang mở còn hiện không" chạy như cũ. */
+  body.mobile-view #mainTabs .tab-btn.tab-extra:not([data-tab="capacity"]){
+    display:inline-flex!important;position:absolute;width:0;height:0;min-width:0;flex:0 0 0;padding:0;margin:0;border:0;overflow:hidden;visibility:hidden;pointer-events:none;
+  }
+  .more-sheet-bg{display:none;}
+  body.mobile-view .more-sheet-bg.on{display:block;position:fixed;inset:0;z-index:8990;background:rgba(16,11,13,.45);}
+  body.mobile-view .more-sheet{
+    position:absolute;left:0;right:0;bottom:calc(72px + max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)));background:var(--card);border-radius:20px 20px 0 0;
+    padding:14px 12px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;box-shadow:0 -8px 28px rgba(0,0,0,.2);
+  }
+  body.mobile-view .ms-it{
+    position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:88px;padding:12px 4px;
+    border:1px solid var(--border);border-radius:14px;background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  body.mobile-view .ms-it .e{font-size:28px;line-height:1;}
+  body.mobile-view .ms-it.on{background:var(--primary-l);border-color:var(--primary);color:var(--primary);}
+  body.mobile-view .ms-it .viec-dem{position:absolute;top:6px;right:10px;margin:0;}
+  body.mobile-view .tabs-more-toggle.dang-chon{color:var(--primary)!important;background:var(--primary-l)!important;}
+  /* Đang gõ (bàn phím mở): hạ thanh dưới xuống để không nhảy lên che ô nhập */
+  body.mobile-view.dang-go #mainTabs,body.mobile-view.dang-go .tabs-more-toggle{transform:translateY(120%);}
+  body.mobile-view #mainTabs,body.mobile-view .tabs-more-toggle{transition:transform .15s ease;}
   /* Nút "Thêm" nằm chung trong thanh dưới cho khỏi lạc chỗ */
-  body.mobile-view #mainTabs{padding-right:64px;}
+  body.mobile-view #mainTabs{padding-right:68px;}
   body.mobile-view .tabs-more-toggle{
     position:fixed;right:0;bottom:0;z-index:9001;width:64px;
     display:flex;align-items:center;justify-content:center;
-    height:calc(64px + env(safe-area-inset-bottom, 0px));
-    padding:0 0 env(safe-area-inset-bottom, 0px);margin:0;
+    height:calc(72px + max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)));flex-direction:column;gap:2px;
+    padding:0 0 max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px));margin:0;
     font-size:10px;font-weight:700;line-height:1.1;white-space:nowrap;
     background:var(--card)!important;border:none!important;border-top:1px solid var(--border)!important;
     border-radius:0!important;box-shadow:none!important;color:var(--text2)!important;
@@ -1152,7 +1161,7 @@
   }
   @media(max-width:700px){
     body{padding-bottom:env(safe-area-inset-bottom);}
-    .wrap{padding-top:max(10px,env(safe-area-inset-top));}
+    .wrap{padding-top:max(10px,env(safe-area-inset-top),calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px)));}
     header{gap:10px;margin-bottom:14px;padding-bottom:12px;}
     .brand{gap:10px;min-width:0;}
     .brand-logo{width:48px;height:48px;border-radius:12px;}
@@ -1734,6 +1743,7 @@ body.mobile-view .nkx-tim{width:100%;}
   <button class="tab-btn tab-extra" data-tab="settings"><span class="tab-emoji">⚙️</span><svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8" stroke-dasharray="2.4 2.6"/></svg>Cài đặt</button>
 </div>
 <button id="tabsMoreToggle" type="button" class="tabs-more-toggle only-manager2" aria-label="Thêm mục" aria-expanded="false">☰ Thêm</button>
+<div id="moreSheetBg" class="more-sheet-bg"><div id="moreSheet" class="more-sheet" role="menu"></div></div>
 <div id="viecCuaToi" class="card viec-cua-toi" style="display:none;margin-bottom:14px;border-left:4px solid var(--accent);"></div>
 
 <div class="panel active" id="panel-monthly">
@@ -1835,44 +1845,6 @@ body.mobile-view .nkx-tim{width:100%;}
   </div>
 </div>
 
-<div class="panel" id="panel-daily">
-  <div class="day-select-row">
-    <label>Chọn ngày:</label>
-    <select id="daySelect"></select>
-    <input type="text" id="searchBox" placeholder="Tìm theo tên hàng, tổ, ghi chú...">
-  </div>
-
-  <div class="kpis" id="dayKpis" style="margin-bottom:16px;"></div>
-
-  <div class="grid2">
-    <div class="card">
-      <h3>Tỷ lệ hoàn thành theo tổ</h3>
-      <div id="teamCards" class="team-cards"></div>
-    </div>
-    <div class="card">
-      <h3>Kế hoạch vs Đóng gói (ngày)</h3>
-      <div class="chart-wrap" style="height:220px;"><canvas id="dayStageChart" role="img" aria-label="Bieu do tien do san xuat theo ngay"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Chi tiết kế hoạch sản xuất ngày đã chọn</h3>
-    <div class="legend-row">
-      <span><span class="dot" style="background:var(--success);"></span>Đủ tiến độ</span>
-      <span><span class="dot" style="background:#b7791f;"></span>Thiếu / chưa hoàn thành</span>
-      <span><span class="dot" style="background:#c0332f;"></span>Có ghi chú sự cố</span>
-    </div>
-    <div class="table-scroll">
-      <table id="dayTable">
-        <thead>
-          <tr><th>Tổ</th><th>Tên hàng</th><th>Kích thước</th><th>Nhóm KHSX</th><th>Kế hoạch</th><th>Đóng gói</th><th>Ghi chú</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
 <div class="panel" id="panel-progress">
   <div class="nut-bang-dat-nv" id="nutBangDatNv">
     <button id="phoiBtnNv" class="primary-btn" type="button" style="background:var(--accent);flex:1 1 140px;">🧱 Bảng đặt phôi</button>
@@ -1885,7 +1857,6 @@ body.mobile-view .nkx-tim{width:100%;}
       <button id="addManualOrderBtnProgress" class="primary-btn only-manager2" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
       <button id="bulkCompleteBtn" class="primary-btn" style="display:none;background:var(--success);">✓ Hoàn thành</button>
       <button id="lockProgressBtn" class="primary-btn only-manager2" style="background:var(--text2);">🔒 Chốt tiến độ</button>
-      <button id="overtimeBtn" class="primary-btn only-manager2" style="background:var(--warning);">⏱ Ghi nhận OT</button>
       <button id="refreshProgressBtn" class="primary-btn">↻ Làm mới</button>
     </div>
     <div class="day-select-row toolbar-filter-row">
@@ -1897,17 +1868,6 @@ body.mobile-view .nkx-tim{width:100%;}
       <span class="save-status" id="syncStatus"></span>
     </div>
     <details id="dataIntegrityAlert" class="data-integrity-alert only-manager2"><summary></summary><div class="data-integrity-list"></div></details>
-    <div id="overtimePanel" class="overtime-panel only-manager2" aria-hidden="true">
-      <div style="font-weight:800;margin-bottom:4px;">Tăng ca của ngày đang chọn</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Tick nhân viên tăng ca. Tổ và công đoạn lấy đúng từ tài khoản; mỗi người được lưu riêng để tính chi phí sau này.</div>
-      <div class="overtime-form">
-        <div class="overtime-field" style="grid-column:span 2"><label>Nhân viên</label><div id="overtimeWorkers" class="overtime-worker-checks"></div></div>
-        <div class="overtime-field"><label>Thời gian</label><select id="overtimeHours"><option value="4">OT 4 giờ</option><option value="8">OT 8 giờ</option></select></div>
-        <button id="saveOvertimeBtn" type="button" class="primary-btn">Lưu OT</button>
-      </div>
-      <div id="overtimeStatus" class="save-status" style="display:block;margin-top:8px;"></div>
-      <div id="overtimeSavedList" class="overtime-list"></div>
-    </div>
     <div id="lockProgressPanel" style="display:none;background:#faf9f9;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="font-size:12.5px;color:var(--text2);margin-bottom:9px;">
         Tick chọn ngày muốn <strong>chốt tiến độ</strong>. Ngày đã chốt thì số liệu và phân công không sửa được nữa. Chỉ Quản lý mới có quyền mở khóa tạm ở tab Kế hoạch sản xuất; Quản lý 2 không có quyền mở khóa.
@@ -2418,7 +2378,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=246"></script>
+<script src="raw-data.js?v=247"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2563,7 +2523,7 @@ const mainContent = document.getElementById('mainContent');
 // ---- module-level state, rebuilt every time month/year changes ----
 let dayKeys = [];
 let elapsedDayKeys = [];
-let dayStageChart, productChart, teamMonthChart, dailyTrendChart;
+let productChart, teamMonthChart, dailyTrendChart;
 let PRODUCT_COLOR_MAP = {};
 
 const FIXED_PRODUCT_COLORS = {
@@ -2986,84 +2946,6 @@ function chayDemSo(goc){
     requestAnimationFrame(buoc);
   });
 }
-
-// ---- Theo ngày tab ----
-const daySelect = document.getElementById('daySelect');
-const searchBox = document.getElementById('searchBox');
-
-function populateDaySelect(){
-  const prev = daySelect.value;
-  daySelect.innerHTML = dayKeys.map(k=>`<option value="${k}">Ngày ${allDays[k].date}</option>`).join('');
-  if(dayKeys.includes(prev)) daySelect.value = prev;
-}
-
-function renderDay(key){
-  if(!key) return;
-  const d = allDays[key];
-  const teamCardsEl = document.getElementById('teamCards');
-  if(d.team_progress.length===0){
-    teamCardsEl.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0;">Không có dữ liệu tiến độ theo tổ cho ngày này (có thể ngưng sản xuất).</div>';
-  } else {
-    teamCardsEl.innerHTML = d.team_progress.map(t=>{
-      const rate = t.ty_le!=null ? Math.round(t.ty_le*1000)/10 : null;
-      const color = rate==null ? 'var(--text2)' : rate>=100 ? 'var(--success)' : rate>=80 ? 'var(--warning)' : 'var(--danger)';
-      // Không có kế hoạch riêng (chỉ hỗ trợ) -> không có mẫu số để tính %, hiển thị số lượng thay vì %.
-      const mainValue = rate!=null ? rate+'%' : (t.hoan_thanh!=null ? t.hoan_thanh.toLocaleString() : '-');
-      const subLabel = rate!=null ? `${t.hoan_thanh??'-'} / ${t.don_hang??'-'}` : 'Số lượng hỗ trợ';
-      return `<div class="team-card">
-        <div class="to-label">${t.to==='Tổng Tháng'||t.to==='Grand Total' ? 'Tổng' : teamLabel(t.to)}</div>
-        <div class="rate" style="color:${color};">${mainValue}</div>
-        <div style="font-size:11px;color:var(--text2);">${subLabel}</div>
-      </div>`;
-    }).join('');
-  }
-
-  const q = searchBox.value.trim().toLowerCase();
-  const filteredRows = d.rows.filter(r=>{
-    if(!q) return true;
-    return String(r.ten_hang).toLowerCase().includes(q) || String(r.to).includes(q) || String(r.ghi_chu||'').toLowerCase().includes(q) || String(r.nhom_khsx||'').toLowerCase().includes(q);
-  });
-
-  let plan=0, dg=0;
-  filteredRows.forEach(r=>{ plan += r.ke_hoach||0; dg += r.dong_goi||0; });
-  const dayRate = plan>0 ? Math.round((dg/plan)*1000)/10 : null;
-  document.getElementById('dayKpis').innerHTML = `
-    <div class="kpi k-accent"><div class="label">Kế hoạch</div><div class="value">${plan.toLocaleString()}</div></div>
-    <div class="kpi k-success"><div class="label">Đóng gói</div><div class="value">${dg.toLocaleString()}</div></div>
-    <div class="kpi ${dayRate==null?'':dayRate>=95?'k-success':'k-warning'}"><div class="label">Tỷ lệ hoàn thành</div><div class="value" style="color:${dayRate==null?'var(--text2)':dayRate>=95?'var(--success)':dayRate>=80?'var(--warning)':'var(--danger)'}">${dayRate==null?'—':dayRate+'%'}</div></div>
-    <div class="kpi k-accent"><div class="label">Số đơn</div><div class="value">${filteredRows.length}</div></div>
-  `;
-
-  if(dayStageChart) dayStageChart.destroy();
-  dayStageChart = new Chart(document.getElementById('dayStageChart'), {
-    type:'bar',
-    data:{
-      labels:['Kế hoạch','Đóng gói'],
-      datasets:[{data:[plan,dg], backgroundColor:['#d81d5b','#0f8a4c'], borderRadius:6, maxBarThickness:64}]
-    },
-    options:{animation:FX.chartAnim('dayStageChart'), responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}
-  });
-
-  const tbody = document.querySelector('#dayTable tbody');
-  tbody.innerHTML = filteredRows.map(r=>{
-    const done = r.dong_goi||0, plan = r.ke_hoach||0;
-    let rowBg = '';
-    if(r.ghi_chu) rowBg = 'background:#fbeaea60;';
-    else if(plan>0 && done < plan) rowBg = 'background:#fdf4e360;';
-    return `<tr style="${rowBg}">
-      <td>${r.to??'-'}</td>
-      <td>${r.ten_hang??'-'}</td>
-      <td>${r.kich_thuoc??'-'}</td>
-      <td>${r.nhom_khsx??'-'}</td>
-      <td>${r.ke_hoach??'-'}</td>
-      <td>${r.dong_goi??'-'}</td>
-      <td class="${r.ghi_chu?'note':''}">${r.ghi_chu??''}</td>
-    </tr>`;
-  }).join('');
-}
-
-daySelect.addEventListener('change', e => renderDay(e.target.value));
-searchBox.addEventListener('input', window.KhsxDataCore.debounce(() => renderDay(daySelect.value),160));
 
 // ---- Tổng hợp tháng tab ----
 const monthFromSelect = document.getElementById('monthFromSelect');
@@ -3565,17 +3447,7 @@ const QUARTER_TARGET_KEY = 'khsx_muc_tieu_quy';
 let quarterTargets = {};
 const QUARTER_CALENDAR_KEY='khsx_lich_lam_viec_quy_v118';
 let quarterCalendars=(()=>{try{return JSON.parse(localStorage.getItem(QUARTER_CALENDAR_KEY)||'{}')}catch(e){return {}}})();
-const OVERTIME_RECORDS_KEY='khsx_overtime_records_v118';
-let overtimeRecords=(()=>{try{return JSON.parse(localStorage.getItem(OVERTIME_RECORDS_KEY)||'{}')}catch(e){return {}}})();
-function persistOvertime(){try{localStorage.setItem(OVERTIME_RECORDS_KEY,JSON.stringify(overtimeRecords));}catch(e){}}
-function overtimeKey(day,team,stage,worker){return [day,team,stage,worker].join('|');}
-function overtimeFor(day,team,stage){return Object.values(overtimeRecords).filter(x=>x.day===day&&(!team||x.team===team)&&(!stage||x.stage===stage));}
-function gioCaTheoOT(hours){return 8+Math.max(0,Number(hours)||0);}
-function maxOvertimeHoursForDay(day,stage='dong_goi'){
-  const d=String(day||'').includes('-')?isoToDMY(day):String(day||'');
-  return Math.max(0,...overtimeFor(d,null,stage).map(x=>Number(x.hours)||0));
-}
-function capacityForOtHours(hours){ return Number(hours)>=3?180:Number(hours)>=2?170:150; }
+const NANG_LUC_NGAY_MAC_DINH=150;   // tấm/ngày: năng lực đóng gói dùng để cảnh báo khi tốc độ cần cho quý vượt quá
 function quyCuaNgay(dateObj){
   const y = dateObj.getFullYear();
   const q = Math.floor(dateObj.getMonth()/3) + 1;
@@ -3706,15 +3578,7 @@ function tinhTocDoQuy(){
   const thieuSoVoiMucTieu=Math.max(0,Number(quy.mucTieu||0)-Number(kpi.throughput||0));
   const tocDoCanChoPhanConLai=ngayConLai>0?thieuSoVoiMucTieu/ngayConLai:null;
   const canThemMoiNgay=tocDoCanChoPhanConLai==null||thucTe==null?null:Math.max(0,tocDoCanChoPhanConLai-thucTe);
-  const normalizedOutput=ngayDaQua.reduce((sum,iso)=>{
-    const dayKeys=keys.filter(k=>dmyToIso(allDays[k]?.date||'')===iso);
-    const output=tongKpiTuRowsTheoKeys(dayKeys).throughput;
-    return sum+output*8/gioCaTheoOT(maxOvertimeHoursForDay(iso,'dong_goi'));
-  },0);
-  const normalizedSpeed=ngayDaQuaCount>0?normalizedOutput/ngayDaQuaCount:null;
-  const availableCapacity=ngayConLai>0
-    ? ngayConLaiDates.reduce((sum,iso)=>sum+capacityForOtHours(maxOvertimeHoursForDay(iso,'dong_goi')),0)/ngayConLai
-    : capacityForOtHours(maxOvertimeHoursForDay(ngayHienTaiIso(),'dong_goi'));
+  const availableCapacity=NANG_LUC_NGAY_MAC_DINH;
   const vuotNangLuc=tocDoCanChoPhanConLai!=null&&tocDoCanChoPhanConLai>availableCapacity;
   let danhGia='Chưa nhập mục tiêu quý hoặc chưa có ngày làm việc.';
   if(mucTieuNgay>0){
@@ -3723,7 +3587,7 @@ function tinhTocDoQuy(){
     }else if(duBao>=quy.mucTieu){
       danhGia=`Đang nhanh hơn mục tiêu ${formatTocDo(chenhlech)} tấm/ngày; giữ nhịp hiện tại sẽ đạt khoảng ${Math.round(duBao).toLocaleString('vi-VN')} tấm cuối quý.`;
     }else if(vuotNangLuc){
-      danhGia=`Phần còn lại cần ${formatTocDo(tocDoCanChoPhanConLai)} tấm/ngày, vượt năng lực hiện có ${formatTocDo(availableCapacity)} tấm/ngày theo lịch OT đã ghi.`;
+      danhGia=`Phần còn lại cần ${formatTocDo(tocDoCanChoPhanConLai)} tấm/ngày, vượt năng lực hiện có ${formatTocDo(availableCapacity)} tấm/ngày.`;
     }else if(ngayConLai>0){
       danhGia=`Dự báo hiện tại đạt khoảng ${Math.round(duBao).toLocaleString('vi-VN')} tấm; cần thêm ${formatTocDo(canThemMoiNgay)} tấm/ngày trong ${ngayConLai} ngày còn lại để đạt mục tiêu.`;
     }else{
@@ -3734,7 +3598,7 @@ function tinhTocDoQuy(){
     elapsedDates:ngayDaQua,totalWorkdays:tongNgay,elapsedWorkdays:ngayDaQuaCount,
     remainingWorkdays:ngayConLai,ngaySanXuat:ngayDaQuaCount,mucTieuNgay,thucTe,duBao,
     tocDoCanChoPhanConLai,canThemMoiNgay,thieuSoVoiMucTieu,
-    chenhlech,trangThai,danhGia,normalizedOutput,normalizedSpeed,dataComplete:true,
+    chenhlech,trangThai,danhGia,dataComplete:true,
     missingElapsedDates,partialWorkdays,partialSpeed,availableCapacity,vuotNangLuc};
 }
 
@@ -3805,7 +3669,6 @@ function moPopupTocDo(kind){
       <div class="speed-detail-row"><span>${isQuarter?'Lịch làm việc cả quý':'Ngày làm việc làm mẫu số'}</span><strong>${detail.totalWorkdays||0} ngày</strong></div>
       ${isQuarter?`<div class="speed-detail-row"><span>Đã qua / còn lại</span><strong>${detail.elapsedWorkdays||0} / ${detail.remainingWorkdays||0} ngày</strong></div><div class="speed-detail-row"><span>Ngày đã qua có dòng nguồn</span><strong>${detail.partialWorkdays||0} / ${detail.elapsedWorkdays||0} ngày</strong></div><div class="speed-detail-row"><span>Phạm vi nguồn hiện có</span><strong>${sourceRange}</strong></div>`:''}
       <div class="speed-detail-row"><span>${isQuarter?'Tốc độ quý':'Kết quả'}</span><strong>${formatTocDo(detail.thucTe)} tấm/ngày</strong></div>
-      ${isQuarter?`<div class="speed-detail-row"><span>Năng suất quy đổi về ca 8 giờ</span><strong>${formatTocDo(detail.normalizedSpeed)} tấm/ngày</strong></div>`:''}
       ${benchmark}
       ${isQuarter&&detail.remainingWorkdays>0?`<div class="speed-detail-row"><span>Tốc độ cần từ nay</span><strong>${formatTocDo(detail.tocDoCanChoPhanConLai)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Cần tăng thêm so với thực tế</span><strong>${formatTocDo(detail.canThemMoiNgay)} tấm/ngày</strong></div><div class="speed-detail-row"><span>Năng lực bình quân còn lại</span><strong>${formatTocDo(detail.availableCapacity)} tấm/ngày</strong></div>`:''}
       ${isQuarter?`<div class="speed-detail-row"><span>Dự báo cuối quý</span><strong>${Math.round(detail.duBao||0).toLocaleString('vi-VN')} tấm</strong></div>`:''}
@@ -3816,7 +3679,7 @@ function moPopupTocDo(kind){
     <div class="speed-detail-source"><strong>${isQuarter?'Lịch làm việc đã đăng ký':'Ngày làm việc được tính'}:</strong> ${dates.length?dates.join(', '):'Không có'}.</div>
     ${source.length?`<div class="speed-detail-source"><strong>Ngày có dữ liệu nguồn:</strong> ${source.join(', ')}.</div>`:''}
     ${missing.length?`<div class="speed-detail-source"><strong>Ngày đã đăng ký không có dòng nguồn, được tính đóng gói = 0:</strong> ${missing.join(', ')}.</div>`:''}
-    ${isQuarter&&detail.vuotNangLuc?`<div class="speed-detail-warning"><strong>Cảnh báo năng lực:</strong> tốc độ cần thiết ${formatTocDo(detail.tocDoCanChoPhanConLai)} vượt năng lực bình quân còn lại ${formatTocDo(detail.availableCapacity)} tấm/ngày theo lịch OT đã ghi.</div>`:''}
+    ${isQuarter&&detail.vuotNangLuc?`<div class="speed-detail-warning"><strong>Cảnh báo năng lực:</strong> tốc độ cần thiết ${formatTocDo(detail.tocDoCanChoPhanConLai)} vượt năng lực bình quân còn lại ${formatTocDo(detail.availableCapacity)} tấm/ngày</div>`:''}
     <div class="speed-detail-result">${detail.danhGia}</div>`;
   modal.style.display='block';
 }
@@ -4532,7 +4395,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 246;
+const APP_VERSION = 247;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -4712,7 +4575,7 @@ const FX=(()=>{
     if(el.matches('.kpi')) doRise(el,'k|'+scopeId(el)+'|'+(el.querySelector('.label')?tx(el.querySelector('.label')).slice(0,40):''));
     if(el.matches('.stage-summary-item')) doStageBox(el);
     if(el.matches('tr.row-new,tr.row-changed')){ const id=el.dataset.orderId; if(id&&on()&&once('f|'+id+'|'+(el.classList.contains('row-new')?'n':'c'))){ el.classList.add('fx-flash'); setTimeout(()=>el.classList.remove('fx-flash'),2600); } }
-    if(el.matches('.employee-order-card')) doRise(el,'eo|'+(el.dataset.orderId||'')+'|'+(document.getElementById('daySelect')?document.getElementById('daySelect').value:''));
+    if(el.matches('.employee-order-card')) doRise(el,'eo|'+(el.dataset.orderId||'')+'|'+(document.getElementById('progressDaySelect')?.value||''));
     if(el.matches('.employee-order-card')){
       const nt=el.querySelector('.employee-order-note'); if(nt&&on()&&once('note|'+(el.dataset.orderId||'')+'|'+tx(nt).slice(0,40))) flash(nt,'fx-bump',1100);   // ghi chú đơn nảy lên một lần để gây chú ý
     }
@@ -5713,10 +5576,6 @@ async function loadSupabaseOperationalData({allowPublic=false}={}){
     if(Array.isArray(x.work_dates)&&x.work_dates.length)quarterCalendars[key]=x.work_dates.map(String);
   });
   try{localStorage.setItem(QUARTER_CALENDAR_KEY,JSON.stringify(quarterCalendars));}catch(e){}
-  if(!allowPublic){
-    const ot=await supabaseSelectAll('khsx_overtime_records');
-    if(!ot.error){overtimeRecords={};(ot.data||[]).forEach(x=>{const day=isoToDMY(x.work_date),team=supabaseUnitToUi(x.team_name),key=overtimeKey(day,team,x.stage,x.worker_id);overtimeRecords[key]={day,team,stage:x.stage,worker:x.worker_id,hours:Number(x.overtime_hours),updatedAt:x.updated_at};});persistOvertime();}
-  }
   rebuildOrderEntityStore();
   // Tai lai toan bo dung xay dung lai stage_by_date tu dau nhung KHONG tinh lai
   // so_luong_da_dan/may/ngay_hoan_thanh - don ron ("da roi") hoan thanh o ngay khac
@@ -7643,8 +7502,7 @@ function runV118BusinessSelfTests(){
     {name:'giam_kh_giu_d6_m6_p5',ok:tongLichSuStage(split.giu,'dan')===6&&tongLichSuStage(split.giu,'may')===6&&tongLichSuStage(split.giu,'dong_goi')===5},
     {name:'giam_kh_tach_thua_d2_m1_p0',ok:tongLichSuStage(split.thua,'dan')===2&&tongLichSuStage(split.thua,'may')===1&&tongLichSuStage(split.thua,'dong_goi')===0},
     {name:'lich_quy_khong_chon_chu_nhat',ok:work.every(x=>new Date(`${x}T00:00:00`).getDay()!==0)},
-    {name:'lich_quy_bo_quoc_khanh',ok:!work.includes('2026-09-01')&&!work.includes('2026-09-02')},
-    {name:'ot_2h_3h_ra_ca_10h_11h',ok:gioCaTheoOT(2)===10&&gioCaTheoOT(3)===11}
+    {name:'lich_quy_bo_quoc_khanh',ok:!work.includes('2026-09-01')&&!work.includes('2026-09-02')}
   ];
 }
 if(LOCAL_PREVIEW_MODE&&new URLSearchParams(location.search).get('business_test')==='1')setTimeout(()=>{
@@ -9329,11 +9187,6 @@ function refreshForMonthYear(){
 
   buildProductColorMap();
   computeAndRenderKpis();
-  const prevDay = daySelect.value;
-  populateDaySelect();
-  const dayToShow = dayKeys.includes(prevDay) ? prevDay : (dayKeys.find(k=>allDays[k].rows.length>0) || dayKeys[0]);
-  daySelect.value = dayToShow;
-  renderDay(dayToShow);
   populateMonthRangeSelects();
   renderMonthly();
 }
@@ -9415,7 +9268,7 @@ function restoreUiState(){
         resetOperationalToday(st.tab);
       }
     }
-    capNhatHienThiKpiRow();
+    capNhatHienThiKpiRow(); capNhatNutThem();
     setTimeout(()=>window.scrollTo(0,Number(st.scrollY)||0),0);
   }catch(e){}
 }
@@ -9439,6 +9292,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     setTimeout(()=>FX.flush(),70); FX.reveal(document.getElementById('panel-'+btn.dataset.tab));
     if(btn.dataset.tab==='nhatky') nhatKyLamMoi();
     saveUiState({tab:btn.dataset.tab,scrollY:window.scrollY||0});
+    dongBangThem(); capNhatNutThem();
     // Chọn xong thì tự thu gọn drawer "☰ Thêm" trên điện thoại, không để mở lì.
     // TRỪ tab đang mở lại chính là mục trong drawer (vd Nhân sự/Cài đặt/Lương) —
     // thu gọn lúc này sẽ ẩn luôn nút tab đang active (class .tab-extra dùng
@@ -9450,7 +9304,39 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     }
   });
 });
+// Bảng trượt ☰ Thêm trên điện thoại: lưới biểu tượng lớn lấy từ chính các nút tab phụ (đúng quyền, đúng thứ tự).
+function veBangThem(){
+  const sheet=document.getElementById('moreSheet'); if(!sheet) return;
+  const dangMo=document.querySelector('.tab-btn.active')?.dataset.tab;
+  const muc=[...document.querySelectorAll('#mainTabs .tab-btn.tab-extra')].filter(b=>b.dataset.tab!=='capacity'&&b.style.getPropertyValue('display')!=='none');
+  const dem=document.getElementById('viecDemMenu');
+  sheet.innerHTML=muc.map(b=>{
+    const t=b.dataset.tab, ten=TEN_TAB_NGAN[t]||b.textContent.trim(), e=b.querySelector('.tab-emoji')?.textContent||'•';
+    const soViec=t==='viec'&&dem&&dem.textContent&&dem.style.display!=='none'?`<span class="viec-dem${dem.classList.contains('tre')?' tre':''}">${thoatHtml(dem.textContent)}</span>`:'';
+    return `<button type="button" class="ms-it${t===dangMo?' on':''}" data-tab="${t}" role="menuitem"><span class="e">${e}</span>${thoatHtml(ten)}${soViec}</button>`;
+  }).join('')||'<div style="grid-column:1/-1;text-align:center;color:var(--text2);padding:10px;">Không có mục nào thêm</div>';
+}
+function dongBangThem(){
+  document.getElementById('moreSheetBg')?.classList.remove('on');
+  document.getElementById('tabsMoreToggle')?.setAttribute('aria-expanded','false');
+}
+function capNhatNutThem(){
+  const t=document.querySelector('.tab-btn.active'), nut=document.getElementById('tabsMoreToggle');
+  if(nut) nut.classList.toggle('dang-chon',!!t&&t.classList.contains('tab-extra')&&t.dataset.tab!=='capacity');
+}
+document.getElementById('moreSheetBg')?.addEventListener('click',e=>{
+  if(e.target.id==='moreSheetBg'){ dongBangThem(); return; }
+  const it=e.target.closest('.ms-it'); if(!it) return;
+  dongBangThem(); document.querySelector(`#mainTabs .tab-btn[data-tab="${it.dataset.tab}"]`)?.click();
+});
 document.getElementById('tabsMoreToggle')?.addEventListener('click', ()=>{
+  if(document.body.classList.contains('mobile-view')){
+    const bg=document.getElementById('moreSheetBg'), mo=!bg.classList.contains('on');
+    if(mo) veBangThem();
+    bg.classList.toggle('on',mo);
+    document.getElementById('tabsMoreToggle').setAttribute('aria-expanded',mo?'true':'false');
+    return;
+  }
   const tabs=document.getElementById('mainTabs');
   const expanded=tabs.classList.toggle('show-extra');
   document.getElementById('tabsMoreToggle').setAttribute('aria-expanded', expanded?'true':'false');
@@ -9956,10 +9842,6 @@ function renderProgressThat(){
   const partialCount = filtered.filter(r=>getOrderStatus(r)==='partial').length;
   const inProgressCount = filtered.length - doneCount - partialCount;
   const rate = totalPlan>0 ? Math.round((totalDone/totalPlan)*1000)/10 : null;
-  const otDay=dayVal==='all'?null:dayVal;
-  const otPack=otDay?overtimeFor(otDay,null,'dong_goi'):[];
-  const shiftHours=gioCaTheoOT(otDay?maxOvertimeHoursForDay(otDay,'dong_goi'):0);
-  const normalizedDone=shiftHours>0?totalDone*8/shiftHours:totalDone;
   renderOpsCommandCenter(filtered,dayVal,totalPlan);
 
   // Phần thiếu đã tách ra nhưng CHƯA được giao tổ hỗ trợ — đếm trên toàn bộ dữ liệu,
@@ -9989,7 +9871,6 @@ function renderProgressThat(){
       <div class="kpi k-warning"><div class="label">Đang sản xuất</div><div class="value">${inProgressCount}</div></div>
       <div class="kpi" style="border-top-color:var(--accent);"><div class="label">Đã chia tổ (dở dang)</div><div class="value" style="color:var(--accent);">${partialCount}</div></div>
        <div class="kpi ${rate==null?'':rate>=95?'k-success':'k-warning'}"><div class="label">Tỷ lệ hoàn thành</div><div class="value" style="color:${rate==null?'var(--text2)':rate>=95?'var(--success)':rate>=80?'var(--warning)':'var(--danger)'}">${rate==null?'—':rate+'%'}</div></div>
-       ${otDay?`<div class="kpi" style="border-top-color:var(--warning);"><div class="label">Năng suất ĐG quy đổi 8H</div><div class="value">${normalizedDone.toLocaleString('vi-VN',{maximumFractionDigits:1})}</div><div class="kpi-phu">Thực tế ${totalDone.toLocaleString('vi-VN')} · ca ${shiftHours}h${otPack.length?` · ${otPack.length} người OT`:''}</div></div>`:''}
       ${canManage2() ? `<div class="kpi" style="border-top-color:${thieuChuaGiao>0?'var(--danger)':'var(--border)'};">
         <div class="label">Phần thiếu chưa giao tổ</div>
         <div class="value" style="color:${thieuChuaGiao>0?'var(--danger)':'var(--text2)'}">${thieuChuaGiao}</div>
@@ -10052,7 +9933,7 @@ function renderProgressThat(){
   }).join('');
 }
 
-progressDaySelect.addEventListener('change', ()=>{renderProgress();renderOvertimePanel();});
+progressDaySelect.addEventListener('change', renderProgress);
 // ===== Nhật ký nhập liệu (màn Tiến độ) =====
 // CHỈ ĐỌC: lấy từ hàm khsx_nhat_ky_nhap_v1 (nhật ký sửa tiến độ của 3 công đoạn). Không tự cộng số, không đụng đường ghi và KPI.
 // Một nguồn, một hàm vẽ (nkVe) cho cả 3 bảng Dán / May / Đóng gói.
@@ -10149,71 +10030,6 @@ document.getElementById('nhatKyThan')?.addEventListener('click',e=>{
 document.getElementById('nhatKyThan')?.addEventListener('input',e=>{ const q=e.target.dataset&&e.target.dataset.nkxQ; if(q){ nkSt.loc[q].q=e.target.value; nkVe(); } });
 progressTeamSelect.addEventListener('change', renderProgress);
 progressSearchBox.addEventListener('input',window.KhsxDataCore.debounce(renderProgress,160));
-function overtimeStageFromUnit(unit){
-  if(TEAM_OPTIONS.includes(unit))return 'dan';
-  const n=chuanMaNguoiDung(unit||'');
-  if(n.includes('may'))return 'may';
-  if(n.includes('donggoi'))return 'dong_goi';
-  return null;
-}
-function overtimeStageLabel(stage){return stage==='dan'?'Dán':stage==='may'?'May':stage==='dong_goi'?'Đóng gói':'Chưa xác định';}
-function overtimeEmployees(){
-  const source=(supabaseAdminProfiles||[]).filter(p=>p.active!==false&&p.role==='nhan_vien').map(p=>({
-    id:String(p.worker_id||p.user_id||''),name:p.display_name||p.worker_id||p.user_id,
-    team:supabaseUnitToUi(p.unit_name),stage:overtimeStageFromUnit(supabaseUnitToUi(p.unit_name))
-  })).filter(x=>x.id&&x.team&&x.stage);
-  const seen=new Set();return source.filter(x=>!seen.has(x.id)&&seen.add(x.id));
-}
-function overtimeEmployee(workerId){return overtimeEmployees().find(x=>x.id===String(workerId||''))||null;}
-function selectedOvertimeWorkerIds(){
-  return Array.from(document.querySelectorAll('#overtimeWorkers input[type="checkbox"]:checked')).map(x=>x.value);
-}
-function renderOvertimePanel(){
-  const panel=document.getElementById('overtimePanel'),checks=document.getElementById('overtimeWorkers'),list=document.getElementById('overtimeSavedList');
-  if(!panel||!checks||!list)return;
-  const selected=new Set(selectedOvertimeWorkerIds()),employees=overtimeEmployees();
-  checks.innerHTML=employees.length?employees.map(x=>`<label class="overtime-worker-check"><input type="checkbox" value="${thoatHtml(x.id)}" ${selected.has(x.id)?'checked':''}><span><strong>${thoatHtml(x.name)}</strong><small>${thoatHtml(x.team)} · ${overtimeStageLabel(x.stage)}</small></span></label>`).join(''):'<div class="overtime-empty">Chưa có tài khoản nhân viên đang hoạt động.</div>';
-  const day=progressDaySelect.value;
-  if(day==='all'){
-    list.innerHTML='<div class="overtime-empty">Chọn một ngày cụ thể để ghi và xem OT.</div>';
-    return;
-  }
-  const rows=Object.values(overtimeRecords).filter(x=>x.day===day).sort((a,b)=>String(a.team).localeCompare(String(b.team),'vi')||String(a.worker).localeCompare(String(b.worker),'vi'));
-  list.innerHTML=rows.length?rows.map(x=>{
-    const employee=overtimeEmployee(x.worker),name=employee?.name||x.worker;
-    return `<div class="overtime-row"><strong>${thoatHtml(name)}</strong><span>${thoatHtml(x.team)} · ${overtimeStageLabel(x.stage)}</span><b>OT ${Number(x.hours)}H</b><span><button type="button" class="capacity-quick-btn edit-overtime-btn" data-worker="${thoatHtml(x.worker)}" data-hours="${Number(x.hours)}">Sửa</button> <button type="button" class="capacity-quick-btn remove-overtime-btn" data-key="${thoatHtml(overtimeKey(x.day,x.team,x.stage,x.worker))}">Xóa</button></span></div>`;
-  }).join(''):'<div class="overtime-empty">Ngày này chưa ghi OT.</div>';
-}
-document.getElementById('overtimeBtn')?.addEventListener('click',()=>{
-  const panel=document.getElementById('overtimePanel'),opening=!panel.classList.contains('is-open');
-  panel.classList.toggle('is-open',opening);panel.setAttribute('aria-hidden',String(!opening));
-  if(opening){renderOvertimePanel();panel.scrollIntoView({behavior:'smooth',block:'nearest'});}
-});
-document.getElementById('saveOvertimeBtn')?.addEventListener('click',async()=>{
-  if(!canManage2())return;
-  const day=progressDaySelect.value,workerIds=selectedOvertimeWorkerIds(),hours=Number(document.getElementById('overtimeHours').value),st=document.getElementById('overtimeStatus');
-  const employees=workerIds.map(overtimeEmployee).filter(Boolean),updatedAt=new Date().toISOString();
-  if(day==='all'||!employees.length){st.textContent='Chọn đúng 1 ngày và tick ít nhất 1 nhân viên.';st.style.color='var(--danger)';return;}
-  if(SUPABASE_VARIANT&&supabaseDb){
-    const {data:{session}}=await supabaseDb.auth.getSession();
-    const payload=employees.map(employee=>({work_date:dmyToIso(day),team_name:uiUnitToSupabase(employee.team),stage:employee.stage,worker_id:employee.id,overtime_hours:hours,confirmed_by:session?.user?.id,updated_at:updatedAt}));
-    const {error}=await supabaseDb.from('khsx_overtime_records').upsert(payload,{onConflict:'work_date,team_name,stage,worker_id'});
-    if(error){st.textContent=`Không lưu được OT: ${error.message||error.code}`;st.style.color='var(--danger)';return;}
-  }
-  employees.forEach(employee=>{const key=overtimeKey(day,employee.team,employee.stage,employee.id);overtimeRecords[key]={day,team:employee.team,stage:employee.stage,worker:employee.id,hours,updatedAt};});
-  persistOvertime();st.textContent=`Đã lưu OT ${hours} giờ cho ${employees.length} nhân viên.`;st.style.color='var(--success)';renderOvertimePanel();renderProgress();computeAndRenderKpis();
-});
-document.getElementById('overtimeSavedList')?.addEventListener('click',async e=>{
-  const edit=e.target.closest('.edit-overtime-btn');
-  if(edit){document.querySelectorAll('#overtimeWorkers input[type="checkbox"]').forEach(x=>{x.checked=x.value===edit.dataset.worker;});document.getElementById('overtimeHours').value=edit.dataset.hours;return;}
-  const remove=e.target.closest('.remove-overtime-btn');if(!remove||!canManage2())return;
-  const record=overtimeRecords[remove.dataset.key];if(!record||!confirm(`Xóa OT của ${overtimeEmployee(record.worker)?.name||record.worker} ngày ${record.day}?`))return;
-  if(SUPABASE_VARIANT&&supabaseDb){
-    const {error}=await supabaseDb.from('khsx_overtime_records').delete().eq('work_date',dmyToIso(record.day)).eq('team_name',uiUnitToSupabase(record.team)).eq('stage',record.stage).eq('worker_id',record.worker);
-    if(error){const st=document.getElementById('overtimeStatus');st.textContent=`Không xóa được OT: ${error.message||error.code}`;st.style.color='var(--danger)';return;}
-  }
-  delete overtimeRecords[remove.dataset.key];persistOvertime();renderOvertimePanel();renderProgress();computeAndRenderKpis();
-});
 document.querySelector('#progressTable tbody').addEventListener('keydown', (e)=>{
   if(e.target.classList.contains('stage-qty-input') && e.key === 'Enter'){
     e.target.blur();
@@ -13399,7 +13215,7 @@ document.body.classList.add('dark-mode');
 const MAN_HEP=window.matchMedia('(max-width:640px) and (orientation:portrait)');
 // Thanh dưới chỉ đủ chỗ cho tên ngắn — "Tổng Thống kê sản xuất" dài quá, đẩy mục khác ra khỏi màn.
 const TEN_TAB_NGAN={monthly:'Thống kê',autoplan:'KHSX',progress:'Tiến độ',capacity:'Năng lực',
-  report:'Báo cáo',wage:'Lương',staff:'Nhân sự',settings:'Cài đặt'};
+  report:'Báo cáo',wage:'Lương',staff:'Nhân sự',settings:'Cài đặt',viec:'Giao việc',nhatky:'Nhật ký'};
 function datTenTabNgan(){
   document.querySelectorAll('#mainTabs .tab-btn').forEach(b=>{
     if(b.querySelector('.nhan-ngan')) return;
@@ -13416,7 +13232,7 @@ function datTenTabNgan(){
     b.appendChild(bocNgan);
   });
   const them=document.getElementById('tabsMoreToggle');
-  if(them && !them.dataset.daDoiNhan){ them.textContent='☰ Thêm'; them.dataset.daDoiNhan='1'; }
+  if(them && !them.dataset.daDoiNhan){ them.innerHTML='<span style="font-size:21px;line-height:1">☰</span><span>Thêm</span>'; them.dataset.daDoiNhan='1'; }
 }
 function apDungManHep(){ document.body.classList.toggle('mobile-view',MAN_HEP.matches); datTenTabNgan(); }
 // Xoay máy đổi qua lại dọc/ngang thì vẽ lại thẻ tổ, để thẻ "Chưa gán tổ" chỉ có ở màn dọc.
@@ -13425,6 +13241,13 @@ MAN_HEP.addEventListener('change',()=>{
   try{ if(typeof renderAutoPlan==='function') renderAutoPlan(); if(typeof renderProgress==='function') renderProgress(); }catch(e){}
 });
 apDungManHep();
+// Đang gõ vào ô nhập thì hạ thanh dưới xuống (bàn phím mở), gõ xong hiện lại.
+let henGoXong=null;
+document.addEventListener('focusin',e=>{
+  if(!document.body.classList.contains('mobile-view')) return;
+  if(e.target.matches('textarea,input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]):not([type=date]):not([type=color])')){ clearTimeout(henGoXong); document.body.classList.add('dang-go'); }
+});
+document.addEventListener('focusout',()=>{ clearTimeout(henGoXong); henGoXong=setTimeout(()=>document.body.classList.remove('dang-go'),220); });
 
 // "Chi tiết thống kê": mượn luôn khối thẻ đang có, mở ra xem rồi trả về chỗ cũ —
 // không nhân bản để renderMonthly() vẫn ghi đúng vào một khối duy nhất.
@@ -13667,6 +13490,8 @@ async function bootstrap(){
   }
   if(TELEGRAM_WEBAPP){
     try{ TELEGRAM_WEBAPP.ready(); TELEGRAM_WEBAPP.expand(); }catch(e){}
+    // Khóa vuốt xuống kéo/đóng cửa sổ mini app (Telegram 7.7 trở lên). Máy cũ không có hàm này thì bỏ qua.
+    try{ if(typeof TELEGRAM_WEBAPP.disableVerticalSwipes==='function') TELEGRAM_WEBAPP.disableVerticalSwipes(); }catch(e){}
     try{ TELEGRAM_WEBAPP.onEvent('fullscreenChanged',syncTelegramFullscreenButton); }catch(e){}
     const platform=String(TELEGRAM_WEBAPP.platform||'').toLowerCase();
     const fullscreenBtn=document.getElementById('telegramFullscreenBtn');
@@ -13843,7 +13668,7 @@ bootstrap().finally(()=>{ window.__khsxBootstrapDone=true; });
 function handleOrientationChange(){
   setTimeout(()=>{
     window.dispatchEvent(new Event('resize'));
-    [dayStageChart, productChart, teamMonthChart, dailyTrendChart].forEach(c=>{
+    [productChart, teamMonthChart, dailyTrendChart].forEach(c=>{
       if(c && typeof c.resize === 'function') c.resize();
     });
   }, 300);

@@ -143,17 +143,6 @@ const {chromium}=require('playwright');
     throw new Error(`Manager desktop failed: ${JSON.stringify(desktop)}`);
   console.log('PASS  manager desktop layout with non-overlapping scroll table');
 
-  const overtime=await page.evaluate(()=>{
-    progressDaySelect.value='27/08/2026';
-    document.getElementById('overtimeBtn').click();
-    const check=[...document.querySelectorAll('#overtimeWorkers input[type="checkbox"]')].find(x=>x.value==='employee-auth');
-    if(check)check.checked=true;
-    return {open:document.getElementById('overtimePanel').classList.contains('is-open'),label:check?.closest('label')?.textContent||'',checked:!!check?.checked,stageSelect:!!document.getElementById('overtimeStage')};
-  });
-  if(!overtime.open||!overtime.checked||!overtime.label.includes('Tổ 1')||!overtime.label.includes('Dán')||overtime.stageSelect)
-    throw new Error(`Overtime simple flow failed: ${JSON.stringify(overtime)}`);
-  console.log('PASS  OT uses employee ticks and derives team/stage from account');
-
   const liveWarranty=await page.evaluate(async()=>{
     await fetchBaoHanh({force:true,silent:true});
     return {

@@ -11,7 +11,6 @@ const context={
   allDays:{},
   quarterTargets:{'2026_Q3':100},
   target:100,
-  otHours:0,
   workDates:['2026-07-01','2026-07-02','2026-08-03','2026-08-04'],
   isoDayNumber(iso){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||''))) return NaN;
@@ -33,9 +32,7 @@ const context={
   tongKpiTuRowsTheoKeys(keys){
     return {throughput:keys.reduce((sum,key)=>sum+Number(context.allDays[key]?.output||0),0)};
   },
-  maxOvertimeHoursForDay(){ return context.otHours; },
-  gioCaTheoOT(hours){ return 8+Number(hours||0); },
-  capacityForOtHours(hours){ return Number(hours)>=3?180:Number(hours)>=2?170:150; },
+  NANG_LUC_NGAY_MAC_DINH:150,
 };
 vm.createContext(context);
 vm.runInContext(html.slice(start,end),context);
@@ -71,9 +68,8 @@ assert(/vượt năng lực/.test(result.danhGia),'Đánh giá phải nói rõ v
 console.log('PASS  required speed above available capacity is flagged');
 
 context.target=100;
-context.otHours=2;
 result=context.tinhTocDoQuy();
-assert(result.thucTe===20,'OT không được đổi tốc độ quý vật lý');
-assert(result.normalizedSpeed===16,'OT 2 giờ phải quy đổi sản lượng về ca 8 giờ');
-assert(result.availableCapacity===170,'OT 2 giờ phải cho năng lực 170 tấm/ngày');
-console.log('PASS  OT changes normalized productivity and capacity, not physical quarter speed');
+assert(result.thucTe===20,'Tốc độ quý vật lý phải giữ nguyên');
+assert(result.availableCapacity===150,'Năng lực mặc định phải là 150 tấm/ngày (đã bỏ chức năng Ghi nhận OT)');
+assert(!('normalizedSpeed' in result),'Không còn quy đổi OT');
+console.log('PASS  capacity fixed at 150/day, no OT normalization');

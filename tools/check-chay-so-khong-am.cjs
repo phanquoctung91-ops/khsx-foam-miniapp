@@ -7,7 +7,7 @@ assert.ok(xau.length>=4,'phải thấy ít nhất 4 công thức tiến độ, t
 xau.forEach(m=>assert.ok(/Math\.max\(0, ?$/.test(html.slice(Math.max(0,m.index-12),m.index)),'chưa chặn âm: '+m[0]));
 console.log('PASS cả '+xau.length+' công thức tiến độ chạy số đều bị chặn không âm');
 // 2) chạy thật chayDemSo với khung hình đến SỚM hơn giờ bắt đầu
-const a=html.indexOf('function chayDemSo(goc){'), b=html.indexOf('// ---- Theo ngày tab ----',a); assert.ok(a>0&&b>a);
+const a=html.indexOf('function chayDemSo(goc){'), b=html.indexOf('// ---- Tổng hợp tháng tab ----',a); assert.ok(a>0&&b>a);
 const el={dataset:{dem:'1673'},textContent:'1.673'}, ghi=[];
 const goc={querySelectorAll:()=>[el]};
 let cb=null; const hen=[];
