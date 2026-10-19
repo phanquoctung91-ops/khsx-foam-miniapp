@@ -813,6 +813,61 @@
   /* Đang gõ (bàn phím mở): hạ thanh dưới xuống để không nhảy lên che ô nhập */
   body.mobile-view.dang-go #mainTabs,body.mobile-view.dang-go .tabs-more-toggle{transform:translateY(120%);}
   body.mobile-view #mainTabs,body.mobile-view .tabs-more-toggle{transition:transform .15s ease;}
+  /* ---- KHSX điện thoại cho quản lý (mẫu anh duyệt 19/10/2026): thẻ tổ gọn, mỗi đơn một dòng có ⋯, nút nổi Thêm đơn ---- */
+  body.mobile-view .team-ring-card.to-moi{padding:0;text-align:left;border-radius:14px;overflow:hidden;}
+  body.mobile-view .to-moi .to-tom-tat{display:block;padding:12px 14px 11px;min-height:0;}
+  body.mobile-view .to-moi .to-tom-tat::after{display:none;}
+  body.mobile-view .tt-h{display:flex;align-items:center;gap:8px;}
+  body.mobile-view .tt-h b{font-size:16px;font-weight:800;color:var(--text);}
+  body.mobile-view .tt-h em{font-style:normal;font-size:12px;font-weight:600;color:var(--text2);}
+  body.mobile-view .tt-pill{margin-left:auto;font-size:12px;font-weight:800;padding:3px 10px;border-radius:99px;}
+  body.mobile-view .tt-pill.ok{background:var(--success-l,#e3f4ea);color:var(--success);}
+  body.mobile-view .tt-pill.w{background:var(--warning-l);color:var(--warning);}
+  body.mobile-view .tt-pill.bad{background:var(--danger-l);color:var(--danger);}
+  body.mobile-view .tt-chev{font-size:11px;color:var(--text2);}
+  body.mobile-view .tt-chev::before{content:'▾';}
+  body.mobile-view .to-moi.to-gap .tt-chev::before{content:'▸';}
+  body.mobile-view .tt-bar{display:block;height:6px;border-radius:9px;background:var(--border);margin-top:9px;overflow:hidden;}
+  body.mobile-view .tt-bar i{display:block;height:100%;border-radius:9px;}
+  body.mobile-view .to-moi .to-than{padding:0;}
+  body.mobile-view .to-moi .to-than > .team-ring-bh,
+  body.mobile-view .to-moi .to-than > .team-ring-canhbao,
+  body.mobile-view .to-moi .to-than > .team-ring-extra{margin:0 14px 8px;}
+  body.mobile-view .dong-ds{display:block;border-top:1px solid var(--border);}
+  body.mobile-view .dong-moi{padding:10px 12px;border-top:1px solid var(--border);}
+  body.mobile-view .dong-moi:first-child{border-top:0;}
+  body.mobile-view .dong-moi.dm-uutien{background:var(--warning-l);}
+  body.mobile-view .dm-r{display:flex;align-items:center;gap:8px;}
+  body.mobile-view .dd-m{flex:1;min-width:0;}
+  body.mobile-view .dd-m b{display:block;font-size:13.5px;line-height:1.25;color:var(--text);word-break:break-word;}
+  body.mobile-view .dd-m > span{display:block;font-size:11.5px;color:var(--text2);margin-top:1px;}
+  body.mobile-view .dong-moi .ct-mini{display:flex;grid-column:auto;gap:5px;padding:0;border:0;flex:0 0 auto;}
+  body.mobile-view .dong-moi .ct-o{min-height:38px;min-width:46px;padding:0 6px;border-radius:10px;background:var(--bg);}
+  body.mobile-view .dong-moi .ct-o.ct-dang{background:var(--warning-l);border-color:transparent;color:var(--warning);}
+  body.mobile-view .dong-moi .ct-o.ct-du{background:var(--success-l,#e3f4ea);border-color:transparent;}
+  body.mobile-view .dong-moi .giao-to-mini{padding:8px 0 0;}
+  body.mobile-view .dot-don{flex:0 0 auto;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:19px;line-height:1;cursor:pointer;padding:0;}
+  .don-sheet-bg{display:none;}
+  body.mobile-view .don-sheet-bg.on{display:block;position:fixed;inset:0;z-index:9100;background:rgba(16,11,13,.5);}
+  body.mobile-view .don-sheet{position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow-y:auto;background:var(--card);border-radius:22px 22px 0 0;padding:8px 16px calc(16px + max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)));}
+  body.mobile-view .don-sheet .grab{width:42px;height:5px;border-radius:9px;background:var(--border);margin:2px auto 10px;}
+  body.mobile-view .don-sheet h4{margin:4px 0 2px;font-size:16px;}
+  body.mobile-view .ds-info{font-size:12px;color:var(--text2);margin-bottom:6px;}
+  body.mobile-view .ds-blk{border-top:1px solid var(--border);padding:10px 0;}
+  body.mobile-view .ds-t{font-weight:700;font-size:13px;margin-bottom:8px;color:var(--text2);}
+  body.mobile-view .ds-nut{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;}
+  body.mobile-view .don-sheet .dm-item,body.mobile-view .don-sheet .source-action-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;min-height:50px;padding:6px 8px;border:1px solid var(--border);border-radius:12px;
+    background:var(--bg);color:var(--text);font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;cursor:pointer;
+  }
+  body.mobile-view .don-sheet .dm-item.xoa{color:var(--danger);}
+  .fab-them-don{display:none;}
+  body.mobile-view[data-tab-hien="autoplan"] .fab-them-don{
+    display:flex;align-items:center;position:fixed;right:14px;bottom:calc(86px + max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)));z-index:8800;
+    padding:13px 18px;border:0;border-radius:99px;background:var(--primary);color:var(--on-primary);font-family:inherit;font-size:14px;font-weight:800;
+    box-shadow:0 6px 18px rgba(179,23,63,.4);cursor:pointer;
+  }
+  body.mobile-view.dang-go .fab-them-don{display:none;}
   /* Nút "Thêm" nằm chung trong thanh dưới cho khỏi lạc chỗ */
   body.mobile-view #mainTabs{padding-right:68px;}
   body.mobile-view .tabs-more-toggle{
@@ -1744,6 +1799,8 @@ body.mobile-view .nkx-tim{width:100%;}
 </div>
 <button id="tabsMoreToggle" type="button" class="tabs-more-toggle only-manager2" aria-label="Thêm mục" aria-expanded="false">☰ Thêm</button>
 <div id="moreSheetBg" class="more-sheet-bg"><div id="moreSheet" class="more-sheet" role="menu"></div></div>
+<div id="donSheetBg" class="don-sheet-bg"><div id="donSheet" class="don-sheet"></div></div>
+<button id="fabThemDon" type="button" class="fab-them-don only-manager2">＋ Thêm đơn</button>
 <div id="viecCuaToi" class="card viec-cua-toi" style="display:none;margin-bottom:14px;border-left:4px solid var(--accent);"></div>
 
 <div class="panel active" id="panel-monthly">
@@ -2378,7 +2435,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=247"></script>
+<script src="raw-data.js?v=248"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4395,7 +4452,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 247;
+const APP_VERSION = 248;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -7918,7 +7975,7 @@ function danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nu
     const kt = formatKichThuoc(o);
     const hoTro = toDuocHoTro(o);
     const k = ten + '|' + kt + '|' + (hoTro || '');
-    if(!gom[k]) gom[k] = {ten, tenGon:tenGonTrenTheTo(o), kt, sl:0, hoTro, uuTien:false, xong:true, rot:false, day: parseFloat(o.day) || 0, ngang: parseFloat(o.ngang) || 0, ids:[], cd:{dan:0,may:0,dong_goi:0}, ghiChu:[]};
+    if(!gom[k]) gom[k] = {ten, tenGon:tenGonTrenTheTo(o), kt, sl:0, hoTro, uuTien:false, xong:true, rot:false, day: parseFloat(o.day) || 0, ngang: parseFloat(o.ngang) || 0, ma:String(o.ma||''), ids:[], cd:{dan:0,may:0,dong_goi:0}, ghiChu:[]};
     { const gc=String(o.ghi_chu||'').trim(); if(gc && !gom[k].ghiChu.includes(gc)) gom[k].ghiChu.push(gc); }
     gom[k].sl += Number(o.so_luong) || 0;
     gom[k].ids.push(o.id);
@@ -7954,14 +8011,28 @@ function oCongDoanMini(r,ngay,coTheBam){
   return `<span class="ct-mini">`+CONG_DOAN.map(s=>{
     const lam=Number(r.cd?.[s])||0, du=lam>=r.sl&&r.sl>0;
     const bam=coTheBam&&coQuyenNhapCongDoan(s);
-    return `<button type="button" class="ct-o${du?' ct-du':''}"${bam?` data-ids="${r.ids.join('|')}" data-ngay="${ngay}" data-stage="${s}" data-ke-hoach="${r.sl}"`:' disabled'}>`
+    return `<button type="button" class="ct-o${du?' ct-du':(lam>0?' ct-dang':'')}"${bam?` data-ids="${r.ids.join('|')}" data-ngay="${ngay}" data-stage="${s}" data-ke-hoach="${r.sl}"`:' disabled'}>`
       +`<span class="ct-ten">${ten[s]}</span><span class="ct-so">${lam}</span></button>`;
   }).join('')+`</span>`;
 }
-function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=null, team=null){
+function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=null, team=null, kieuMoi=false){
   const ds = danhSachDonCuaTo(teamOrders, anDongDaXong, congDoan, ngay);
   if(!ds.length){
     return anDongDaXong ? `<div class="team-ring-list-xong">✓ Đã xong hết</div>` : '';
+  }
+  if(kieuMoi){
+    const coTheBam=!!ngay&&coQuyenNhapCongDoan(congDoan);
+    return `<div class="dong-ds">`+ds.map(r=>{
+      const tick = r.xong?`<span class="team-ring-done-tick" title="Đã hoàn thành">✓</span>`:r.rot?`<span class="team-ring-fail-tick" title="Không hoàn thành · đã giao tổ hỗ trợ hoặc đã qua ngày">✗</span>`:'';
+      const sao=(canManage()||hasPermOrOwner('khsx_priority'))?`<button type="button" class="sao-uu-tien${r.uuTien?' dang-uu-tien':''}" data-ids="${r.ids.join('|')}" title="Ưu tiên kế hoạch tuần">★</button>`:'';
+      const chuGhi=r.ghiChu&&r.ghiChu.length?`<em class="ghi-chu-don">${thoatHtml(r.ghiChu.join(' · '))}</em>`:'';
+      const ten=(r.ma&&!String(r.ten).includes(r.ma)?r.ma+' · ':'')+r.ten;
+      return `<div class="dong-moi${r.uuTien?' dm-uutien':''}"><div class="dm-r"><div class="dd-m"><b>${sao}${thoatHtml(ten)}${tick}</b>`
+        +`<span>${thoatHtml(r.kt)} · KH ${r.sl}${r.hoTro?` · <em class="ho-tro">hỗ trợ ${r.hoTro}</em>`:''}</span>${chuGhi}</div>`
+        +oCongDoanMini(r,ngay,coTheBam)
+        +(canManage2()?`<button type="button" class="dot-don" data-ids="${r.ids.join('|')}" aria-label="Thao tác đơn">⋯</button>`:'')
+        +`</div>${nutGiaoToMini(r,ngay,team)}</div>`;
+    }).join('')+`</div>`;
   }
   const coTheBam=!!ngay&&coQuyenNhapCongDoan(congDoan);
   return `<div class="team-ring-list">`
@@ -7986,7 +8057,8 @@ function htmlDanhSachDon(teamOrders, anDongDaXong, congDoan='dong_goi', ngay=nul
 function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDangXem='all', congDoan='dong_goi', chiTo=null, anTyLe=false){
   const container = document.getElementById(containerId);
   if(!container) return;
-  const dsHtml = hienDanhSach ? ((dh,team) => htmlDanhSachDon(dh, anDongDaXong, congDoan, ngayDangXem, team)) : (()=> '');
+  const kieuMoi = document.body.classList.contains('mobile-view') && canManage2() && containerId==='autoPlanTeamRings';   // quản lý trên điện thoại: thẻ tổ kiểu mới
+  const dsHtml = hienDanhSach ? ((dh,team) => htmlDanhSachDon(dh, anDongDaXong, congDoan, ngayDangXem, team, kieuMoi)) : (()=> '');
   const motNgay = !!ngayDangXem && ngayDangXem !== 'all';
   const cacNgayDangXem = motNgay ? [ngayDangXem] : Array.from(new Set(orders.map(o=>o.date)));
   const toMinh = toCuaToi();
@@ -8052,6 +8124,23 @@ function renderTeamRings(containerId, orders, hienDanhSach, anDongDaXong, ngayDa
     const con = Math.max(0, keHoach - hoanThanh);
     const gapSan = dangGap[team]!==undefined ? dangGap[team] : (con<=0 || daMoMot);
     if(!gapSan) daMoMot=true;
+    if(kieuMoi){
+      const soDon=danhSachDonCuaTo(teamOrders,anDongDaXong,congDoan,ngayDangXem).length;
+      const lop=pctThat>=95?'ok':pctThat>=60?'w':'bad';
+      return `
+    <div class="team-ring-card to-moi${gapSan?' to-gap':''}" data-to="${team}">
+      <button type="button" class="to-tom-tat">
+        <span class="tt-h"><b>${team}</b><em>${soDon} đơn · ${hoanThanh.toLocaleString()}/${keHoach.toLocaleString()}</em><span class="tt-pill ${lop}">${pct}%</span><span class="tt-chev"></span></span>
+        <span class="tt-bar"><i style="width:${pct}%;background:${color};"></i></span>
+      </button>
+      <div class="to-than">
+      ${slBaoHanh>0 ? `<div class="team-ring-bh">🛠 Bảo hành: ${slBaoHanh}</div>` : ''}
+      ${duoiChuan ? `<div class="team-ring-canhbao">⚠ Dưới 60% kế hoạch</div>` : ''}
+      ${extra>0 ? `<div class="team-ring-extra">+${extra.toLocaleString()} vượt KH</div>` : ''}
+      ${dsHtml(teamOrders,team)}
+      </div>
+    </div>`;
+    }
     return `
     <div class="team-ring-card${gapSan?' to-gap':''}" data-to="${team}">
       <button type="button" class="to-tom-tat">
@@ -8322,6 +8411,8 @@ document.getElementById('progressTeamRings').addEventListener('click',bamDonTren
 document.getElementById('autoPlanTeamRings')?.addEventListener('click',e=>{
   if(!document.body.classList.contains('mobile-view')) return;
   // Bấm dòng tóm tắt thì gập/xổ tổ đó, bấm vào đơn thì mở popup nhập số.
+  const dotDon=e.target.closest('.dot-don');
+  if(dotDon){ moBangDon(dotDon.dataset.ids); return; }
   const giao=e.target.closest('.giao-to-nut');
   if(giao){ moChonTo(giao); return; }
   const tom=e.target.closest('.to-tom-tat');
@@ -8960,7 +9051,7 @@ document.querySelector('#autoPlanTable tbody').addEventListener('change', async 
 
 // ---- Xác nhận thay đổi nguồn / hủy mềm đơn (kể cả "Tách đơn" cho đơn công ty đã bỏ) ----
 const trashActionInFlight = new Set(); // chặn bấm đúp Xóa/Tách đơn cùng 1 đơn
-document.querySelector('#autoPlanTable tbody').addEventListener('click', async (e)=>{
+async function xuLyThaoTacDon(e){
   const menuBtn=e.target.closest('.dong-menu-btn');
   if(menuBtn){ moMenuDon(menuBtn); return; }
   const tachBtn=e.target.closest('.tach-don-btn');
@@ -9018,7 +9109,28 @@ document.querySelector('#autoPlanTable tbody').addEventListener('click', async (
   } finally {
     trashActionInFlight.delete(id);
   }
+}
+document.querySelector('#autoPlanTable tbody').addEventListener('click',xuLyThaoTacDon);
+// Điện thoại: bảng trượt ⋯ của từng đơn trên thẻ tổ (Sửa / Tách / Xóa), dùng đúng bộ nút và quyền của bảng KHSX.
+function moBangDon(ids){
+  const ds=String(ids||'').split('|').map(getOrderById).filter(Boolean);
+  if(!ds.length) return;
+  const d0=ds[0], ten={dan:'D',may:'M',dong_goi:'Đ'};
+  const khoi=ds.map(r=>{
+    const tmp=document.createElement('div'); tmp.innerHTML=hanhDongDonHtml(r);
+    const nut=(tmp.querySelector('.dong-menu')||tmp).innerHTML;
+    const lam=CONG_DOAN.map(s=>`${ten[s]} ${tongCongDoan(r,s)}`).join(' · ');
+    return `<div class="ds-blk"><div class="ds-t">KH ${Number(r.so_luong)||0} tấm · đã làm ${lam}</div><div class="ds-nut">${nut}</div></div>`;
+  }).join('');
+  document.getElementById('donSheet').innerHTML=`<div class="grab"></div><h4>${thoatHtml((d0.ma?d0.ma+' · ':'')+(d0.dong||''))}</h4><div class="ds-info">${thoatHtml(formatKichThuoc(d0))}${ds.length>1?` · ${ds.length} đơn gộp trên thẻ`:''}</div>${khoi}`;
+  document.getElementById('donSheetBg').classList.add('on');
+}
+function dongBangDon(){ document.getElementById('donSheetBg')?.classList.remove('on'); }
+document.getElementById('donSheetBg')?.addEventListener('click',e=>{
+  if(e.target.id==='donSheetBg'){ dongBangDon(); return; }
+  if(e.target.closest('.dm-item,.source-action-btn')){ dongBangDon(); xuLyThaoTacDon(e); }
 });
+document.getElementById('fabThemDon')?.addEventListener('click',()=>{ if(canManage2()) openManualOrderModal(); });
 
 
 // Feed every Foam order (mọi trạng thái — không chỉ đơn đã xong) vào data model "Tổng hợp
@@ -9322,6 +9434,7 @@ function dongBangThem(){
 }
 function capNhatNutThem(){
   const t=document.querySelector('.tab-btn.active'), nut=document.getElementById('tabsMoreToggle');
+  document.body.dataset.tabHien=t?t.dataset.tab:'';
   if(nut) nut.classList.toggle('dang-chon',!!t&&t.classList.contains('tab-extra')&&t.dataset.tab!=='capacity');
 }
 document.getElementById('moreSheetBg')?.addEventListener('click',e=>{
