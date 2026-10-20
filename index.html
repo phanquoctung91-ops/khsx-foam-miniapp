@@ -346,7 +346,9 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
 
   html{overflow-x:hidden;overscroll-behavior-y:none;}
-  body{overflow-x:hidden;overscroll-behavior-y:none;}
+  /* KHÔNG đặt overscroll-behavior trên body: html đã có overflow-x nên body cũng là một khung cuộn riêng, đặt "none" ở đây chặn cuộn nối lên trang
+     và máy Android không cuộn được nữa (lỗi 20/10/2026). */
+  body{overflow-x:hidden;}
   button,select,input,textarea,[role="button"],.tab-btn,.bom-chip{touch-action:manipulation;}
 
   /* Tablet / máy tính bảng, cả 2 chiều xoay */
@@ -2435,7 +2437,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=249"></script>
+<script src="raw-data.js?v=250"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4452,7 +4454,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 249;
+const APP_VERSION = 250;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.

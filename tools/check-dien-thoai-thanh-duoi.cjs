@@ -2,7 +2,9 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const html=fs.readFileSync(path.resolve(__dirname,'..','index.html'),'utf8').split('\r\n').join('\n');
 assert.match(html,/disableVerticalSwipes==='function'\) TELEGRAM_WEBAPP\.disableVerticalSwipes\(\)/,'chưa khóa vuốt xuống của Telegram');
-assert.match(html,/html\{overflow-x:hidden;overscroll-behavior-y:none;\}/); assert.match(html,/body\{overflow-x:hidden;overscroll-behavior-y:none;\}/);
+assert.match(html,/html\{overflow-x:hidden;overscroll-behavior-y:none;\}/); assert.match(html,/\n  body\{overflow-x:hidden;\}/);
+// body KHÔNG được có overscroll-behavior (chặn cuộn nối lên trang, Android không cuộn được: lỗi 20/10/2026)
+assert.ok(!/body\{[^}]*overscroll-behavior/.test(html),'body có overscroll-behavior');
 console.log('PASS khóa vuốt xuống của Telegram (có kiểm tra máy hỗ trợ) và chặn nảy trang');
 assert.match(html,/touch-action:manipulation/);
 assert.match(html,/--tg-safe-area-inset-bottom/); assert.match(html,/--tg-content-safe-area-inset-top/);
