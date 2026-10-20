@@ -870,6 +870,68 @@
     box-shadow:0 6px 18px rgba(179,23,63,.4);cursor:pointer;
   }
   body.mobile-view.dang-go .fab-them-don{display:none;}
+  /* ---- Đợt 3: Tổng thống kê trên điện thoại — số chính hiện ngay đầu trang, lọc nhanh gọn một khối ---- */
+  body.mobile-view #panel-monthly #monthlyKpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px;}
+  body.mobile-view #panel-monthly #monthlyKpis .kpi{margin:0;padding:11px 12px;min-width:0;}
+  body.mobile-view #panel-monthly #monthlyKpis .kpi .value{font-size:22px;}
+  body.mobile-view #panel-monthly #monthlyKpis .speed-kpi-card{grid-column:1/-1;}
+  body.mobile-view #moThongKeBtn{display:none;}
+  /* Thứ tự trên điện thoại: hàng lọc nhanh → số chính → thanh tiến độ quý → biểu đồ */
+  body.mobile-view #mainContent:not([style*="display: none"]):has(#panel-monthly.active){display:flex!important;flex-direction:column;}   /* app gán display:block thẳng vào #mainContent nên cần !important; bỏ qua lúc app đang ẩn nó */
+  body.mobile-view #mainContent:has(#panel-monthly.active) #panel-monthly{display:contents;}
+  body.mobile-view #panel-monthly > .card:first-child{order:1;margin-bottom:10px;}
+  body.mobile-view #panel-monthly #monthlyKpis{order:2;}
+  body.mobile-view #mainContent:has(#panel-monthly.active) #thanhTienDoQuy{order:3;}
+  body.mobile-view #panel-monthly > .grid2{order:4;}
+  body.mobile-view #panel-monthly > .card:last-child{order:5;}
+  body.mobile-view #panel-monthly > #neoThongKe{order:6;}
+  /* Hàng lọc nhanh một dòng, vuốt ngang; ô ngày ẩn sau nút "📅 Chọn ngày" */
+  /* Ô vuông "Thành công": giữa màn hình, mờ vào rồi mờ ra trong khoảng 1 giây */
+  .toast-vuong{position:fixed;left:50%;top:50%;z-index:99999;width:156px;height:156px;margin:-78px 0 0 -78px;box-sizing:border-box;padding:10px;border-radius:22px;background:var(--card);color:var(--text);box-shadow:0 14px 40px rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;pointer-events:none;animation:toastVuong 1.2s ease both;}
+  .toast-vuong .tick{width:58px;height:58px;border-radius:50%;background:var(--success);color:#fff;font-size:36px;line-height:58px;font-weight:800;}
+  .toast-vuong b{font-size:15px;}
+  .toast-vuong small{font-size:11.5px;color:var(--text2);line-height:1.3;}
+  @keyframes toastVuong{0%{opacity:0;transform:scale(.85);}14%{opacity:1;transform:scale(1);}78%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(.97);}}
+  .nut-chon-ngay{display:none;}
+  body.mobile-view #panel-monthly .capacity-filters{flex-wrap:nowrap;overflow-x:auto;padding:8px;gap:6px;align-items:center;}
+  body.mobile-view #panel-monthly .capacity-filters .capacity-quick-btn{flex:0 0 auto;min-height:38px;padding:8px 12px;}
+  body.mobile-view #panel-monthly .nut-chon-ngay{display:inline-flex;align-items:center;order:0;}
+  body.mobile-view #panel-monthly .capacity-filters > div,body.mobile-view #panel-monthly #monthRangeNote{display:none;}
+  body.mobile-view #panel-monthly .capacity-filters.hien-ngay{flex-wrap:wrap;overflow:visible;}
+  body.mobile-view #panel-monthly .capacity-filters.hien-ngay > div{display:block;flex:1 1 calc(50% - 8px);order:5;}
+  body.mobile-view #panel-monthly .capacity-filters.hien-ngay #monthRangeNote{display:block;flex:1 0 100%;order:9;}
+  body.mobile-view #panel-monthly .grid2{grid-template-columns:minmax(0,1fr);}
+  body.mobile-view #panel-monthly .chart-wrap{height:250px!important;}
+  body.mobile-view #panel-monthly .grid2 .card:first-child .chart-wrap{height:320px!important;}
+  /* Bộ lọc ngày dùng chung (Thống kê, Năng lực, Lương, Báo cáo): hai ô ngày một hàng, nút lọc nhanh ba cái một hàng, nút to */
+  body.mobile-view .capacity-filters{gap:8px;padding:10px;align-items:stretch;}
+  body.mobile-view .capacity-filters > div{flex:1 1 calc(50% - 8px);min-width:0;}
+  body.mobile-view .capacity-filters input[type="date"],body.mobile-view .capacity-filters select{width:100%;min-height:44px;font-size:16px;box-sizing:border-box;}
+  body.mobile-view .capacity-filters .capacity-quick-btn{flex:1 1 calc(33.33% - 8px);min-height:42px;font-size:13px;padding:8px 6px;white-space:nowrap;}
+  body.mobile-view .capacity-filters .primary-btn{flex:1 1 100%;min-height:46px;}
+  body.mobile-view .capacity-filters .save-status{flex:1 0 100%;order:9;}
+  body.mobile-view #panel-monthly .capacity-filters .capacity-quick-btn{order:-1;}
+  /* ---- Đợt 4: các tab quản trị (Năng lực, Lương, Báo cáo, Cài đặt, Nhân sự) ---- */
+  body.mobile-view :is(#panel-capacity,#panel-wage,#panel-report,#panel-settings,#panel-staff) :is(input[type="text"],input[type="number"],input[type="search"],input[type="date"],select){min-height:44px;font-size:16px;}
+  body.mobile-view :is(#panel-capacity,#panel-wage,#panel-report,#panel-settings,#panel-staff) .primary-btn{min-height:44px;}
+  /* Bảng dạng danh sách (tối đa 6 cột) dựng thành thẻ: mỗi dòng một thẻ, mỗi ô "Tên cột: giá trị" */
+  body.mobile-view table.bang-the{min-width:0!important;width:100%;display:block;border:0;}
+  body.mobile-view table.bang-the thead{display:none;}
+  body.mobile-view table.bang-the tbody{display:block;}
+  body.mobile-view table.bang-the tr{display:block;background:var(--card);border:1px solid var(--border);border-radius:12px;margin:0 0 10px;padding:4px 12px;box-shadow:var(--shadow);}
+  body.mobile-view table.bang-the td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border:0;border-bottom:1px dotted var(--border);text-align:right!important;white-space:normal!important;width:auto!important;min-width:0!important;}
+  body.mobile-view table.bang-the td:last-child{border-bottom:0;}
+  body.mobile-view table.bang-the td:empty{display:none;}
+  body.mobile-view table.bang-the td::before{content:attr(data-label);flex:0 0 38%;font-size:11.5px;font-weight:700;color:var(--text2);text-align:left;}
+  body.mobile-view table.bang-the td:first-child{font-weight:800;font-size:14px;}
+  body.mobile-view table.bang-the td:first-child::before{display:none;}
+  body.mobile-view table.bang-the td button,body.mobile-view table.bang-the td select{min-height:40px;}
+  body.mobile-view .table-scroll:has(table.bang-the){max-height:none!important;overflow:visible!important;}
+  /* Bảng ma trận theo ngày (hơn 6 cột): giữ dạng bảng, cuộn ngang, cột đầu đứng yên để biết đang đọc dòng nào */
+  body.mobile-view table.bang-ngang{font-size:12px;}
+  body.mobile-view table.bang-ngang th:first-child,body.mobile-view table.bang-ngang td:first-child{position:sticky;left:0;z-index:1;background:var(--card);box-shadow:2px 0 4px rgba(0,0,0,.08);}
+  .o-tim-nhanh{display:none;}
+  body.mobile-view .o-tim-nhanh{display:block;width:100%;box-sizing:border-box;margin:0 0 10px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font-family:inherit;}
   /* Nút "Thêm" nằm chung trong thanh dưới cho khỏi lạc chỗ */
   body.mobile-view #mainTabs{padding-right:68px;}
   body.mobile-view .tabs-more-toggle{
@@ -1816,6 +1878,7 @@ body.mobile-view .nkx-tim{width:100%;}
       <button id="monthlyQuickLastWeek" type="button" class="capacity-quick-btn">Tuần trước</button>
       <button id="monthlyQuickThisMonth" type="button" class="capacity-quick-btn">Tháng này</button>
       <button id="monthlyQuickLastMonth" type="button" class="capacity-quick-btn">Tháng trước</button>
+      <button id="nutChonNgayTk" type="button" class="capacity-quick-btn nut-chon-ngay" aria-expanded="false">📅 Chọn ngày</button>
       <span id="monthRangeNote" class="save-status"></span>
     </div>
   </div>
@@ -2437,7 +2500,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=250"></script>
+<script src="raw-data.js?v=252"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4454,7 +4517,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 250;
+const APP_VERSION = 252;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -11325,6 +11388,14 @@ document.getElementById('doRestoreBtn').addEventListener('click', napLaiTuGoi);
 const sheetDocTuNgay=()=>{ const [y,m,d]=homNayIso().split('-'); return `${d}/${m}/${y}`; };   // hôm nay dd/mm/yyyy
 const sheetLocTuNgay=(rows,tu)=>{ const k=khoaNgayDMY(tu); return rows.filter(r=>khoaNgayDMY(r.date)>=k); };
 let sheetXemTruoc=null;   // {docLuc, theoNgay:{'dd/mm/yyyy':[dòng Sheet]}}
+// Ô vuông "Thành công" giữa màn hình, tự tắt sau khoảng 1 giây (dùng chung cho các thao tác ghi xong).
+function hienThanhCong(chu='Thành công',phu=''){
+  document.querySelectorAll('.toast-vuong').forEach(x=>x.remove());
+  const o=document.createElement('div'); o.className='toast-vuong'; o.setAttribute('role','status'); o.setAttribute('aria-live','polite');
+  o.innerHTML=`<div class="tick">✓</div><b>${thoatHtml(chu)}</b>${phu?`<small>${thoatHtml(phu)}</small>`:''}`;
+  document.body.appendChild(o);
+  setTimeout(()=>o.remove(),1300);   // không chờ animationend vì tab ẩn thì hoạt ảnh không chạy
+}
 async function moLayKhsxSheet(){
   if(!(canManage()||hasPermOrOwner('khsx_sync_source'))) return;   // Quản lý, hoặc Quản lý 2 được cấp quyền Đồng bộ kế hoạch từ nguồn (máy chủ kiểm lại)
   const hop=document.getElementById('sheetXemTruocModal'), than=document.getElementById('sheetXemTruocBody');
@@ -11372,7 +11443,11 @@ document.getElementById('sheetXemTruocModal')?.addEventListener('click',async e=
   nut.disabled=false;
   if(!kq.ok) return bao(`Chưa ghi được: ${kq.error?.message||kq.error?.code||(kq.skipped?'đang ghi dở lượt trước, thử lại sau':'lỗi không rõ')}`,'var(--danger)');
   sheetXemTruoc=null; nut.remove();
-  bao(`Đã ghi ${ngays.length} ngày: thêm ${kq.inserted} đơn · bỏ ${kq.cancelled} đơn chưa làm${kq.review_count?` · ${kq.review_count} đơn cần kiểm tra (nút ⚠ ở đầu trang)`:''}${kq.skipped_locked?` · ${kq.skipped_locked} đơn giữ nguyên vì ngày đang chốt`:''}.`,'var(--success)');
+  // Ghi xong: tự đóng bảng, chỉ hiện ô vuông "Thành công" khoảng 1 giây rồi tắt (anh chốt 20/10/2026). Chi tiết đầy đủ vẫn ghi ở dòng trạng thái đồng bộ.
+  const chiTiet=`Đã ghi ${ngays.length} ngày: thêm ${kq.inserted} đơn · bỏ ${kq.cancelled} đơn chưa làm${kq.review_count?` · ${kq.review_count} đơn cần kiểm tra (nút ⚠ ở đầu trang)`:''}${kq.skipped_locked?` · ${kq.skipped_locked} đơn giữ nguyên vì ngày đang chốt`:''}.`;
+  hop.style.display='none';
+  supabaseStatus(chiTiet,true);
+  hienThanhCong('Thành công',`Thêm ${kq.inserted} · bỏ ${kq.cancelled}${kq.review_count?` · ${kq.review_count} cần kiểm tra`:''}`);
 });
 async function readOfflineTables(file){
   if(!file)throw new Error('Chưa chọn file.');
@@ -13369,6 +13444,31 @@ function capNhatDangGo(){
 ['focusin','focusout','pointerdown','touchend','keyup','visibilitychange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(capNhatDangGo,60),true));
 window.addEventListener('resize',()=>setTimeout(capNhatDangGo,60));
 setInterval(capNhatDangGo,800);   // lưới an toàn: dù sự kiện nào bị lỡ, tối đa 0,8 giây là thanh dưới trở lại
+// Điện thoại, các tab quản trị: bảng dạng danh sách -> thẻ, bảng ma trận theo ngày -> cuộn ngang có cột đầu dính.
+// Mỗi ô được gắn nhãn cột (data-label) để CSS vẽ "Tên cột: giá trị"; chạy lại mỗi khi trang vẽ lại bảng.
+const BANG_QUAN_TRI='#panel-capacity table,#panel-wage table,#panel-staff table,#panel-settings table,#panel-report table';
+function ganNhanBang(){
+  document.querySelectorAll(BANG_QUAN_TRI).forEach(t=>{
+    if(t.closest('.dd-bang-ngang')) return;   // Điểm danh và Phát sữa đã có thẻ riêng
+    const dau=[...t.querySelectorAll('thead th')].map(h=>h.textContent.trim()); if(!dau.length) return;
+    const nhieu=dau.length>6;
+    t.classList.toggle('bang-ngang',nhieu); t.classList.toggle('bang-the',!nhieu);
+    const dong=t.querySelectorAll('tbody tr');
+    dong.forEach(tr=>{ const c=tr.children; if(c.length!==dau.length) return; for(let i=0;i<c.length;i++) if(c[i].dataset.label!==dau[i]) c[i].dataset.label=dau[i]; });
+    if(!nhieu&&dong.length>=8){   // danh sách dài: thêm ô tìm nhanh phía trên
+      const khung=t.closest('.table-scroll')||t;
+      if(!(khung.previousElementSibling&&khung.previousElementSibling.classList.contains('o-tim-nhanh'))){
+        const o=document.createElement('input'); o.type='search'; o.className='o-tim-nhanh'; o.placeholder='🔍 Tìm nhanh…';
+        o.addEventListener('input',()=>{ const q=o.value.trim().toLowerCase(); t.querySelectorAll('tbody tr').forEach(tr=>{ tr.style.display=(!q||tr.textContent.toLowerCase().includes(q))?'':'none'; }); });
+        khung.before(o);
+      }
+    }
+  });
+}
+document.getElementById('nutChonNgayTk')?.addEventListener('click',e=>{ const kh=e.currentTarget.closest('.capacity-filters'); const mo=kh.classList.toggle('hien-ngay'); e.currentTarget.setAttribute('aria-expanded',mo?'true':'false'); });
+let henGanNhan=null;
+new MutationObserver(()=>{ clearTimeout(henGanNhan); henGanNhan=setTimeout(ganNhanBang,150); }).observe(document.body,{childList:true,subtree:true});
+setTimeout(ganNhanBang,500);
 
 // "Chi tiết thống kê": mượn luôn khối thẻ đang có, mở ra xem rồi trả về chỗ cũ —
 // không nhân bản để renderMonthly() vẫn ghi đúng vào một khối duy nhất.
