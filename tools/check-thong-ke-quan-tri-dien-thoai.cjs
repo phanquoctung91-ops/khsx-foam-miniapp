@@ -15,5 +15,5 @@ console.log('PASS các tab quản trị: bảng ≤6 cột thành thẻ, bảng 
 // mọi luật mới chỉ trong phạm vi điện thoại
 const doan=html.slice(html.indexOf('/* ---- Đợt 3'),html.indexOf('/* Nút "Thêm" nằm chung trong thanh dưới cho khỏi lạc chỗ */',html.indexOf('/* ---- Đợt 3')));
 for(const l of doan.split('\n').filter(l=>l.includes('{')&&!l.trim().startsWith('/*')))
-  assert.ok(l.trim().startsWith('body.mobile-view')||/^\.(nut-chon-ngay|o-tim-nhanh)\{display:none;\}$/.test(l.trim())||/^\.toast-vuong|^@keyframes (toastVuong|bangTruotLen)/.test(l.trim()),'luật không nằm trong phạm vi điện thoại: '+l.slice(0,100));
+  assert.ok(l.trim().startsWith('body.mobile-view')||/^\.(nut-chon-ngay|o-tim-nhanh)\{display:none;\}$/.test(l.trim())||/^\.toast-vuong|^@keyframes (toastVuong|bangTruotLen)|^@(supports|starting-style|media \(prefers-reduced-motion)/.test(l.trim()),'luật không nằm trong phạm vi điện thoại: '+l.slice(0,100));
 console.log('PASS luật mới chỉ áp trong chế độ điện thoại, máy tính không đổi');

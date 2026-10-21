@@ -953,6 +953,26 @@
   body.mobile-view .sua-don-luoi label:nth-child(5),body.mobile-view .sua-don-luoi label:nth-child(6),body.mobile-view .sua-don-luoi label:nth-child(7){grid-column:span 2;}
   body.mobile-view .sua-don-luoi input{font-size:16px;min-height:46px;padding:8px 10px;}
   @keyframes bangTruotLen{from{transform:translateY(40px);opacity:.4;}to{transform:none;opacity:1;}}
+  /* ---- Hiệu ứng mượt cho mọi bảng trượt (anh nhắc 21/10/2026): nền mờ dần, hộp trượt cả chiều cao từ đáy lên với đường cong êm,
+     và có cả hiệu ứng LÚC ĐÓNG (trước đây tắt ngay). Dùng @starting-style + transition cho display, máy nào chưa hỗ trợ thì giữ hiệu ứng ngắn cũ. ---- */
+  @supports (transition-behavior:allow-discrete){
+    /* chú ý: không gộp #tachDonModal vào :is() cùng lớp — :is() lấy độ ưu tiên của phần tử mạnh nhất (id) nên đè mất luật "đóng" của các bảng khác */
+    body.mobile-view .capacity-modal,body.mobile-view #tachDonModal,body.mobile-view .more-sheet-bg,body.mobile-view .don-sheet-bg{opacity:1;transition:opacity .28s ease,display .3s allow-discrete;}
+    body.mobile-view .capacity-modal[style*="display: none"],body.mobile-view #tachDonModal[style*="display: none"]{opacity:0;pointer-events:none;}
+    body.mobile-view .more-sheet-bg:not(.on),body.mobile-view .don-sheet-bg:not(.on){opacity:0;pointer-events:none;}
+    body.mobile-view .capacity-modal .capacity-dialog,body.mobile-view #tachDonModal > div,body.mobile-view .more-sheet,body.mobile-view .don-sheet{
+      transform:none;animation:none;transition:transform .34s cubic-bezier(.32,.72,0,1);will-change:transform;
+    }
+    body.mobile-view .capacity-modal[style*="display: none"] .capacity-dialog,body.mobile-view #tachDonModal[style*="display: none"] > div,
+    body.mobile-view :is(.more-sheet-bg,.don-sheet-bg):not(.on) :is(.more-sheet,.don-sheet){transform:translateY(100%);transition-duration:.26s;transition-timing-function:cubic-bezier(.4,0,1,1);}
+    @starting-style{
+      body.mobile-view .capacity-modal,body.mobile-view #tachDonModal,body.mobile-view .more-sheet-bg,body.mobile-view .don-sheet-bg{opacity:0;}
+      body.mobile-view .capacity-modal .capacity-dialog,body.mobile-view #tachDonModal > div,body.mobile-view .more-sheet,body.mobile-view .don-sheet{transform:translateY(100%);}
+    }
+    @media (prefers-reduced-motion:reduce){
+      body.mobile-view :is(.capacity-modal,#tachDonModal,.more-sheet-bg,.don-sheet-bg,.capacity-dialog,.more-sheet,.don-sheet,#tachDonModal > div){transition:none!important;}
+    }
+  }
   /* Nút "Thêm" nằm chung trong thanh dưới cho khỏi lạc chỗ */
   body.mobile-view #mainTabs{padding-right:68px;}
   body.mobile-view .tabs-more-toggle{
@@ -2521,7 +2541,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=253"></script>
+<script src="raw-data.js?v=254"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4538,7 +4558,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 253;
+const APP_VERSION = 254;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
