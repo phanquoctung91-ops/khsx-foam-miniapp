@@ -1961,6 +1961,7 @@ body.mobile-view .nkx-tim{width:100%;}
       <button id="layKhsxSheetBtn" class="primary-btn" type="button">📥 Lấy KHSX từ Sheet</button>
       <button id="nutDonCanKiemTra" class="primary-btn only-manager" type="button" style="display:none;background:var(--warning-l);color:var(--warning);border:1px solid var(--warning);">⚠ Đơn cần kiểm tra</button>
       <button id="addManualOrderBtn" class="primary-btn only-manager" style="background:var(--accent);">+ Thêm đơn phát sinh</button>
+      <button id="xoaCaNgayBtn" class="primary-btn" type="button" style="display:none;background:var(--danger);">🗑 Xóa đơn chưa làm của ngày</button>
       <button id="unlockEditBtn" class="primary-btn only-manager" style="background:var(--danger);">⚠ Sửa đổi số liệu</button>
       <button id="lockPlanBtn" class="primary-btn" style="background:var(--text2);">🔒 Chốt đầu vào</button>
       <button id="phoiBtn" class="primary-btn" style="background:var(--accent);">🧱 Bảng đặt phôi</button>
@@ -2518,6 +2519,16 @@ body.mobile-view .nkx-tim{width:100%;}
   </div>
 </div>
 
+<div id="xoaNgayModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="xoaNgayTitle">
+  <div class="capacity-dialog" style="max-width:520px;">
+    <div class="capacity-head">
+      <h3 id="xoaNgayTitle" style="margin:0;font-size:17px;">Xóa đơn chưa làm của ngày</h3>
+      <button id="dongXoaNgayBtn" class="capacity-quick-btn" type="button">Đóng</button>
+    </div>
+    <div id="xoaNgayThan"></div>
+  </div>
+</div>
+
 <div id="thongKeModal" class="capacity-modal" role="dialog" aria-modal="true" aria-labelledby="thongKeModalTitle">
   <div class="capacity-dialog">
     <div class="capacity-head">
@@ -2541,7 +2552,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=254"></script>
+<script src="raw-data.js?v=255"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4558,7 +4569,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 254;
+const APP_VERSION = 255;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -8312,7 +8323,7 @@ function canhBaoAnhChupRong(){
   el.style.color = 'var(--danger)';
 }
 
-function renderAutoPlan(){ const g=giuODangGo(); try{ return renderAutoPlanThat(); }finally{ traODangGo(g); } }
+function renderAutoPlan(){ const g=giuODangGo(); try{ return renderAutoPlanThat(); }finally{ traODangGo(g); try{ capNhatNutXoaCaNgay(); }catch(e){} } }
 function renderAutoPlanThat(){
   capNhatNutDonKiemTra();
   const dayVal = document.getElementById('autoPlanDaySelect').value;
@@ -9240,6 +9251,80 @@ document.getElementById('donSheetBg')?.addEventListener('click',e=>{
 });
 document.getElementById('fabThemDon')?.addEventListener('click',()=>{ if(canManage2()) openManualOrderModal(); });
 
+
+// ---- Xóa cả ngày (anh chốt 26/10/2026): công ty đổ nhầm đơn cả ngày thì xóa một lượt thay vì từng đơn ----
+// Chỉ xóa đơn kế hoạch CHƯA làm (không tiến độ, không tách, không chờ xác nhận nguồn); đơn đã có số được giữ nguyên và báo lại.
+// Mỗi đơn đi đúng đường hủy mềm như nút Xóa từng đơn (vào "Xem đơn đã hủy", khôi phục được).
+function donCoTheXoaCaNgay(ngay){
+  const duoc=[], giu=[];
+  getOrders().filter(o=>o.date===ngay&&isPlannedOrder(o)).forEach(o=>{
+    (coTienDoDon(o)||assignments[o.id]?.spinoff_id||pendingSheetChanges[o.id]||o.source_order_id?giu:duoc).push(o);
+  });
+  return {duoc,giu};
+}
+const coQuyenXoaDon=()=>!!(SUPABASE_VARIANT&&supabaseDb&&!PUBLIC_VIEW_MODE&&(canManage()||hasPermOrOwner('order_cancel')));
+function capNhatNutXoaCaNgay(){
+  const nut=document.getElementById('xoaCaNgayBtn'); if(!nut) return;
+  const ngay=document.getElementById('autoPlanDaySelect')?.value;
+  if(!coQuyenXoaDon()||!ngay||ngay==='all'){ nut.style.display='none'; return; }
+  const {duoc}=donCoTheXoaCaNgay(ngay);
+  nut.style.display=duoc.length?'':'none';
+  nut.textContent=`🗑 Xóa ${duoc.length} đơn chưa làm của ${ngay.slice(0,5)}`;
+}
+function moXoaCaNgay(){
+  const ngay=document.getElementById('autoPlanDaySelect')?.value; if(!ngay||ngay==='all'||!coQuyenXoaDon()) return;
+  const hop=document.getElementById('xoaNgayModal'), than=document.getElementById('xoaNgayThan');
+  const {duoc,giu}=donCoTheXoaCaNgay(ngay);
+  document.getElementById('xoaNgayTitle').textContent=`Xóa đơn chưa làm — ${ngay}`;
+  if(isPlanLocked(ngay)||lockedProgressDates.includes(ngay)){
+    than.innerHTML='<div style="color:var(--danger);font-weight:700;">Ngày này đang chốt nên không xóa được. Mở chốt ngày rồi thử lại.</div>'; hop.style.display='block'; return;
+  }
+  if(!duoc.length){ than.innerHTML='<div>Ngày này không có đơn chưa làm để xóa.</div>'; hop.style.display='block'; return; }
+  const tong=duoc.reduce((t,o)=>t+(Number(o.so_luong)||0),0);
+  const the=(ds,mau)=>ds.slice(0,12).map(o=>`<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 8px;border-radius:99px;font-size:12px;background:var(--bg);border:1px solid ${mau};">${thoatHtml(o.ma||o.dong||'')} ×${Number(o.so_luong)||0}</span>`).join('')+(ds.length>12?` <span style="font-size:12px;color:var(--text2);">… và ${ds.length-12} đơn nữa</span>`:'');
+  than.innerHTML=`<div style="font-size:14px;margin-bottom:8px;">Xóa <b>${duoc.length} đơn</b> (<b>${tong.toLocaleString('vi-VN')} tấm</b>) của ngày <b>${ngay}</b>. Đơn vào "Xem đơn đã hủy", khôi phục được.</div>`
+    +`<div style="margin-bottom:10px;">${the(duoc,'var(--danger)')}</div>`
+    +(giu.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:10px;background:var(--warning-l);color:var(--warning);font-size:12.5px;"><b>Giữ lại ${giu.length} đơn</b> vì đã có số, đã tách hoặc đang chờ xác nhận nguồn: ${the(giu,'var(--warning)')}</div>`:'')
+    +`<label style="display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px;">Lý do</label><input type="text" id="xoaNgayLyDo" value="Công ty đổ nhầm đơn" style="width:100%;box-sizing:border-box;margin-bottom:10px;">`
+    +`<div class="btn-row" style="align-items:center;"><button type="button" id="xoaNgayDongYBtn" class="primary-btn" style="background:var(--danger);">Xóa ${duoc.length} đơn</button><button type="button" id="xoaNgayHuyBtn" class="primary-btn" style="background:var(--text2);">Hủy</button><span id="xoaNgayStatus" class="save-status"></span></div>`;
+  hop.style.display='block';
+}
+let xoaCaNgayDangChay=false;
+async function xacNhanXoaCaNgay(){
+  if(xoaCaNgayDangChay) return;
+  const ngay=document.getElementById('autoPlanDaySelect')?.value, st=document.getElementById('xoaNgayStatus');
+  const ly=(document.getElementById('xoaNgayLyDo')?.value||'').trim();
+  if(!ly){ st.textContent='Phải nhập lý do.'; st.style.color='var(--danger)'; return; }
+  if(!ngay||ngay==='all'||!coQuyenXoaDon()||isPlanLocked(ngay)||lockedProgressDates.includes(ngay)) return;
+  xoaCaNgayDangChay=true;
+  try{
+    const {duoc}=donCoTheXoaCaNgay(ngay);   // tính lại lúc bấm: dữ liệu có thể đã đổi từ lúc mở hộp
+    if(!duoc.length){ st.textContent='Không còn đơn nào để xóa.'; return; }
+    const tong=duoc.reduce((t,o)=>t+(Number(o.so_luong)||0),0);
+    duoc.forEach(o=>{
+      const id=o.id, a=assignments[id];
+      cancelledOrderMeta[id]={order:{...o},assignment:a?JSON.parse(JSON.stringify(a)):null,splitOrderId:null,reason:ly,cancelledAt:new Date().toISOString()};
+      delete assignments[id];
+      orderEntityStore?.remove(id);
+      if(!deletedOrderIds.includes(id)) deletedOrderIds.push(id);
+      if(SUPABASE_VARIANT){ purgeSupabaseOutboxForOrder(id); queueSupabaseManagementPatch('cancel',o); }
+      dirtyAssignmentIds.set(id, monthKeyOf(o.date));
+    });
+    persistCancelledOrders();
+    renderAutoPlanDaySelect(); renderAutoPlan(); renderProgress(); scheduleMonthlySync();
+    if(!SUPABASE_VARIANT) queueSave('assignments','dynamic','deleted'); else saveLocalCache();
+    document.getElementById('xoaNgayModal').style.display='none';
+    supabaseStatus(`Đã xóa ${duoc.length} đơn chưa làm của ngày ${ngay} (${tong.toLocaleString('vi-VN')} tấm): "${ly}".`,true);
+    hienThanhCong('Đã xóa',`${duoc.length} đơn · ${tong.toLocaleString('vi-VN')} tấm`);
+  }finally{ xoaCaNgayDangChay=false; }
+}
+document.getElementById('xoaCaNgayBtn')?.addEventListener('click',moXoaCaNgay);
+document.getElementById('xoaNgayModal')?.addEventListener('click',e=>{
+  const hop=e.currentTarget;
+  if(e.target===hop||e.target.id==='dongXoaNgayBtn'||e.target.id==='xoaNgayHuyBtn'){ hop.style.display='none'; return; }
+  if(e.target.id==='xoaNgayDongYBtn') xacNhanXoaCaNgay();
+});
+document.getElementById('autoPlanDaySelect')?.addEventListener('change',()=>{ try{ capNhatNutXoaCaNgay(); }catch(e){} });
 
 // Feed every Foam order (mọi trạng thái — không chỉ đơn đã xong) vào data model "Tổng hợp
 // tháng" (allDays), để ngày nào cũng hiện ra dù chưa có đơn nào hoàn thành (hôm nay, ngày
