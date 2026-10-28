@@ -2552,7 +2552,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=255"></script>
+<script src="raw-data.js?v=256"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4569,7 +4569,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 255;
+const APP_VERSION = 256;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -13241,7 +13241,9 @@ function ddBangXuat(nguoi,dd,ps,tu,den,gc=[]){
   return [dau,...dong];
 }
 const GIAY_TC_DONG=11, GIAY_TC_TOI_DA=30, GIAY_TC_CAO_BANG=177;   // tối thiểu 11 dòng như mẫu; tối đa 30 dòng/tờ; 177mm là chiều cao dành cho các dòng
-function giayTangCaHtml(ds,logo){
+function giayTangCaHtml(ds,logo,ngay){
+  const [ny,nt,nn]=/^\d{4}-\d{2}-\d{2}$/.test(ngay||'')?ngay.split('-').map(Number):[];   // ngày lọc (yyyy-mm-dd); không có thì để chấm cho ghi tay
+  const dongNgay=ny?`Ngày ${nn} tháng ${nt} năm ${ny}`:'Ngày ....... tháng ....... năm ..........';
   const trang=Math.max(1,Math.ceil(ds.length/GIAY_TC_TOI_DA));
   let h='';
   for(let t=0;t<trang;t++){
@@ -13253,8 +13255,8 @@ function giayTangCaHtml(ds,logo){
       const k=dau+i, x=ds[k];
       dong+=`<tr><td class="c">${k+1}</td><td class="ten">${x?thoatHtml(x.ten):''}</td><td class="c">${x?'17h':''}</td><td class="c">${x?(17+x.tc)+'h':''}</td><td></td></tr>`;
     }
-    h+=`<section class="tr"><div class="dau"><img src="${logo}" alt=""><div class="qh"><b>CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><b>Độc lập - Tự do - Hạnh phúc</b><span class="gach"></span><i>Ngày ....... tháng ....... năm ..........</i></div></div>
-<h1>GIẤY ĐỀ XUẤT TĂNG CA</h1><div class="bp"><b>Bộ phận:</b><span>${'.'.repeat(220)}</span></div>
+    h+=`<section class="tr"><div class="dau"><img src="${logo}" alt=""><div class="qh"><b>CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><b>Độc lập - Tự do - Hạnh phúc</b><span class="gach"></span><i>${dongNgay}</i></div></div>
+<h1>GIẤY ĐỀ XUẤT TĂNG CA</h1><div class="bp"><b>Bộ phận:</b><span class="bpten">Tổ Nệm Foam</span></div>
 <table style="--rh:${cao.toFixed(2)}mm;--fs:${co}pt"><thead><tr><th class="tt">TT</th><th>Họ và tên</th><th class="gi">Từ giờ</th><th class="gi">Đến giờ</th><th>Nội dung công việc tăng ca</th></tr></thead><tbody>${dong}</tbody></table>
 <div class="ky"><div><b>Phòng HCNS</b><i>(Ký, ghi rõ họ tên)</i></div><div><b>BAN GIÁM ĐỐC</b><i>(Ký, ghi rõ họ tên)</i></div><div><b>Trưởng bộ phận</b><i>(Ký, ghi rõ họ tên)</i></div></div></section>`;
   }
@@ -13263,7 +13265,7 @@ function giayTangCaHtml(ds,logo){
 .dau{display:grid;grid-template-columns:1fr 112mm;align-items:start}.dau img{width:36mm;height:auto;display:block;margin-top:1mm}
 .qh{text-align:center;line-height:1.3}.qh b{display:block;font-size:13pt}.qh .gach{display:block;width:44mm;border-top:1px solid #000;margin:1mm auto 0}.qh i{display:block;font-size:12pt;margin-top:4mm}
 h1{text-align:center;font-size:23pt;margin:9mm 0 6mm;font-weight:700;letter-spacing:.3px}
-.bp{display:flex;align-items:baseline;gap:2mm;font-size:13pt;margin-bottom:3mm;white-space:nowrap}.bp b{flex:none}.bp span{flex:1;overflow:hidden;letter-spacing:1px}
+.bp{display:flex;align-items:baseline;gap:2mm;font-size:13pt;margin-bottom:3mm;white-space:nowrap}.bp b{flex:none}.bp span{flex:1;overflow:hidden}
 table{width:100%;border-collapse:collapse;table-layout:fixed;border:1.6px solid #000}th,td{border:1px solid #000;padding:0 3mm;vertical-align:middle}
 th{height:9mm;font-size:12.5pt;font-weight:700;text-align:center}td{height:var(--rh,8.5mm);font-size:var(--fs,13pt);line-height:1.1}.tt{width:14mm}.gi{width:24mm}.c{text-align:center;padding:0}.ten{padding-left:4mm}
 .ky{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:9mm;text-align:center}.ky b{display:block;font-size:12.5pt}.ky i{display:block;font-size:11pt;margin-top:1mm}`;
@@ -13272,7 +13274,7 @@ th{height:9mm;font-size:12.5pt;font-weight:700;text-align:center}td{height:var(-
 document.getElementById('ddInTcBtn')?.addEventListener('click',()=>{
   const ds=ddNguoi.filter(p=>(ddDong[p.id]||{}).tc>0).sort(ddThuTu).map(p=>({ten:p.ten,tc:ddDong[p.id].tc}));
   if(!ds.length) return ddBao('ddStatus','Ngày này chưa có ai tăng ca.','var(--danger)');
-  const trang=giayTangCaHtml(ds,new URL('assets/tc-logo.png?v=235',location.href).href);
+  const trang=giayTangCaHtml(ds,new URL('assets/tc-logo.png?v=235',location.href).href,document.getElementById('ddNgay').value);
   const tai=()=>{   // dự phòng: nơi không cho in (một số trình duyệt nhúng) thì tải file về, mở bằng Chrome rồi in
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([trang],{type:'text/html;charset=utf-8'}));
     a.download=`Giay de xuat tang ca ${document.getElementById('ddNgay').value}.html`; document.body.appendChild(a); a.click(); a.remove();

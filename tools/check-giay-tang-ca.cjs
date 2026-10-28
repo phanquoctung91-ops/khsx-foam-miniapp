@@ -25,4 +25,8 @@ assert.ok(cao(N(11))===8.5&&cao(N(20))===8.5,'hàng giữ 8,5mm khi còn đủ c
 assert.ok(cao(N(30))<6.5&&cao(N(30))*30<=177.01,'30 người: hàng thấp lại cho vừa 177mm');
 assert.ok(cao(N(25))*25<=177.01&&cao(N(25))<8.5,'25 người: hàng thấp lại');
 assert.match(N(30),/--fs:10pt/,'chữ nhỏ dần khi hàng thấp');
+const ngay=ctx.g([{ten:'An',tc:1}],'x.png','2026-10-28');
+assert.match(ngay,/<i>Ngày 28 tháng 10 năm 2026<\/i>/,'ngày điền theo bộ lọc');
+assert.match(ngay,/<b>Bộ phận:<\/b><span class="bpten">Tổ Nệm Foam<\/span>/,'bộ phận điền sẵn');
+assert.match(mot,/Ngày \.\.\.\.\.\.\. tháng/,'không truyền ngày thì để chấm');
 console.log('PASS giấy tăng ca: đủ khung theo mẫu, tối thiểu 11 dòng, cân đối cả tờ tới 30 người (hàng thấp dần), sang tờ khi quá 30, giờ 17h→18/19/20h, tên thoát HTML, cột nội dung trống');
