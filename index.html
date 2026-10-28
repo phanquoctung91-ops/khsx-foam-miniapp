@@ -2333,7 +2333,11 @@ body.mobile-view .nkx-tim{width:100%;}
         <label style="font-size:12.5px;color:var(--text2);">Lịch ngày làm việc quý</label>
         <strong id="quarterWorkdayCount" style="font-size:12px;color:var(--primary);"></strong>
       </div>
-      <div style="font-size:11.5px;color:var(--text2);margin-bottom:7px;">Mặc định chọn Thứ 2–7; bỏ Chủ nhật và ngày lễ Việt Nam. Quản lý tự chỉnh ngày nghỉ bù/thay đổi của công ty.</div>
+      <div style="font-size:11.5px;color:var(--text2);margin-bottom:7px;">Mặc định chọn Thứ 2–7; bỏ Chủ nhật và ngày lễ Việt Nam. Quản lý tự chỉnh ngày nghỉ bù/thay đổi của công ty. Đổi "Từ ngày / Đến ngày" nếu quý kéo dài hơn 3 tháng (vd Quý 4 tính hết tháng 1); ngày đã thuộc quý trước thì không chọn được.</div>
+      <div style="display:flex;gap:10px;margin-bottom:8px;max-width:420px;">
+        <label style="flex:1;font-size:12px;font-weight:700;color:var(--text2);">Từ ngày <input type="date" id="quarterTuNgay" style="width:100%;font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+        <label style="flex:1;font-size:12px;font-weight:700;color:var(--text2);">Đến ngày <input type="date" id="quarterDenNgay" style="width:100%;font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
+      </div>
       <div id="quarterWorkCalendar" style="display:grid;grid-template-columns:repeat(7,minmax(44px,1fr));gap:5px;max-height:220px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:10px;"></div>
     </div>
     <button id="doSaveQuarterTargetBtn" class="primary-btn">💾 Lưu mục tiêu</button>
@@ -2552,7 +2556,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=256"></script>
+<script src="raw-data.js?v=257"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -2871,20 +2875,19 @@ function dinhDangPhanTramBaoCao(value){
   return Math.abs(Number(value)||0).toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1});
 }
 function taoCauBaoCaoKrTuan(nam,thang,hienTai=new Date()){
-  const quy=Math.floor((thang-1)/3)+1,quarterStartMonth=(quy-1)*3+1;
-  const registered=workDatesForQuarter(nam,quy).slice().sort();
-  const registeredSet=new Set(registered);
   const monthEnd=new Date(nam,thang,0),today=new Date(hienTai);today.setHours(0,0,0,0);
   const limit=today<monthEnd?today:monthEnd;
+  const {nam:namQuy,quy}=quyCuaIso(isoDateLocal(limit));   // quý chứa tháng này (Quý 4 có thể kéo hết tháng 1 năm sau)
+  const registered=workDatesForQuarter(namQuy,quy).slice().sort();
+  const registeredSet=new Set(registered);
   const cutoffIso=mocKetThucTuan(limit,registeredSet),cutoffDate=ngayTuIsoLocal(cutoffIso);
   if(!cutoffDate||cutoffDate.getFullYear()!==nam||cutoffDate.getMonth()+1!==thang)return {text:'',cutoffIso};
   const monthPrefix=`${nam}-${String(thang).padStart(2,'0')}`;
-  const quarterFrom=`${nam}-${String(quarterStartMonth).padStart(2,'0')}-01`;
-  const quarterTo=`${nam}-${String(quarterStartMonth+2).padStart(2,'0')}-31`;
+  const quarterFrom=khoangQuy(namQuy,quy).from;
   const keysBetween=(from,to)=>Object.keys(allDays).filter(k=>{
     const iso=dmyToIso(allDays[k]?.date);return iso&&iso>=from&&iso<=to;
   });
-  const target=Number(quarterTargets[`${nam}_Q${quy}`])||0;
+  const target=Number(quarterTargets[`${namQuy}_Q${quy}`])||0;
   if(target<=0||!registered.length)return {text:'',cutoffIso};
   // Sửa 2026-09-08 (Việc 12): theo đúng chốt lại của anh Tùng — mọi mốc (tuần/tháng/quý)
   // đều quy về CÙNG 1 tốc độ ngày của quý (đúng số đã hiện ở thẻ "Tốc độ quý"), KHÔNG
@@ -3622,24 +3625,52 @@ let quarterTargets = {};
 const QUARTER_CALENDAR_KEY='khsx_lich_lam_viec_quy_v118';
 let quarterCalendars=(()=>{try{return JSON.parse(localStorage.getItem(QUARTER_CALENDAR_KEY)||'{}')}catch(e){return {}}})();
 const NANG_LUC_NGAY_MAC_DINH=150;   // tấm/ngày: năng lực đóng gói dùng để cảnh báo khi tốc độ cần cho quý vượt quá
-function quyCuaNgay(dateObj){
-  const y = dateObj.getFullYear();
-  const q = Math.floor(dateObj.getMonth()/3) + 1;
-  return {nam:y, quy:q, key:`${y}_Q${q}`};
+function quyCuaNgay(dateObj){ return quyCuaIso(isoDateLocal(dateObj)); }
+// ---- Khoảng ngày của quý (anh chốt 28/10/2026): quý đã lưu lịch thì khoảng = từ ngày đăng ký đầu tới ngày đăng ký cuối
+// (vd Quý 4 kéo hết tháng 1 năm sau). Ngày nằm trong khoảng của quý nào thì thuộc quý đó; chồng nhau thì quý đứng trước giữ.
+// Ngày không nằm trong khoảng nào đã lưu thì tính theo quý lịch như cũ.
+function lichQuyDaLuu(nam,quy){const a=quarterCalendars[`${nam}_Q${quy}`];return Array.isArray(a)&&a.length?a:null;}
+function rangesDaLuu(){
+  const out=[];
+  for(const k in quarterCalendars){
+    const p=/^(\d{4})_Q(\d)$/.exec(k),a=p&&lichQuyDaLuu(+p[1],+p[2]); if(!a) continue;
+    const s=a.slice().sort(); out.push({ord:+p[1]*10+ +p[2],nam:+p[1],quy:+p[2],from:s[0],to:s[s.length-1]});
+  }
+  return out.sort((x,y)=>x.ord-y.ord);
+}
+function quyCuaIso(iso,ds=rangesDaLuu()){
+  const x=String(iso||''),r=ds.find(q=>x>=q.from&&x<=q.to);
+  if(r) return {nam:r.nam,quy:r.quy,key:`${r.nam}_Q${r.quy}`};
+  const m=/^(\d{4})-(\d{2})-/.exec(x); if(!m) return null;
+  const q=Math.floor((+m[2]-1)/3)+1; return {nam:+m[1],quy:q,key:`${m[1]}_Q${q}`};
+}
+function khoangQuy(nam,quy,ds=rangesDaLuu()){
+  const own=ds.find(r=>r.nam===nam&&r.quy===quy); if(own) return {from:own.from,to:own.to};
+  let from=isoDateLocal(new Date(nam,(quy-1)*3,1)); const to=isoDateLocal(new Date(nam,quy*3,0));
+  ds.forEach(r=>{   // quý trước đã kéo qua đầu quý này: quý này bắt đầu ngay sau đó
+    if(r.ord<nam*10+quy&&r.to>=from&&r.to<to){const d=new Date(r.to+'T00:00:00');d.setDate(d.getDate()+1);const n=isoDateLocal(d);if(n>from)from=n;}
+  });
+  return {from,to};
 }
 const NGAY_LE_QUOC_GIA_THEO_NAM={
   2026:['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-04-26','2026-04-30','2026-05-01','2026-09-01','2026-09-02']
 };
 function isoDateLocal(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+const ngayLeSet=nam=>new Set(NGAY_LE_QUOC_GIA_THEO_NAM[nam]||[`${nam}-01-01`,`${nam}-04-30`,`${nam}-05-01`,`${nam}-09-01`,`${nam}-09-02`]);
+const macDinhLamViec=iso=>{const d=new Date(iso+'T00:00:00');return d.getDay()!==0&&!ngayLeSet(d.getFullYear()).has(iso);};
 function defaultQuarterWorkDates(nam,quy){
-  const holidays=new Set(NGAY_LE_QUOC_GIA_THEO_NAM[nam]||[`${nam}-01-01`,`${nam}-04-30`,`${nam}-05-01`,`${nam}-09-01`,`${nam}-09-02`]);
+  const holidays=ngayLeSet(nam);
   const out=[],end=new Date(nam,quy*3,0);
   for(let d=new Date(nam,(quy-1)*3,1);d<=end;d.setDate(d.getDate()+1)){
     const iso=isoDateLocal(d); if(d.getDay()!==0&&!holidays.has(iso))out.push(iso);
   }
   return out;
 }
-function workDatesForQuarter(nam,quy){const key=`${nam}_Q${quy}`;return Array.isArray(quarterCalendars[key])?quarterCalendars[key]:defaultQuarterWorkDates(nam,quy);}
+function workDatesForQuarter(nam,quy){
+  const key=`${nam}_Q${quy}`,raw=Array.isArray(quarterCalendars[key])?quarterCalendars[key]:defaultQuarterWorkDates(nam,quy);
+  const truoc=rangesDaLuu().filter(r=>r.ord<nam*10+quy);   // ngày đã thuộc khoảng của quý đứng trước thì không tính cho quý này
+  return truoc.length?raw.filter(iso=>!truoc.some(r=>iso>=r.from&&iso<=r.to)):raw;
+}
 function tinhSoNgayLamViecQuy(nam, quy){
   return workDatesForQuarter(nam,quy).length;
 }
@@ -3652,7 +3683,7 @@ function tinhTienDoQuyHienTai(){
   const thangHienTai = new Date().getMonth()+1;
   Object.entries(allDays).forEach(([k,d])=>{
     const p = parseDMY(d.date);
-    if(!p || p.y !== nam || Math.floor((p.m-1)/3)+1 !== quy) return;
+    if(!p || quyCuaIso(dmyToIso(d.date))?.key !== key) return;
     quyKeys.push(k);
     if(p.m === thangHienTai) thangKeys.push(k);
   });
@@ -3686,7 +3717,7 @@ function ngayLamViecTrongKhoang(fromIso,toIso){
   if(from>to) [from,to]=[to,from];
   const start=new Date(from*86400000),end=new Date(to*86400000);
   const result=new Set();
-  for(let year=start.getUTCFullYear();year<=end.getUTCFullYear();year++){
+  for(let year=start.getUTCFullYear()-1;year<=end.getUTCFullYear();year++){   // -1: Quý 4 năm trước có thể kéo sang năm này
     for(let quarter=1;quarter<=4;quarter++){
       workDatesForQuarter(year,quarter).forEach(iso=>{
         const n=isoDayNumber(iso);
@@ -3702,8 +3733,7 @@ function ngayLamViecDaQuaCuaQuy(nam,quy){
 }
 function keysTheoQuy(nam,quy){
   return Object.keys(allDays).filter(k=>{
-    const p=parseDMY(allDays[k]?.date||'');
-    return p&&p.y===nam&&Math.floor((p.m-1)/3)+1===quy;
+    return quyCuaIso(dmyToIso(allDays[k]?.date||''))?.key===`${nam}_Q${quy}`;
   });
 }
 function keysTrongKhoang(fromIso,toIso){
@@ -3789,12 +3819,10 @@ function tinhTocDoBoLoc({keys=[],output=null,fromIso='',toIso='',scope='Toàn te
   const thucTe=ngayDangKy.length>0?sanLuong/ngayDangKy.length:0;
   const quarterDate=sourceDates[0]||from;
   const p=String(quarterDate).match(/^(\d{4})-(\d{2})-/);
-  const q=p?Math.floor((Number(p[2])-1)/3)+1:null;
-  const nam=p?Number(p[1]):null;
-  const sourceQuarters=new Set(sourceDates.map(iso=>{
-    const m=String(iso).match(/^(\d{4})-(\d{2})-/);
-    return m?`${m[1]}_Q${Math.floor((Number(m[2])-1)/3)+1}`:'';
-  }).filter(Boolean));
+  const qc=quyCuaIso(quarterDate);
+  const q=qc?qc.quy:null;
+  const nam=qc?qc.nam:null;
+  const sourceQuarters=new Set(sourceDates.map(iso=>quyCuaIso(iso)?.key||'').filter(Boolean));
   const mucTieuQuy=nam&&q&&sourceQuarters.size<=1?mucTieuNgayTheoQuy(nam,q):0;
   const chenhlech=mucTieuQuy>0?thucTe-mucTieuQuy:null;
   const trangThai=chenhlech==null?'none':chenhlech>=0?'green':chenhlech>=-mucTieuQuy*.1?'yellow':'red';
@@ -4569,7 +4597,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 256;
+const APP_VERSION = 257;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -11653,18 +11681,31 @@ document.getElementById('cancelledOrdersList')?.addEventListener('click',async e
   renderCancelledOrders();renderAutoPlanDaySelect();renderAutoPlan();renderProgress();scheduleMonthlySync();
 });
 
-function renderQuarterWorkCalendar(){
+function renderQuarterWorkCalendar(datLaiKhoang=true){
   const nam=parseInt(document.getElementById('quarterTargetNam').value,10),quy=parseInt(document.getElementById('quarterTargetQuy').value,10),box=document.getElementById('quarterWorkCalendar');
-  if(!nam||!quy||!box)return;
-  const selected=new Set(workDatesForQuarter(nam,quy)),end=new Date(nam,quy*3,0),days=[];
-  for(let d=new Date(nam,(quy-1)*3,1);d<=end;d.setDate(d.getDate()+1))days.push(new Date(d));
-  box.innerHTML=days.map(d=>{const iso=isoDateLocal(d),on=selected.has(iso),sun=d.getDay()===0;return `<label title="${d.toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit'})}" style="display:flex;align-items:center;gap:3px;padding:5px 4px;border:1px solid ${on?'var(--primary)':'var(--border)'};border-radius:7px;background:${on?'var(--primary-l)':'transparent'};font-size:10px;color:${sun?'var(--danger)':'var(--text)'}"><input class="quarter-workday" type="checkbox" value="${iso}" ${on?'checked':''} style="margin:0;width:13px;height:13px;">${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</label>`}).join('');
+  const tuEl=document.getElementById('quarterTuNgay'),denEl=document.getElementById('quarterDenNgay');
+  if(!nam||!quy||!box||!tuEl||!denEl)return;
+  const daCo=new Set([...box.querySelectorAll('.quarter-workday')].map(x=>x.value)),daChon=new Set([...box.querySelectorAll('.quarter-workday:checked')].map(x=>x.value));
+  if(datLaiKhoang){const k=khoangQuy(nam,quy);tuEl.value=k.from;denEl.value=k.to;}
+  const from=tuEl.value,to=denEl.value;
+  const ngayDau=new Date(from+'T00:00:00'),ngayCuoi=new Date(to+'T00:00:00');
+  if(!from||!to||from>to||(ngayCuoi-ngayDau)/864e5>400){box.innerHTML='<div style="grid-column:1/-1;color:var(--danger);font-size:12px;">Khoảng ngày không hợp lệ (đến ngày phải sau từ ngày, tối đa 400 ngày).</div>';updateQuarterWorkdayCount();return;}
+  const truoc=rangesDaLuu().filter(r=>r.ord<nam*10+quy),selected=new Set(workDatesForQuarter(nam,quy)),days=[];
+  for(const d=new Date(ngayDau);d<=ngayCuoi;d.setDate(d.getDate()+1))days.push(new Date(d));
+  box.innerHTML=days.map(d=>{
+    const iso=isoDateLocal(d),sun=d.getDay()===0,chuQuy=truoc.find(r=>iso>=r.from&&iso<=r.to);
+    const on=!chuQuy&&(datLaiKhoang?selected.has(iso):daCo.has(iso)?daChon.has(iso):macDinhLamViec(iso));
+    const tieuDe=chuQuy?`Đã thuộc Quý ${chuQuy.quy}/${chuQuy.nam}`:d.toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit'});
+    return `<label title="${tieuDe}" style="display:flex;align-items:center;gap:3px;padding:5px 4px;border:1px solid ${on?'var(--primary)':'var(--border)'};border-radius:7px;background:${on?'var(--primary-l)':'transparent'};font-size:10px;color:${sun?'var(--danger)':'var(--text)'};${chuQuy?'opacity:.4;':''}"><input class="quarter-workday" type="checkbox" value="${iso}" ${on?'checked':''}${chuQuy?' disabled':''} style="margin:0;width:13px;height:13px;">${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}${from.slice(0,4)!==to.slice(0,4)?'/'+String(d.getFullYear()).slice(2):''}</label>`;
+  }).join('');
   updateQuarterWorkdayCount();
 }
 function updateQuarterWorkdayCount(){const n=document.querySelectorAll('.quarter-workday:checked').length,el=document.getElementById('quarterWorkdayCount');if(el)el.textContent=`${n} ngày làm việc`;}
 document.getElementById('quarterWorkCalendar')?.addEventListener('change',updateQuarterWorkdayCount);
-document.getElementById('quarterTargetQuy')?.addEventListener('change',renderQuarterWorkCalendar);
-document.getElementById('quarterTargetNam')?.addEventListener('change',renderQuarterWorkCalendar);
+document.getElementById('quarterTargetQuy')?.addEventListener('change',()=>renderQuarterWorkCalendar(true));
+document.getElementById('quarterTargetNam')?.addEventListener('change',()=>renderQuarterWorkCalendar(true));
+document.getElementById('quarterTuNgay')?.addEventListener('change',()=>renderQuarterWorkCalendar(false));
+document.getElementById('quarterDenNgay')?.addEventListener('change',()=>renderQuarterWorkCalendar(false));
 // Sửa 2026-09-07 (Việc 9.1): "Cài đặt" không còn nút lối tắt (quarterTargetBtn đã xoá,
 // sidebar đã có sẵn trang riêng data-tab="settings") — khởi tạo trang gọi hàm này thay
 // vì gắn vào click nút, xem tab-click-handler và restoreUiState().
@@ -11900,7 +11941,7 @@ document.getElementById('wageQuickThisWeek').addEventListener('click',()=>{ datW
 document.getElementById('wageQuickLastWeek').addEventListener('click',()=>{ const a=thuHaiCuaTuan(new Date()),b=new Date(a),c=new Date(a); b.setDate(b.getDate()-7); c.setDate(c.getDate()-1); datWageRange(b,c); });
 document.getElementById('wageQuickThisMonth').addEventListener('click',()=>{ const n=new Date(); datWageRange(new Date(n.getFullYear(),n.getMonth(),1), n); });
 document.getElementById('wageQuickLastMonth').addEventListener('click',()=>{ const n=new Date(); datWageRange(new Date(n.getFullYear(),n.getMonth()-1,1),new Date(n.getFullYear(),n.getMonth(),0)); });
-document.getElementById('wageQuickThisQuarter').addEventListener('click',()=>{ const n=new Date(); const {nam,quy}=quyCuaNgay(n); datWageRange(new Date(nam,(quy-1)*3,1), n); });
+document.getElementById('wageQuickThisQuarter').addEventListener('click',()=>{ const n=new Date(); const {nam,quy}=quyCuaNgay(n); datWageRange(new Date(khoangQuy(nam,quy).from+'T00:00:00'), n); });
 document.getElementById('wageRefreshBtn').addEventListener('click', renderWagePage);
 document.getElementById('doSaveQuarterTargetBtn').addEventListener('click', async ()=>{
   if(!(canManage()||hasPermOrOwner('settings_edit_targets'))) return;

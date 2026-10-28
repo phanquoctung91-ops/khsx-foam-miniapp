@@ -31,6 +31,9 @@ const context={
     const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
     return m?`${m[3]}/${m[2]}/${m[1]}`:'';
   },
+  quyCuaIso(iso){ const m=/^(\d{4})-(\d{2})-/.exec(String(iso||'')); if(!m) return null; const q=Math.floor((+m[2]-1)/3)+1; return {nam:+m[1],quy:q,key:`${m[1]}_Q${q}`}; },   // chưa quý nào kéo dài: theo quý lịch
+  khoangQuy(nam,quy){ return {from:`${nam}-${String((quy-1)*3+1).padStart(2,'0')}-01`}; },
+  isoDateLocal(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; },
   workDatesForQuarter(){
     return ['2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-06',
       '2026-08-03','2026-08-04','2026-08-24','2026-08-25','2026-08-31'];

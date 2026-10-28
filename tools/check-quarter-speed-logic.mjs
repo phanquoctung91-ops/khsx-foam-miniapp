@@ -27,6 +27,7 @@ const context={
     return m?{d:Number(m[1]),m:Number(m[2]),y:Number(m[3])}:null;
   },
   isoDateLocal(){ return '2026-08-03'; },
+  quyCuaIso(iso){ const m=/^(\d{4})-(\d{2})-/.exec(String(iso||'')); if(!m) return null; const q=Math.floor((+m[2]-1)/3)+1; return {nam:+m[1],quy:q,key:`${m[1]}_Q${q}`}; },   // chưa quý nào kéo dài: theo quý lịch
   workDatesForQuarter(){ return context.workDates.slice(); },
   tinhTienDoQuyHienTai(){ return {nam:2026,quy:3,mucTieu:context.target}; },
   tongKpiTuRowsTheoKeys(keys){
