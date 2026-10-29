@@ -2565,7 +2565,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=259"></script>
+<script src="raw-data.js?v=260"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3277,23 +3277,45 @@ function apDungMauChuBieuDo(){
 // theo khoảng ngày của tab Thống kê. Lỗi "May tay" anh chốt bỏ hẳn khỏi biểu đồ.
 const LOI_BO_QUA_BIEU_DO=['may tay'];
 let loiBaoHanhChart=null;
+function nhanLoiBaoHanh(x){
+  return (Array.isArray(x.loi)?x.loi:String(x.loi||'').split(',')).map(k=>String(k).trim()).filter(k=>k&&!LOI_BO_QUA_BIEU_DO.includes(k.toLowerCase()));
+}
 function demLoiBaoHanh(tuIso,denIso){
   const dem={};let tam=0,chuaGhi=0;
   Object.entries(baoHanhTheoNgay||{}).forEach(([ngay,w])=>{
     const iso=dmyToIso(ngay); if(!iso||iso<tuIso||iso>denIso) return;
     (w&&w.chiTiet||[]).forEach(x=>{
       const n=Number(x.so_luong)||0; if(!n) return; tam+=n;
-      const nhan=(Array.isArray(x.loi)?x.loi:String(x.loi||'').split(',')).map(k=>String(k).trim()).filter(Boolean);
-      if(!nhan.length){ chuaGhi+=n; return; }
-      nhan.forEach(k=>{ if(LOI_BO_QUA_BIEU_DO.includes(k.toLowerCase())) return; dem[k]=(dem[k]||0)+n; });
+      const nhan=nhanLoiBaoHanh(x);
+      if(!nhan.length){ if(!(Array.isArray(x.loi)?x.loi:String(x.loi||'').split(',')).some(k=>String(k).trim())) chuaGhi+=n; return; }
+      nhan.forEach(k=>{ dem[k]=(dem[k]||0)+n; });
     });
   });
   return {ds:Object.entries(dem).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi')),tam,chuaGhi};
 }
+// Các dòng bảo hành có lỗi `loi` trong khoảng ngày, ngày mới trước (popup khi bấm cột biểu đồ).
+function dongBaoHanhTheoLoi(loi,tuIso,denIso){
+  const kq=[];
+  Object.entries(baoHanhTheoNgay||{}).forEach(([ngay,w])=>{
+    const iso=dmyToIso(ngay); if(!iso||iso<tuIso||iso>denIso) return;
+    (w&&w.chiTiet||[]).forEach(x=>{
+      if((Number(x.so_luong)||0)>0 && nhanLoiBaoHanh(x).includes(loi)) kq.push({ngay,iso,x});
+    });
+  });
+  return kq.sort((a,b)=>b.iso.localeCompare(a.iso));
+}
+function openLoiBaoHanhDetail(loi,tuIso,denIso){
+  const dong=dongBaoHanhTheoLoi(loi,tuIso,denIso);
+  const tam=dong.reduce((n,d)=>n+(Number(d.x.so_luong)||0),0);
+  document.getElementById('productDetailTitle').textContent=`${loi} · ${tam.toLocaleString('vi-VN')} tấm · ${dong.length.toLocaleString('vi-VN')} dòng`;
+  document.getElementById('productDetailBody').innerHTML=dong.length?`<div class="table-scroll" style="max-height:60vh"><table><thead><tr><th>Ngày</th><th>Tổ</th><th>Sản phẩm</th><th>Kích thước</th><th>SL</th><th>Lỗi</th><th>Nguyên nhân</th><th>Hướng xử lý</th></tr></thead><tbody>${dong.map(({ngay,x})=>`<tr><td>${thoatHtml(ngay)}</td><td><strong>${thoatHtml(x.to||'Chưa có tổ')}</strong></td><td>${thoatHtml(x.ten||'-')}</td><td>${thoatHtml(x.kich_thuoc||'-')}</td><td style="text-align:center;font-weight:700;">${Number(x.so_luong)||0}</td><td>${thoatHtml(nhanLoiBaoHanh(x).join(', '))}</td><td>${thoatHtml(x.nguyen_nhan||'-')}</td><td>${thoatHtml(x.huong_xu_ly||'-')}</td></tr>`).join('')}</tbody></table></div>`:'Không có dòng chi tiết trong khoảng đã chọn.';
+  document.getElementById('productDetailModal').style.display='block';
+}
 function veBieuDoLoiBaoHanh(){
   const wrap=document.getElementById('loiBaoHanhWrap'),gc=document.getElementById('loiBaoHanhGhiChu');
   if(!wrap||!gc) return;
-  const {ds,tam,chuaGhi}=demLoiBaoHanh(monthFromSelect.value,monthToSelect.value);
+  const tuIso=monthFromSelect.value,denIso=monthToSelect.value;
+  const {ds,tam,chuaGhi}=demLoiBaoHanh(tuIso,denIso);
   if(loiBaoHanhChart){ loiBaoHanhChart.destroy(); loiBaoHanhChart=null; }
   if(!ds.length){
     wrap.style.display='none';
@@ -3306,6 +3328,8 @@ function veBieuDoLoiBaoHanh(){
     type:'bar',
     data:{labels:ds.map(x=>x[0]),datasets:[{data:ds.map(x=>x[1]),backgroundColor:'#d97706',borderWidth:0,borderRadius:5}]},
     options:{animation:FX.chartAnim('loiBaoHanhChart'),responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:48}},
+      onClick:(event,elements)=>{ if(elements.length) openLoiBaoHanhDetail(ds[elements[0].index][0],tuIso,denIso); },
+      onHover:(event,elements)=>{ if(event?.native?.target) event.native.target.style.cursor=elements.length?'pointer':'default'; },
       scales:{x:{beginAtZero:true,grace:'12%',ticks:{precision:0},grid:CHART_GRID_STYLE()},y:{grid:{display:false}}},
       plugins:{totalLabels:true,legend:{display:false},tooltip:{...CHART_TOOLTIP_STYLE(),callbacks:{label:c=>` ${c.label}: ${Number(c.parsed.x).toLocaleString('vi-VN')} tấm`}}}}
   });
@@ -4644,7 +4668,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 259;
+const APP_VERSION = 260;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
