@@ -2113,6 +2113,7 @@ body.mobile-view .nkx-tim{width:100%;}
       <div id="capacityStatsSummary" class="capacity-summary"></div>
       <div class="capacity-grid">
         <section class="capacity-section capacity-full"><h4>Năng lực Tổ Dán</h4><p class="capacity-note">Kế hoạch, Hoàn thành, Rớt và Tỷ lệ theo khoảng lọc, chỉ tính Dán do chính tổ thực hiện. Hỗ trợ và Bảo hành theo khoảng lọc; không cộng vào tỷ lệ. Chỉ KPI tổng dưới tên tổ là lũy kế toàn bộ lịch sử.</p><div class="table-scroll" style="max-height:300px;"><table class="capacity-table"><thead><tr><th>Tổ</th><th>Kế hoạch</th><th>Hoàn thành</th><th title="Phần tổ chưa tự Dán xong; không phải trạng thái May/Đóng gói">Rớt</th><th>Tỷ lệ</th><th>Hỗ trợ<br><small>Trong kỳ</small></th><th>Bảo hành<br><small>Trong kỳ</small></th><th>Chi tiết</th></tr></thead><tbody id="capacityDanBody"></tbody></table></div></section>
+        <section class="capacity-section capacity-full" id="nangSuatGioCong"><h4>Năng suất theo giờ công</h4><p class="capacity-note" id="nangSuatGhiChu"></p><div class="table-scroll"><table class="capacity-table"><thead><tr><th>Tổ</th><th>Sản lượng<br><small>Tấm</small></th><th>Người<br><small>Bình quân/ngày</small></th><th>Giờ công<br><small>Giờ</small></th><th>Tấm / người<br><small>Mỗi ngày</small></th><th>Tấm / người<br><small>Mỗi giờ</small></th><th>Tấm / giờ<br><small>Cả tổ</small></th></tr></thead><tbody id="nangSuatBody"></tbody></table></div></section>
         <section class="capacity-section capacity-full"><h4>Năng lực từng người May</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành<br><small>Trong kỳ</small></th><th>KPI tổng<br><small>Lũy kế lịch sử</small></th><th>Chi tiết</th></tr></thead><tbody id="capacityMayBody"></tbody></table></div></section>
         <section class="capacity-section capacity-full"><h4>Năng lực từng người Đóng gói</h4><div class="table-scroll" style="max-height:340px;"><table class="capacity-table"><thead><tr><th>Người hoàn thành</th><th>Sản lượng</th><th>Đơn</th><th>TB/ngày</th><th>Ngày cao nhất</th><th>Đúng ngày</th><th>Bảo hành<br><small>Trong kỳ</small></th><th>KPI tổng<br><small>Lũy kế lịch sử</small></th><th>Chi tiết</th></tr></thead><tbody id="capacityPackBody"></tbody></table></div></section>
       </div>
@@ -2565,7 +2566,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=260"></script>
+<script src="raw-data.js?v=261"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3104,32 +3105,6 @@ function computeAndRenderKpis(){
   document.getElementById('refreshWarrantyKpiBtn')?.addEventListener('click',async e=>{
     const btn=e.currentTarget; btn.classList.add('is-loading');
     await fetchBaoHanh({force:true}); btn.classList.remove('is-loading');
-  });
-  chayDemSo(kpiRow);
-}
-
-// Hiệu ứng số chạy từ 0 lên giá trị thật (~0,6 giây) cho dễ thấy là số vừa đổi.
-// QUAN TRỌNG: số thật đã được ghi sẵn trong HTML. Hiệu ứng chỉ là lớp trang trí —
-// nếu trình duyệt không chạy được hiệu ứng thì ô vẫn hiện đúng số, không bao giờ đứng ở 0.
-function chayDemSo(goc){
-  if(typeof requestAnimationFrame !== 'function' || typeof performance === 'undefined') return;
-  goc.querySelectorAll('[data-dem]').forEach(el=>{
-    const dich = Number(el.dataset.dem) || 0;
-    const hau = el.dataset.hau || '';
-    const cuoi = dich.toLocaleString() + hau;
-    if(dich === 0) return;
-    const batDau = performance.now();
-    let xong = false;
-    const chot = ()=>{ if(!xong){ xong = true; el.textContent = cuoi; } };
-    setTimeout(chot, 900);                       // lưới an toàn: chậm nhất 0,9 giây phải đúng số
-    const buoc = t=>{
-      if(xong) return;
-      const k = Math.max(0, Math.min(1, (t - batDau) / 600));   // t là mốc của khung hình, có thể sớm hơn batDau khi máy bận: không được để k âm
-      const muot = 1 - Math.pow(1 - k, 3);
-      el.textContent = Math.round(dich * muot).toLocaleString() + hau;
-      if(k < 1) requestAnimationFrame(buoc); else chot();
-    };
-    requestAnimationFrame(buoc);
   });
 }
 
@@ -4668,7 +4643,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 260;
+const APP_VERSION = 261;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -8829,6 +8804,90 @@ function htmlDongNangLucCaNhan(data,stage){
   const rows=data.rows.map(r=>`<tr><td><strong>${thoatHtml(r.name||r.code)}</strong></td><td>${r.soLuong.toLocaleString('vi-VN')}</td><td>${r.soDon}</td><td>${r.trungBinh.toLocaleString('vi-VN',{maximumFractionDigits:1})}</td><td>${r.ngayCao==='—'?'—':`${r.ngayCao} · ${r.slNgayCao}`}</td><td>${r.tyLeDung==null?'—':r.tyLeDung+'%'}</td><td>${r.baoHanh.toLocaleString('vi-VN')}</td><td>${r.tong.toLocaleString('vi-VN')}</td><td>${capacityDetailButton(stage,r.name||r.code)}</td></tr>`);
   return rows.length?rows.join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px;">Chưa có dữ liệu hoàn thành.</td></tr>';
 }
+// Khối "Năng suất theo giờ công" (anh duyệt 30/10/2026). Giờ công theo điểm danh: sáng 4,25 giờ, chiều 3,75 giờ, cộng tăng ca.
+// Từng tổ chỉ tính người của tổ; dòng Toàn xưởng tính thêm nhóm "Ngoài 6 tổ" (Phụ kho, Hỗ trợ, quản lý). Sản lượng lấy từ đúng hàm của
+// tab này (Dán: sanLuongTong của tổ; May/Đóng gói: soLuong từng người cộng lại), không cộng bảo hành.
+const NS_GIO_SANG=4.25,NS_GIO_CHIEU=3.75,NS_NGOAI='Ngoài 6 tổ';
+const NS_TO_DAN=['Tổ dán 1','Tổ dán 2','Tổ dán 3','Tổ dán 4'];
+const NS_MOI_TO=[...NS_TO_DAN,'Tổ may','Tổ đóng gói'];
+function nsGioCong(r){ return (Number(r.sang)||0)*NS_GIO_SANG+(Number(r.chieu)||0)*NS_GIO_CHIEU+(Number(r.tang_ca)||0); }
+function nsGom(rows,nhoms,tuIso,denIso){
+  const ngay=new Set();let nguoiNgay=0,gio=0;
+  rows.forEach(r=>{ if(!nhoms.includes(r.nhom)||r.ngay<tuIso||r.ngay>denIso) return; ngay.add(r.ngay); nguoiNgay+=Number(r.nguoi)||0; gio+=nsGioCong(r); });
+  return {nguoiNgay,gio,soNgay:ngay.size,nguoiBq:ngay.size?nguoiNgay/ngay.size:0};
+}
+function nsNgayTruoc(iso){ const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()-1); return d.toISOString().slice(0,10); }
+// Hôm nay 6 tổ chưa có ai điểm danh chiều thì chưa đủ ngày: bỏ khỏi cả giờ công lẫn sản lượng (người Ngoài 6 tổ điểm danh chiều trước không tính).
+function nsKhoangHieuLuc(rows,denIso,homNayIso){
+  if(denIso<homNayIso) return {den:denIso,boHomNay:false};
+  const chieu=rows.filter(r=>r.ngay===homNayIso&&NS_MOI_TO.includes(r.nhom)).reduce((n,r)=>n+(Number(r.chieu)||0),0);
+  return chieu>0?{den:denIso,boHomNay:false}:{den:nsNgayTruoc(homNayIso),boHomNay:true};
+}
+function nsTinhBang(rows,sanLuong,tuIso,denIso){
+  const dong=(ten,nhoms,sl,gioTo=true)=>{
+    const g=nsGom(rows,nhoms,tuIso,denIso);
+    return {ten,sl,nguoiBq:g.nguoiBq,gio:g.gio,coDuLieu:g.nguoiNgay>0,
+      slNguoiNgay:g.nguoiNgay?sl/g.nguoiNgay:null,slNguoiGio:g.gio?sl/g.gio:null,
+      slGioTo:(gioTo&&g.gio&&g.nguoiBq)?sl/(g.gio/g.nguoiBq):null};
+  };
+  const sl=t=>Number(sanLuong[t])||0;
+  const dan=NS_TO_DAN.map(t=>dong(t,[t],sl(t)));
+  const out=[...dan,dong('Dán (4 tổ gộp)',NS_TO_DAN,NS_TO_DAN.reduce((n,t)=>n+sl(t),0),false),
+    dong('Tổ may',['Tổ may'],sl('Tổ may')),dong('Tổ đóng gói',['Tổ đóng gói'],sl('Tổ đóng gói'))];
+  const xuong=dong('Toàn xưởng',[...NS_MOI_TO,NS_NGOAI],sl('Tổ đóng gói'),false);
+  xuong.gioNgoai=nsGom(rows,[NS_NGOAI],tuIso,denIso).gio;
+  return [...out,xuong];
+}
+function nsSanLuong(tuKhoa,denKhoa){
+  const may=duLieuNangLucCaNhan('may',tuKhoa,denKhoa),dg=duLieuNangLucCaNhan('dong_goi',tuKhoa,denKhoa);
+  if(may.chuaCoDuLieu||dg.chuaCoDuLieu) return null;
+  const tong=d=>d.rows.reduce((n,r)=>n+(r.soLuong||0),0), kq={'Tổ may':tong(may),'Tổ đóng gói':tong(dg)};
+  // tab Năng lực gọi tổ dán là 'Tổ 1'…'Tổ 5'; khối này gọi 'Tổ dán 1'…'Tổ dán 4' cho khớp điểm danh
+  tinhNangLucToDan(tuKhoa,denKhoa,{xuat:true}).forEach(r=>{ const m=/^Tổ ([1-4])$/.exec(r.team); if(m) kq['Tổ dán '+m[1]]=r.sanLuongTong; });
+  return kq;
+}
+let nsLan=0; const nsCache={};
+async function nsTaiGioCong(tuIso,denIso){
+  const key=tuIso+'|'+denIso,c=nsCache[key];
+  if(c&&Date.now()-c.at<60000) return c.rows;
+  const cl=PUBLIC_VIEW_MODE
+    ?(guestDashboardClient||(guestDashboardClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}})))
+    :supabaseDb;
+  if(!cl) throw new Error('NO_DB');
+  const {data,error}=await cl.rpc('khsx_gio_cong_theo_to_v1',{p_tu:tuIso,p_den:denIso});
+  if(error) throw error;
+  const rows=Array.isArray(data)?data:[]; nsCache[key]={at:Date.now(),rows}; return rows;
+}
+async function veNangSuatGioCong(){
+  const body=document.getElementById('nangSuatBody'),ghi=document.getElementById('nangSuatGhiChu'),sec=document.getElementById('nangSuatGioCong');
+  if(!body||!ghi) return;
+  if(!PUBLIC_VIEW_MODE&&!(SUPABASE_VARIANT&&supabaseDb)){ sec.style.display='none'; return; }
+  sec.style.display='';
+  const tuIso=document.getElementById('capacityFromDate').value,denIso=document.getElementById('capacityToDate').value;
+  if(!tuIso||!denIso||tuIso>denIso) return;
+  const lan=++nsLan, f1=n=>n.toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1}),f2=n=>n.toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2}),f0=n=>Math.round(n).toLocaleString('vi-VN');
+  const cot=(v,f)=>v==null?'—':f(v);
+  if(!body.children.length) body.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:14px;">Đang tải…</td></tr>';
+  try{
+    const rows=await nsTaiGioCong(tuIso,denIso);
+    if(lan!==nsLan) return;
+    const {den,boHomNay}=nsKhoangHieuLuc(rows,denIso,KhsxCapacityCore.vietnamToday());
+    if(den<tuIso){ body.innerHTML=''; ghi.textContent='Ngày hôm nay chưa đủ điểm danh chiều nên chưa tính. Chọn khoảng ngày đã qua để xem năng suất.'; return; }
+    const sl=nsSanLuong(Number(tuIso.replaceAll('-','')),Number(den.replaceAll('-','')));
+    if(!sl){ body.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:14px;">Đang tải…</td></tr>'; return; }
+    const bang=nsTinhBang(rows,sl,tuIso,den);
+    body.innerHTML=bang.map(r=>{
+      const xuong=r.ten==='Toàn xưởng', tenHtml=xuong?`<strong>Toàn xưởng</strong><br><small>Thành phẩm trên mọi giờ công, gồm cả Phụ kho, Hỗ trợ, quản lý${r.gioNgoai?` (Ngoài 6 tổ: ${f1(r.gioNgoai)} giờ)`:''}</small>`:`<strong>${r.ten}</strong>`;
+      return `<tr${xuong?' style="border-top:2px solid var(--border);"':''}><td>${tenHtml}</td><td>${f0(r.sl)}</td><td>${r.coDuLieu?f1(r.nguoiBq):'—'}</td><td>${r.coDuLieu?f1(r.gio):'—'}</td><td>${cot(r.slNguoiNgay,f1)}</td><td><strong>${cot(r.slNguoiGio,f2)}</strong></td><td>${cot(r.slGioTo,f2)}</td></tr>`;
+    }).join('');
+    const coDiemDanh=rows.some(r=>r.ngay>=tuIso&&r.ngay<=den);
+    ghi.textContent='Giờ công theo điểm danh: sáng 4,25 giờ, chiều 3,75 giờ, tăng ca đúng số giờ ghi. Từng tổ chỉ tính người của tổ đó; dòng Toàn xưởng tính thêm Phụ kho, Hỗ trợ và quản lý. Điểm danh có từ 06/10/2026.'
+      +(boHomNay?' Ngày hôm nay chưa đủ điểm danh chiều nên chưa tính.':'')+(coDiemDanh?'':' Khoảng này chưa có điểm danh.');
+  }catch(e){
+    if(lan!==nsLan) return;
+    console.warn('Chưa tải được giờ công',e); body.innerHTML=''; ghi.textContent='Chưa tải được giờ công từ máy chủ, thử lại sau.';
+  }
+}
 function renderCapacityStats(){
   const tu=isoToDMY(document.getElementById('capacityFromDate').value),den=isoToDMY(document.getElementById('capacityToDate').value);
   const tuKhoa=khoaNgayDMY(tu),denKhoa=khoaNgayDMY(den),rangeEl=document.getElementById('capacityStatsRange');
@@ -8853,6 +8912,7 @@ function renderCapacityStats(){
   }).join('');
   document.getElementById('capacityMayBody').innerHTML=htmlDongNangLucCaNhan(may,'may');
   document.getElementById('capacityPackBody').innerHTML=htmlDongNangLucCaNhan(pack,'dong_goi');
+  veNangSuatGioCong();
 }
 function resetCapacityWeek(){
   const {from,to}=KhsxCapacityCore.weekRange();

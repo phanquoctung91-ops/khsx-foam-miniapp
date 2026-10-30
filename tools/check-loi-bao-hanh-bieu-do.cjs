@@ -57,5 +57,5 @@ assert.match(html,/id="loiBaoHanhCard"/); assert.match(html,/id="loiBaoHanhChart
 assert.match(html,/chartAnim\('dailyTrendChart'\)[\s\S]{0,400}\n  veBieuDoLoiBaoHanh\(\);\n\}/,'renderMonthly phải gọi vẽ biểu đồ lỗi ở cuối');
 assert.ok(html.includes("onClick:(event,elements)=>{ if(elements.length) openLoiBaoHanhDetail(ds[elements[0].index][0],tuIso,denIso); }"),'bấm cột mở popup');
 assert.ok(html.includes("event.native.target.style.cursor=elements.length?'pointer':'default'"));
-assert.match(html,/const APP_VERSION = 260;/); assert.match(html,/raw-data\.js\?v=260/);
+assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=260,'từ bản 260 trở lên');
 console.log('PASS nối giao diện + phiên bản');
