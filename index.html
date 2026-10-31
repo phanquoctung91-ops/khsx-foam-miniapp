@@ -2568,7 +2568,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=262"></script>
+<script src="raw-data.js?v=263"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4645,7 +4645,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 262;
+const APP_VERSION = 263;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -4700,7 +4700,7 @@ const FX=(()=>{
     const orig=el.textContent, meta=parseNum(orig); if(!meta) return;
     const card=el.closest(CARD)||el, key='n|'+scopeId(el)+'|'+labelOf(el)+'|'+(card.dataset.to||'');
     const was=prev.get(key); prev.set(key,meta.v);
-    if(was===undefined){ countTo(el,0,meta.v,meta,orig); if(meta.post.trim().startsWith('%')&&meta.v>=100) celebrate(card,key); }
+    if(was===undefined){ if(meta.post.trim().startsWith('%')&&meta.v>=100) celebrate(card,key); }   // lần đầu thấy: hiện đúng số ngay, không đếm từ 0
     else if(was!==meta.v){ countTo(el,was,meta.v,meta,orig); flash(card,'fx-bump',1000); if(meta.post.trim().startsWith('%')&&meta.v>=100&&was<100) celebrate(card,key); }
   }
   // ---- thanh tiến độ quý: chạy từ 0 / từ mức cũ, vạch "Cần…" rơi xuống, dòng "x / y tấm · z%" đếm tăng ----
@@ -4721,8 +4721,8 @@ const FX=(()=>{
     const orig=el.textContent, tok=orig.match(/\d[\d.,]*/g); if(!tok||tok.length<3||el.children.length) return;
     const a=parseNum(tok[0]), p=parseNum(tok[2]+'%'); if(!a||!p) return;
     const key='tdqt|'+scopeId(el), was=prev.get(key); prev.set(key,[a.v,p.v]);
-    if(!on()||(was&&was[0]===a.v&&was[1]===p.v)) return;
-    const fa=was?was[0]:0, fp=was?was[1]:0, t0=performance.now(), dur=1200;
+    if(!on()||!was||(was[0]===a.v&&was[1]===p.v)) return;   // lần đầu thấy: hiện đúng số ngay, không đếm từ 0
+    const fa=was[0], fp=was[1], t0=performance.now(), dur=1200;
     const i0=orig.indexOf(tok[0]), i2=orig.indexOf(tok[2],i0+tok[0].length+tok[1].length);
     const mk=(x,y)=>orig.slice(0,i0)+fmt(x,a)+orig.slice(i0+tok[0].length,i2)+fmt(y,p)+orig.slice(i2+tok[2].length);
     el.dataset.fxRun='1'; el.textContent=mk(fa,fp);
@@ -9718,7 +9718,7 @@ function capNhatHienThiKpiRow(){
 function restoreUiState(){
   try{
     const st=JSON.parse(localStorage.getItem(UI_STATE_KEY)||'{}');
-    if(st.tab){
+    if(st.tab&&!PUBLIC_VIEW_MODE){   // khách luôn mở vào Thống kê, không nhớ tab đã mở lần trước
       const btn=document.querySelector(`.tab-btn[data-tab="${st.tab}"]`);
       if(btn && getComputedStyle(btn).display!=='none'){
         document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
