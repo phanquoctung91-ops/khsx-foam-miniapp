@@ -694,6 +694,8 @@
   body:not(.role-nhan-vien) .nut-bang-dat-nv{display:none !important;}   /* quản lý đã có nút ở trang KHSX */
   body.role-nhan-vien .only-manager2,
   body.role-chi-xem .only-manager2{display:none !important;}
+  /* Khách xem Năng lực nhưng không xuất Excel / mở chi tiết từng người (cần quyền quản lý) — ẩn để không có nút bấm không ra gì */
+  body.public-view-mode #exportCapacityStatsBtn{display:none !important;}
   body.role-chi-xem .only-editor{display:none !important;}
   body.role-nhan-vien .tab-overview{display:none !important;}
   /* Nhân viên mỗi công đoạn chỉ thấy đúng cột mình cần nhập. Quản lý và khách xem
@@ -2566,7 +2568,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=261"></script>
+<script src="raw-data.js?v=262"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4643,7 +4645,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 261;
+const APP_VERSION = 262;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -5191,8 +5193,8 @@ function applyPermissionTabGates(){
     const btn=document.querySelector(`.tab-btn[data-tab="${tab}"]`);
     if(!btn) return;
     // Khach (link ?view=guest) khong co auth_user_id, khong phu thuoc bang
-    // quyen that - chi cho xem dung 2 tab Tong thong ke + KHSX (hardcode).
-    const allowed=PUBLIC_VIEW_MODE?(tab==='monthly'||tab==='autoplan'):keys.some(hasPermOrOwner);
+    // quyen that - chi cho xem dung 3 tab Tong thong ke + KHSX + Nang luc (hardcode; anh Tung duyet them Nang luc 30/10/2026).
+    const allowed=PUBLIC_VIEW_MODE?(tab==='monthly'||tab==='autoplan'||tab==='capacity'):keys.some(hasPermOrOwner);
     btn.style.setProperty('display', allowed?'':'none', 'important');
     if(!allowed && btn.classList.contains('active')) activeHidden=true;
   });

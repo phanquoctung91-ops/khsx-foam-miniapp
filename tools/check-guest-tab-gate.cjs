@@ -1,7 +1,7 @@
 // Dot 4.1 gay hoi quy: link khach xem (?view=guest) dung chung applyPermissionTabGates,
 // khach khong co auth_user_id nen myPermissionKeys rong -> tab monthly/autoplan bi an mat.
 // Test nay mo phong dung URL ?view=guest that (PUBLIC_VIEW_MODE doc tu URLSearchParams,
-// khong the set qua JS) va kiem tab monthly/autoplan hien, cac tab con lai van an.
+// khong the set qua JS) va kiem tab monthly/autoplan/capacity hien (capacity them 30/10/2026), cac tab con lai van an.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');let browser,server;
 const sdk=`window.supabase={createClient:(url,key,options)=>({
@@ -40,11 +40,11 @@ const sdk=`window.supabase={createClient:(url,key,options)=>({
  const assert=require('node:assert/strict');
  assert.equal(tabs.monthly, true, 'khach phai thay Tong thong ke san xuat');
  assert.equal(tabs.autoplan, true, 'khach phai thay Ke hoach san xuat');
- assert.equal(tabs.capacity, false, 'khach khong duoc thay Nang luc');
+ assert.equal(tabs.capacity, true, 'khach phai thay Nang luc (anh Tung duyet 30/10/2026)');
  assert.equal(tabs.report, false, 'khach khong duoc thay Xuat bao cao');
  assert.equal(tabs.wage, false, 'khach khong duoc thay So lieu luong');
  assert.equal(tabs.staff, false, 'khach khong duoc thay Nhan su');
  assert.equal(tabs.settings, false, 'khach khong duoc thay Cai dat');
  assert.equal(errors.length, 0, 'khong duoc co loi JS');
- console.log('PASS: link khach xem (?view=guest) thay dung 2 tab Tong thong ke + KHSX, cac tab con lai van an');
+ console.log('PASS: link khach xem (?view=guest) thay 3 tab Tong thong ke + KHSX + Nang luc, cac tab con lai van an');
 })().catch(e=>{console.error('FATAL',e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(r=>server.close(r))});

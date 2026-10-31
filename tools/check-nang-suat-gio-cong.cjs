@@ -58,8 +58,15 @@ assert.match(html,/id="nangSuatGioCong"/); assert.match(html,/id="nangSuatBody"/
 assert.match(html,/capacityPackBody'\)\.innerHTML=htmlDongNangLucCaNhan\(pack,'dong_goi'\);\n  veNangSuatGioCong\(\);\n\}/,'renderCapacityStats gọi vẽ khối năng suất');
 assert.ok(html.includes("cl.rpc('khsx_gio_cong_theo_to_v1'")&&html.includes('PUBLIC_VIEW_MODE\n    ?(guestDashboardClient'),'khách đọc qua đường công khai');
 assert.ok(!html.includes('chayDemSo'),'không còn hiệu ứng đếm từ 0 của dải KPI');
-assert.match(html,/const APP_VERSION = 261;/); assert.match(html,/raw-data\.js\?v=261/);
-console.log('PASS nối giao diện, bỏ chayDemSo, phiên bản 261');
+assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=261,'từ bản 261 trở lên');
+console.log('PASS nối giao diện, bỏ chayDemSo');
+
+// 5b) Khách thấy tab Năng lực (v262), không có nút bấm không ra gì
+assert.ok(html.includes("PUBLIC_VIEW_MODE?(tab==='monthly'||tab==='autoplan'||tab==='capacity'):keys.some(hasPermOrOwner)"),'khách thấy Thống kê + KHSX + Năng lực');
+assert.ok(html.includes('body.public-view-mode #exportCapacityStatsBtn{display:none !important;}'),'khách không có nút xuất Excel (cần quyền quản lý)');
+const ct=fs.readFileSync(path.resolve(__dirname,'..','js','khsx-capacity-details.js'),'utf8');
+assert.ok(ct.includes("function capacityDetailButton(stage,who){if(typeof PUBLIC_VIEW_MODE!=='undefined'&&PUBLIC_VIEW_MODE)return '—';"),'khách không có nút Chi tiết năng lực (cần quyền quản lý)');
+console.log('PASS khách thấy tab Năng lực, ẩn nút xuất Excel và Chi tiết năng lực');
 
 // 6) SQL (PGlite): gom theo (ngày, nhóm), người ngoài 6 tổ gộp, không lộ tên, bỏ ngày tương lai
 const mig=fs.readFileSync(path.resolve(__dirname,'..','supabase','migrations','20261030100000_gio_cong_theo_to.sql'),'utf8');

@@ -3,7 +3,7 @@ let capacityDetailState=null,capacityEventCache=null,capacityDetailRequest=0,cap
 const capNumber=n=>n==null?'—':Number(n).toLocaleString('vi-VN',{maximumFractionDigits:2});
 const capDate=d=>d?d.split('-').reverse().join('/'):'—';
 const capTime=t=>t==null||!Number.isFinite(t)?'—':new Date(t).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour12:false});
-function capacityDetailButton(stage,who){return `<button type="button" class="capacity-quick-btn" data-capacity-stage="${stage}" data-capacity-who="${thoatHtml(who)}">Chi tiết năng lực</button>`;}
+function capacityDetailButton(stage,who){if(typeof PUBLIC_VIEW_MODE!=='undefined'&&PUBLIC_VIEW_MODE)return '—';return `<button type="button" class="capacity-quick-btn" data-capacity-stage="${stage}" data-capacity-who="${thoatHtml(who)}">Chi tiết năng lực</button>`;}
 function capacityRange(){
  const from=document.getElementById('capacityFromDate').value,to=document.getElementById('capacityToDate').value;
  if(!from||!to||from>to)throw Error('Khoảng ngày không hợp lệ.');return {from,to,now:Date.now()};
