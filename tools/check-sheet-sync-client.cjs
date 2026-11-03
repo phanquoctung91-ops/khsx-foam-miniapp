@@ -12,7 +12,7 @@ assert(!/syncMissingSheetOrdersToSupabase\(\{silent:true\}\)\);?\s*\n.*jobs\.pus
 let calls=[],reloads=0,notes=[],allowed=true,fail=false,reads=0;
 const source={rows:[{id:'r_new',date:'05/09/2026'},{id:'r_existing',date:'05/09/2026'}]};
 const ctx=vm.createContext({SUPABASE_VARIANT:true,PUBLIC_VIEW_MODE:false,sheetPlanSyncInFlight:false,
- canManage:()=>allowed,readSheetPlanSource:async()=>{reads++;return source},sheetOrderToSupabase:o=>o,
+ canManage:()=>allowed,hasPermOrOwner:()=>false,readSheetPlanSource:async()=>{reads++;return source},sheetOrderToSupabase:o=>o,
  supabaseStageOutbox:{a:{order_id:'r_pending',status:'failed'}},supabaseManagementOutbox:{b:{order_id:'r_assignment'}},
  pendingSheetChanges:{r_next:{old:{id:'r_old'},next:{id:'r_next'}}},
  getOrders:()=>[{id:'r_work',progress:1},{id:'r_zero',progress:0}],coTienDoDon:o=>o.progress>0,

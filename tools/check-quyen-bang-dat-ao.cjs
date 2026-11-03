@@ -3,7 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {PGlite}=require('@electric-sql/pglite');
 const root=path.resolve(__dirname,'..');
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/\r\n/g,'\n');   // file trên Windows xuống dòng CRLF
 assert.match(html,/aoBtn:\['ao_board_use'\]/);
 assert.match(html,/phoiBtn:\['phoi_board_use'\]/);
 assert.match(html,/async function moBangDatAo\(\)\{\n  if\(!hasPermOrOwner\('ao_board_use'\)\) return;/);

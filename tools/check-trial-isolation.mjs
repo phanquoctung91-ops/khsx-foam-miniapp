@@ -35,7 +35,7 @@ const checks = [
   },
   {
     name: 'Stage writes use idempotent Supabase RPC',
-    ok: /\.rpc\(\s*'khsx_apply_stage_progress_v2'/.test(html) && /p_operation_id\s*:/.test(html),
+    ok: /\.rpc\(\s*'khsx_apply_stage_progress_(?:v2|timed)'/.test(html) && /p_operation_id\s*:/.test(html),
   },
   {
     name: 'Stage writes carry the credited worker separately',
