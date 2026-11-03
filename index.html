@@ -2592,7 +2592,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=275"></script>
+<script src="raw-data.js?v=276"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4669,7 +4669,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 275;
+const APP_VERSION = 276;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -7688,8 +7688,9 @@ function moDonKiemTra(){
     </div>`;}).join('')
     + le.map(a=>`<div class="kt-cap">${theDonKiemTra(a,'File mới không còn dòng này, không thấy dòng thay thế')}
       <div class="kt-nut"><button type="button" class="primary-btn" data-kt="toidong" data-a="${a.id}">Xem trong bảng</button>
+      ${(canManage()||hasPermOrOwner('order_cancel'))?`<button type="button" class="primary-btn" style="background:var(--danger);" data-kt="xoa" data-a="${a.id}">🗑 Xóa đơn</button>`:''}
       <button type="button" class="capacity-quick-btn" data-kt="desau">Để sau</button></div>
-      <div class="kt-giai">Trong bảng có nút huỷ hoặc tách cho đơn này.</div></div>`).join('');
+      <div class="kt-giai">Xóa đơn: đơn đã có số thì hỏi trùng đơn và lý do; không trùng thì số đã làm chuyển sang đơn phát sinh rồi mới hủy.</div></div>`).join('');
   document.getElementById('donKiemTraModal').style.display='block';
 }
 function dongDonKiemTra(){ document.getElementById('donKiemTraModal').style.display='none'; }
@@ -7716,11 +7717,19 @@ async function xuLyCapDon(aId,bId,giuMaSua){
 }
 function toiDongDon(id){
   const o=getOrderById(id); dongDonKiemTra(); if(!o) return;
+  document.querySelector('.tab-btn[data-tab="autoplan"]')?.click();   // đang ở tab khác thì bảng đang ẩn
+  const p=parseDMY(o.date);
+  if(Number(monthFilterSelect.value)!==p.m||Number(yearFilterSelect.value)!==p.y){   // đơn ở tháng khác tháng đang xem thì bị lọc mất
+    monthFilterSelect.value=String(p.m); yearFilterSelect.value=String(p.y);
+    onHeaderMonthYearChanged();
+  }
+  document.getElementById('autoPlanSearchBox').value=''; document.getElementById('autoPlanAssignFilter').value='all';
   const sel=document.getElementById('autoPlanDaySelect');
   if([...sel.options].some(x=>x.value===o.date)) sel.value=o.date;
   renderAutoPlan();
   const tr=document.querySelector(`#autoPlanTable tr[data-order-id="${CSS.escape(id)}"]`);
-  if(tr){ tr.scrollIntoView({block:'center'}); tr.classList.add('kt-nhay'); setTimeout(()=>tr.classList.remove('kt-nhay'),2400); }
+  if(!tr||!tr.offsetParent){ alert(`Không hiện được dòng ${o.ma||o.dong} ngày ${o.date} trong bảng (trên điện thoại bảng này ẩn). Dùng nút "🗑 Xóa đơn" ngay trong popup.`); return; }
+  tr.scrollIntoView({block:'center'}); tr.classList.add('kt-nhay'); setTimeout(()=>tr.classList.remove('kt-nhay'),2400);
 }
 document.getElementById('nutDonCanKiemTra')?.addEventListener('click',moDonKiemTra);
 // Đóng/mở khối: một hiệu ứng chung của dashboard (fx-expand), mở lần nào cũng chạy như nhau; máy bật "giảm chuyển động" tự tắt qua CSS.
@@ -7743,6 +7752,7 @@ document.getElementById('donKiemTraModal')?.addEventListener('click',async e=>{
   const viec=nut.dataset.kt;
   if(viec==='desau'){ nut.closest('.kt-cap')?.remove(); return; }
   if(viec==='toidong'){ toiDongDon(nut.dataset.a); return; }
+  if(viec==='xoa'){ if(await huyDonTheoId(nut.dataset.a)){ capNhatNutDonKiemTra(); moDonKiemTra(); } return; }
   if(viec==='hopnhat'||viec==='theofile') await xuLyCapDon(nut.dataset.a,nut.dataset.b,viec==='hopnhat');
 });
 document.getElementById('suaDonModal')?.addEventListener('click',e=>{
@@ -9367,11 +9377,14 @@ async function xuLyThaoTacDon(e){
   if(sourceBtn){ await xuLyThayDoiNguon(sourceBtn.dataset.sourceChangeId); return; }
   const btn = e.target.closest('.trash-btn');
   if(!btn) return;
-  if(!(canManage()||hasPermOrOwner('order_cancel'))) return;
-  const id = btn.dataset.orderId;
-  if(trashActionInFlight.has(id)) return; // lượt trước chưa xong, bỏ qua bấm đúp
+  await huyDonTheoId(btn.dataset.orderId);
+}
+// Xóa/hủy một đơn (dùng chung cho bảng KHSX và popup "Đơn cần kiểm tra"). Trả true khi đơn đã bị hủy.
+async function huyDonTheoId(id){
+  if(!(canManage()||hasPermOrOwner('order_cancel'))) return false;
+  if(trashActionInFlight.has(id)) return false; // lượt trước chưa xong, bỏ qua bấm đúp
   const o = getOrderById(id);
-  if(!o) return;
+  if(!o) return false;
   trashActionInFlight.add(id);
   try{
     // Đơn đã có số: hỏi trước có phải trùng đơn không. Trùng thì số này đã ghi ở đơn khác, huỷ
@@ -9379,12 +9392,12 @@ async function xuLyThaoTacDon(e){
     // tiếp (LAEZ15-8 tách 3 lần) và tấm đó bị tính 2 lần (ZONE12-8 21/09).
     const trungDon=coTienDoDon(o)&&confirm(`Đơn ${o.ma||o.dong} đã có số.\n\nCó phải TRÙNG ĐƠN không (số đã làm này đã ghi ở một đơn khác)?\n\nOK = trùng đơn: huỷ luôn, bỏ số của đơn này.\nHuỷ bỏ = không trùng: chuyển số đã làm sang đơn phát sinh rồi mới huỷ.`);
     const reason=prompt(`${trungDon?'Trùng đơn: huỷ luôn, bỏ số của đơn này.':coTienDoDon(o)?'Đơn đã có tiến độ: hệ thống sẽ tách toàn bộ số đã làm thành đơn phát sinh rồi hủy đơn gốc.':'Hủy đơn khỏi vận hành.'}\n\nNhập lý do bắt buộc:`,trungDon?'Trùng đơn':'');
-    if(!reason||!reason.trim()){alert('Phải nhập lý do hủy đơn.');return;}
+    if(!reason||!reason.trim()){alert('Phải nhập lý do hủy đơn.');return false;}
     const a = assignments[id];
     let splitOrder=null;
     if(coTienDoDon(o)&&!trungDon){
       splitOrder=await taoDonTachNguon(o,a?.stage_by_date||{},`Hủy đơn: ${reason.trim()}`);
-      if(!splitOrder){alert('Không tạo được đơn phát sinh nên đơn gốc chưa bị hủy. Hãy kiểm tra kết nối rồi thử lại.');return;}
+      if(!splitOrder){alert('Không tạo được đơn phát sinh nên đơn gốc chưa bị hủy. Hãy kiểm tra kết nối rồi thử lại.');return false;}
     }
     // Nếu đã tách tiến độ, khi khôi phục đơn gốc phải trở lại với tiến độ rỗng;
     // sản lượng cũ vẫn nằm ở đơn phát sinh, tránh nhân đôi KPI.
@@ -9408,6 +9421,7 @@ async function xuLyThaoTacDon(e){
     dirtyAssignmentIds.set(id, monthKeyOf(o.date));
     if(!SUPABASE_VARIANT) queueSave('assignments','dynamic','deleted');
     else saveLocalCache();
+    return true;
   } finally {
     trashActionInFlight.delete(id);
   }
