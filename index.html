@@ -637,12 +637,15 @@
   .dd-tab th{white-space:nowrap;padding:8px 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.2px;height:auto;min-height:0;line-height:1.2;}
   .dd-tab thead tr{height:auto;}
   .dd-tab td{padding:7px 6px;vertical-align:middle;border-top:1px solid var(--border);overflow:hidden;}
-  .dd-tab .c-ten{width:21%;font-weight:600;}.dd-tab .c-cv{width:24%;}.dd-tab .c-viec{width:13%;}.dd-tab .c-cb{width:62px;text-align:center;}
-  .dd-tab .c-tc{width:134px;text-align:center;}.dd-tab .c-gc{width:auto;}.dd-tab .c-xoa{width:62px;text-align:center;}
+  .dd-tab .c-ten{width:19%;font-weight:600;white-space:normal;overflow-wrap:anywhere;}
+  .dd-tab .c-ten .bom-nhan{display:inline-block;white-space:nowrap;margin-top:2px;}.dd-tab .c-cv{width:22%;}.dd-tab .c-viec{width:12%;}.dd-tab .c-cb{width:54px;text-align:center;}
+  .dd-tab .c-tc{width:186px;text-align:center;overflow:visible;}.dd-tab .c-gc{width:auto;}.dd-tab .c-xoa{width:54px;text-align:center;}
   .dd-tab:not(.dd-co-viec) .c-viec{display:none;}
-  .dd-tab td.c-cv select{width:calc(50% - 3px);min-width:0;max-width:none;font-size:12px;padding:4px 4px;}
-  .dd-tab td.c-cv select+select{margin-left:4px;}
-  .dd-tab .dd-tc-gio{flex-wrap:nowrap;gap:5px;margin:0;justify-content:center;}
+  .dd-tab td.c-cv{white-space:nowrap;}
+  .dd-tab td.c-cv select{width:calc(50% - 5px);min-width:0;max-width:none;font-size:12px;padding:4px 4px;vertical-align:middle;}
+  .dd-tab td.c-cv select+select{margin-left:2px;}
+  .dd-tab .dd-tc-gio{flex-wrap:nowrap;gap:8px;margin:0;justify-content:center;align-items:center;}
+  .dd-tab .dd-tc-gio input{flex:none;}
   .dd-tab .dd-tc-gio label{gap:3px;font-size:12.5px;white-space:nowrap;}
   .dd-tab .dd-tc-gio small{display:none;}
   .dd-tab .dd-tc-mo{min-height:30px;padding:0 8px;font-size:12.5px;}
@@ -2405,7 +2408,7 @@ body.mobile-view .nkx-tim{width:100%;}
     <div class="bom-chip-row" id="ddNhom" style="margin-bottom:8px;min-height:34px;"></div>
     <div class="bom-chip-row" id="ddLoc" style="margin-bottom:8px;"></div>
     <div id="ddKhung">
-    <div class="table-scroll dd-bang-ngang" style="max-height:none;"><table class="dd-tab" style="min-width:0;">
+    <div class="table-scroll dd-bang-ngang" style="max-height:none;"><table class="dd-tab" style="min-width:860px;">
       <thead><tr><th class="c-ten">Tên</th><th class="c-cv">Chức vụ / Tổ</th><th class="c-viec">Việc làm</th><th class="c-cb">Cả ngày</th><th class="c-cb">Sáng</th><th class="c-cb">Chiều</th><th class="c-tc">Tăng ca</th><th class="c-gc">Ghi chú</th><th class="c-xoa"></th></tr></thead>
       <tbody id="ddBang"></tbody>
     </table></div>
@@ -2586,7 +2589,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=269"></script>
+<script src="raw-data.js?v=272"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4663,7 +4666,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 269;
+const APP_VERSION = 272;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
