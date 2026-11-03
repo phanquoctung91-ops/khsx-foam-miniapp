@@ -2568,7 +2568,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=264"></script>
+<script src="raw-data.js?v=265"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -3066,12 +3066,12 @@ function computeAndRenderKpis(){
   kpiRow.innerHTML = `
     <div class="kpi">
       <div class="label">Tổng kế hoạch</div>
-      <div class="value" data-dem="${totalPlan}">${totalPlan.toLocaleString()}</div>
+      <div class="value">${totalPlan.toLocaleString()}</div>
       <div class="kpi-phu">${mucTieuHtml}</div>
     </div>
     <div class="kpi k-accent">
       <div class="label">Tổng hoàn thành</div>
-      <div class="value" data-dem="${totalDG}">${totalDG.toLocaleString()}</div>
+      <div class="value">${totalDG.toLocaleString()}</div>
       <div class="kpi-phu">${trungBinhThangQuyHtml}</div>
       ${baoCaoKr.text&&canManage2()?`<button type="button" id="krReportHintBtn" class="speed-kpi-hint" style="background:none;border:none;padding:0;font:inherit;cursor:pointer;">📋 Bấm xem báo cáo tuần</button>`:''}
       <div class="kpi-thanh"><i style="width:${rate==null?0:Math.min(100,rate)}%;background:var(--accent);"></i></div>
@@ -3083,18 +3083,18 @@ function computeAndRenderKpis(){
     </div>
     <div class="kpi k-accent">
       <div class="label">Sản lượng đóng gói trong kỳ</div>
-      <div class="value" data-dem="${tongKpi.throughput}">${tongKpi.throughput.toLocaleString()}</div>
+      <div class="value">${tongKpi.throughput.toLocaleString()}</div>
       <div class="kpi-phu">Theo đúng ngày thực tế nhập đóng gói</div>
     </div>
     <div class="kpi k-accent">
       <div class="label">Số ngày có sản xuất</div>
-      <div class="value"><span data-dem="${activeDays}">${activeDays}</span><span style="font-size:15px;color:var(--text2);"> / ${metricDayKeys.length}</span></div>
+      <div class="value"><span>${activeDays}</span><span style="font-size:15px;color:var(--text2);"> / ${metricDayKeys.length}</span></div>
       <div class="kpi-phu">${trungBinhNgayHtml}</div>
       <div class="kpi-thanh"><i style="width:${tienDoNgay}%;background:var(--primary);"></i></div>
     </div>
     <div class="kpi" style="border-top-color:#8a5cd0;">
       <div class="label" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">Hàng bảo hành <button id="refreshWarrantyKpiBtn" class="kpi-refresh-btn only-manager" title="Nạp lại dữ liệu bảo hành">↻</button></div>
-      <div class="value" style="color:#8a5cd0;" data-dem="${totalBaoHanh}">${totalBaoHanh.toLocaleString()}</div>
+      <div class="value" style="color:#8a5cd0;">${totalBaoHanh.toLocaleString()}</div>
       <div class="kpi-phu">${totalBaoHanh>0 ? 'Ngoài kế hoạch, không tính vào tỷ lệ' : (daTaiBaoHanh() ? 'Tháng này chưa có hàng bảo hành' : 'Đang tải số liệu bảo hành…')}</div>
     </div>
     <div class="kpi speed-kpi-card" role="button" tabindex="0" data-speed-kind="quarter" aria-label="Xem cách tính Tốc độ quý" style="border-top-color:${mauTocDo(tocDoQuy.trangThai)};">
@@ -4645,7 +4645,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 264;
+const APP_VERSION = 265;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -5312,23 +5312,6 @@ function forceLogout(msg){
   if(err && msg){ err.textContent = msg; err.style.display = 'block'; }
 }
 
-// Kiểm tra lại phiên đang mở với máy chủ. Mã bị thu hồi -> đẩy ra ngay.
-async function revalidateSession(){
-  if(!currentUser || !currentUser.code) return;      // khách xem thống kê thì bỏ qua
-  const u = await verifyCodeOnServer(currentUser.code);
-  if(u){
-    u.unit=currentUser.unit||null;
-    currentUser = u;                                  // cập nhật nếu quản lý đổi tên/vai
-    applyRoleUI();
-    return;
-  }
-  // Không xác thực được: chỉ đẩy ra khi máy chủ trả lời rõ là không hợp lệ.
-  // (verifyCodeOnServer trả null cả khi mất mạng, nên thử lại 1 lần cho chắc)
-  const retry = await verifyCodeOnServer(currentUser.code);
-  if(!retry){
-    forceLogout('Mã đăng nhập của bạn đã bị thu hồi hoặc không kết nối được máy chủ. Vui lòng đăng nhập lại.');
-  }
-}
 
 // Supabase không dùng mã Apps Script nên phiên đang mở phải tự kiểm tra hồ sơ
 // active. Mỗi 24 giây kiểm tra một lần, đủ để thu hồi quyền trên thiết bị khác
@@ -11091,12 +11074,6 @@ async function manageTelegramAccount(telegramId,role='',unit='',displayName='',a
   const data=await response.json().catch(()=>null);
   if(!response.ok) return {error:data?.error||'ACCOUNT_ACTION_FAILED'};
   return data||{ok:true};
-}
-// Tương thích tên hàm cũ cho các bản nhúng trước đây; luồng giao diện hiện tại
-// không còn chọn hồ sơ/Worker ID mà luôn đi qua approveTelegramRequest.
-async function linkTelegramToProfile(){
-  setAdminTelegramStatus('Luồng liên kết hồ sơ cũ đã được thay bằng Telegram ID → chọn vai → chọn tổ/công đoạn → Duyệt.');
-  return false;
 }
 async function approveTelegramRequest(telegramId,role,unit,displayName=''){
   if(!canApproveTelegram() || !supabaseDb) return false;

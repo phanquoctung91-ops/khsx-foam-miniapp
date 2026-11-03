@@ -28,3 +28,12 @@ console.log('PASS dòng tiến độ quý: lần đầu hiện ngay');
 assert.ok(html.includes("if(st.tab&&!PUBLIC_VIEW_MODE){"),'khách luôn mở vào Thống kê');
 assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=263);
 console.log('PASS khách không khôi phục tab đã mở lần trước');
+
+// 4) Dọn code chết (v265): bỏ hàm không ai gọi và thuộc tính data-dem thừa; hàm còn dùng (toán tử ...) thì giữ
+assert.ok(!html.includes('data-dem'),'không còn data-dem');
+assert.ok(!html.includes('async function revalidateSession(){'),'bỏ revalidateSession (đã có revalidateSessionBackground)');
+assert.ok(html.includes('async function revalidateSessionBackground(){'));
+assert.ok(!html.includes('linkTelegramToProfile'),'bỏ linkTelegramToProfile (luồng duyệt dùng approveTelegramRequest)');
+assert.ok(html.includes('async function approveTelegramRequest('));
+assert.ok(html.includes('function parseDMYForDate(')&&html.includes('...parseDMYForDate('),'parseDMYForDate còn được dùng, không bỏ');
+console.log('PASS dọn code chết: hàm không ai gọi và data-dem đã bỏ, hàm còn dùng được giữ');
