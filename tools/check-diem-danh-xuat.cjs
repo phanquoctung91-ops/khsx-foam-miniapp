@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const html=fs.readFileSync(path.resolve(__dirname,'..','index.html'),'utf8').split('\r\n').join('\n');
 const lay=re=>{ const m=html.match(re); assert.ok(m,'không thấy '+re); return m[0]; };
-const code=[/const TANG_CA_GIO=[^\n]*\n/,/const DD_CHUC_VU=[^\n]*\n/,/const DD_TO=[^\n]*\n/,/const ddThuTu=\(a,b\)=>\{[\s\S]*?\n\};/,/function ddBangXuat\([\s\S]*?\n\}\n/].map(lay).join('\n');
+const code=[/const TANG_CA_GIO=[^\n]*\n/,/const DD_CHUC_VU=[^\n]*\n/,/const DD_TO_MAY=[^\n]*\n/,/const DD_TO=[^\n]*\n/,/const ddThuTu=\(a,b\)=>\{[\s\S]*?\n\};/,/function ddBangXuat\([\s\S]*?\n\}\n/].map(lay).join('\n');
 const ctx={isoCuaNgay:d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 vm.createContext(ctx); vm.runInContext(code+';this.ddBangXuat=ddBangXuat;',ctx);
 const nguoi=[
