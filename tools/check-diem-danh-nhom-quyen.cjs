@@ -124,4 +124,14 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
   assert.ok(!/hasPermOrOwner\('diem_danh'\)/.test(html),'không còn quyền chung diem_danh');
   assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=266);
   console.log('PASS giao diện: chip nhóm, quyền theo nhóm, Việc làm, Phát sữa / giấy tăng ca / Excel theo nhóm');
+
+  // 10) Êm tay (v267): tick / tăng ca chỉ đổi tại chỗ, không vẽ lại cả danh sách; ghi chú tự lưu sau khi ngừng gõ, không mất chữ
+  const tick=html.slice(html.indexOf('async function ghiDiemDanh('),html.indexOf('async function ghiTangCa('));
+  assert.ok(tick.includes('veTickDiemDanh(id)')&&!tick.includes('veDiemDanh()'),'tick không vẽ lại cả danh sách');
+  const tc=html.slice(html.indexOf('async function ghiTangCa('),html.indexOf('button[data-dd-tc-mo]'));
+  assert.ok(tc.includes('veTickDiemDanh(id)')&&!tc.includes('veDiemDanh()'),'tăng ca không vẽ lại cả danh sách');
+  for(const k of ['function veTickDiemDanh(id){','data-dd-tc-cell="${p.id}"','function ddTcKhoi(p,r,tat){','async function ddLuuGhiChu(c){','setTimeout(()=>ddLuuGhiChu(c),900)',
+    'if(i!==document.activeElement) i.value=v;','if(o.innerHTML!==h) o.innerHTML=h;','id="ddNhom" style="margin-bottom:8px;min-height:34px;"']) assert.ok(html.includes(k),'thiếu: '+k);
+  assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=267);
+  console.log('PASS êm tay: tick và tăng ca cập nhật tại chỗ; ghi chú tự lưu sau 0,9 giây, ô đang gõ không bị ghi đè; chip chỉ vẽ lại khi đổi');
 })().catch(e=>{ console.error(e); process.exit(1); });
