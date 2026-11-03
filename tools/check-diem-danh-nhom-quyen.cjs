@@ -118,9 +118,9 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
 
   // 9) Giao diện: nhóm, quyền theo nhóm, chip lọc theo nhóm, Việc làm, Phát sữa/giấy tăng ca/Excel theo nhóm
   for(const k of ["const DD_NHOM=['Sản xuất mút','Kho','Quản lý','Tổ may','Chưa phân nhóm'];","function ddNhomCua(p){","const ddDuocNhom=n=>","['diem_danh_mut','diem_danh_kho','diem_danh_may'].some(hasPermOrOwner)",
-    "staff:['hr_view','diem_danh_mut','diem_danh_kho','diem_danh_may','phat_sua']","id=\"ddNhom\"","id=\"ddNhomPS\"","<th>Việc làm</th>","khsx_diem_danh_dat_viec_lam_v1",
+    "staff:['hr_view','diem_danh_mut','diem_danh_kho','diem_danh_may','phat_sua']","id=\"ddNhom\"","id=\"ddNhomPS\"",'<th class="c-viec">Việc làm</th>',"khsx_diem_danh_dat_viec_lam_v1",
     "const sua=duocDiemDanh()&&ddDuocNhom(ddNhom);","ddSuaDong.filter(r=>ddNhomCua(r)===ddNhom)","ddNhomCua(p)===ddNhom&&(ddDong[p.id]||{}).tc>0",
-    "(n.data||[]).filter(p=>ddNhomCua(p)===ddNhom)","ddNhom==='Tổ may'?'Tổ May':'Tổ Nệm Foam'","select('id,ten,chuc_vu,to_lam,viec_lam')"]) assert.ok(html.includes(k),'thiếu: '+k);
+    "(n.data||[]).filter(p=>ddNhomCua(p)===ddNhom)","ddNhom==='Tổ may'?'Tổ May':'Tổ Nệm Foam'","select('id,ten,chuc_vu,to_lam,viec_lam,con_dung')"]) assert.ok(html.includes(k),'thiếu: '+k);
   assert.ok(!/hasPermOrOwner\('diem_danh'\)/.test(html),'không còn quyền chung diem_danh');
   assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=266);
   console.log('PASS giao diện: chip nhóm, quyền theo nhóm, Việc làm, Phát sữa / giấy tăng ca / Excel theo nhóm');
@@ -134,4 +134,19 @@ const A='00000000-0000-0000-0000-00000000000a', P='00000000-0000-0000-0000-00000
     'if(i!==document.activeElement) i.value=v;','if(o.innerHTML!==h) o.innerHTML=h;','id="ddNhom" style="margin-bottom:8px;min-height:34px;"']) assert.ok(html.includes(k),'thiếu: '+k);
   assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=267);
   console.log('PASS êm tay: tick và tăng ca cập nhật tại chỗ; ghi chú tự lưu sau 0,9 giây, ô đang gõ không bị ghi đè; chip chỉ vẽ lại khi đổi');
+
+  // 11) Người đã nghỉ (v268): ngày họ có điểm danh / ghi chú thì vẫn hiện, chỉ xem; ngày khác không hiện
+  for(const k of ["select('id,ten,chuc_vu,to_lam,viec_lam,con_dung').order('ten')",
+    "ddNguoi=(n.data||[]).filter(p=>p.con_dung||ddDong[p.id]||ddGhiChu[p.id]).map(p=>({...p,nghi:!p.con_dung}));",
+    "if(p.nghi||!laChuTaiKhoan()) return","tat=(!sua||p.nghi)?' disabled':''",">đã nghỉ</span>","xoa&&!p.nghi?","&&!p.nghi)?'':' disabled', ma=CSS.escape(id);"]) assert.ok(html.includes(k),'thiếu: '+k);
+  assert.ok(!html.includes("select('id,ten,chuc_vu,to_lam,viec_lam').eq('con_dung',true)"),'không còn lọc bỏ người đã ẩn khi xem điểm danh từng ngày');
+  assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=268);
+  console.log('PASS người đã nghỉ: hiện ở ngày có dữ liệu với nhãn đã nghỉ, chỉ xem, không sửa / xóa');
+
+  // 12) Bố cục gọn (v269): bảng chia cột đều, mỗi người một dòng, tăng ca một dòng, Việc làm chỉ hiện ở Tổ may
+  for(const k of ['<table class="dd-tab"','.dd-tab:not(.dd-co-viec) .c-viec{display:none;}','.dd-tab .dd-tc-gio{flex-wrap:nowrap;','.dd-tab .dd-tc-gio small{display:none;}',
+    '<label title="${TANG_CA_GIO[g]}">',"than.closest('table')?.classList.toggle('dd-co-viec',ddNhom==='Tổ may')",'<th class="c-viec">Việc làm</th>','<td class="c-tc" data-dd-tc-cell="${p.id}">',
+    '.dd-tab th{white-space:nowrap;']) assert.ok(html.includes(k),'thiếu: '+k);
+  assert.ok(Number(html.match(/const APP_VERSION = (\d+);/)[1])>=269);
+  console.log('PASS bố cục gọn: bảng chia cột đều, mỗi người một dòng, tăng ca một dòng, cột Việc làm chỉ ở Tổ may');
 })().catch(e=>{ console.error(e); process.exit(1); });

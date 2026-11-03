@@ -632,6 +632,22 @@
   .dd-tc-the .dd-tc-gio input{width:24px;height:24px;}
   .dd-tc-dong{min-width:34px;min-height:34px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-size:14px;cursor:pointer;}
   .dd-tc-the .dd-tc-dong{grid-column:1/-1;min-height:40px;}
+  /* Bảng điểm danh (máy tính): cột chia đều, mỗi người đúng một dòng; Việc làm chỉ hiện ở nhóm Tổ may */
+  .dd-tab{width:100%;table-layout:fixed;border-collapse:collapse;}
+  .dd-tab th{white-space:nowrap;padding:8px 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.2px;height:auto;min-height:0;line-height:1.2;}
+  .dd-tab thead tr{height:auto;}
+  .dd-tab td{padding:7px 6px;vertical-align:middle;border-top:1px solid var(--border);overflow:hidden;}
+  .dd-tab .c-ten{width:21%;font-weight:600;}.dd-tab .c-cv{width:24%;}.dd-tab .c-viec{width:13%;}.dd-tab .c-cb{width:62px;text-align:center;}
+  .dd-tab .c-tc{width:134px;text-align:center;}.dd-tab .c-gc{width:auto;}.dd-tab .c-xoa{width:62px;text-align:center;}
+  .dd-tab:not(.dd-co-viec) .c-viec{display:none;}
+  .dd-tab td.c-cv select{width:calc(50% - 3px);min-width:0;max-width:none;font-size:12px;padding:4px 4px;}
+  .dd-tab td.c-cv select+select{margin-left:4px;}
+  .dd-tab .dd-tc-gio{flex-wrap:nowrap;gap:5px;margin:0;justify-content:center;}
+  .dd-tab .dd-tc-gio label{gap:3px;font-size:12.5px;white-space:nowrap;}
+  .dd-tab .dd-tc-gio small{display:none;}
+  .dd-tab .dd-tc-mo{min-height:30px;padding:0 8px;font-size:12.5px;}
+  .dd-tab .dd-tc-dong{min-width:26px;min-height:26px;font-size:12px;}
+  .dd-tab .capacity-quick-btn{padding:4px 8px;font-size:12px;min-height:30px;}
   .dd-the select{width:100%;min-height:42px;font-size:14px;margin-top:8px;}
   .dd-nut-lon{width:100%;min-height:46px;margin-top:8px;font-size:15px;}
   body:not(.mobile-view) .dd-the-khung{display:none;}
@@ -2389,8 +2405,8 @@ body.mobile-view .nkx-tim{width:100%;}
     <div class="bom-chip-row" id="ddNhom" style="margin-bottom:8px;min-height:34px;"></div>
     <div class="bom-chip-row" id="ddLoc" style="margin-bottom:8px;"></div>
     <div id="ddKhung">
-    <div class="table-scroll dd-bang-ngang" style="max-height:none;"><table style="min-width:0;">
-      <thead><tr><th>Tên</th><th>Chức vụ / Tổ</th><th>Việc làm</th><th style="text-align:center;">Cả ngày</th><th style="text-align:center;">Sáng</th><th style="text-align:center;">Chiều</th><th style="text-align:center;">Tăng ca</th><th>Ghi chú</th><th></th></tr></thead>
+    <div class="table-scroll dd-bang-ngang" style="max-height:none;"><table class="dd-tab" style="min-width:0;">
+      <thead><tr><th class="c-ten">Tên</th><th class="c-cv">Chức vụ / Tổ</th><th class="c-viec">Việc làm</th><th class="c-cb">Cả ngày</th><th class="c-cb">Sáng</th><th class="c-cb">Chiều</th><th class="c-tc">Tăng ca</th><th class="c-gc">Ghi chú</th><th class="c-xoa"></th></tr></thead>
       <tbody id="ddBang"></tbody>
     </table></div>
     <div id="ddThe" class="dd-the-khung"></div>
@@ -2570,7 +2586,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=267"></script>
+<script src="raw-data.js?v=269"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4647,7 +4663,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 267;
+const APP_VERSION = 269;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -13150,11 +13166,11 @@ function veLocDiemDanh(dsNhom){
 }
 const ddNhanCv=p=>[p.chuc_vu,p.chuc_vu==='Công nhân'?p.to_lam:null].filter(Boolean).join(' · ');
 function ddOChon(p){
-  if(!laChuTaiKhoan()) return `<span style="font-size:12.5px;color:var(--text2);">${thoatHtml(ddNhanCv(p))||'—'}</span>`;
+  if(p.nghi||!laChuTaiKhoan()) return `<span style="font-size:12.5px;color:var(--text2);">${thoatHtml(ddNhanCv(p))||'—'}</span>`;
   const sel=(attr,ds,v,trong)=>`<select ${attr} data-id="${p.id}" style="font-size:12.5px;padding:4px;max-width:150px;"><option value="">${trong}</option>${ds.map(x=>`<option${x===v?' selected':''}>${x}</option>`).join('')}</select>`;
   return sel('data-dd-cv',DD_CHUC_VU,p.chuc_vu,'— Chức vụ —')+(p.chuc_vu==='Công nhân'?' '+sel('data-dd-to',DD_TO,p.to_lam,'— Tổ —'):'');
 }
-const ddOViec=(p,kieu)=>laChuTaiKhoan()?`<input type="text" data-dd-viec data-id="${p.id}" maxlength="100" value="${thoatHtml(p.viec_lam||'')}" placeholder="Việc làm" aria-label="Việc làm ${thoatHtml(p.ten)}" style="${kieu}font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);box-sizing:border-box;">`:`<span style="font-size:12.5px;">${thoatHtml(p.viec_lam||'')}</span>`;
+const ddOViec=(p,kieu)=>(laChuTaiKhoan()&&!p.nghi)?`<input type="text" data-dd-viec data-id="${p.id}" maxlength="100" value="${thoatHtml(p.viec_lam||'')}" placeholder="Việc làm" aria-label="Việc làm ${thoatHtml(p.ten)}" style="${kieu}font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);box-sizing:border-box;">`:`<span style="font-size:12.5px;">${thoatHtml(p.viec_lam||'')}</span>`;
 function loiDiemDanh(e){
   const m=String(e?.message||e||'');
   if(m.includes('ATTENDANCE_FORBIDDEN')) return 'Tài khoản chưa có quyền điểm danh nhóm này.';
@@ -13199,28 +13215,30 @@ async function taiDiemDanh(){
   const ngay=document.getElementById('ddNgay')?.value; if(!ngay) return;
   const lan=++ddLan; ddBao('ddStatus','Đang tải...');
   const [n,d,s,g]=await Promise.all([
-    supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten,chuc_vu,to_lam,viec_lam').eq('con_dung',true).order('ten'),
+    supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten,chuc_vu,to_lam,viec_lam,con_dung').order('ten'),
     supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu,tang_ca').eq('ngay',ngay),
     supabaseDb.from('khsx_phat_sua').select('nguoi_id').eq('ngay',ngay),
     supabaseDb.from('khsx_diem_danh_ghi_chu').select('nguoi_id,ghi_chu').eq('ngay',ngay)]);
   if(lan!==ddLan) return;
   const loi=n.error||d.error||s.error||g.error;
   if(loi){ ddBao('ddStatus',`Chưa tải được điểm danh: ${loi.message||loi}`,'var(--danger)'); return; }
-  ddNguoi=n.data||[]; ddDong={}; (d.data||[]).forEach(r=>{ ddDong[r.nguoi_id]={sang:!!r.sang,chieu:!!r.chieu,tc:r.tang_ca||0}; });
+  ddDong={}; (d.data||[]).forEach(r=>{ ddDong[r.nguoi_id]={sang:!!r.sang,chieu:!!r.chieu,tc:r.tang_ca||0}; });
   ddDaPhat=new Set((s.data||[]).map(r=>r.nguoi_id));
   ddGhiChu={}; (g.data||[]).forEach(r=>{ ddGhiChu[r.nguoi_id]=r.ghi_chu; });
+  // Người đã ẩn (đã nghỉ): chỉ hiện ở ngày họ có điểm danh hoặc ghi chú, để xem lại dữ liệu cũ; không sửa được (nghi=true)
+  ddNguoi=(n.data||[]).filter(p=>p.con_dung||ddDong[p.id]||ddGhiChu[p.id]).map(p=>({...p,nghi:!p.con_dung}));
   ddBao('ddStatus',''); veDiemDanh();
 }
 // Khối Tăng ca của một người (dùng cả khi vẽ cả danh sách lẫn khi chỉ cập nhật tại chỗ một người)
 function ddTcKhoi(p,r,tat){
   const coDD=r.sang||r.chieu, mo=coDD&&(ddMoTc.has(p.id)||!!r.tc), tatTc=(tat||!coDD)?' disabled':'';
   if(!mo) return `<button type="button" class="dd-nut dd-tc-mo" data-dd-tc-mo="${p.id}" aria-expanded="false"${tatTc}${coDD?'':' title="Tick sáng hoặc chiều trước khi báo tăng ca"'}>Tăng ca</button>`;
-  return `<div class="dd-tc-gio">${[1,2,3].map(g=>`<label><input type="checkbox" data-dd-tc="${g}" data-id="${p.id}"${r.tc===g?' checked':''}${tatTc}> ${g}h <small>${TANG_CA_GIO[g]}</small></label>`).join('')}${r.tc?'':`<button type="button" class="dd-tc-dong" data-dd-tc-mo="${p.id}" aria-label="Đóng tăng ca"${tatTc}>✕</button>`}</div>`;
+  return `<div class="dd-tc-gio">${[1,2,3].map(g=>`<label title="${TANG_CA_GIO[g]}"><input type="checkbox" data-dd-tc="${g}" data-id="${p.id}"${r.tc===g?' checked':''}${tatTc}> ${g}h <small>${TANG_CA_GIO[g]}</small></label>`).join('')}${r.tc?'':`<button type="button" class="dd-tc-dong" data-dd-tc-mo="${p.id}" aria-label="Đóng tăng ca"${tatTc}>✕</button>`}</div>`;
 }
 // Tick / tăng ca chỉ đổi đúng ô của người đó, KHÔNG vẽ lại cả danh sách: trang không nhảy, ô ghi chú đang gõ không mất chữ, bàn phím không đóng.
 function veTickDiemDanh(id){
   const p=ddNguoi.find(x=>x.id===id); if(!p) return veDiemDanh();
-  const r=ddDong[id]||{sang:false,chieu:false,tc:0}, tat=(duocDiemDanh()&&ddDuocNhom(ddNhom))?'':' disabled', ma=CSS.escape(id);
+  const r=ddDong[id]||{sang:false,chieu:false,tc:0}, tat=(duocDiemDanh()&&ddDuocNhom(ddNhom)&&!p.nghi)?'':' disabled', ma=CSS.escape(id);
   document.querySelectorAll(`#ddKhung input[data-dd][data-id="${ma}"]`).forEach(c=>{ c.checked=c.dataset.dd==='ca'?!!(r.sang&&r.chieu):c.dataset.dd==='sang'?!!r.sang:!!r.chieu; });
   document.querySelectorAll(`#ddKhung .dd-nut[data-dd-n][data-id="${ma}"]`).forEach(b=>{
     const k=b.dataset.ddN, on=k==='ca'?!!(r.sang&&r.chieu):k==='sang'?!!r.sang:!!r.chieu;
@@ -13235,24 +13253,25 @@ function veDiemDanh(){
   const nh=ddNhomHienDs(ddNguoi,false); if(!nh.some(x=>x.n===ddNhom)) ddNhom=nh[0]?nh[0].n:'';
   veNhomDiemDanh(nh,'ddNhom');
   const sua=duocDiemDanh()&&ddDuocNhom(ddNhom);   // chỉ tick được nhóm mình có quyền; nhóm khác chỉ xem
+  than.closest('table')?.classList.toggle('dd-co-viec',ddNhom==='Tổ may');   // Việc làm chỉ dùng ở Tổ may
   const dsNhom=ddNguoi.filter(p=>ddNhomCua(p)===ddNhom);
   veLocDiemDanh(dsNhom);
   const hien=dsNhom.filter(ddHopLoc).sort(ddThuTu);
   const trong=t=>{ than.innerHTML=`<tr><td colspan="9" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; };
   if(!ddNguoi.length) return trong(`Chưa có ai trong danh sách.${xoa?' Thêm người ở dưới.':''}`);
   if(!hien.length) return trong('Không có ai trong nhóm này.');
-  const oGc=(p,kieu)=>`<input type="text" data-dd-gc data-id="${p.id}" maxlength="200" value="${thoatHtml(ddGhiChu[p.id]||'')}" placeholder="Ghi chú"${sua?'':' disabled'} aria-label="Ghi chú ${thoatHtml(p.ten)}" style="${kieu}font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);box-sizing:border-box;">`;
+  const oGc=(p,kieu)=>`<input type="text" data-dd-gc data-id="${p.id}" maxlength="200" value="${thoatHtml(ddGhiChu[p.id]||'')}" placeholder="Ghi chú"${(sua&&!p.nghi)?'':' disabled'} aria-label="Ghi chú ${thoatHtml(p.ten)}" style="${kieu}font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);box-sizing:border-box;">`;
   const tcKhoi=ddTcKhoi;
   than.innerHTML=hien.map(p=>{
-    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=!sua?' disabled':'';
-    const o=(k,v)=>`<td style="text-align:center;"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
-    return `<tr><td style="font-weight:600;">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da" title="Đã phát sữa (chỉ là thông tin, vẫn sửa được điểm danh)">🥛 đã phát</span>':''}</td><td>${ddOChon(p)}</td><td>${ddOViec(p,'min-width:0;width:100%;max-width:170px;')}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td style="text-align:center;" data-dd-tc-cell="${p.id}">${tcKhoi(p,r,tat)}</td><td>${oGc(p,'min-width:0;width:100%;max-width:240px;')}</td><td>${xoa?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
+    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||p.nghi)?' disabled':'';
+    const o=(k,v)=>`<td class="c-cb"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
+    return `<tr><td class="c-ten">${thoatHtml(p.ten)}${p.nghi?' <span class="bom-nhan" title="Đã nghỉ (đã ẩn khỏi danh sách). Chỉ xem dữ liệu cũ, không sửa được.">đã nghỉ</span>':''}${khoa?' <span class="bom-nhan da" title="Đã phát sữa (chỉ là thông tin, vẫn sửa được điểm danh)">🥛 đã phát</span>':''}</td><td class="c-cv">${ddOChon(p)}</td><td class="c-viec">${ddOViec(p,'min-width:0;width:100%;')}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td class="c-tc" data-dd-tc-cell="${p.id}">${tcKhoi(p,r,tat)}</td><td class="c-gc">${oGc(p,'min-width:0;width:100%;')}</td><td class="c-xoa">${xoa&&!p.nghi?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
   }).join('');
   the.innerHTML=hien.map(p=>{
-    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=!sua?' disabled':'';
+    const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||p.nghi)?' disabled':'';
     const nut=(k,txt,on)=>`<button type="button" class="dd-nut${on?' on':''}" data-dd-n="${k}" data-id="${p.id}" aria-pressed="${on}"${tat}>${on?'✓ ':''}${txt}</button>`;
-    return `<div class="dd-the"><div class="dd-the-ten">${thoatHtml(p.ten)}${khoa?' <span class="bom-nhan da">🥛 đã phát</span>':''}${xoa?'':`<small>${thoatHtml([ddNhanCv(p),p.viec_lam].filter(Boolean).join(' · '))||'—'}</small>`}</div>${xoa?ddOChon(p)+ddOViec(p,'width:100%;min-width:0;min-height:38px;margin-top:6px;'):''}
-      <div class="dd-nut-hang">${nut('ca','Cả ngày',r.sang&&r.chieu)}${nut('sang','Sáng',r.sang)}${nut('chieu','Chiều',r.chieu)}</div><div class="dd-tc-the" data-dd-tc-cell="${p.id}">${tcKhoi(p,r,tat)}</div>${oGc(p,'width:100%;min-width:0;min-height:42px;margin-top:8px;')}${xoa?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
+    return `<div class="dd-the"><div class="dd-the-ten">${thoatHtml(p.ten)}${p.nghi?' <span class="bom-nhan">đã nghỉ</span>':''}${khoa?' <span class="bom-nhan da">🥛 đã phát</span>':''}${xoa?'':`<small>${thoatHtml([ddNhanCv(p),p.viec_lam].filter(Boolean).join(' · '))||'—'}</small>`}</div>${xoa?ddOChon(p)+ddOViec(p,'width:100%;min-width:0;min-height:38px;margin-top:6px;'):''}
+      <div class="dd-nut-hang">${nut('ca','Cả ngày',r.sang&&r.chieu)}${nut('sang','Sáng',r.sang)}${nut('chieu','Chiều',r.chieu)}</div><div class="dd-tc-the" data-dd-tc-cell="${p.id}">${tcKhoi(p,r,tat)}</div>${oGc(p,'width:100%;min-width:0;min-height:42px;margin-top:8px;')}${xoa&&!p.nghi?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
   }).join('');
 }
 async function ghiDiemDanh(id,sang,chieu){
