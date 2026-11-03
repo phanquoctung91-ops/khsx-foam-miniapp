@@ -31,7 +31,8 @@ const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');l
 
    // Bam mo drawer "☰ Thêm" (mobile <=1023px, da set viewport 390px)
    document.getElementById('tabsMoreToggle').click();
-   const openedExtra = document.getElementById('mainTabs').classList.contains('show-extra');
+   // Trên điện thoại "☰ Thêm" mở bảng trượt từ đáy (#moreSheetBg.on), không còn thêm class show-extra vào #mainTabs.
+   const openedExtra = document.getElementById('moreSheetBg').classList.contains('on');
 
    // Bam tab Nhan su (1 muc trong drawer)
    document.querySelector('.tab-btn[data-tab="staff"]').click();

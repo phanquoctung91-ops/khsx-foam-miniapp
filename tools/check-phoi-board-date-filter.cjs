@@ -35,20 +35,18 @@ const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');l
 
    moBangDatPhoi();
 
-   const opts=[...document.getElementById('phoiTuNgay').options].map(o=>o.value);
-   const tu=document.getElementById('phoiTuNgay').value;
-   const den=document.getElementById('phoiDenNgay').value;
-   return {optCount:opts.length, hasAugust:opts.some(d=>d.endsWith('/08/2026')), allSeptember:opts.every(d=>d.endsWith('/09/2026')), tu, den};
+   // Từ 26/09/2026 hai ô là ô lịch (type=date), mở ra luôn là hôm nay.
+   const tuEl=document.getElementById('phoiTuNgay'), denEl=document.getElementById('phoiDenNgay');
+   const t=new Date(), hom=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+   return {tuType:tuEl.type, denType:denEl.type, tu:tuEl.value, den:denEl.value, hom, modal:document.getElementById('phoiModal').style.display};
  });
  console.log(JSON.stringify(result,null,2));
  console.log('page errors:', errors);
 
  const assert=require('node:assert/strict');
- assert.equal(result.allSeptember, true, 'Danh sach chi duoc liet ke ngay trong thang dang chon (9/2026)');
- assert.equal(result.hasAugust, false, 'Danh sach KHONG duoc lan sang thang 8/2026');
- assert.equal(result.optCount, 12, 'Phai co du 12 ngay cua thang 9/2026 trong danh sach de cuon them');
- assert.equal(result.tu, '06/09/2026', 'Mac dinh Tu ngay phai la ngay thu 7 tu cuoi len (7 ngay gan nhat: 06->12/09)');
- assert.equal(result.den, '12/09/2026', 'Mac dinh Den ngay phai la ngay gan nhat (cuoi danh sach)');
+ assert.equal(result.tuType, 'date', 'Tu ngay la o lich'); assert.equal(result.denType, 'date', 'Den ngay la o lich');
+ assert.equal(result.modal, 'block', 'Bang dat phoi phai mo');
+ assert.equal(result.tu, result.hom, 'Mac dinh Tu ngay la hom nay'); assert.equal(result.den, result.hom, 'Mac dinh Den ngay la hom nay');
  assert.equal(errors.length, 0, 'khong duoc co loi JS');
- console.log('PASS: Bang dat phoi chi liet ke ngay trong thang hien tai, mac dinh chon 7 ngay gan nhat');
+ console.log('PASS: Bang dat phoi mo ra voi o lich Tu ngay / Den ngay mac dinh la hom nay');
 })().catch(e=>{console.error('FATAL',e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(r=>server.close(r))});

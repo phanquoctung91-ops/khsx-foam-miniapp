@@ -1,5 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');let browser,server;
+if(!fs.existsSync(path.join(root,'.hotfix-test/KHSX_100926.xlsx'))){ console.log('BỎ QUA: thiếu file mẫu .hotfix-test/KHSX_100926.xlsx (thư mục này không đưa lên git)'); process.exit(0); }
 const sdk=`window.supabase={createClient:(url,key,options)=>({
  auth:{getSession:async()=>({data:{session:window.__testSession||null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),startAutoRefresh(){},stopAutoRefresh(){},signOut:async()=>({}),setSession:async()=>({}),getUser:async()=>({data:{user:window.__testSession?.user}})},
  from(table){const q={};for(const m of ['select','range','eq','is','not','order','limit','in','gte','lte','update','upsert','insert','delete'])q[m]=()=>q;q.maybeSingle=()=>{q.single=true;return q};q.then=(resolve,reject)=>options.global.fetch(url+'/rest/v1/'+table).then(async r=>{const data=await r.json();return r.ok?{data:q.single?(data[0]||null):data,error:null}:{data:null,error:data,status:r.status}}).then(resolve,reject);return q;},

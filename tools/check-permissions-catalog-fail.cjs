@@ -9,7 +9,7 @@ const OWNER='7ebce211-e3b0-4195-9207-ff46506e13d6';
 const OTHER='5c7fbd28-0bff-47da-9d25-9ecccce68e5b';
 const sdk=`window.supabase={createClient:(url,key,options)=>({
  auth:{getSession:async()=>({data:{session:window.__testSession||null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),startAutoRefresh(){},stopAutoRefresh(){}},
- from(table){const q={_table:table};for(const m of ['select','range','eq','is','not','in','gte','lte','update'])q[m]=()=>q;
+ from(table){const q={_table:table};for(const m of ['select','range','eq','is','not','order','limit','in','gte','lte','update'])q[m]=()=>q;
   q.order=()=>{q._ordered=true;return q};
   q.then=(resolve,reject)=>{
     if(table==='khsx_permissions') return Promise.resolve({data:null,error:{message:'permission denied for table khsx_permissions'}}).then(resolve,reject);

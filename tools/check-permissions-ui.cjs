@@ -6,7 +6,7 @@ const OWNER='7ebce211-e3b0-4195-9207-ff46506e13d6';
 const OTHER='5c7fbd28-0bff-47da-9d25-9ecccce68e5b';
 const sdk=`window.supabase={createClient:(url,key,options)=>({
  auth:{getSession:async()=>({data:{session:window.__testSession||null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),startAutoRefresh(){},stopAutoRefresh(){}},
- from(table){const q={_table:table};for(const m of ['select','range','eq','is','not','in','gte','lte','update'])q[m]=()=>q;
+ from(table){const q={_table:table};for(const m of ['select','range','eq','is','not','order','limit','in','gte','lte','update'])q[m]=()=>q;
   q.order=()=>{q._ordered=true;return q};
   q.then=(resolve,reject)=>(options.global?.fetch||fetch)(url+'/rest/v1/'+table).then(async r=>{const data=await r.json();return r.ok?{data,error:null}:{data:null,error:data,status:r.status}}).then(resolve,reject);return q;},
  rpc:async(name,args)=>{window.__rpcCalls=window.__rpcCalls||[];window.__rpcCalls.push({name,args});

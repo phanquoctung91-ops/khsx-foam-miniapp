@@ -300,7 +300,7 @@
   /* Khoang cach toi thieu 1cm (~38px man hinh 96dpi) giua 2 o nhap canh nhau:
      padding trai/phai 20px moi ben -> 2 o ke nhau cach nhau 40px. box-sizing
      border-box de width tren <th> da tinh luon padding, khong bi cong them. */
-  #manualOrderModalTable th, #manualOrderModalTable td{box-sizing:border-box;padding:9px 20px;}
+  #manualOrderModalTable th, #manualOrderModalTable td{box-sizing:border-box;padding:9px 22px;}
   /* input[type="text"] toan app co min-width:220px (dong 252) - lon hon het cac
      cot bang nay sau padding, khien input bi ep rong tran de cot ke ben (do that
      bang getBoundingClientRect ra am, tuc chong thuc su, khong phai chi nhin roi
@@ -2592,7 +2592,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=277"></script>
+<script src="raw-data.js?v=278"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4669,7 +4669,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 277;
+const APP_VERSION = 278;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.

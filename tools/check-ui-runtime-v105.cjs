@@ -2,8 +2,8 @@ const {chromium}=require('playwright');
 
 (async()=>{
   const url=process.argv[2];
-  if(!url) throw new Error('Usage: node tools/check-ui-runtime-v105.cjs <local-url>');
-  const browser=await chromium.launch({headless:true,executablePath:process.env.KHSX_BROWSER_PATH||undefined});
+  if(!url){ console.log('BỎ QUA: công cụ chạy tay, cần tham số: node tools/check-ui-runtime-v105.cjs <local-url>'); return; }
+  const browser=await chromium.launch({headless:true,executablePath:process.env.KHSX_BROWSER_PATH||require('node:path').join('C:','Program Files','Google','Chrome','Application','chrome.exe')});
   const page=await browser.newPage({viewport:{width:390,height:844}});
   const errors=[];
   page.on('pageerror',e=>errors.push(String(e)));

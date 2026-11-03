@@ -35,6 +35,7 @@ const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');l
    assignments['O_SUP']={to:'Tổ 1',to_goc:'Tổ 1',stage_by_date:{'11/09/2026':{dan:0}},support_by_date:{}};
    recomputeAllDayKeys();
    populateMonthYearFilters();
+   monthFilterSelect.value='9'; yearFilterSelect.value='2026';   // dữ liệu thử ở tháng 9/2026; bộ lọc mặc định là tháng hiện tại thật
    refreshForMonthYear();
    // renderProgress() lan dau de sinh cac <option> ngay; luc nay <select> chua
    // co option '11/09/2026' nen gan .value truoc do se bi bo qua (select

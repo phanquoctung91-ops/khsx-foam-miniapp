@@ -8,7 +8,7 @@ const {chromium}=require('playwright');const root=path.resolve(__dirname,'..');l
 const ORDER_ID='r_11_09_2026_LAEZ20_2020_200_200_20_2_1';
 const sdk=`window.supabase={createClient:(url,key,options)=>({
  auth:{getSession:async()=>({data:{session:{user:{id:'owner-test'}}}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),startAutoRefresh(){},stopAutoRefresh(){}},
- from(table){const q={_table:table};for(const m of ['select','range','eq','is','not','in','gte','lte','update'])q[m]=()=>q;
+ from(table){const q={_table:table};for(const m of ['select','range','eq','is','not','order','limit','in','gte','lte','update'])q[m]=()=>q;
   q.then=(resolve,reject)=>(options.global?.fetch||fetch)(url+'/rest/v1/'+table).then(async r=>{const data=await r.json();return r.ok?{data,error:null}:{data:null,error:data,status:r.status}}).then(resolve,reject);return q;},
  rpc:async()=>({data:[],error:null}),
  channel(){const c={on:(t,f,cb)=>c,subscribe:cb=>{c.cb=cb;cb('SUBSCRIBED');return c}};return c},removeChannel(c){c.cb?.('CLOSED')}

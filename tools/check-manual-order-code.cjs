@@ -38,18 +38,20 @@ const sdk=`window.supabase={createClient:(url,key,options)=>({
    document.querySelectorAll('.panel').forEach(p=>{if(p.id!=='panel-autoplan')p.style.display='none';});
    document.getElementById('panel-autoplan').style.display='block';
    document.getElementById('addManualOrderBtn').click();
-   document.getElementById('manualOrderDate').value='2026-09-15';
-   document.getElementById('manualOrderCode').value='SORA10-6';
-   document.getElementById('manualOrderName').value='Sora';
-   document.getElementById('manualOrderSize').value='160x200x10';
-   document.getElementById('manualOrderQty').value='7';
+   // Popup nhiều dòng: một ngày chung + dòng đầu tiên (mo-ma / mo-dong / mo-size / mo-qty)
+   document.getElementById('manualOrderModalDate').value='2026-09-15';
+   const tr=document.querySelector('#manualOrderModalTable tbody tr');
+   tr.querySelector('.mo-ma').value='SORA10-6';
+   tr.querySelector('.mo-dong').value='Sora';
+   tr.querySelector('.mo-size').value='160x200x10';
+   tr.querySelector('.mo-qty').value='7';
  });
- await page.evaluate(()=>document.getElementById('saveManualOrderBtn').click());
+ await page.evaluate(()=>document.getElementById('saveManualOrderModalBtn').click());
  await page.waitForTimeout(300);
  const result=await page.evaluate(()=>({
    insertCalls:(window.__insertCalls||[]).map(c=>({table:c.table,product_code:c.payload.product_code,product_name:c.payload.product_name,width_mm:c.payload.width_mm,length_mm:c.payload.length_mm,thickness_mm:c.payload.thickness_mm,plan_qty:c.payload.plan_qty})),
-   statusText:document.getElementById('manualOrderStatus').textContent,
-   codeFieldClearedAfterSave:document.getElementById('manualOrderCode').value
+   statusText:document.getElementById('manualOrderModalStatus').textContent,
+   codeFieldClearedAfterSave:(document.querySelector('#manualOrderModalTable tbody tr .mo-ma')||{value:''}).value   // sau khi lưu popup đóng và dòng được làm trống/đóng lại
  }));
  console.log(JSON.stringify(result,null,2));
  console.log('page errors:', errors);
