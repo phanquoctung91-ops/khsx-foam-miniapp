@@ -500,7 +500,7 @@
   .stage-total{font-size:14px;font-weight:800;color:var(--text);padding:6px 0;}
   .stage-readonly{font-size:13px;font-weight:800;color:var(--text);text-align:center;}
   .status-over{display:block;margin-top:4px;color:#d0245d;font-size:11px;font-weight:800;}
-  .group-chip{display:inline-block;max-width:100%;margin:1px 2px;padding:3px 7px;border-radius:999px;font-size:10.5px;font-weight:800;line-height:1.2;white-space:normal;overflow-wrap:break-word;border:1px solid transparent;}
+  .group-chip{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:100px;max-width:100%;min-height:34px;text-align:center;vertical-align:middle;margin:1px 2px;padding:3px 7px;border-radius:999px;font-size:10.5px;font-weight:800;line-height:1.2;white-space:normal;overflow-wrap:break-word;border:1px solid transparent;}
   .group-thanh-cong{background:#e4f4ec;color:#146c45;border-color:#9fd6b8;}
   .group-digital{background:#f2eff0;color:#991d46;border-color:#e6a8bd;}
   .group-global{background:#efe9fa;color:#6134ad;border-color:#c3b2e8;}
@@ -2446,9 +2446,11 @@ body.mobile-view .nkx-tim{width:100%;}
     </section>
   </div>
   <div class="card" id="staffAccountCard">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
+    <button type="button" id="staffToggle" aria-expanded="false" aria-controls="staffBody" style="display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin:0 0 6px;padding:0;background:none;border:0;cursor:pointer;color:inherit;font:inherit;text-align:left;">
       <h3 id="staffModalTitle" style="margin:0;font-size:17px;">🔗 Quản lý Telegram &amp; phân tổ</h3>
-    </div>
+      <span id="staffChevron" aria-hidden="true" style="font-size:15px;color:var(--text2);">▸</span>
+    </button>
+    <div id="staffBody" hidden>
 
       <div id="legacyStaffDescription" style="font-size:12.5px;color:var(--text2);margin-bottom:10px;">
         Tạo mã đăng nhập cho từng người. <strong>Mã ít nhất 4 ký tự</strong>, nên đặt khó đoán. Mã tạo ở đây lưu trên Google nên mọi thiết bị đều dùng được, và không mất khi cập nhật dashboard.
@@ -2486,6 +2488,7 @@ body.mobile-view .nkx-tim{width:100%;}
         <div id="telegramAccessRequests" style="margin-top:10px;"></div>
       </div>
       <div id="staffUsersList"></div>
+    </div>
   </div>
 </div>
 
@@ -2589,7 +2592,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=272"></script>
+<script src="raw-data.js?v=274"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4666,7 +4669,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 272;
+const APP_VERSION = 274;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -7720,6 +7723,13 @@ function toiDongDon(id){
   if(tr){ tr.scrollIntoView({block:'center'}); tr.classList.add('kt-nhay'); setTimeout(()=>tr.classList.remove('kt-nhay'),2400); }
 }
 document.getElementById('nutDonCanKiemTra')?.addEventListener('click',moDonKiemTra);
+// Khối "Quản lý Telegram & phân tổ": mặc định thu gọn, bấm tiêu đề để mở/đóng (danh sách bên trong vẽ lại không đổi trạng thái này)
+document.getElementById('staffToggle')?.addEventListener('click',()=>{
+  const body=document.getElementById('staffBody'), mo=body.hidden;
+  body.hidden=!mo;
+  document.getElementById('staffToggle').setAttribute('aria-expanded',String(mo));
+  document.getElementById('staffChevron').textContent=mo?'▾':'▸';
+});
 document.getElementById('donKiemTraModal')?.addEventListener('click',async e=>{
   if(e.target.id==='donKiemTraModal'||e.target.id==='dongDonKiemTraBtn'){ dongDonKiemTra(); return; }
   const nut=e.target.closest('[data-kt]'); if(!nut) return;
