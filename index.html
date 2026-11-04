@@ -2592,7 +2592,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=279"></script>
+<script src="raw-data.js?v=280"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4669,7 +4669,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 279;
+const APP_VERSION = 280;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -13249,7 +13249,7 @@ async function taiDiemDanh(){
   const ngay=document.getElementById('ddNgay')?.value; if(!ngay) return;
   const lan=++ddLan; ddBao('ddStatus','Đang tải...');
   const [n,d,s,g]=await Promise.all([
-    supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten,chuc_vu,to_lam,viec_lam,con_dung').order('ten'),
+    supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten,chuc_vu,to_lam,viec_lam,con_dung,an_tu_ngay').order('ten'),
     supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu,tang_ca').eq('ngay',ngay),
     supabaseDb.from('khsx_phat_sua').select('nguoi_id').eq('ngay',ngay),
     supabaseDb.from('khsx_diem_danh_ghi_chu').select('nguoi_id,ghi_chu').eq('ngay',ngay)]);
@@ -13260,7 +13260,9 @@ async function taiDiemDanh(){
   ddDaPhat=new Set((s.data||[]).map(r=>r.nguoi_id));
   ddGhiChu={}; (g.data||[]).forEach(r=>{ ddGhiChu[r.nguoi_id]=r.ghi_chu; });
   // Người đã ẩn (đã nghỉ): chỉ hiện ở ngày họ có điểm danh hoặc ghi chú, để xem lại dữ liệu cũ; không sửa được (nghi=true)
-  ddNguoi=(n.data||[]).filter(p=>p.con_dung||ddDong[p.id]||ddGhiChu[p.id]).map(p=>({...p,nghi:!p.con_dung}));
+  // an_tu_ngay: tài khoản đã thu hồi thì từ ngày đó trở đi không hiện (ngày cũ vẫn hiện nhờ có điểm danh)
+  const dangDung=p=>p.con_dung&&!(p.an_tu_ngay&&ngay>=p.an_tu_ngay);
+  ddNguoi=(n.data||[]).filter(p=>dangDung(p)||ddDong[p.id]||ddGhiChu[p.id]).map(p=>({...p,nghi:!dangDung(p)}));
   ddBao('ddStatus',''); veDiemDanh();
 }
 // Khối Tăng ca của một người (dùng cả khi vẽ cả danh sách lẫn khi chỉ cập nhật tại chỗ một người)
