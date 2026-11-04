@@ -2592,7 +2592,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=278"></script>
+<script src="raw-data.js?v=279"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4669,7 +4669,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 278;
+const APP_VERSION = 279;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -13541,9 +13541,10 @@ th{height:9mm;font-size:12.5pt;font-weight:700;text-align:center}td{height:var(-
   return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Giấy đề xuất tăng ca</title><style>${css}</style></head><body>${h}</body></html>`;
 }
 document.getElementById('ddInTcBtn')?.addEventListener('click',()=>{
-  const ds=ddNguoi.filter(p=>ddNhomCua(p)===ddNhom&&(ddDong[p.id]||{}).tc>0).sort(ddThuTu).map(p=>({ten:p.ten,tc:ddDong[p.id].tc}));
-  if(!ds.length) return ddBao('ddStatus',`Ngày này chưa có ai tăng ca ở nhóm ${ddNhom}.`,'var(--danger)');
-  const trang=giayTangCaHtml(ds,new URL('assets/tc-logo.png?v=235',location.href).href,document.getElementById('ddNgay').value,ddNhom==='Tổ may'?'Tổ May':'Tổ Nệm Foam');
+  const boMay=ddNhom==='Tổ may';   // giấy May riêng; giấy Mút = Sản xuất mút + Kho + Quản lý (anh chốt 04/11), Chưa phân nhóm không in
+  const ds=ddNguoi.filter(p=>(boMay?ddNhomCua(p)==='Tổ may':['Sản xuất mút','Kho','Quản lý'].includes(ddNhomCua(p)))&&(ddDong[p.id]||{}).tc>0).sort(ddThuTu).map(p=>({ten:p.ten,tc:ddDong[p.id].tc}));
+  if(!ds.length) return ddBao('ddStatus',`Ngày này chưa có ai tăng ca ở ${boMay?'Tổ May':'Tổ Nệm Foam'}.`,'var(--danger)');
+  const trang=giayTangCaHtml(ds,new URL('assets/tc-logo.png?v=235',location.href).href,document.getElementById('ddNgay').value,boMay?'Tổ May':'Tổ Nệm Foam');
   const tai=()=>{   // dự phòng: nơi không cho in (một số trình duyệt nhúng) thì tải file về, mở bằng Chrome rồi in
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([trang],{type:'text/html;charset=utf-8'}));
     a.download=`Giay de xuat tang ca ${document.getElementById('ddNgay').value}.html`; document.body.appendChild(a); a.click(); a.remove();

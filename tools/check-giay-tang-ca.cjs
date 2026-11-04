@@ -29,4 +29,13 @@ const ngay=ctx.g([{ten:'An',tc:1}],'x.png','2026-10-28');
 assert.match(ngay,/<i>Ngày 28 tháng 10 năm 2026<\/i>/,'ngày điền theo bộ lọc');
 assert.match(ngay,/<b>Bộ phận:<\/b><span class="bpten">Tổ Nệm Foam<\/span>/,'bộ phận điền sẵn');
 assert.match(mot,/Ngày \.\.\.\.\.\.\. tháng/,'không truyền ngày thì để chấm');
+// Bộ lọc nút In (anh chốt 04/11): giấy Mút = Sản xuất mút + Kho + Quản lý; giấy May riêng; Chưa phân nhóm không in.
+{
+  const ms=html.match(/document\.getElementById\('ddInTcBtn'\)\?\.addEventListener\('click',\(\)=>\{\n([\s\S]*?)\n  const tai=/); assert.ok(ms,'không thấy handler nút in');
+  const nhomCua=p=>p.n, ddNguoi=[{id:1,ten:'M',n:'Sản xuất mút'},{id:2,ten:'K',n:'Kho'},{id:3,ten:'Q',n:'Quản lý'},{id:4,ten:'W',n:'Tổ may'},{id:5,ten:'X',n:'Chưa phân nhóm'}];
+  const ddDong={1:{tc:1},2:{tc:2},3:{tc:1},4:{tc:3},5:{tc:1}};
+  const chay=nhom=>{ let ra=null; vm.runInNewContext('(function(){'+ms[1]+'})()',{ddNhom:nhom,ddNguoi,ddDong,ddNhomCua:nhomCua,ddThuTu:()=>0,ddBao:()=>{},giayTangCaHtml:(ds,l,n,bp)=>{ra={ten:ds.map(d=>d.ten).join(''),bp};return '';},URL,location:{href:'http://x/'},document:{getElementById:()=>({value:'2026-11-04'}),createElement:()=>({}),body:{appendChild(){}}}}); return ra; };
+  for(const n of ['Sản xuất mút','Kho','Quản lý','Chưa phân nhóm']){ const r=chay(n); assert.deepEqual(r,{ten:'MKQ',bp:'Tổ Nệm Foam'},'giấy Mút gồm 3 nhóm, không Chưa phân nhóm, xem '+n); }
+  assert.deepEqual(chay('Tổ may'),{ten:'W',bp:'Tổ May'},'giấy May riêng');
+}
 console.log('PASS giấy tăng ca: đủ khung theo mẫu, tối thiểu 11 dòng, cân đối cả tờ tới 30 người (hàng thấp dần), sang tờ khi quá 30, giờ 17h→18/19/20h, tên thoát HTML, cột nội dung trống');
