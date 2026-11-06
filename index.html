@@ -1157,21 +1157,17 @@
   }
   .chon-to-luoi .chon-to-nut:hover{border-color:var(--primary);color:var(--primary);}
 
-  /* Hàng chip lọc tổ + nút mở tìm kiếm/bộ lọc */
+  /* Hàng chip lọc tổ; ô tìm hiện sẵn ngay trên hàng này (anh chốt 06/11/2026, bỏ nút ⚙ vì không có tác dụng) */
+  .tim-khsx-mobile{display:none;}
+  body.mobile-view .tim-khsx-mobile{display:block;margin-bottom:8px;}
+  body.mobile-view .tim-khsx-mobile .search-with-clear{flex:1 1 auto;min-width:0;}
+  body.mobile-view .tim-khsx-mobile input{min-height:44px;font-size:16px;box-sizing:border-box;}
   body.mobile-view .hang-loc-mobile{display:flex;align-items:center;gap:8px;}
   body.mobile-view .hang-loc-mobile #chipLocTo{flex:1 1 auto;min-width:0;}
-  .nut-loc-mobile{display:none;}
-  body.mobile-view .nut-loc-mobile{
-    display:flex;align-items:center;justify-content:center;flex:0 0 auto;
-    width:38px;height:38px;margin-bottom:8px;border-radius:9px;cursor:pointer;
-    font-size:16px;border:1px solid var(--border);background:var(--card);color:var(--text2);
-  }
-  /* Ô tìm kiếm và bộ lọc phân công: giấu sau nút ⚙, cần mới mở */
+  /* Ô tìm và lọc phân công của thanh công cụ phía trên: trên điện thoại dùng ô tìm riêng ở trên */
   body.mobile-view #panel-autoplan .toolbar-filter-row .search-with-clear,
   body.mobile-view #panel-autoplan .toolbar-filter-row label[for],
   body.mobile-view #panel-autoplan #autoPlanAssignFilter{display:none;}
-  body.mobile-view #panel-autoplan.hien-bo-loc .toolbar-filter-row .search-with-clear,
-  body.mobile-view #panel-autoplan.hien-bo-loc #autoPlanAssignFilter{display:block;}
 
   /* Bảng KHSX dạng thẻ dọc lặp lại đúng nội dung thẻ tổ — trên điện thoại ẩn hẳn cho đỡ cuộn */
   body.mobile-view #autoPlanTable,
@@ -2001,7 +1997,7 @@ body.mobile-view .nkx-tim{width:100%;}
     <div class="day-select-row toolbar-filter-row">
       <label>Ngày:</label>
       <select id="autoPlanDaySelect" class="date-select-limited"></select>
-      <span class="search-with-clear"><input type="text" id="autoPlanSearchBox" placeholder="Tìm theo dòng, mã, kích thước..."><button type="button" class="search-clear-btn" data-clear-search="autoPlanSearchBox" aria-label="Xóa nội dung tìm kiếm" title="Xóa tìm kiếm">×</button></span>
+      <span class="search-with-clear"><input type="text" id="autoPlanSearchBox" placeholder="Tìm theo dòng, mã, kích thước, ghi chú..."><button type="button" class="search-clear-btn" data-clear-search="autoPlanSearchBox" aria-label="Xóa nội dung tìm kiếm" title="Xóa tìm kiếm">×</button></span>
       <label>Phân công:</label>
       <select id="autoPlanAssignFilter">
         <option value="all">Tất cả</option>
@@ -2027,7 +2023,8 @@ body.mobile-view .nkx-tim{width:100%;}
     <button id="moSoLieuKhsxBtn" type="button" class="mobile-only-btn">Chi tiết số liệu</button>
     <div id="neoKpiKhsx"></div>
     <div class="kpis" id="autoPlanKpis" style="margin-bottom:16px;"></div>
-    <div class="hang-loc-mobile"><div id="chipLocTo"></div><button id="nutLocKhsx" type="button" class="nut-loc-mobile" title="Tìm kiếm và bộ lọc">⚙</button></div>
+    <div class="tim-khsx-mobile"><span class="search-with-clear"><input type="text" id="autoPlanSearchMobile" placeholder="Tìm mã hàng, tên hàng, ghi chú..." autocomplete="off" enterkeyhint="search"><button type="button" class="search-clear-btn" data-clear-search="autoPlanSearchMobile" aria-label="Xóa nội dung tìm kiếm" title="Xóa tìm kiếm">×</button></span></div>
+    <div class="hang-loc-mobile"><div id="chipLocTo"></div></div>
     <div class="team-ring-row" id="autoPlanTeamRings" style="margin-bottom:16px;"></div>
     <div class="table-scroll" id="autoPlanTableWrap">
       <table id="autoPlanTable">
@@ -2592,7 +2589,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=281"></script>
+<script src="raw-data.js?v=282"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4669,7 +4666,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 281;
+const APP_VERSION = 282;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -8433,6 +8430,8 @@ function canhBaoAnhChupRong(){
 
 function renderAutoPlan(){ const g=giuODangGo(); try{ return renderAutoPlanThat(); }finally{ traODangGo(g); try{ capNhatNutXoaCaNgay(); }catch(e){} } }
 function renderAutoPlanThat(){
+  { const mb=document.getElementById('autoPlanSearchMobile'), hop=document.getElementById('autoPlanSearchBox');
+    if(mb&&hop&&mb.value!==hop.value&&document.activeElement!==mb){ mb.value=hop.value; syncSearchClearButton(mb); } }
   capNhatNutDonKiemTra();
   const dayVal = document.getElementById('autoPlanDaySelect').value;
   const q = document.getElementById('autoPlanSearchBox').value.trim().toLowerCase();
@@ -8442,7 +8441,7 @@ function renderAutoPlanThat(){
     // ở một ngày phía sau. Nên giữ đơn nếu ngày gốc HOẶC một ngày nó trôi tới thuộc tháng đang xem.
     if(!getCarryForwardDates(r).some(ngayThuocThangHeader)) return false;
     if(dayVal !== 'all' && !getCarryForwardDates(r).includes(dayVal)) return false;
-    if(q && !r.dong.toLowerCase().includes(q) && !r.ma.toLowerCase().includes(q) && !formatKichThuoc(r).toLowerCase().includes(q)) return false;
+    if(q && !r.dong.toLowerCase().includes(q) && !r.ma.toLowerCase().includes(q) && !formatKichThuoc(r).toLowerCase().includes(q) && !String(r.ghi_chu||'').toLowerCase().includes(q)) return false;   // tìm cả ghi chú đơn (anh chốt 06/11/2026)
     const hasTeam = !!(assignments[r.id]?.to);
     const status = getOrderStatus(r);
     if(assignFilter === 'unassigned' && hasTeam) return false;
@@ -9011,7 +9010,7 @@ document.querySelectorAll('[data-clear-search]').forEach(btn=>btn.addEventListen
   const input=document.getElementById(btn.dataset.clearSearch);
   if(!input) return;
   input.value=''; syncSearchClearButton(input); input.focus();
-  if(input.id==='autoPlanSearchBox') renderAutoPlan(); else renderProgress();
+  if(input.id==='autoPlanSearchBox'||input.id==='autoPlanSearchMobile'){ document.getElementById('autoPlanSearchBox').value=''; renderAutoPlan(); } else renderProgress();
 }));
 // Trên PC chỉ mở tối đa khoảng 7 ngày rồi cuộn; điện thoại vẫn dùng bộ chọn native.
 document.querySelectorAll('.date-select-limited').forEach(sel=>{
@@ -9027,6 +9026,11 @@ document.querySelectorAll('.date-select-limited').forEach(sel=>{
   sel.addEventListener('keydown',e=>{ if(e.key==='Escape') closeList(); });
 });
 document.getElementById('autoPlanSearchBox').addEventListener('input',window.KhsxDataCore.debounce(renderAutoPlan,160));
+// Ô tìm trên điện thoại dùng chung giá trị với ô tìm của bảng KHSX (gõ ở đâu cũng đồng bộ)
+document.getElementById('autoPlanSearchMobile')?.addEventListener('input',e=>{
+  document.getElementById('autoPlanSearchBox').value=e.target.value;
+  window.KhsxDataCore.debounce(renderAutoPlan,160)();
+});
 document.getElementById('autoPlanAssignFilter').addEventListener('change', renderAutoPlan);
 
 // ---- Thêm đơn hàng phát sinh — dùng chung cho cả tab Kế hoạch tuần và Tiến độ sản xuất ----
@@ -13899,10 +13903,6 @@ function moSoLieuKhsx(){
   than.appendChild(the); modal.classList.add('dang-mo'); modal.style.display='block';
 }
 document.getElementById('moSoLieuKhsxBtn')?.addEventListener('click',moSoLieuKhsx);
-// Gom ô tìm kiếm và bộ lọc phân công vào một nút — trên điện thoại ít khi dùng tới.
-document.getElementById('nutLocKhsx')?.addEventListener('click',()=>{
-  document.getElementById('panel-autoplan')?.classList.toggle('hien-bo-loc');
-});
 document.getElementById('moThongKeBtn')?.addEventListener('click',moThongKe);
 document.getElementById('dongThongKeBtn')?.addEventListener('click',dongThongKe);
 document.getElementById('thongKeModal')?.addEventListener('click',e=>{ if(e.target.id==='thongKeModal') dongThongKe(); });
