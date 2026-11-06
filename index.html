@@ -2592,7 +2592,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=280"></script>
+<script src="raw-data.js?v=281"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4669,7 +4669,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 280;
+const APP_VERSION = 281;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -12185,7 +12185,7 @@ function chuanBiDongBaoCao(ngay){
     const tenGoc = String(o.dong || '').trim();   // đã chuẩn hoá lúc đọc sheet
     const key = [chuanHoaMaBaoCao(maGoc), chuanHoaTenSP(tenGoc), ngang, dai, day].join('|');
 
-    if(!nhom[key]) nhom[key] = {maDem:{}, tenDem:{}, ngang, dai, day, keHoach:0, thucTe:0, ghiChu:[]};
+    if(!nhom[key]) nhom[key] = {maDem:{}, tenDem:{}, ngang, dai, day, keHoach:0, thucTe:0};
     nhom[key].maDem[maGoc] = (nhom[key].maDem[maGoc] || 0) + 1;
     nhom[key].tenDem[tenGoc] = (nhom[key].tenDem[tenGoc] || 0) + 1;
     // Không cộng vào KẾ HOẠCH:
@@ -12195,7 +12195,6 @@ function chuanBiDongBaoCao(ngay){
     if(o.date === ngay && !o.is_drop && !o.is_manual) nhom[key].keHoach += Number(o.so_luong) || 0;
     // Đóng gói ngày nào chỉ cộng sản lượng phát sinh đúng ngày đó.
     nhom[key].thucTe += dongGoiNgayNay;
-    if(o.ghi_chu && nhom[key].ghiChu.indexOf(o.ghi_chu) === -1) nhom[key].ghiChu.push(o.ghi_chu);
   });
 
   return Object.keys(nhom).map(k=>{
@@ -12211,7 +12210,7 @@ function chuanBiDongBaoCao(ngay){
                 || (Number(x.ngang)||0) - (Number(y.ngang)||0)
                 || (Number(x.dai)||0) - (Number(y.dai)||0)
                 || (Number(x.day)||0) - (Number(y.day)||0))
-    .map(r=>[r.ma, r.ten, r.ngang, r.dai, r.day, r.keHoach, r.thucTe, r.ghiChu.join('; ')]);
+    .map(r=>[r.ma, r.ten, r.ngang, r.dai, r.day, r.keHoach, r.thucTe, '']);   // cột Ghi chú để trống (anh chốt 06/11/2026); giữ đủ 8 cột cho Apps Script
 }
 
 async function taiDanhSachBaoCao(){
