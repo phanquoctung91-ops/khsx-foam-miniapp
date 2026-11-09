@@ -1,6 +1,6 @@
 // Bảng Đặt áo của một ngày, tính BẰNG CHÍNH mã của mini-app (không viết lại công thức) trên dữ liệu thật (khách xem, chỉ đọc).
 // Dùng cho bot giám sát sản xuất (anh chốt 07/11/2026). In ra đúng một dòng JSON:
-//   { ngay, soDon, thieuBom:{mã:SL}, khongCoAo:[mã], chuaGanTo:[{ma,dong,sl}], bang:{cacTo,coLe,...}, hash }
+//   { ngay, soDon, thieuBom:{mã:SL}, khongCoAo:[mã], chuaGanTo:[{ma,dong,sl}], bang:{cacTo,coLe,...}, daGan:{chuan,coLe} (chỉ các tổ đã gán), hash }
 // Cách dùng:  node tools/bang-dat-ao-live.cjs dd/mm/yyyy [--bom-file file.json]
 //   BOM mặc định đọc bằng RPC khsx_bom_ao_guest_v1 (khách xem). --bom-file chỉ để chạy thử khi RPC chưa lên máy chủ:
 //   file là mảng [{ma_hang, stt, ma_vt, ten_vt, dinh_muc, dvt}] (tất cả dòng BOM).
@@ -39,7 +39,11 @@ let browser,server;
    const chuaGanTo=don.filter(o=>!toTheToCuaDon(o)).map(o=>({ma:o.ma,dong:o.dong,sl:Number(o.so_luong)||0}));
    const gon=r=>({ma:r.ma,ten:r.ten,sl:r.tong});
    const bang={cacTo:t.cacTo.map(x=>({to:x.to,dongHang:x.dongHang.map(gon),coLe:x.coLe.map(gon),tong:x.tongChung})),tong:t.tongChung,dongHang:t.dongHang.map(gon),coLe:t.coLe.map(gon)};
-   return {ngay,soDon:don.length,tongSL:don.reduce((s,o)=>s+(Number(o.so_luong)||0),0),thieuBom,khongCoAo:coBomKhongAo,chuaGanTo,bang};
+   // Phần của các tổ ĐÃ gán (bỏ khối "Chưa gán tổ"): dùng cho nhánh bổ sung ngày đang sản xuất — đơn chưa gán tổ chưa tính vào phiếu
+   const gop=(ds)=>{ const m={}; ds.forEach(r=>{ const k=r.ma+'|'+r.ten; (m[k]||(m[k]={ma:r.ma,ten:r.ten,sl:0})).sl+=r.tong; }); return Object.values(m); };
+   const toDaGan=t.cacTo.filter(x=>x.to!==TO_CHUA_GAN);
+   const daGan={chuan:gop(toDaGan.flatMap(x=>x.dongHang)),coLe:gop(toDaGan.flatMap(x=>x.coLe))};
+   return {ngay,soDon:don.length,tongSL:don.reduce((s,o)=>s+(Number(o.so_luong)||0),0),thieuBom,khongCoAo:coBomKhongAo,chuaGanTo,bang,daGan};
  },{ngay,bomRows});
  if(kq.loi){ console.error(kq.loi); process.exitCode=1; return; }
  if(errors.length){ console.error('Lỗi JS trong trang: '+errors.join(' | ')); process.exitCode=1; return; }

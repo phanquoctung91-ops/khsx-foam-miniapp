@@ -621,6 +621,8 @@
   .dd-nut-hang{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
   .dd-nut{min-height:46px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;}
   .dd-nut.on{background:var(--primary);border-color:var(--primary);color:var(--on-primary);}
+  .dd-nut-ht{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;}
+  .dd-nut.ht.on{background:var(--warning);border-color:var(--warning);color:#fff;}
   .dd-nut:disabled{opacity:.45;cursor:not-allowed;}
   .dd-tc-mo{min-height:34px;padding:0 10px;font-size:13px;}
   .dd-tc-gio{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
@@ -639,7 +641,7 @@
   .dd-tab thead tr{height:auto;}
   .dd-tab td{padding:7px 6px;vertical-align:middle;border-top:1px solid var(--border);overflow:hidden;}
   .dd-tab .c-ten{width:19%;font-weight:600;white-space:normal;overflow-wrap:anywhere;}
-  .dd-tab .c-ten .bom-nhan{display:inline-block;white-space:nowrap;margin-top:2px;}.dd-tab .c-cv{width:22%;}.dd-tab .c-viec{width:12%;}.dd-tab .c-cb{width:54px;text-align:center;}
+  .dd-tab .c-ten .bom-nhan{display:inline-block;white-space:nowrap;margin-top:2px;}.dd-tab .c-cv{width:22%;}.dd-tab .c-viec{width:12%;}.dd-tab .c-cb{width:54px;text-align:center;}.dd-tab .c-ht{width:62px;}.dd-tab th.c-ht{white-space:normal;color:var(--warning);}
   .dd-tab .c-tc{width:186px;text-align:center;overflow:visible;}.dd-tab .c-gc{width:auto;}.dd-tab .c-xoa{width:54px;text-align:center;}
   .dd-tab:not(.dd-co-viec) .c-viec{display:none;}
   .dd-tab td.c-cv{white-space:nowrap;}
@@ -2406,8 +2408,8 @@ body.mobile-view .nkx-tim{width:100%;}
     <div class="bom-chip-row" id="ddNhom" style="margin-bottom:8px;min-height:34px;"></div>
     <div class="bom-chip-row" id="ddLoc" style="margin-bottom:8px;"></div>
     <div id="ddKhung">
-    <div class="table-scroll dd-bang-ngang" style="max-height:none;"><table class="dd-tab" style="min-width:860px;">
-      <thead><tr><th class="c-ten">Tên</th><th class="c-cv">Chức vụ / Tổ</th><th class="c-viec">Việc làm</th><th class="c-cb">Cả ngày</th><th class="c-cb">Sáng</th><th class="c-cb">Chiều</th><th class="c-tc">Tăng ca</th><th class="c-gc">Ghi chú</th><th class="c-xoa"></th></tr></thead>
+    <div class="table-scroll dd-bang-ngang" style="max-height:none;"><table class="dd-tab" style="min-width:960px;">
+      <thead><tr><th class="c-ten">Tên</th><th class="c-cv">Chức vụ / Tổ</th><th class="c-viec">Việc làm</th><th class="c-cb">Cả ngày</th><th class="c-cb">Sáng</th><th class="c-cb">Chiều</th><th class="c-cb c-ht" title="Buổi sáng đi hỗ trợ tổ khác (không làm ở tổ gốc)">Hỗ trợ<br>sáng</th><th class="c-cb c-ht" title="Buổi chiều đi hỗ trợ tổ khác (không làm ở tổ gốc)">Hỗ trợ<br>chiều</th><th class="c-tc">Tăng ca</th><th class="c-gc">Ghi chú</th><th class="c-xoa"></th></tr></thead>
       <tbody id="ddBang"></tbody>
     </table></div>
     <div id="ddThe" class="dd-the-khung"></div>
@@ -2589,7 +2591,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=282"></script>
+<script src="raw-data.js?v=283"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4666,7 +4668,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 282;
+const APP_VERSION = 283;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -8843,9 +8845,12 @@ const NS_GIO_SANG=4.25,NS_GIO_CHIEU=3.75,NS_NGOAI='Ngoài 6 tổ';
 const NS_TO_DAN=['Tổ dán 1','Tổ dán 2','Tổ dán 3','Tổ dán 4'];
 const NS_MOI_TO=[...NS_TO_DAN,'Tổ may','Tổ đóng gói'];
 function nsGioCong(r){ return (Number(r.sang)||0)*NS_GIO_SANG+(Number(r.chieu)||0)*NS_GIO_CHIEU+(Number(r.tang_ca)||0); }
-function nsGom(rows,nhoms,tuIso,denIso){
+// tach=true (từng tổ): trừ buổi đi hỗ trợ, người hỗ trợ trọn ngày và tăng ca của họ khỏi tổ gốc. tach=false (Toàn xưởng): tính đủ.
+function nsGom(rows,nhoms,tuIso,denIso,tach=false){
   const ngay=new Set();let nguoiNgay=0,gio=0;
-  rows.forEach(r=>{ if(!nhoms.includes(r.nhom)||r.ngay<tuIso||r.ngay>denIso) return; ngay.add(r.ngay); nguoiNgay+=Number(r.nguoi)||0; gio+=nsGioCong(r); });
+  rows.forEach(r=>{ if(!nhoms.includes(r.nhom)||r.ngay<tuIso||r.ngay>denIso) return; ngay.add(r.ngay);
+    if(tach){ nguoiNgay+=(Number(r.nguoi)||0)-(Number(r.nguoi_ht)||0); gio+=nsGioCong({sang:(Number(r.sang)||0)-(Number(r.ht_sang)||0),chieu:(Number(r.chieu)||0)-(Number(r.ht_chieu)||0),tang_ca:(Number(r.tang_ca)||0)-(Number(r.tang_ca_ht)||0)}); }
+    else{ nguoiNgay+=Number(r.nguoi)||0; gio+=nsGioCong(r); } });
   return {nguoiNgay,gio,soNgay:ngay.size,nguoiBq:ngay.size?nguoiNgay/ngay.size:0};
 }
 function nsNgayTruoc(iso){ const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()-1); return d.toISOString().slice(0,10); }
@@ -8856,8 +8861,8 @@ function nsKhoangHieuLuc(rows,denIso,homNayIso){
   return chieu>0?{den:denIso,boHomNay:false}:{den:nsNgayTruoc(homNayIso),boHomNay:true};
 }
 function nsTinhBang(rows,sanLuong,tuIso,denIso){
-  const dong=(ten,nhoms,sl,gioTo=true)=>{
-    const g=nsGom(rows,nhoms,tuIso,denIso);
+  const dong=(ten,nhoms,sl,gioTo=true,tach=true)=>{
+    const g=nsGom(rows,nhoms,tuIso,denIso,tach);
     return {ten,sl,nguoiBq:g.nguoiBq,gio:g.gio,coDuLieu:g.nguoiNgay>0,
       slNguoiNgay:g.nguoiNgay?sl/g.nguoiNgay:null,slNguoiGio:g.gio?sl/g.gio:null,
       slGioTo:(gioTo&&g.gio&&g.nguoiBq)?sl/(g.gio/g.nguoiBq):null};
@@ -8866,7 +8871,7 @@ function nsTinhBang(rows,sanLuong,tuIso,denIso){
   const dan=NS_TO_DAN.map(t=>dong(t,[t],sl(t)));
   const out=[...dan,dong('Dán (4 tổ gộp)',NS_TO_DAN,NS_TO_DAN.reduce((n,t)=>n+sl(t),0),false),
     dong('Tổ may',['Tổ may'],sl('Tổ may')),dong('Tổ đóng gói',['Tổ đóng gói'],sl('Tổ đóng gói'))];
-  const xuong=dong('Toàn xưởng',[...NS_MOI_TO,NS_NGOAI],sl('Tổ đóng gói'),false);
+  const xuong=dong('Toàn xưởng',[...NS_MOI_TO,NS_NGOAI],sl('Tổ đóng gói'),false,false);
   xuong.gioNgoai=nsGom(rows,[NS_NGOAI],tuIso,denIso).gio;
   return [...out,xuong];
 }
@@ -8913,7 +8918,7 @@ async function veNangSuatGioCong(){
       return `<tr${xuong?' style="border-top:2px solid var(--border);"':''}><td>${tenHtml}</td><td>${f0(r.sl)}</td><td>${r.coDuLieu?f1(r.nguoiBq):'—'}</td><td>${r.coDuLieu?f1(r.gio):'—'}</td><td>${cot(r.slNguoiNgay,f1)}</td><td><strong>${cot(r.slNguoiGio,f2)}</strong></td><td>${cot(r.slGioTo,f2)}</td></tr>`;
     }).join('');
     const coDiemDanh=rows.some(r=>r.ngay>=tuIso&&r.ngay<=den);
-    ghi.textContent='Giờ công theo điểm danh: sáng 4,25 giờ, chiều 3,75 giờ, tăng ca đúng số giờ ghi. Từng tổ chỉ tính người của tổ đó; dòng Toàn xưởng tính thêm Phụ kho, Hỗ trợ và quản lý. Điểm danh có từ 06/10/2026.'
+    ghi.textContent='Giờ công theo điểm danh: sáng 4,25 giờ, chiều 3,75 giờ, tăng ca đúng số giờ ghi. Từng tổ chỉ tính người của tổ đó và đã trừ các buổi đi hỗ trợ tổ khác; dòng Toàn xưởng tính đủ, thêm Phụ kho, Hỗ trợ và quản lý. Điểm danh có từ 06/10/2026.'
       +(boHomNay?' Ngày hôm nay chưa đủ điểm danh chiều nên chưa tính.':'')+(coDiemDanh?'':' Khoảng này chưa có điểm danh.');
   }catch(e){
     if(lan!==nsLan) return;
@@ -13253,13 +13258,13 @@ async function taiDiemDanh(){
   const lan=++ddLan; ddBao('ddStatus','Đang tải...');
   const [n,d,s,g]=await Promise.all([
     supabaseDb.from('khsx_diem_danh_nguoi').select('id,ten,chuc_vu,to_lam,viec_lam,con_dung,an_tu_ngay').order('ten'),
-    supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu,tang_ca').eq('ngay',ngay),
+    supabaseDb.from('khsx_diem_danh').select('nguoi_id,sang,chieu,tang_ca,ho_tro_sang,ho_tro_chieu').eq('ngay',ngay),
     supabaseDb.from('khsx_phat_sua').select('nguoi_id').eq('ngay',ngay),
     supabaseDb.from('khsx_diem_danh_ghi_chu').select('nguoi_id,ghi_chu').eq('ngay',ngay)]);
   if(lan!==ddLan) return;
   const loi=n.error||d.error||s.error||g.error;
   if(loi){ ddBao('ddStatus',`Chưa tải được điểm danh: ${loi.message||loi}`,'var(--danger)'); return; }
-  ddDong={}; (d.data||[]).forEach(r=>{ ddDong[r.nguoi_id]={sang:!!r.sang,chieu:!!r.chieu,tc:r.tang_ca||0}; });
+  ddDong={}; (d.data||[]).forEach(r=>{ ddDong[r.nguoi_id]={sang:!!r.sang,chieu:!!r.chieu,hs:!!r.ho_tro_sang,hc:!!r.ho_tro_chieu,tc:r.tang_ca||0}; });
   ddDaPhat=new Set((s.data||[]).map(r=>r.nguoi_id));
   ddGhiChu={}; (g.data||[]).forEach(r=>{ ddGhiChu[r.nguoi_id]=r.ghi_chu; });
   // Người đã ẩn (đã nghỉ): chỉ hiện ở ngày họ có điểm danh hoặc ghi chú, để xem lại dữ liệu cũ; không sửa được (nghi=true)
@@ -13275,13 +13280,24 @@ function ddTcKhoi(p,r,tat){
   return `<div class="dd-tc-gio">${[1,2,3].map(g=>`<label title="${TANG_CA_GIO[g]}"><input type="checkbox" data-dd-tc="${g}" data-id="${p.id}"${r.tc===g?' checked':''}${tatTc}> ${g}h <small>${TANG_CA_GIO[g]}</small></label>`).join('')}${r.tc?'':`<button type="button" class="dd-tc-dong" data-dd-tc-mo="${p.id}" aria-label="Đóng tăng ca"${tatTc}>✕</button>`}</div>`;
 }
 // Tick / tăng ca chỉ đổi đúng ô của người đó, KHÔNG vẽ lại cả danh sách: trang không nhảy, ô ghi chú đang gõ không mất chữ, bàn phím không đóng.
+// Mỗi buổi đúng một trong hai: làm ở tổ (sang/chieu) hoặc đi hỗ trợ (hs/hc); sang/chieu = có mặt buổi đó, hs/hc = buổi đó đi hỗ trợ.
+// Ô "Sáng" bật = có mặt và KHÔNG hỗ trợ; ô "Hỗ trợ sáng" bật = có mặt và hỗ trợ. Tick ô này thì ô kia của cùng buổi tự bỏ.
+function ddBatO(r,k){ r=r||{}; return k==='ca'?!!(r.sang&&r.chieu&&!r.hs&&!r.hc):k==='sang'?!!(r.sang&&!r.hs):k==='chieu'?!!(r.chieu&&!r.hc):k==='hs'?!!(r.sang&&r.hs):!!(r.chieu&&r.hc); }
+function ddDoiO(r,k,bat){
+  const n={sang:!!(r&&r.sang),chieu:!!(r&&r.chieu),hs:!!(r&&r.hs),hc:!!(r&&r.hc)};
+  if(k==='ca'){ n.sang=n.chieu=bat; n.hs=n.hc=false; }
+  else if(k==='sang'||k==='hs'){ n.sang=bat; n.hs=bat&&k==='hs'; }
+  else { n.chieu=bat; n.hc=bat&&k==='hc'; }
+  return n;
+}
+const DD_NHAN_O={ca:'Cả ngày',sang:'Sáng',chieu:'Chiều',hs:'Hỗ trợ sáng',hc:'Hỗ trợ chiều'};
 function veTickDiemDanh(id){
   const p=ddNguoi.find(x=>x.id===id); if(!p) return veDiemDanh();
   const r=ddDong[id]||{sang:false,chieu:false,tc:0}, tat=(duocDiemDanh()&&ddDuocNhom(ddNhom)&&!p.nghi)?'':' disabled', ma=CSS.escape(id);
-  document.querySelectorAll(`#ddKhung input[data-dd][data-id="${ma}"]`).forEach(c=>{ c.checked=c.dataset.dd==='ca'?!!(r.sang&&r.chieu):c.dataset.dd==='sang'?!!r.sang:!!r.chieu; });
+  document.querySelectorAll(`#ddKhung input[data-dd][data-id="${ma}"]`).forEach(c=>{ c.checked=ddBatO(r,c.dataset.dd); });
   document.querySelectorAll(`#ddKhung .dd-nut[data-dd-n][data-id="${ma}"]`).forEach(b=>{
-    const k=b.dataset.ddN, on=k==='ca'?!!(r.sang&&r.chieu):k==='sang'?!!r.sang:!!r.chieu;
-    b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on)); b.textContent=(on?'✓ ':'')+({ca:'Cả ngày',sang:'Sáng',chieu:'Chiều'})[k];
+    const k=b.dataset.ddN, on=ddBatO(r,k);
+    b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on)); b.textContent=(on?'✓ ':'')+DD_NHAN_O[k];
   });
   const tc=ddTcKhoi(p,r,tat);
   document.querySelectorAll(`#ddKhung [data-dd-tc-cell="${ma}"]`).forEach(c=>{ c.innerHTML=tc; });
@@ -13296,36 +13312,35 @@ function veDiemDanh(){
   const dsNhom=ddNguoi.filter(p=>ddNhomCua(p)===ddNhom);
   veLocDiemDanh(dsNhom);
   const hien=dsNhom.filter(ddHopLoc).sort(ddThuTu);
-  const trong=t=>{ than.innerHTML=`<tr><td colspan="9" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; };
+  const trong=t=>{ than.innerHTML=`<tr><td colspan="11" style="color:var(--text2);text-align:center;padding:14px;">${t}</td></tr>`; the.innerHTML=`<div style="color:var(--text2);text-align:center;padding:14px;">${t}</div>`; };
   if(!ddNguoi.length) return trong(`Chưa có ai trong danh sách.${xoa?' Thêm người ở dưới.':''}`);
   if(!hien.length) return trong('Không có ai trong nhóm này.');
   const oGc=(p,kieu)=>`<input type="text" data-dd-gc data-id="${p.id}" maxlength="200" value="${thoatHtml(ddGhiChu[p.id]||'')}" placeholder="Ghi chú"${(sua&&!p.nghi)?'':' disabled'} aria-label="Ghi chú ${thoatHtml(p.ten)}" style="${kieu}font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);box-sizing:border-box;">`;
   const tcKhoi=ddTcKhoi;
   than.innerHTML=hien.map(p=>{
     const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||p.nghi)?' disabled':'';
-    const o=(k,v)=>`<td class="c-cb"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
-    return `<tr><td class="c-ten">${thoatHtml(p.ten)}${p.nghi?' <span class="bom-nhan" title="Đã nghỉ (đã ẩn khỏi danh sách). Chỉ xem dữ liệu cũ, không sửa được.">đã nghỉ</span>':''}${khoa?' <span class="bom-nhan da" title="Đã phát sữa (chỉ là thông tin, vẫn sửa được điểm danh)">🥛 đã phát</span>':''}</td><td class="c-cv">${ddOChon(p)}</td><td class="c-viec">${ddOViec(p,'min-width:0;width:100%;')}</td>${o('ca',r.sang&&r.chieu)}${o('sang',r.sang)}${o('chieu',r.chieu)}<td class="c-tc" data-dd-tc-cell="${p.id}">${tcKhoi(p,r,tat)}</td><td class="c-gc">${oGc(p,'min-width:0;width:100%;')}</td><td class="c-xoa">${xoa&&!p.nghi?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
+    const o=(k,v)=>`<td class="c-cb${k==='hs'||k==='hc'?' c-ht':''}"><input type="checkbox" data-dd="${k}" data-id="${p.id}"${v?' checked':''}${tat} style="width:20px;height:20px;"></td>`;
+    return `<tr><td class="c-ten">${thoatHtml(p.ten)}${p.nghi?' <span class="bom-nhan" title="Đã nghỉ (đã ẩn khỏi danh sách). Chỉ xem dữ liệu cũ, không sửa được.">đã nghỉ</span>':''}${khoa?' <span class="bom-nhan da" title="Đã phát sữa (chỉ là thông tin, vẫn sửa được điểm danh)">🥛 đã phát</span>':''}</td><td class="c-cv">${ddOChon(p)}</td><td class="c-viec">${ddOViec(p,'min-width:0;width:100%;')}</td>${o('ca',ddBatO(r,'ca'))}${o('sang',ddBatO(r,'sang'))}${o('chieu',ddBatO(r,'chieu'))}${o('hs',ddBatO(r,'hs'))}${o('hc',ddBatO(r,'hc'))}<td class="c-tc" data-dd-tc-cell="${p.id}">${tcKhoi(p,r,tat)}</td><td class="c-gc">${oGc(p,'min-width:0;width:100%;')}</td><td class="c-xoa">${xoa&&!p.nghi?`<button type="button" class="capacity-quick-btn" data-dd-xoa="${p.id}">Xóa</button>`:''}</td></tr>`;
   }).join('');
   the.innerHTML=hien.map(p=>{
     const r=ddDong[p.id]||{sang:false,chieu:false,tc:0}, khoa=ddDaPhat.has(p.id), tat=(!sua||p.nghi)?' disabled':'';
-    const nut=(k,txt,on)=>`<button type="button" class="dd-nut${on?' on':''}" data-dd-n="${k}" data-id="${p.id}" aria-pressed="${on}"${tat}>${on?'✓ ':''}${txt}</button>`;
+    const nut=(k,txt,on)=>`<button type="button" class="dd-nut${k==='hs'||k==='hc'?' ht':''}${on?' on':''}" data-dd-n="${k}" data-id="${p.id}" aria-pressed="${on}"${tat}>${on?'✓ ':''}${txt}</button>`;
     return `<div class="dd-the"><div class="dd-the-ten">${thoatHtml(p.ten)}${p.nghi?' <span class="bom-nhan">đã nghỉ</span>':''}${khoa?' <span class="bom-nhan da">🥛 đã phát</span>':''}${xoa?'':`<small>${thoatHtml([ddNhanCv(p),p.viec_lam].filter(Boolean).join(' · '))||'—'}</small>`}</div>${xoa?ddOChon(p)+ddOViec(p,'width:100%;min-width:0;min-height:38px;margin-top:6px;'):''}
-      <div class="dd-nut-hang">${nut('ca','Cả ngày',r.sang&&r.chieu)}${nut('sang','Sáng',r.sang)}${nut('chieu','Chiều',r.chieu)}</div><div class="dd-tc-the" data-dd-tc-cell="${p.id}">${tcKhoi(p,r,tat)}</div>${oGc(p,'width:100%;min-width:0;min-height:42px;margin-top:8px;')}${xoa&&!p.nghi?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
+      <div class="dd-nut-hang">${nut('ca','Cả ngày',ddBatO(r,'ca'))}${nut('sang','Sáng',ddBatO(r,'sang'))}${nut('chieu','Chiều',ddBatO(r,'chieu'))}</div><div class="dd-nut-ht">${nut('hs','Hỗ trợ sáng',ddBatO(r,'hs'))}${nut('hc','Hỗ trợ chiều',ddBatO(r,'hc'))}</div><div class="dd-tc-the" data-dd-tc-cell="${p.id}">${tcKhoi(p,r,tat)}</div>${oGc(p,'width:100%;min-width:0;min-height:42px;margin-top:8px;')}${xoa&&!p.nghi?`<button type="button" class="capacity-quick-btn" style="margin-top:8px;min-height:38px;" data-dd-xoa="${p.id}">Xóa khỏi danh sách</button>`:''}</div>`;
   }).join('');
 }
-async function ghiDiemDanh(id,sang,chieu){
-  const ngay=document.getElementById('ddNgay').value, cu=ddDong[id]||{sang:false,chieu:false};
-  if(sang||chieu) ddDong[id]={sang,chieu,tc:cu.tc||0}; else delete ddDong[id];
+async function ghiDiemDanh(id,sang,chieu,hs=false,hc=false){
+  const ngay=document.getElementById('ddNgay').value, cu=ddDong[id]||{sang:false,chieu:false,hs:false,hc:false};
+  if(sang||chieu) ddDong[id]={sang,chieu,hs:sang&&hs,hc:chieu&&hc,tc:cu.tc||0}; else delete ddDong[id];
   veTickDiemDanh(id); ddBao('ddStatus','Đang lưu...');
-  const {error}=await supabaseDb.rpc('khsx_diem_danh_ghi_v1',{p_nguoi:id,p_ngay:ngay,p_sang:sang,p_chieu:chieu});
+  const {error}=await supabaseDb.rpc('khsx_diem_danh_ghi_v2',{p_nguoi:id,p_ngay:ngay,p_sang:sang,p_chieu:chieu,p_ho_tro_sang:sang&&hs,p_ho_tro_chieu:chieu&&hc});
   if(error){ if(cu.sang||cu.chieu) ddDong[id]=cu; else delete ddDong[id]; veTickDiemDanh(id); return ddBao('ddStatus',loiDiemDanh(error),'var(--danger)'); }
   ddBao('ddStatus','Đã lưu.','var(--success)');
 }
 document.getElementById('ddKhung')?.addEventListener('change',e=>{
   const c=e.target.closest('input[data-dd]'); if(!c||!duocDiemDanh()) return;
-  const id=c.dataset.id, r=ddDong[id]||{sang:false,chieu:false};
-  if(c.dataset.dd==='ca') return ghiDiemDanh(id,c.checked,c.checked);
-  ghiDiemDanh(id,c.dataset.dd==='sang'?c.checked:r.sang,c.dataset.dd==='chieu'?c.checked:r.chieu);
+  const id=c.dataset.id, n=ddDoiO(ddDong[id],c.dataset.dd,c.checked);
+  ghiDiemDanh(id,n.sang,n.chieu,n.hs,n.hc);
 });
 async function ghiTangCa(id,gio){
   const ngay=document.getElementById('ddNgay').value, cu=ddDong[id]; if(!cu||!(cu.sang||cu.chieu)) return;
@@ -13375,9 +13390,8 @@ document.getElementById('ddKhung')?.addEventListener('change',async e=>{
 });
 document.getElementById('ddKhung')?.addEventListener('click',e=>{
   const b=e.target.closest('button[data-dd-n]'); if(!b||b.disabled||!duocDiemDanh()) return;
-  const id=b.dataset.id, r=ddDong[id]||{sang:false,chieu:false}, k=b.dataset.ddN;
-  if(k==='ca'){ const on=!(r.sang&&r.chieu); return ghiDiemDanh(id,on,on); }
-  ghiDiemDanh(id,k==='sang'?!r.sang:r.sang,k==='chieu'?!r.chieu:r.chieu);
+  const id=b.dataset.id, k=b.dataset.ddN, n=ddDoiO(ddDong[id],k,!ddBatO(ddDong[id],k));
+  ghiDiemDanh(id,n.sang,n.chieu,n.hs,n.hc);
 });
 document.getElementById('ddKhung')?.addEventListener('click',async e=>{
   const b=e.target.closest('[data-dd-xoa]'); if(!b||!laChuTaiKhoan()) return;
@@ -13493,9 +13507,15 @@ document.getElementById('ddSuaKhung')?.addEventListener('click',async e=>{
 
 // --- Xuất Excel: mỗi người một dòng, mỗi ngày một cột; cuối dòng ngày công + hộp sữa ---
 // Ngày công: cả ngày = 1, một buổi = 0,5. Hộp: cả ngày 2, một buổi 1. Hộp đã phát = hộp của các ngày đã đánh dấu phát.
+// Nhãn buổi trong file Excel: Cả ngày / Sáng / Chiều; có buổi đi hỗ trợ thì ghi rõ: "Hỗ trợ cả ngày", "Sáng + Hỗ trợ chiều"...
+function ddNhanBuoi(r,ca){
+  if(!r.hs&&!r.hc) return ca?'Cả ngày':r.sang?'Sáng':'Chiều';
+  if(ca&&r.hs&&r.hc) return 'Hỗ trợ cả ngày';
+  return [r.sang?(r.hs?'Hỗ trợ sáng':'Sáng'):'',r.chieu?(r.hc?'Hỗ trợ chiều':'Chiều'):''].filter(Boolean).join(' + ');
+}
 function ddBangXuat(nguoi,dd,ps,tu,den,gc=[]){
   const ngay=[]; for(let d=new Date(tu+'T00:00:00');isoCuaNgay(d)<=den;d.setDate(d.getDate()+1)) ngay.push(isoCuaNgay(d));
-  const diem={}; dd.forEach(r=>{ (diem[r.nguoi_id]||(diem[r.nguoi_id]={}))[r.ngay]={sang:!!r.sang,chieu:!!r.chieu,tc:r.tang_ca||0}; });
+  const diem={}; dd.forEach(r=>{ (diem[r.nguoi_id]||(diem[r.nguoi_id]={}))[r.ngay]={sang:!!r.sang,chieu:!!r.chieu,hs:!!r.ho_tro_sang,hc:!!r.ho_tro_chieu,tc:r.tang_ca||0}; });
   const phat={}; ps.forEach(r=>{ (phat[r.nguoi_id]||(phat[r.nguoi_id]=new Set())).add(r.ngay); });
   const ghi={}; gc.forEach(r=>{ (ghi[r.nguoi_id]||(ghi[r.nguoi_id]={}))[r.ngay]=String(r.ghi_chu||'').trim(); });
   const ds=nguoi.filter(p=>p.con_dung||diem[p.id]).sort(ddThuTu);
@@ -13508,7 +13528,7 @@ function ddBangXuat(nguoi,dd,ps,tu,den,gc=[]){
       if(!r||(!r.sang&&!r.chieu)) return note;
       const ca=r.sang&&r.chieu, h=ca?2:1, daPhat=phat[p.id]?.has(n);
       cong+=ca?1:0.5; hop+=h; if(daPhat) da+=h; gioTc+=r.tc||0;
-      return (ca?'Cả ngày':r.sang?'Sáng':'Chiều')+(daPhat?' 🥛':'')+(r.tc?` + Tăng ca ${r.tc}h (${TANG_CA_GIO[r.tc]})`:'')+(note?' — '+note:'');
+      return ddNhanBuoi(r,ca)+(daPhat?' 🥛':'')+(r.tc?` + Tăng ca ${r.tc}h (${TANG_CA_GIO[r.tc]})`:'')+(note?' — '+note:'');
     });
     return [p.ten,p.chuc_vu||'',p.chuc_vu==='Công nhân'?(p.to_lam||''):'',...o,cong,hop,da,hop-da,gioTc];
   });
@@ -13578,7 +13598,7 @@ document.getElementById('ddXuatTai')?.addEventListener('click',async e=>{
   try{
     const [n,d,s,g]=await Promise.all([
       supabaseSelectAll('khsx_diem_danh_nguoi','id,ten,chuc_vu,to_lam,con_dung',q=>q.order('id')),
-      supabaseSelectAll('khsx_diem_danh','nguoi_id,ngay,sang,chieu,tang_ca',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
+      supabaseSelectAll('khsx_diem_danh','nguoi_id,ngay,sang,chieu,tang_ca,ho_tro_sang,ho_tro_chieu',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
       supabaseSelectAll('khsx_phat_sua','nguoi_id,ngay',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id')),
       supabaseSelectAll('khsx_diem_danh_ghi_chu','nguoi_id,ngay,ghi_chu',q=>q.gte('ngay',tu).lte('ngay',den).order('ngay').order('nguoi_id'))]);
     const loi=n.error||d.error||s.error||g.error; if(loi) throw loi;
