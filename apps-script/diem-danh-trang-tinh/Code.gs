@@ -4,7 +4,7 @@
  * Cài vào Sheet: Tiện ích mở rộng > Apps Script, dán file này, menu "Điểm danh" > "Chọn tổ của Sheet này" (nếu là May), "Nhập khóa", "Cài đặt lần đầu".
  * Dữ liệu đọc từ Supabase bằng hàm khsx_diem_danh_sheet_v1, khóa bí mật nằm trong Script Properties (KHOA), không nằm trong mã.
  * Lịch 18:00 mỗi ngày ghi lại 3 tab của tháng: "Chấm công Tmm-yyyy", "Tổng hợp tổ Tmm-yyyy", "Ghi chú Tmm-yyyy".
- * Nút "Xuất lên Sheet" trong app gọi doPost (triển khai Ứng dụng web) -> ghi 3 tab cố định "Xuất tay: ..." theo khoảng ngày chọn, ghi đè mỗi lần.
+ * Nút "Xuất lên Sheet" trong app gọi doPost (triển khai Ứng dụng web) -> ghi lại CHÍNH 3 tab của tháng này ngay, không chờ 18:00 (12/11/2026, bỏ chọn khoảng ngày).
  * Tab Chấm công: mỗi người HAI dòng liền nhau. Dòng trên = điểm danh (X, S, C, HT, off...). Dòng dưới (chữ nhỏ, nền xám) = số giờ tăng ca của đúng ngày đó.
  */
 var SB_URL = 'https://tydevlvcyvqwghinboif.supabase.co';
@@ -15,7 +15,6 @@ var DS_MUT = ['Tổ dán 1', 'Tổ dán 2', 'Tổ dán 3', 'Tổ dán 4', 'Tổ 
 var DS_TO = ['Tổ dán 1', 'Tổ dán 2', 'Tổ dán 3', 'Tổ dán 4', 'Tổ dán 5', 'Tổ may (Mút)', 'Tổ đóng gói', 'Kho', 'Quản lý', 'Hỗ trợ', 'Tổ May'];   // thứ tự dải ở tab Chấm công
 var VIEC_MAY = ['May mẫu & cắt hàng', 'May áo niệm', 'May áo gối'];
 var NGOAI = 'Khác';
-var TOI_DA_NGAY = 62;
 var MAU = { to: '#d9ead3', ho_tro: '#fff2cc', chu_nhat: '#eeeeee', cn_lam: '#ffd966', dau: '#1f3864', dai_to: '#d9e2f3', tc: '#f3f3f3' };
 var THU = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 var CHU_GIAI = 'X = cả ngày ở tổ · S / C = chỉ sáng / chỉ chiều · HT = đi hỗ trợ cả ngày · S+HT = sáng ở tổ, chiều hỗ trợ · HT+C = sáng hỗ trợ, chiều ở tổ · dòng nhỏ bên dưới = giờ tăng ca · off = nghỉ (ngày thường vắng) · ô xám trống = Chủ nhật · ô vàng đậm = đi làm Chủ nhật';
@@ -260,31 +259,22 @@ function ghiThang(y, m) {
   return ghiBoBa(SpreadsheetApp.getActiveSpreadsheet(), iso(y, m, 1), iso(y, m, soNgayThang(y, m)),
     { cc: tenTab('Chấm công', y, m), th: tenTab('Tổng hợp tổ', y, m), gc: tenTab('Ghi chú', y, m) }, 'tháng ' + m + '/' + y, nhanCapNhat());
 }
-// Xuất tay theo khoảng ngày: 3 tab cố định, ghi đè mỗi lần.
-function ghiTay(tuIso, denIso) {
-  return ghiBoBa(SpreadsheetApp.getActiveSpreadsheet(), tuIso, denIso,
-    { cc: 'Xuất tay: Chấm công', th: 'Xuất tay: Tổng hợp', gc: 'Xuất tay: Ghi chú' }, 'từ ' + dmy(tuIso) + ' đến ' + dmy(denIso), nhanCapNhat());
-}
 function ghiThangNay() {
-  var t = homNay();
-  ghiThang(t.y, t.m);
+  var t = homNay(), r = ghiThang(t.y, t.m);
   if (t.d <= 2) { var m = t.m - 1, y = t.y; if (m < 1) { m = 12; y--; } ghiThang(y, m); } // đầu tháng: chốt lại tháng trước
+  r.thang = t.m + '/' + t.y; return r;
 }
 
 // ---- Nút "Xuất lên Sheet" trong app: triển khai Ứng dụng web (Chạy với quyền: Tôi · Ai có quyền truy cập: Bất kỳ ai).
-// App POST {token, tu, den} rồi hỏi kết quả bằng GET ?action=result&token=...&callback=... (giống xuất báo cáo đóng gói).
-function ngayHopLe(s) { return /^\d{4}-\d\d-\d\d$/.test(s) && !isNaN(new Date(s + 'T00:00:00').getTime()); }
+// App POST {token} -> ghi lại 3 tab tháng này ngay (cùng việc với lịch 18:00), rồi hỏi kết quả bằng GET ?action=result&token=...&callback=... (giống xuất báo cáo đóng gói).
 function doPost(e) {
   var tok = '', kq;
   try {
     var b = JSON.parse(e.postData.contents);
     tok = String(b.token || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 40);
-    var tu = String(b.tu || ''), den = String(b.den || '');
-    if (!ngayHopLe(tu) || !ngayHopLe(den) || tu > den) throw new Error('Khoảng ngày không hợp lệ.');
-    if (taoKhoang(tu, den).ngay.length > TOI_DA_NGAY) throw new Error('Tối đa ' + TOI_DA_NGAY + ' ngày một lần xuất.');
     var khoa = LockService.getScriptLock(); khoa.waitLock(30000);
-    var r; try { r = ghiTay(tu, den); } finally { khoa.releaseLock(); }
-    kq = { done: true, success: true, message: tenTo(layTo()) + ': đã ghi ' + r.nguoi + ' người, ' + r.ghiChu + ' ghi chú (' + dmy(tu) + ' đến ' + dmy(den) + ').', url: SpreadsheetApp.getActiveSpreadsheet().getUrl() };
+    var r; try { r = ghiThangNay(); } finally { khoa.releaseLock(); }
+    kq = { done: true, success: true, message: tenTo(layTo()) + ': đã cập nhật tháng ' + r.thang + ' (' + r.nguoi + ' người, ' + r.ghiChu + ' ghi chú).', url: SpreadsheetApp.getActiveSpreadsheet().getUrl() };
   } catch (err) { kq = { done: true, success: false, message: err.message }; }
   if (tok) CacheService.getScriptCache().put('kq_' + tok, JSON.stringify(kq), 600);
   return ContentService.createTextOutput('ok');

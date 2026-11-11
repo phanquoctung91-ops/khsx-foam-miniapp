@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const gs = fs.readFileSync(path.resolve(__dirname, '..', 'apps-script/diem-danh-trang-tinh/Code.gs'), 'utf8');
 const kho = {}, ctx = { CacheService: { getScriptCache: () => ({ get: k => (k === 'kq_ok1' ? '{"done":true,"success":true}' : kho[k] || null), put: (k, v) => { kho[k] = v; } }) }, ContentService: { createTextOutput: t => ({ t, setMimeType(m) { this.m = m; return this; } }), MimeType: { JAVASCRIPT: 'js', JSON: 'json' } } }; vm.createContext(ctx);
-vm.runInContext(gs + ';this.F={locTo,taoKhoang,khoangThang,kyHieu,gioNguoiNgay,xayChamCong,xayTongHopTo,xayGhiChu,doGet,doPost,ngayHopLe};', ctx);
+vm.runInContext(gs + ';this.F={locTo,taoKhoang,khoangThang,kyHieu,gioNguoiNgay,xayChamCong,xayTongHopTo,xayGhiChu,doGet,doPost};', ctx);
 const F = ctx.F, J = x => JSON.parse(JSON.stringify(x)), gan = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, a + ' != ' + b);
 const T11 = () => F.khoangThang(2026, 11);
 
@@ -21,7 +21,6 @@ const k1 = J(F.taoKhoang('2026-11-28', '2026-12-03'));
 assert.equal(k1.ngay.length, 6); assert.equal(k1.nhieuThang, true); assert.equal(k1.ngay[0].thu, 6); assert.equal(k1.ngay[3].iso, '2026-12-01');
 assert.equal(J(F.taoKhoang('2026-11-05', '2026-11-05')).ngay.length, 1); assert.equal(J(T11()).nhieuThang, false);
 assert.equal(J(F.taoKhoang('2026-02-27', '2026-03-02')).ngay.length, 4, 'qua tháng 2 không nhuận');
-assert.ok(F.ngayHopLe('2026-11-09') && !F.ngayHopLe('2026-13-09') && !F.ngayHopLe('09/11/2026') && !F.ngayHopLe(''));
 console.log('PASS khoảng ngày');
 
 // 3) Dữ liệu mẫu (Mút)
@@ -108,12 +107,12 @@ const bAn = J(F.xayChamCong(duAn, T11())).giaTri.find(r => r[0] === 'Bình').sli
 assert.equal(bAn[4], 'off'); assert.equal(bAn[5], '', 'từ ngày thu hồi không còn off'); assert.equal(bAn[9], 'X');
 console.log('PASS ghi chú + người ẩn');
 
-// 8) Xuất tay: kiểm tra đầu vào của doPost/doGet (không chạm Sheet)
+// 8) Điểm vào Ứng dụng web: doPost luôn lưu kết quả (không ném lỗi), doGet đọc lại theo mã
+F.doPost({ postData: { contents: '{"token":"zz"}' } });   // trong node không có SpreadsheetApp -> lỗi được bắt và lưu
+const kzz = JSON.parse(F.doGet({ parameter: { token: 'zz' } }).t); assert.equal(kzz.done, true); assert.equal(kzz.success, false);
+F.doPost({ postData: { contents: 'không phải json' } });   // JSON hỏng không làm sập
 assert.equal(F.doGet({ parameter: { token: 'abc', callback: 'cb_1' } }).t, 'cb_1({"done":false})');
 assert.equal(F.doGet({ parameter: { token: 'ok1', callback: 'cb<2>' } }).t, 'cb2({"done":true,"success":true})', 'callback được làm sạch');
 assert.equal(F.doGet({ parameter: { token: 'ok1' } }).t, '{"done":true,"success":true}');
-const dp = F.doPost({ postData: { contents: '{"token":"zz","tu":"2026-11-10","den":"2026-11-01"}' } }); assert.equal(dp.t, 'ok');   // khoảng sai: không chạm Sheet, kết quả lỗi lưu ở cache
-assert.deepEqual(J(JSON.parse(F.doGet({ parameter: { token: 'zz' } }).t)), { done: true, success: false, message: 'Khoảng ngày không hợp lệ.' });
-F.doPost({ postData: { contents: '{"token":"y1","tu":"2026-01-01","den":"2026-12-31"}' } });
-assert.match(JSON.parse(F.doGet({ parameter: { token: 'y1' } }).t).message, /Tối đa 62 ngày/);
+assert.ok(!/function ghiTay|Xuất tay/.test(gs), 'không còn tab Xuất tay');
 console.log('PASS điểm vào doGet/doPost');

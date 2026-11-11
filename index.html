@@ -2403,14 +2403,12 @@ body.mobile-view .nkx-tim{width:100%;}
     </div>
     <div id="ddSheet" style="display:none;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:10px;">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <label style="font-size:12px;font-weight:700;color:var(--text2);">Từ ngày <input type="date" id="ddSheetTu" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
-        <label style="font-size:12px;font-weight:700;color:var(--text2);">Đến ngày <input type="date" id="ddSheetDen" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
         <label style="font-size:12px;font-weight:700;color:var(--text2);">Tổ <select id="ddSheetTo" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"><option value="mut">Tổ Mút</option><option value="may">Tổ May</option></select></label>
-        <button type="button" id="ddSheetGhi" class="primary-btn">Ghi lên Sheet</button>
+        <button type="button" id="ddSheetGhi" class="primary-btn">Cập nhật Sheet ngay</button>
         <span id="ddSheetStatus" class="save-status" aria-live="polite"></span>
         <span id="ddSheetLink"></span>
       </div>
-      <div style="font-size:12px;color:var(--text2);margin-top:6px;">Ghi vào 3 tab "Xuất tay" của Sheet tổ đã chọn (ghi đè mỗi lần). Tối đa 62 ngày.</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:6px;">Ghi lại ngay 3 tab của tháng này trong Sheet tổ đã chọn, giống lịch tự động 18:00 mỗi ngày (không cần chờ).</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
       <label style="font-size:12px;font-weight:700;color:var(--text2);">Ngày <input type="date" id="ddNgay" style="font-size:14px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);"></label>
@@ -2603,7 +2601,7 @@ body.mobile-view .nkx-tim{width:100%;}
 <footer>Dashboard Kế hoạch sản xuất — Xưởng Foam &nbsp;·&nbsp; <strong>Telegram Mini App · Supabase · Bản #118</strong><div style="margin-top:5px;">Sở hữu bởi Phan Quốc Tùng - Trưởng nhóm sản xuất Foam&amp;Gối</div></footer>
 </div>
 
-<script src="raw-data.js?v=285"></script>
+<script src="raw-data.js?v=286"></script>
 <script>
 const RAW = window.__KHSX_RAW__ || {days:{}, monthly:{}};
 const allDays = {...RAW.days}; // mutable: manual entries get merged in
@@ -4680,7 +4678,7 @@ setInterval(()=>{
 // NHẮC (2026-09-05): mỗi lần tăng số này, cũng phải tăng "?v=" của <script src="raw-data.js?v=...">
 // ở gần đầu file — raw-data.js không có cơ chế cache-buster tự động, cache cũ có thể ghép
 // nhầm code mới với dữ liệu lịch sử cũ nếu quên.
-const APP_VERSION = 285;
+const APP_VERSION = 286;
 // ===== Hiệu ứng giao diện (bản 240) =====
 // Nguyên tắc: hiệu ứng chỉ chạy lần đầu nhìn thấy hoặc khi chính số liệu đổi, KHÔNG chạy lại mỗi lần
 // dữ liệu tải lại. Phần tử mới dựng được nhận ra bằng bộ quan sát DOM, không cần sửa từng chỗ vẽ.
@@ -13263,8 +13261,6 @@ function initDiemDanh(){
   den.max=hn; tu.max=hn;
   const xt=document.getElementById('ddXuatTu'), xd=document.getElementById('ddXuatDen');
   if(!xd.value) xd.value=hn; if(!xt.value) xt.value=hn.slice(0,8)+'01'; xd.max=hn; xt.max=hn;
-  const st_=document.getElementById('ddSheetTu'), sd_=document.getElementById('ddSheetDen');
-  if(st_&&sd_){ if(!sd_.value) sd_.value=hn; if(!st_.value) st_.value=hn.slice(0,8)+'01'; sd_.max=hn; st_.max=hn; }
   taiDiemDanh();
 }
 async function taiDiemDanh(){
@@ -13629,29 +13625,26 @@ document.getElementById('ddXuatTai')?.addEventListener('click',async e=>{
   finally{ nut.disabled=false; }
 });
 
-// --- Xuất điểm danh lên Google Sheet theo tổ (anh chốt 12/11/2026): giống xuất báo cáo đóng gói, gửi lệnh rồi hỏi lại kết quả theo mã. Địa chỉ điền sau khi triển khai Ứng dụng web của từng Sheet.
+// --- Cập nhật Sheet điểm danh theo tổ ngay, không chờ 18:00 (anh chốt 12/11/2026): giống xuất báo cáo đóng gói, gửi lệnh rồi hỏi lại kết quả theo mã. Địa chỉ điền sau khi triển khai Ứng dụng web của từng Sheet.
 const DD_SHEET_API={mut:'https://script.google.com/macros/s/AKfycbwJWI6b3DbOfgIgx79-359eX1yZTVAtLa3ncHEkuilPnfYKDCoFGaTKNWuXLyz0Z55w/exec',may:'https://script.google.com/macros/s/AKfycbxFvWcTVj5_peIoUZUC5nUn7dvDb-EoTaUpKFlo_BUJPUKQwbRY43ukgsyanllEqHP1/exec'};
 document.getElementById('ddSheetBtn')?.addEventListener('click',()=>{
   const o=document.getElementById('ddSheet'); o.style.display=o.style.display==='none'?'block':'none';
   if(o.style.display==='block') document.getElementById('ddSheetTo').value=ddNhom==='Tổ may'?'may':'mut';
 });
 document.getElementById('ddSheetGhi')?.addEventListener('click',async e=>{
-  const nut=e.currentTarget, tu=document.getElementById('ddSheetTu').value, den=document.getElementById('ddSheetDen').value, to=document.getElementById('ddSheetTo').value;
+  const nut=e.currentTarget, to=document.getElementById('ddSheetTo').value;
   const tenTo=to==='may'?'Tổ May':'Tổ Mút', url=DD_SHEET_API[to], lk=document.getElementById('ddSheetLink');
   const bao=(t,m)=>ddBao('ddSheetStatus',t,m); lk.textContent='';
   if(!duocDiemDanh()&&!duocPhatSua()) return;
-  if(!tu||!den||tu>den) return bao('Chọn khoảng ngày: từ ngày không được sau đến ngày.','var(--danger)');
-  if((new Date(den)-new Date(tu))/86400000>=62) return bao('Tối đa 62 ngày một lần xuất.','var(--danger)');
   if(LOCAL_PREVIEW_MODE) return bao('Bản xem thử local không ghi lên Sheet thật.','var(--danger)');
   if(!url) return bao(`Chưa cài địa chỉ Sheet ${tenTo}.`,'var(--danger)');
-  const dmy=iso=>iso.split('-').reverse().join('/');
-  if(!confirm(`Ghi ${tenTo} từ ${dmy(tu)} đến ${dmy(den)} lên Sheet?
+  if(!confirm(`Cập nhật Sheet ${tenTo} ngay?
 
-Sẽ GHI ĐÈ 3 tab "Xuất tay" trong Sheet ${tenTo}.`)) return;
+Ghi lại 3 tab của tháng này trong Sheet ${tenTo}.`)) return;
   nut.disabled=true; bao('Đang gửi lệnh...');
   const token='x'+Date.now()+Math.random().toString(36).slice(2,7);
   try{
-    await fetchCoHanDai(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token,tu,den})});
+    await fetchCoHanDai(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token})});
   }catch(err){ nut.disabled=false; return bao('Không gửi được lệnh, kiểm tra mạng rồi thử lại.','var(--danger)'); }
   bao('Đang ghi lên Sheet...');
   for(let i=0;i<40;i++){
